@@ -1,0 +1,3 @@
+HABApp==0.31.2
+transitions~=0.8
+graphviz~=0.19
