@@ -8,6 +8,8 @@ import HABApp.openhab.items
 import transitions.extensions
 import transitions.extensions.states
 
+import rules.common.state_machine_rule
+
 os.environ["PATH"] += r"C:\Program Files\Graphviz\bin"
 
 
@@ -16,10 +18,12 @@ class StateMachineWithTimeout(transitions.Machine):
     pass
 
 
-class Presence(HABApp.Rule):
+class Presence(rules.common.state_machine_rule.StateMachineRule):
+    """Rules class to manage presence of a home."""
+
     states = [{"name": "presence"},
-              {"name": "leaving", "timeout": 5 * 60, "on_timeout": "absence_detected"},
-              {"name": "absence", "timeout": 1.5 * 24 * 3600, "on_timeout": "detected_long_absence"},
+              {"name": "leaving", "timeout": 5 * 60, "on_timeout": "absence_detected"},  # leaving takes 5 minutes
+              {"name": "absence", "timeout": 1.5 * 24 * 3600, "on_timeout": "long_absence_detected"},  # switch to long absence after 1.5 days
               {"name": "long_absence"}
               ]
 
@@ -32,12 +36,18 @@ class Presence(HABApp.Rule):
     ]
 
     def __init__(self, name_presence: str, outside_door_names: typing.List[str], leaving_name: str) -> None:
+        """Init of Presence object.
+
+        :param name_presence: name of OpenHAB presence item
+        :param outside_door_names: list of names of OpenHAB outdoor door items
+        :param leaving_name: name of OpenHAB leaving item
+        """
         super().__init__()
 
         self.state_machine = StateMachineWithTimeout(model=self,
                                                      states=self.states,
                                                      transitions=self.trans,
-                                                     initial=self._get_initial_state(),
+                                                     initial=self._get_initial_state("presence"),
                                                      ignore_invalid_triggers=True,
                                                      after_state_change="_update_openhab_state")
 
@@ -45,19 +55,47 @@ class Presence(HABApp.Rule):
             door_item = HABApp.openhab.items.ContactItem.get_item(name)
             door_item.listen_event(self._cb_outside_door, HABApp.openhab.events.ItemStateChangedEvent)
 
-        leaving_item = HABApp.openhab.items.SwitchItem.get_item(leaving_name)
-        leaving_item.listen_event(self._cb_leaving, HABApp.openhab.events.ItemStateEvent)
+        self.__leaving_item = HABApp.openhab.items.SwitchItem.get_item(leaving_name)
+        self.__leaving_item.listen_event(self._cb_leaving, HABApp.openhab.events.ItemStateChangedEvent)
 
-    def _get_initial_state(self):
-        return "presence"
+        self.__presence_item = HABApp.openhab.items.SwitchItem.get_item(name_presence)
 
-    def _update_openhab_state(self):
-        pass
+    def _update_openhab_state(self) -> None:
+        """Extend _update_openhab state of base class to also update other openhab items."""
+        super()._update_openhab_state()
 
-    def _cb_outside_door(self, event: HABApp.openhab.events.ItemStateChangedEvent):
+        # update presence item
+        target_value = "ON" if self.state == "presence" else "OFF"
+        self._send_if_different(self.__presence_item.name, target_value)
+
+        # update leaving item
+        if self.state != "leaving":
+            self._send_if_different(self.__leaving_item.name, "OFF")
+
+    def _cb_outside_door(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+        """Callback, which is called if any outside door changed state.
+
+        :param event: state change event of door item
+        """
         if event.value == "OPEN" and self.state != "presence":
             self.presence_detected()
 
-    def _cb_leaving(self, event: HABApp.openhab.events.ItemStateEvent):
+    def _cb_leaving(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+        """Callback, which is called if leaving item changed state.
+
+        :param event: Item state change event of leaving item
+        """
         if event.value == "ON" and self.state == "presence":
             self.leaving_detected()
+        if event.value == "OFF" and self.state == "leaving":
+            self.abort_leaving()
+
+    def _cb_presence(self, event: HABApp.openhab.events.ItemStateChangedEvent):
+        """Callback, which is called if presence item changed state.
+
+        :param event: Item state change event of presence item
+        """
+        if event.value == "ON" and self.state in ["absence", "long_absence"]:
+            self.presence_detected()
+        elif event.value == "OFF" and self.state in ["presence", "leaving"]:
+            self.absence_detected()
