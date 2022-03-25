@@ -1,6 +1,10 @@
 """This is file is written from spacemanspiff2007 and copied from GitHub."""
+import os
+
 import HABApp
 import HABApp.openhab.connection_handler.func_sync
+
+import definitions
 
 
 class StateMachineRule(HABApp.Rule):
@@ -23,7 +27,6 @@ class StateMachineRule(HABApp.Rule):
         """
         if not HABApp.openhab.interface.item_exists(name):
             result = HABApp.openhab.interface.create_item(item_type=item_type, name=name, label=name.replace("_", " "))
-            print(f"create items result: {result}")
         return HABApp.openhab.items.OpenhabItem.get_item(name)
 
     def _get_initial_state(self, default_value: str) -> str:
