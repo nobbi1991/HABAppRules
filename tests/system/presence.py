@@ -1,3 +1,4 @@
+import collections
 import pathlib
 import threading
 import unittest
@@ -36,13 +37,13 @@ class TestPowerSwitch(unittest.TestCase):
         self.send_command_mock = self.send_command_mock_patcher.start()
 
         self.mock_items = [
-            (HABApp.openhab.items.ContactItem, "Unittest_Main_Door", "CLOSED"),
-            (HABApp.openhab.items.ContactItem, "Unittest_Side_Door", "CLOSED"),
+            (HABApp.openhab.items.ContactItem, "Unittest_Door1", "CLOSED"),
+            (HABApp.openhab.items.ContactItem, "Unittest_Door2", "CLOSED"),
             (HABApp.openhab.items.SwitchItem, 'Unittest_Leaving', 'OFF'),
             (HABApp.openhab.items.SwitchItem, 'Unittest_Phone1', 'OFF'),
             (HABApp.openhab.items.SwitchItem, 'Unittest_Phone2', 'OFF'),
             (HABApp.openhab.items.StringItem, "rules_system_presence_Presence", ""),
-            (HABApp.openhab.items.SwitchItem, "Unittest_Presence", "")
+            (HABApp.openhab.items.SwitchItem, "Unittest_Presence", "ON")
         ]
 
         for item_type, name, value in self.mock_items:
@@ -54,7 +55,7 @@ class TestPowerSwitch(unittest.TestCase):
         self.__runner = tests.helper.rule_runner.SimpleRuleRunner()
         self.__runner.set_up()
         with unittest.mock.patch.object(rules.common.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("Presence", "")):
-            self._presence = rules.system.presence.Presence("Unittest_Presence", outside_door_names=["Unittest_Main_Door", "Unittest_Side_Door"], leaving_name="Unittest_Leaving", phone_names=["Unittest_Phone1", "Unittest_Phone2"])
+            self._presence = rules.system.presence.Presence("Unittest_Presence", outside_door_names=["Unittest_Door1", "Unittest_Door2"], leaving_name="Unittest_Leaving", phone_names=["Unittest_Phone1", "Unittest_Phone2"])
 
     def test_create_graph(self):
         """Create state machine graph for documentation."""
@@ -65,6 +66,87 @@ class TestPowerSwitch(unittest.TestCase):
 
         self._presence_graph.get_graph().draw(pathlib.Path(__file__).parent / "Presence.png", format="png", prog="dot")
 
+    def test_get_initial_state(self):
+        """Test getting correct initial state."""
+        Testcase = collections.namedtuple("Testcase", "presence, outside_doors, leaving, phones, expected_result")
+
+        testcases = [
+            # presence ON | leaving OFF
+            Testcase(presence="ON", leaving="OFF", outside_doors=[], phones=[], expected_result="presence"),
+            Testcase(presence="ON", leaving="OFF", outside_doors=[], phones=["ON"], expected_result="presence"),
+            Testcase(presence="ON", leaving="OFF", outside_doors=[], phones=["OFF"], expected_result="leaving"),
+            Testcase(presence="ON", leaving="OFF", outside_doors=[], phones=["ON", "OFF"], expected_result="presence"),
+
+            Testcase(presence="ON", leaving="OFF", outside_doors=["CLOSED"], phones=[], expected_result="presence"),
+            Testcase(presence="ON", leaving="OFF", outside_doors=["CLOSED"], phones=["ON"], expected_result="presence"),
+            Testcase(presence="ON", leaving="OFF", outside_doors=["CLOSED"], phones=["OFF"], expected_result="leaving"),
+            Testcase(presence="ON", leaving="OFF", outside_doors=["CLOSED"], phones=["ON", "OFF"], expected_result="presence"),
+
+            Testcase(presence="ON", leaving="OFF", outside_doors=["OPEN"], phones=[], expected_result="presence"),
+            Testcase(presence="ON", leaving="OFF", outside_doors=["OPEN"], phones=["ON"], expected_result="presence"),
+            Testcase(presence="ON", leaving="OFF", outside_doors=["OPEN"], phones=["OFF"], expected_result="leaving"),
+            Testcase(presence="ON", leaving="OFF", outside_doors=["OPEN"], phones=["ON", "OFF"], expected_result="presence"),
+
+            Testcase(presence="ON", leaving="OFF", outside_doors=["OPEN, CLOSED"], phones=[], expected_result="presence"),
+            Testcase(presence="ON", leaving="OFF", outside_doors=["OPEN, CLOSED"], phones=["ON"], expected_result="presence"),
+            Testcase(presence="ON", leaving="OFF", outside_doors=["OPEN, CLOSED"], phones=["OFF"], expected_result="leaving"),
+            Testcase(presence="ON", leaving="OFF", outside_doors=["OPEN, CLOSED"], phones=["ON", "OFF"], expected_result="presence"),
+
+            # presence ON | leaving ON
+            Testcase(presence="ON", leaving="ON", outside_doors=[], phones=[], expected_result="leaving"),
+            Testcase(presence="ON", leaving="ON", outside_doors=[], phones=["ON"], expected_result="presence"),
+            Testcase(presence="ON", leaving="ON", outside_doors=[], phones=["OFF"], expected_result="leaving"),
+            Testcase(presence="ON", leaving="ON", outside_doors=[], phones=["ON", "OFF"], expected_result="presence"),
+
+            Testcase(presence="ON", leaving="ON", outside_doors=["CLOSED"], phones=[], expected_result="leaving"),
+            Testcase(presence="ON", leaving="ON", outside_doors=["CLOSED"], phones=["ON"], expected_result="presence"),
+            Testcase(presence="ON", leaving="ON", outside_doors=["CLOSED"], phones=["OFF"], expected_result="leaving"),
+            Testcase(presence="ON", leaving="ON", outside_doors=["CLOSED"], phones=["ON", "OFF"], expected_result="presence"),
+
+            Testcase(presence="ON", leaving="ON", outside_doors=["OPEN"], phones=[], expected_result="leaving"),
+            Testcase(presence="ON", leaving="ON", outside_doors=["OPEN"], phones=["ON"], expected_result="presence"),
+            Testcase(presence="ON", leaving="ON", outside_doors=["OPEN"], phones=["OFF"], expected_result="leaving"),
+            Testcase(presence="ON", leaving="ON", outside_doors=["OPEN"], phones=["ON", "OFF"], expected_result="presence"),
+
+            Testcase(presence="ON", leaving="ON", outside_doors=["OPEN, CLOSED"], phones=[], expected_result="leaving"),
+            Testcase(presence="ON", leaving="ON", outside_doors=["OPEN, CLOSED"], phones=["ON"], expected_result="presence"),
+            Testcase(presence="ON", leaving="ON", outside_doors=["OPEN, CLOSED"], phones=["OFF"], expected_result="leaving"),
+            Testcase(presence="ON", leaving="ON", outside_doors=["OPEN, CLOSED"], phones=["ON", "OFF"], expected_result="presence"),
+
+            # presence OFF | leaving OFF
+            Testcase(presence="OFF", leaving="OFF", outside_doors=[], phones=[], expected_result="absence"),
+            Testcase(presence="OFF", leaving="OFF", outside_doors=[], phones=["ON"], expected_result="presence"),
+            Testcase(presence="OFF", leaving="OFF", outside_doors=[], phones=["OFF"], expected_result="absence"),
+            Testcase(presence="OFF", leaving="OFF", outside_doors=[], phones=["ON", "OFF"], expected_result="presence"),
+
+            Testcase(presence="OFF", leaving="OFF", outside_doors=["CLOSED"], phones=[], expected_result="absence"),
+            Testcase(presence="OFF", leaving="OFF", outside_doors=["CLOSED"], phones=["ON"], expected_result="presence"),
+            Testcase(presence="OFF", leaving="OFF", outside_doors=["CLOSED"], phones=["OFF"], expected_result="absence"),
+            Testcase(presence="OFF", leaving="OFF", outside_doors=["CLOSED"], phones=["ON", "OFF"], expected_result="presence"),
+
+            Testcase(presence="OFF", leaving="OFF", outside_doors=["OPEN"], phones=[], expected_result="absence"),
+            Testcase(presence="OFF", leaving="OFF", outside_doors=["OPEN"], phones=["ON"], expected_result="presence"),
+            Testcase(presence="OFF", leaving="OFF", outside_doors=["OPEN"], phones=["OFF"], expected_result="absence"),
+            Testcase(presence="OFF", leaving="OFF", outside_doors=["OPEN"], phones=["ON", "OFF"], expected_result="presence"),
+
+            Testcase(presence="OFF", leaving="OFF", outside_doors=["OPEN, CLOSED"], phones=[], expected_result="absence"),
+            Testcase(presence="OFF", leaving="OFF", outside_doors=["OPEN, CLOSED"], phones=["ON"], expected_result="presence"),
+            Testcase(presence="OFF", leaving="OFF", outside_doors=["OPEN, CLOSED"], phones=["OFF"], expected_result="absence"),
+            Testcase(presence="OFF", leaving="OFF", outside_doors=["OPEN, CLOSED"], phones=["ON", "OFF"], expected_result="presence"),
+
+            # all None
+            Testcase(presence=None, leaving=None, outside_doors=[None, None], phones=[None, None], expected_result="default"),
+        ]
+
+        for testcase in testcases:
+            self._presence._Presence__presence_item.value = testcase.presence
+            self._presence._Presence__leaving_item.value = testcase.leaving
+
+            self._presence._Presence__outside_door_items = [HABApp.openhab.items.ContactItem(f"Unittest_Door{idx}", state) for idx, state in enumerate(testcase.outside_doors)]
+            self._presence._Presence__phone_items = [HABApp.openhab.items.SwitchItem(f"Unittest_Door{idx}", state) for idx, state in enumerate(testcase.phones)]
+
+            self.assertEqual(self._presence._get_initial_state("default"), testcase.expected_result, f"failed testcase: {testcase}")
+
     def test_presence_trough_doors(self):
         """Test if outside doors set presence correctly."""
         tests.helper.oh_item.send_command("Unittest_Presence", "OFF")
@@ -72,17 +154,17 @@ class TestPowerSwitch(unittest.TestCase):
         self.assertEqual(self._presence.state, "absence")
 
         self.__runner.process_events()
-        tests.helper.oh_item.send_command("Unittest_Main_Door", "CLOSED", "CLOSED")
+        tests.helper.oh_item.send_command("Unittest_Door1", "CLOSED", "CLOSED")
         self.assertEqual(self._presence.state, "absence")
 
-        tests.helper.oh_item.send_command("Unittest_Main_Door", "OPEN", "CLOSED")
+        tests.helper.oh_item.send_command("Unittest_Door1", "OPEN", "CLOSED")
         self.assertEqual(self._presence.state, "presence")
         tests.helper.oh_item.assert_state("Unittest_Presence", "ON")
 
-        tests.helper.oh_item.send_command("Unittest_Main_Door", "OPEN", "CLOSED")
+        tests.helper.oh_item.send_command("Unittest_Door1", "OPEN", "CLOSED")
         self.assertEqual(self._presence.state, "presence")
 
-        tests.helper.oh_item.send_command("Unittest_Main_Door", "CLOSED", "CLOSED")
+        tests.helper.oh_item.send_command("Unittest_Door1", "CLOSED", "CLOSED")
         self.assertEqual(self._presence.state, "presence")
 
     def test_normal_leaving(self):
@@ -115,6 +197,44 @@ class TestPowerSwitch(unittest.TestCase):
         self.assertEqual(self._presence.state, "presence")
         tests.helper.oh_item.assert_state("Unittest_Leaving", "OFF")
 
+    def test_leaving_with_phones(self):
+        """Test if leaving and absence is correct if phones appear/disappear during or after leaving."""
+        # set initial states
+        tests.helper.oh_item.set_state("Unittest_Phone1", "ON")
+        tests.helper.oh_item.set_state("Unittest_Phone2", "OFF")
+        self._presence.state_machine.set_state("presence")
+        tests.helper.oh_item.send_command("Unittest_Leaving", "ON", "OFF")
+        self.assertEqual(self._presence.state, "leaving")
+
+        # leaving on, last phone disappears
+        tests.helper.oh_item.send_command("Unittest_Phone1", "OFF", "ON")
+        self.assertEqual(self._presence.state, "leaving")
+
+        # leaving on, first phone appears
+        tests.helper.oh_item.send_command("Unittest_Phone1", "ON", "OFF")
+        self.assertEqual(self._presence.state, "leaving")
+
+        # leaving on, second phone appears
+        tests.helper.oh_item.send_command("Unittest_Phone2", "ON", "OFF")
+        self.assertEqual(self._presence.state, "leaving")
+
+        # leaving on, both phones leaving
+        tests.helper.oh_item.send_command("Unittest_Phone1", "OFF", "ON")
+        tests.helper.oh_item.send_command("Unittest_Phone2", "OFF", "ON")
+        self.assertEqual(self._presence.state, "leaving")
+
+        # absence on, one disappears, one stays online
+        tests.helper.oh_item.send_command("Unittest_Phone1", "ON", "OFF")
+        tests.helper.oh_item.send_command("Unittest_Phone2", "ON", "OFF")
+        tests.helper.transitions.call_timeout(self.transitions_timer_mock)
+        self.assertEqual(self._presence.state, "absence")
+        tests.helper.oh_item.send_command("Unittest_Phone1", "OFF", "ON")
+        self.assertEqual(self._presence.state, "absence")
+
+        # absence on, two phones disappears
+        tests.helper.oh_item.send_command("Unittest_Phone2", "OFF", "ON")
+        self.assertEqual(self._presence.state, "absence")
+
     def test_long_absence(self):
         """Test entering long_absence and leaving it."""
         # set initial state
@@ -133,7 +253,7 @@ class TestPowerSwitch(unittest.TestCase):
         tests.helper.oh_item.assert_state("Unittest_Presence", "OFF")
 
         # check if presence is set after door open
-        self._presence._cb_outside_door(HABApp.openhab.events.ItemStateChangedEvent("Unittest_Main_Door", "OPEN", "CLOSED"))
+        self._presence._cb_outside_door(HABApp.openhab.events.ItemStateChangedEvent("Unittest_Door1", "OPEN", "CLOSED"))
         self.assertEqual(self._presence.state, "presence")
         tests.helper.oh_item.assert_state("Unittest_Presence", "ON")
 
@@ -192,18 +312,12 @@ class TestPowerSwitch(unittest.TestCase):
         tests.helper.transitions.call_timeout(self.threading_timer_mock)
         self.assertEqual(self._presence.state, "leaving")
 
-        # phone appears during leaving -> presence expected
+        # phone appears during leaving -> leaving expected
         tests.helper.oh_item.send_command("Unittest_Phone1", "ON", "OFF")
-        self.assertEqual(self._presence.state, "presence")
+        self.assertEqual(self._presence.state, "leaving")
         self.assertIsNone(self._presence._Presence__phone_absence_timer)
 
-        # phone leaves again -> leaving + absence expected
-        tests.helper.oh_item.send_command("Unittest_Phone1", "OFF", "ON")
-        self.assertEqual(self._presence.state, "presence")
-        self.assertEqual(self.threading_timer_mock.call_count, 2)
-        self.threading_timer_mock.assert_called_with(1800, self._presence._Presence__set_leaving_through_phone)
-        tests.helper.transitions.call_timeout(self.threading_timer_mock)
-        self.assertEqual(self._presence.state, "leaving")
+        # timeout is over -> absence expected
         tests.helper.transitions.call_timeout(self.transitions_timer_mock)
         self.assertEqual(self._presence.state, "absence")
 

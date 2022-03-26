@@ -6,6 +6,7 @@ import HABApp.openhab.definitions
 import HABApp.openhab.events
 import HABApp.openhab.interface
 import HABApp.openhab.items
+import HABApp.util
 import transitions.extensions
 import transitions.extensions.states
 
@@ -45,6 +46,13 @@ class Presence(rules.common.state_machine_rule.StateMachineRule):
         """
         super().__init__()
 
+        # init items
+        self.__presence_item = HABApp.openhab.items.SwitchItem.get_item(name_presence)
+        self.__leaving_item = HABApp.openhab.items.SwitchItem.get_item(leaving_name)
+        self.__outside_door_items = [HABApp.openhab.items.ContactItem.get_item(name) for name in outside_door_names]
+        self.__phone_items = [HABApp.openhab.items.SwitchItem.get_item(name) for name in phone_names]
+
+        # init state machine
         self.state_machine = StateMachineWithTimeout(model=self,
                                                      states=self.states,
                                                      transitions=self.trans,
@@ -52,22 +60,39 @@ class Presence(rules.common.state_machine_rule.StateMachineRule):
                                                      ignore_invalid_triggers=True,
                                                      after_state_change="_update_openhab_state")
 
-        for name in outside_door_names:
-            door_item = HABApp.openhab.items.ContactItem.get_item(name)
-            door_item.listen_event(self._cb_outside_door, HABApp.openhab.events.ItemStateChangedEvent)
-
-        self.__leaving_item = HABApp.openhab.items.SwitchItem.get_item(leaving_name)
+        # add callbacks
         self.__leaving_item.listen_event(self._cb_leaving, HABApp.openhab.events.ItemStateChangedEvent)
-
-        self.__presence_item = HABApp.openhab.items.SwitchItem.get_item(name_presence)
         self.__presence_item.listen_event(self._cb_presence, HABApp.openhab.events.ItemStateChangedEvent)
+        HABApp.util.EventListenerGroup().add_listener(self.__outside_door_items, self._cb_outside_door, HABApp.core.events.ValueChangeEvent).listen()
+        HABApp.util.EventListenerGroup().add_listener(self.__phone_items, self._cb_phone, HABApp.core.events.ValueChangeEvent).listen()
 
-        self.__phone_items = []
         self.__phone_absence_timer: threading.Timer = None
-        if phone_names:
-            for name in phone_names:
-                self.__phone_items.append(HABApp.openhab.items.SwitchItem.get_item(name))
-                self.__phone_items[-1].listen_event(self._cb_phone, HABApp.openhab.events.ItemStateChangedEvent)
+
+    def _get_initial_state(self, default_value: str) -> str:
+        """Get initial state of state machine.
+
+        :param default_value: default / initial state
+        :return: return correct state if it could be detected, if not return default value
+        """
+        phone_items = [phone for phone in self.__phone_items if phone.value is not None]
+        if phone_items:
+            if any([item.value == "ON" for item in phone_items]):
+                return "presence"
+
+            if self.__presence_item.value == "ON":
+                return "leaving"
+            return "absence"
+
+        if self.__leaving_item.value == "ON":
+            return "leaving"
+
+        if self.__presence_item.value == "ON":
+            return "presence"
+
+        if self.__presence_item.value == "OFF":
+            return "absence"
+
+        return default_value
 
     def _update_openhab_state(self) -> None:
         """Extend _update_openhab state of base class to also update other openhab items."""
@@ -123,8 +148,8 @@ class Presence(rules.common.state_machine_rule.StateMachineRule):
 
             if self.state in ["absence", "long_absence"]:
                 self.presence_detected()
-            elif self.state in ["leaving"]:
-                self.abort_leaving()
+            # elif self.state in ["leaving"]:
+            #     self.abort_leaving()
 
         elif active_phones == 0 and event.value == "OFF":
             # last phone switched to OFF
