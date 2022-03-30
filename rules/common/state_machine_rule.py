@@ -1,12 +1,11 @@
-"""This is file is written from spacemanspiff2007 and copied from GitHub."""
-import os
+"""Base class for Rule with State Machine."""
+# todo check file doc
 
 import HABApp
 import HABApp.openhab.connection_handler.func_sync
 
-import definitions
 
-
+# todo add docstring + unittest
 class StateMachineRule(HABApp.Rule):
     states: list[dict] = []
     trans: list[dict] = []
@@ -43,8 +42,8 @@ class StateMachineRule(HABApp.Rule):
         """Update openhab state item. This should method should be set to "after_state_change" of the state machine."""
         self._item_state.oh_send_command(self.state)
 
-    @staticmethod
-    def _send_if_different(item_name: str, value: str) -> None:
+    @staticmethod  # todo: move to helper file?
+    def _send_if_different(item_name: str, value: str) -> None:  # todo change to item instead name.... or both?!
         """
 
         :param item_name:
@@ -52,4 +51,4 @@ class StateMachineRule(HABApp.Rule):
         :return:
         """
         if str(HABApp.openhab.items.OpenhabItem.get_item(item_name).value) != value:
-            HABApp.openhab.connection_handler.func_sync.send_command(item_name, value)
+            HABApp.openhab.items.OpenhabItem.get_item(item_name).oh_send_command(value)

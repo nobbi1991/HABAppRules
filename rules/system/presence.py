@@ -153,7 +153,7 @@ class Presence(rules.common.state_machine_rule.StateMachineRule):
 
         elif active_phones == 0 and event.value == "OFF":
             # last phone switched to OFF
-            self.__phone_absence_timer = threading.Timer(30 * 60, self.__set_leaving_through_phone)
+            self.__phone_absence_timer = threading.Timer(20 * 60, self.__set_leaving_through_phone)
             self.__phone_absence_timer.start()
 
     def __set_leaving_through_phone(self):

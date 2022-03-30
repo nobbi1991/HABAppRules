@@ -20,7 +20,7 @@ class GraphMachineTimer(transitions.extensions.GraphMachine):
     pass
 
 
-class TestPowerSwitch(unittest.TestCase):
+class TestPresence(unittest.TestCase):
 
     def setUp(self) -> None:
         """Setup testcase."""
@@ -32,29 +32,21 @@ class TestPowerSwitch(unittest.TestCase):
         self.addCleanup(self.threading_timer_mock_patcher.stop)
         self.threading_timer_mock = self.threading_timer_mock_patcher.start()
 
-        self.send_command_mock_patcher = unittest.mock.patch("HABApp.openhab.connection_handler.func_sync.send_command", new=tests.helper.oh_item.set_state)
+        self.send_command_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.send_command", new=tests.helper.oh_item.send_command)
         self.addCleanup(self.send_command_mock_patcher.stop)
         self.send_command_mock = self.send_command_mock_patcher.start()
 
-        self.mock_items = [
-            (HABApp.openhab.items.ContactItem, "Unittest_Door1", "CLOSED"),
-            (HABApp.openhab.items.ContactItem, "Unittest_Door2", "CLOSED"),
-            (HABApp.openhab.items.SwitchItem, 'Unittest_Leaving', 'OFF'),
-            (HABApp.openhab.items.SwitchItem, 'Unittest_Phone1', 'OFF'),
-            (HABApp.openhab.items.SwitchItem, 'Unittest_Phone2', 'OFF'),
-            (HABApp.openhab.items.StringItem, "rules_system_presence_Presence", ""),
-            (HABApp.openhab.items.SwitchItem, "Unittest_Presence", "ON")
-        ]
-
-        for item_type, name, value in self.mock_items:
-            if name in HABApp.core.Items._ALL_ITEMS:
-                HABApp.core.Items.pop_item(name)
-            item = item_type(name, value)
-            HABApp.core.Items.add_item(item)
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.ContactItem, "Unittest_Door1", "CLOSED")
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.ContactItem, "Unittest_Door2", "CLOSED")
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, 'Unittest_Leaving', 'OFF')
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, 'Unittest_Phone1', 'OFF')
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, 'Unittest_Phone2', 'OFF')
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "rules_system_presence_Presence", "")
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Presence", "ON")
 
         self.__runner = tests.helper.rule_runner.SimpleRuleRunner()
         self.__runner.set_up()
-        with unittest.mock.patch.object(rules.common.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("Presence", "")):
+        with unittest.mock.patch.object(rules.common.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_presence_Presence", "")): # todo: why mock this?
             self._presence = rules.system.presence.Presence("Unittest_Presence", outside_door_names=["Unittest_Door1", "Unittest_Door2"], leaving_name="Unittest_Leaving", phone_names=["Unittest_Phone1", "Unittest_Phone2"])
 
     def test_create_graph(self):
@@ -159,7 +151,7 @@ class TestPowerSwitch(unittest.TestCase):
 
         tests.helper.oh_item.send_command("Unittest_Door1", "OPEN", "CLOSED")
         self.assertEqual(self._presence.state, "presence")
-        tests.helper.oh_item.assert_state("Unittest_Presence", "ON")
+        tests.helper.oh_item.assert_value("Unittest_Presence", "ON")
 
         tests.helper.oh_item.send_command("Unittest_Door1", "OPEN", "CLOSED")
         self.assertEqual(self._presence.state, "presence")
@@ -191,11 +183,11 @@ class TestPowerSwitch(unittest.TestCase):
 
         tests.helper.oh_item.send_command("Unittest_Leaving", "ON", "OFF")
         self.assertEqual(self._presence.state, "leaving")
-        tests.helper.oh_item.assert_state("Unittest_Leaving", "ON")
+        tests.helper.oh_item.assert_value("Unittest_Leaving", "ON")
 
         tests.helper.oh_item.send_command("Unittest_Leaving", "OFF", "ON")
         self.assertEqual(self._presence.state, "presence")
-        tests.helper.oh_item.assert_state("Unittest_Leaving", "OFF")
+        tests.helper.oh_item.assert_value("Unittest_Leaving", "OFF")
 
     def test_leaving_with_phones(self):
         """Test if leaving and absence is correct if phones appear/disappear during or after leaving."""
@@ -244,18 +236,18 @@ class TestPowerSwitch(unittest.TestCase):
         # go to absence
         self._presence.absence_detected()
         self.assertEqual(self._presence.state, "absence")
-        tests.helper.oh_item.assert_state("Unittest_Presence", "OFF")
+        tests.helper.oh_item.assert_value("Unittest_Presence", "OFF")
 
         # check if timeout started, and stop the mocked timer
         self.transitions_timer_mock.assert_called_with(1.5 * 24 * 3600, unittest.mock.ANY, args=unittest.mock.ANY)
         tests.helper.transitions.call_timeout(self.transitions_timer_mock)
         self.assertEqual(self._presence.state, "long_absence")
-        tests.helper.oh_item.assert_state("Unittest_Presence", "OFF")
+        tests.helper.oh_item.assert_value("Unittest_Presence", "OFF")
 
         # check if presence is set after door open
         self._presence._cb_outside_door(HABApp.openhab.events.ItemStateChangedEvent("Unittest_Door1", "OPEN", "CLOSED"))
         self.assertEqual(self._presence.state, "presence")
-        tests.helper.oh_item.assert_state("Unittest_Presence", "ON")
+        tests.helper.oh_item.assert_value("Unittest_Presence", "ON")
 
     def test_manual_change(self):
         """Test if change of presence object ist setting correct state."""
@@ -308,7 +300,7 @@ class TestPowerSwitch(unittest.TestCase):
         # first phone switches to OFF -> timer should be started
         tests.helper.oh_item.send_command("Unittest_Phone1", "OFF", "ON")
         self.assertEqual(self._presence.state, "presence")
-        self.threading_timer_mock.assert_called_once_with(1800, self._presence._Presence__set_leaving_through_phone)
+        self.threading_timer_mock.assert_called_once_with(1200, self._presence._Presence__set_leaving_through_phone)
         tests.helper.transitions.call_timeout(self.threading_timer_mock)
         self.assertEqual(self._presence.state, "leaving")
 
@@ -323,8 +315,7 @@ class TestPowerSwitch(unittest.TestCase):
 
     def tearDown(self) -> None:
         """Tear down test case."""
-        for _, name, _ in self.mock_items:
-            HABApp.core.Items.pop_item(name)
+        tests.helper.oh_item.remove_moved_items()
         self.__runner.tear_down()
 
 
