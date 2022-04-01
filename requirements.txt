@@ -2,3 +2,6 @@ HABApp==0.31.2
 coverage~=6.3
 transitions~=0.8
 graphviz~=0.19
+nox~=2022.1.0
+pylint
+pyenchant
