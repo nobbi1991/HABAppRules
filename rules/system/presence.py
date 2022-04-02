@@ -66,6 +66,7 @@ class Presence(rules.common.state_machine_rule.StateMachineRule):
 		HABApp.util.EventListenerGroup().add_listener(self.__phone_items, self._cb_phone, HABApp.core.events.ValueChangeEvent).listen()
 
 		self.__phone_absence_timer: threading.Timer = None
+		LOGGER.debug(f"Init of presence rule {self.rule_name} was successful. Initial state = {self.state}")
 
 	def _get_initial_state(self, default_value: str) -> str:
 		"""Get initial state of state machine.
