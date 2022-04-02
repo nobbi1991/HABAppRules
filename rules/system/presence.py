@@ -1,4 +1,5 @@
 """Rule to detect presence or absence."""
+import logging
 import threading
 import typing
 
@@ -10,6 +11,8 @@ import HABApp.util
 
 import rules.common.helper
 import rules.common.state_machine_rule
+
+LOGGER = logging.getLogger("HABApp.presence")
 
 
 # pylint: disable=no-member
@@ -93,6 +96,7 @@ class Presence(rules.common.state_machine_rule.StateMachineRule):
 	def _update_openhab_state(self) -> None:
 		"""Extend _update_openhab state of base class to also update other OpenHAB items."""
 		super()._update_openhab_state()
+		LOGGER.info(f"Presence state changed to {self.state}")
 
 		# update presence item
 		target_value = "ON" if self.state in {"presence", "leaving"} else "OFF"
