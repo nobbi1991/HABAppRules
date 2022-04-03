@@ -13,6 +13,7 @@ import rules.common.helper
 import rules.common.state_machine_rule
 
 LOGGER = logging.getLogger("HABApp.presence")
+LOGGER.setLevel("DEBUG")
 
 
 # pylint: disable=no-member

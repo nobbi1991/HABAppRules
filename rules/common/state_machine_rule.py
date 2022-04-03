@@ -2,7 +2,7 @@
 
 import HABApp
 import HABApp.openhab.connection_handler.func_sync
-import transitions
+import transitions.extensions.states
 
 
 @transitions.extensions.states.add_state_features(transitions.extensions.states.Timeout)
