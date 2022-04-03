@@ -20,19 +20,24 @@ class Telegram:
 		"""Init Telegram class.
 
 		:param bot_token: bot token from telegram
+		:param chat_ids: dictionary which holds the mapping between name and chat_id
 		"""
 		self.__bot_token = bot_token
 		self._chat_ids = chat_ids
 
 	@property
 	def chat_ids(self) -> dict:
+		"""Property holds the current dictionary of known chat ids.
+
+		:return: dictionary of chat ids
+		"""
 		return self._chat_ids
 
 	def __get_chat_ids(self, recipient_names: list[str]) -> list[str]:
-		"""
+		"""Get chat ids from recipient names.
 
-		:param recipient_names:
-		:return:
+		:param recipient_names: list of recipient ids to transform
+		:return: list of chat ids
 		"""
 		return [self._chat_ids[name] for name in recipient_names]
 
