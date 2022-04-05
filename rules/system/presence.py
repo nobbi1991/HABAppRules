@@ -59,6 +59,7 @@ class Presence(rules.common.state_machine_rule.StateMachineRule):
 			initial=self._get_initial_state("presence"),
 			ignore_invalid_triggers=True,
 			after_state_change="_update_openhab_state")
+		super()._update_openhab_state()
 
 		# add callbacks
 		self.__leaving_item.listen_event(self._cb_leaving, HABApp.openhab.events.ItemStateChangedEvent)

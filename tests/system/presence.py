@@ -36,14 +36,14 @@ class TestPresence(unittest.TestCase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.ContactItem, "Unittest_Door1", "CLOSED")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.ContactItem, "Unittest_Door2", "CLOSED")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Leaving", "OFF")
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Phone1", "OFF")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Phone1", "ON")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Phone2", "OFF")
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "rules_system_presence_Presence", "")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "rules_system_presence_Presence_state", "")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Presence", "ON")
 
 		self.__runner = tests.helper.rule_runner.SimpleRuleRunner()
 		self.__runner.set_up()
-		with unittest.mock.patch.object(rules.common.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_presence_Presence", "")):
+		with unittest.mock.patch.object(rules.common.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_presence_Presence_state", "")):
 			self._presence = rules.system.presence.Presence("Unittest_Presence", outside_door_names=["Unittest_Door1", "Unittest_Door2"], leaving_name="Unittest_Leaving", phone_names=["Unittest_Phone1", "Unittest_Phone2"])
 
 	def test_create_graph(self):
@@ -55,6 +55,11 @@ class TestPresence(unittest.TestCase):
 			initial=self._presence.state)
 
 		presence_graph.get_graph().draw(pathlib.Path(__file__).parent / "Presence.png", format="png", prog="dot")
+
+	def test__init__(self):
+		"""Test init."""
+		tests.helper.oh_item.assert_value("rules_system_presence_Presence_state", "presence")
+		self.assertEqual(self._presence.state, "presence")
 
 	def test_get_initial_state(self):
 		"""Test getting correct initial state."""
