@@ -25,7 +25,16 @@ def add_mock_item(item_type: typing.Type[HABApp.openhab.items.OpenhabItem], name
 	_MOCKED_ITEM_NAMES.append(name)
 
 
-def remove_moved_items() -> None:
+def remove_mocked_item_by_name(name: str) -> None:
+	"""Remove a mocked item by item name
+
+	:param name: name of mocked item
+	"""
+	HABApp.core.Items.pop_item(name)  # pylint: disable=no-member
+	_MOCKED_ITEM_NAMES.remove(name)
+
+
+def remove_all_mocked_items() -> None:
 	"""Remove all mocked items."""
 	for name in _MOCKED_ITEM_NAMES:
 		HABApp.core.Items.pop_item(name)  # pylint: disable=no-member
@@ -57,12 +66,16 @@ def send_command(item_name: str, new_value: str | datetime.datetime, old_value: 
 		HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateEvent(item_name, new_value))
 
 
-def assert_value(item_name: str, value: typing.Any) -> None:
+def assert_value(item_name: str, value: typing.Any, message: typing.Any = None) -> None:
 	"""Helper to assert if item has correct state
 
 	:param item_name: name of item
 	:param value: expected state
+	:param message: message to display if assertion failed
 	:raises AssertionError: if value is wrong
 	"""
 	if (current_state := HABApp.openhab.items.OpenhabItem.get_item(item_name).value) != value:
-		raise AssertionError(f"Wrong state of item '{item_name}'. Expected: {value} | Current: {current_state}")
+		msg = f"Wrong state of item '{item_name}'. Expected: {value} | Current: {current_state}"
+		if message:
+			msg += f'message = {message}'
+		raise AssertionError(msg)

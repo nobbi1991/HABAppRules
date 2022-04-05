@@ -156,7 +156,7 @@ class TestSummerWinter(unittest.TestCase):
 
 	def tearDown(self) -> None:
 		"""Tear down test case."""
-		tests.helper.oh_item.remove_moved_items()
+		tests.helper.oh_item.remove_all_mocked_items()
 		self.__runner.tear_down()
 
 
