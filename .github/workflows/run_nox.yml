@@ -16,10 +16,10 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   run_all_tests:
-    strategy:
-      fail-fast: false
     name: Run nox
     runs-on: ubuntu-latest
     steps:
       # (other steps before this: checkout code, install python and nox...)
+      - uses: actions/checkout@v2
+      - uses: excitedleigh/setup-nox@v2.0.0
       - run: nox
