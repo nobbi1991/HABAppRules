@@ -180,15 +180,20 @@ class TestSleep(unittest.TestCase):
 		# set lock_request and shortly after send sleep request -> locked expected
 		tests.helper.oh_item.send_command("Unittest_Lock_Request", "ON", "OFF")
 		tests.helper.oh_item.send_command("Unittest_Sleep_Request", "ON", "OFF")
+		tests.helper.oh_item.assert_value("Unittest_Sleep_Request", "OFF")
 		tests.helper.oh_item.assert_value("Unittest_Lock", "ON")
 		tests.helper.oh_item.assert_value("rules_system_sleep_Sleep_state", "locked")
 		tests.helper.oh_item.assert_value("Unittest_Sleep", "OFF")
 
-		# release lock and jump directly into pre_sleeping
+		# release lock and jump back to awake
 		tests.helper.oh_item.send_command("Unittest_Lock_Request", "OFF", "ON")
-		tests.helper.oh_item.assert_value("Unittest_Lock", "ON")
+		tests.helper.oh_item.assert_value("Unittest_Lock", "OFF")
+		tests.helper.oh_item.assert_value("rules_system_sleep_Sleep_state", "awake")
+		tests.helper.oh_item.assert_value("Unittest_Sleep", "OFF")
+
+		# start sleeping
+		tests.helper.oh_item.send_command("Unittest_Sleep_Request", "ON", "OFF")
 		tests.helper.oh_item.assert_value("rules_system_sleep_Sleep_state", "pre_sleeping")
-		tests.helper.oh_item.assert_value("Unittest_Sleep", "ON")
 
 		# activate lock, remove sleep request and wait all timer -> expected state == locked
 		tests.helper.oh_item.send_command("Unittest_Lock_Request", "ON", "OFF")
@@ -204,10 +209,8 @@ class TestSleep(unittest.TestCase):
 		tests.helper.oh_item.send_command("Unittest_Sleep_Request", "ON", "OFF")
 		tests.helper.oh_item.assert_value("rules_system_sleep_Sleep_state", "locked")
 		tests.helper.oh_item.send_command("Unittest_Lock_Request", "OFF", "ON")
-		tests.helper.oh_item.assert_value("rules_system_sleep_Sleep_state", "pre_sleeping")
+		tests.helper.oh_item.assert_value("rules_system_sleep_Sleep_state", "awake")
 		tests.helper.oh_item.send_command("Unittest_Lock_Request", "ON", "OFF")
-		tests.helper.oh_item.assert_value("rules_system_sleep_Sleep_state", "pre_sleeping")
-		tests.helper.oh_item.send_command("Unittest_Sleep_Request", "OFF", "ON")
 		tests.helper.oh_item.assert_value("rules_system_sleep_Sleep_state", "locked")
 
 	def test_minimal_items(self):

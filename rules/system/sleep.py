@@ -35,8 +35,7 @@ class Sleep(rules.common.state_machine_rule.StateMachineRule):
 		{"trigger": "post_sleeping_timeout", "source": "post_sleeping", "dest": "awake", "unless": "lock_request_active"},
 		{"trigger": "post_sleeping_timeout", "source": "post_sleeping", "dest": "locked", "conditions": "lock_request_active"},
 		{"trigger": "set_lock", "source": "awake", "dest": "locked"},
-		{"trigger": "release_lock", "source": "locked", "dest": "awake", "unless": "sleep_request_active"},
-		{"trigger": "release_lock", "source": "locked", "dest": "pre_sleeping", "conditions": "sleep_request_active"}
+		{"trigger": "release_lock", "source": "locked", "dest": "awake"}
 	]
 
 	def __init__(self, name_sleep: str, name_sleep_request: str, name_lock: str = None, name_lock_request: str = None, name_display_text: str = None) -> None:
@@ -159,11 +158,14 @@ class Sleep(rules.common.state_machine_rule.StateMachineRule):
 
 		:param event: Item state change event of sleep_request item
 		"""
-		self._sleep_request_active = event.value == "ON"
-
 		if event.value == "ON" and self.state == "awake":
+			self._sleep_request_active = True
 			self.start_sleeping()
-		if event.value == "OFF" and self.state in {"sleeping", "pre_sleeping"}:
+		elif event.value == "ON" and self.state == "locked":
+			self._sleep_request_active = False
+			self.__item_sleep_request.oh_send_command("OFF")
+		elif event.value == "OFF" and self.state in {"sleeping", "pre_sleeping"}:
+			self._sleep_request_active = True
 			self.end_sleeping()
 
 	def _cb_lock_request(self, event: HABApp.openhab.events.ItemStateChangedEvent):
