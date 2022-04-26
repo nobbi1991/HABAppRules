@@ -20,6 +20,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # (other steps before this: checkout code, install python and nox...)
-      - uses: actions/checkout@v2
-      - uses: wntrblm/nox@2022.1.7
-      - run: nox
+     - uses: actions/checkout@v2
+     - uses: excitedleigh/setup-nox@v2.0.0
+     - run: nox
