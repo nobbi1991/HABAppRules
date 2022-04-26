@@ -52,7 +52,8 @@ class TestPresence(unittest.TestCase):
 			model=self._presence,
 			states=self._presence.states,
 			transitions=self._presence.trans,
-			initial=self._presence.state)
+			initial=self._presence.state,
+			show_conditions=True)
 
 		presence_graph.get_graph().draw(pathlib.Path(__file__).parent / "Presence.png", format="png", prog="dot")
 
@@ -191,6 +192,27 @@ class TestPresence(unittest.TestCase):
 		tests.helper.oh_item.send_command("Unittest_Leaving", "OFF", "ON")
 		self.assertEqual(self._presence.state, "presence")
 		tests.helper.oh_item.assert_value("Unittest_Leaving", "OFF")
+
+	def test_abort_leaving_after_last_phone(self):
+		"""Test aborting of leaving which was started through last phone leaving."""
+		self._presence.state_machine.set_state("presence")
+		tests.helper.oh_item.set_state("Unittest_Phone1", "ON")
+
+		tests.helper.oh_item.send_command("Unittest_Phone1", "OFF", "ON")
+		tests.helper.timer.call_timeout(self.threading_timer_mock)
+		self.assertEqual(self._presence.state, "leaving")
+		tests.helper.oh_item.assert_value("Unittest_Leaving", "ON")
+
+		tests.helper.oh_item.send_command("Unittest_Leaving", "OFF", "ON")
+		self.assertEqual(self._presence.state, "presence")
+
+		tests.helper.oh_item.send_command("Unittest_Phone1", "ON", "OFF")
+		self.assertEqual(self._presence.state, "presence")
+
+		tests.helper.oh_item.send_command("Unittest_Phone1", "OFF", "ON")
+		tests.helper.timer.call_timeout(self.threading_timer_mock)
+		self.assertEqual(self._presence.state, "leaving")
+		tests.helper.oh_item.assert_value("Unittest_Leaving", "ON")
 
 	def test_leaving_with_phones(self):
 		"""Test if leaving and absence is correct if phones appear/disappear during or after leaving."""

@@ -106,8 +106,10 @@ class Presence(rules.common.state_machine_rule.StateMachineRule):
 		rules.common.helper.send_if_different(self.__presence_item.name, target_value)
 
 		# update leaving item
-		if self.state != "leaving":
-			rules.common.helper.send_if_different(self.__leaving_item.name, "OFF")
+		# if self.state != "leaving":
+		# 	rules.common.helper.send_if_different(self.__leaving_item.name, "OFF")
+
+		rules.common.helper.send_if_different(self.__leaving_item.name, "ON" if self.state == "leaving" else "OFF")
 
 	def _cb_outside_door(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
 		"""Callback, which is called if any outside door changed state.
