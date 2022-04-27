@@ -14,7 +14,8 @@ def coverage(session):
 		try:
 			session.run("python", "-m", "coverage", "html", "--skip-covered", "--fail-under=100")
 		except nox.command.CommandFailed:
-			os.startfile("htmlcov\\index.html")
+			if os.name == "nt":
+				os.startfile("htmlcov\\index.html")
 
 
 @nox.session
