@@ -1,5 +1,5 @@
 """Run Rules for Unittests."""
-#pylint: skip-file
+# pylint: skip-file
 import sys
 
 import HABApp.rule.scheduler.habappschedulerview as ha_sched

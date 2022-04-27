@@ -9,3 +9,8 @@ os.environ["PATH"] += r"C:\Program Files\Graphviz\bin"
 @transitions.extensions.states.add_state_features(transitions.extensions.states.Timeout)
 class GraphMachineTimer(transitions.extensions.GraphMachine):
 	"""GraphMachine with Timer."""
+
+
+@transitions.extensions.states.add_state_features(transitions.extensions.states.Timeout)
+class HierarchicalGraphMachineTimer(transitions.extensions.HierarchicalGraphMachine):
+	"""HierarchicalGraphMachine with Timer."""

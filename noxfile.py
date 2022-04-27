@@ -20,7 +20,6 @@ def coverage(session):
 @nox.session
 def pylint(session):
 	"""Run pylint."""
-	session.install("-r", "requirements.txt")
 	dirs = [f".\\{directory}" for directory in ("rules", "tests")]
 	args = [*dirs, "--rcfile=.pylintrc"]
 	session.run("python", "-m", "pylint", *args)

@@ -1,5 +1,6 @@
 """Test sleep rule."""
 import collections
+import os
 import pathlib
 import threading
 import unittest
@@ -54,7 +55,9 @@ class TestSleep(unittest.TestCase):
 			initial=self._sleep.state,
 			show_conditions=True
 		)
-		presence_graph.get_graph().draw(pathlib.Path(__file__).parent / "Sleep.png", format="png", prog="dot")
+
+		if os.name == "nt":
+			presence_graph.get_graph().draw(pathlib.Path(__file__).parent / "Sleep.png", format="png", prog="dot")
 
 	def test__init__(self):
 		"""Test init of sleep class."""
@@ -264,7 +267,3 @@ class TestSleep(unittest.TestCase):
 		"""Tear down test case."""
 		tests.helper.oh_item.remove_all_mocked_items()
 		self.__runner.tear_down()
-
-
-if __name__ == "__main__":
-	unittest.main()

@@ -158,7 +158,3 @@ class TestSummerWinter(unittest.TestCase):
 		"""Tear down test case."""
 		tests.helper.oh_item.remove_all_mocked_items()
 		self.__runner.tear_down()
-
-
-if __name__ == "__main__":
-	unittest.main()
