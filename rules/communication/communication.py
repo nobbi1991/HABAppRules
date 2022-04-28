@@ -114,7 +114,7 @@ def ensure_is_list(recipient: str | list[str]) -> list[str]:
 	return recipient
 
 
-with open("communication.json", "r", encoding="utf-8") as config_json:
+with open(rules.BASE_PATH / "rules/communication/communication.json", "r", encoding="utf-8") as config_json:
 	__config: dict = json.load(config_json)
 
 TELEGRAM = Telegram(__config["telegram"]["bot_token"], __config["telegram"]["chat_ids"])

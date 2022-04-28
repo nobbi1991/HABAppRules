@@ -38,16 +38,17 @@ class Sleep(rules.common.state_machine_rule.StateMachineRule):
 		{"trigger": "release_lock", "source": "locked", "dest": "awake"}
 	]
 
-	def __init__(self, name_sleep: str, name_sleep_request: str, name_lock: str = None, name_lock_request: str = None, name_display_text: str = None) -> None:
+	def __init__(self, name_sleep: str, name_sleep_request: str, state_name: str = None, name_lock: str = None, name_lock_request: str = None, name_display_text: str = None) -> None:
 		"""Init of Sleep object.
 
 		:param name_sleep: name of OpenHAB sleep item (SwitchItem)
 		:param name_sleep_request: name of OpenHAB sleep request item (SwitchItem)
+		:param state_name: name of OpenHAB item for storing the current state (StringItem)
 		:param name_lock: name of OpenHAB lock item (SwitchItem)
 		:param name_lock_request: name of OpenHAB lock request item (SwitchItem)
 		:param name_display_text: name of OpenHAB display text item (StringItem)
 		"""
-		super().__init__()
+		super().__init__(state_name)
 
 		# init items
 		self.__item_sleep = HABApp.openhab.items.SwitchItem.get_item(name_sleep)

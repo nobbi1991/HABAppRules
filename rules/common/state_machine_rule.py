@@ -1,13 +1,22 @@
 """Base class for Rule with State Machine."""
+import inspect
+import pathlib
 
 import HABApp
 import HABApp.openhab.connection_handler.func_sync
 import transitions.extensions.states
 
+import rules
+
 
 @transitions.extensions.states.add_state_features(transitions.extensions.states.Timeout)
 class StateMachineWithTimeout(transitions.Machine):
 	"""State machine class with timeout"""
+
+
+@transitions.extensions.states.add_state_features(transitions.extensions.states.Timeout)
+class HierarchicalStateMachineWithTimeout(transitions.extensions.HierarchicalMachine):
+	"""Hierarchical state machine class with timeout"""
 
 
 class StateMachineRule(HABApp.Rule):
@@ -16,10 +25,18 @@ class StateMachineRule(HABApp.Rule):
 	trans: list[dict] = []
 	state: str
 
-	def __init__(self):
+	def __init__(self, state_name: str = None):
 		super().__init__()
-		self._item_prefix = f"{self.__class__.__mro__[0].__module__}.{self.rule_name}".replace(".", "_")
-		self._item_state = self._create_additional_item(f"{self._item_prefix}_state", "String")
+
+		# get prefix for items
+		parent_class_path = pathlib.Path(inspect.getfile(self.__class__.__mro__[0]))
+		parent_class_path_relative = parent_class_path.relative_to(rules.BASE_PATH)
+		parent_class_path_relative_str = str(parent_class_path_relative).removesuffix(".py").replace("\\", "_")
+		self._item_prefix = f"{parent_class_path_relative_str}.{self.rule_name}".replace(".", "_")
+
+		if not state_name:
+			state_name = f"{self._item_prefix}_state"
+		self._item_state = self._create_additional_item(state_name, "String")
 
 	@staticmethod
 	def _create_additional_item(name: str, item_type: str) -> HABApp.openhab.items.OpenhabItem:

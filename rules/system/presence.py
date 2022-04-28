@@ -35,15 +35,16 @@ class Presence(rules.common.state_machine_rule.StateMachineRule):
 		{"trigger": "long_absence_detected", "source": "absence", "dest": "long_absence"},
 	]
 
-	def __init__(self, name_presence: str, outside_door_names: typing.List[str], leaving_name: str, phone_names: typing.List[str] = None) -> None:
+	def __init__(self, name_presence: str, outside_door_names: typing.List[str], leaving_name: str, state_name: str = None, phone_names: typing.List[str] = None) -> None:
 		"""Init of Presence object.
 
 		:param name_presence: name of OpenHAB presence item
 		:param outside_door_names: list of names of OpenHAB outdoor door items
-		:param leaving_name: name of OpenHAB leaving item
+		:param leaving_name: name of OpenHAB leaving item (SwitchItem)
+		:param state_name: name of OpenHAB item for storing the current state (StringItem)
 		:param phone_names: list of names of OpenHAB phone items
 		"""
-		super().__init__()
+		super().__init__(state_name)
 
 		# init items
 		self.__presence_item = HABApp.openhab.items.SwitchItem.get_item(name_presence)
@@ -104,10 +105,6 @@ class Presence(rules.common.state_machine_rule.StateMachineRule):
 		# update presence item
 		target_value = "ON" if self.state in {"presence", "leaving"} else "OFF"
 		rules.common.helper.send_if_different(self.__presence_item.name, target_value)
-
-		# update leaving item
-		# if self.state != "leaving":
-		# 	rules.common.helper.send_if_different(self.__leaving_item.name, "OFF")
 
 		rules.common.helper.send_if_different(self.__leaving_item.name, "ON" if self.state == "leaving" else "OFF")
 
