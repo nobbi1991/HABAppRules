@@ -9,6 +9,8 @@ import smtplib
 
 import requests
 
+import rules
+
 LOGGER = logging.getLogger("HABApp.communication")
 LOGGER.setLevel("DEBUG")
 

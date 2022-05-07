@@ -44,7 +44,7 @@ class TestSleep(unittest.TestCase):
 		self.__runner = tests.helper.rule_runner.SimpleRuleRunner()
 		self.__runner.set_up()
 		with unittest.mock.patch.object(rules.common.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_sleep_Sleep_state", "")):
-			self._sleep = rules.system.sleep.Sleep("Unittest_Sleep", "Unittest_Sleep_Request", "Unittest_Lock", "Unittest_Lock_Request", "Unittest_Display_Text")
+			self._sleep = rules.system.sleep.Sleep("Unittest_Sleep", "Unittest_Sleep_Request", name_lock="Unittest_Lock", name_lock_request="Unittest_Lock_Request", name_display_text="Unittest_Display_Text")
 
 	def test_create_graph(self):
 		"""Create state machine graph for documentation."""
@@ -75,7 +75,7 @@ class TestSleep(unittest.TestCase):
 			tests.helper.oh_item.set_state("Unittest_Lock_Request", test_case.lock_request_state)
 
 			with unittest.mock.patch.object(rules.common.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_sleep_Sleep_state", "")):
-				sleep = rules.system.sleep.Sleep("Unittest_Sleep", "Unittest_Sleep_Request", "Unittest_Lock", "Unittest_Lock_Request", "Unittest_Display_Text")
+				sleep = rules.system.sleep.Sleep("Unittest_Sleep", "Unittest_Sleep_Request", name_lock="Unittest_Lock", name_lock_request="Unittest_Lock_Request", name_display_text="Unittest_Display_Text")
 
 			self.assertEqual(sleep.sleep_request_active, test_case.sleep_request_state == "ON", test_case)
 			self.assertEqual(sleep.lock_request_active, test_case.lock_request_state == "ON", test_case)

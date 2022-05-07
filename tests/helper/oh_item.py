@@ -9,6 +9,7 @@ import HABApp.core.items
 import HABApp.openhab.events
 
 _MOCKED_ITEM_NAMES = []
+StateTypes: typing.TypeAlias = typing.Union[str, int, float, datetime.datetime]
 
 
 def add_mock_item(item_type: typing.Type[HABApp.openhab.items.OpenhabItem], name: str, initial_value: typing.Union[str, int, float] = None) -> None:
@@ -41,18 +42,20 @@ def remove_all_mocked_items() -> None:
 	_MOCKED_ITEM_NAMES.clear()
 
 
-def set_state(item_name: str, value: typing.Any) -> None:
+def set_state(item_name: str, value: StateTypes) -> None:
 	"""Helper to set state of item.
 
 	:param item_name: name of item
 	:param value: state which should be set
 	"""
 	item = HABApp.openhab.items.OpenhabItem.get_item(item_name)
-	item.set_value(value)
-	assert_value(item_name, value)
+	try:
+		item.set_value(value)
+	except AssertionError:
+		print(f"Could not set '{value}' to '{item_name}'")
 
 
-def send_command(item_name: str, new_value: str | datetime.datetime, old_value: str = None) -> None:
+def send_command(item_name: str, new_value: StateTypes, old_value: StateTypes = None) -> None:
 	"""Replacement of send_command for unit-tests.
 
 	:param item_name: Name of item
@@ -60,13 +63,22 @@ def send_command(item_name: str, new_value: str | datetime.datetime, old_value: 
 	:param old_value: previous value
 	"""
 	set_state(item_name, new_value)
-	if old_value:
+	if old_value and old_value != new_value:
 		HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateChangedEvent(item_name, new_value, 'OFF'))
-	else:
-		HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateEvent(item_name, new_value))
+	HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateEvent(item_name, new_value))
 
 
-def assert_value(item_name: str, value: typing.Any, message: typing.Any = None) -> None:
+def item_command_event(item_name: str, value: StateTypes):
+	set_state(item_name, value)
+	HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemCommandEvent(item_name, value))
+
+
+def item_state_event(item_name: str, value: StateTypes):
+	set_state(item_name, value)
+	HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateEvent(item_name, value))
+
+
+def assert_value(item_name: str, value: StateTypes, message: StateTypes = None) -> None:
 	"""Helper to assert if item has correct state
 
 	:param item_name: name of item
