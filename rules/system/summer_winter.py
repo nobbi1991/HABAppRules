@@ -43,6 +43,12 @@ class SummerWinter(HABApp.Rule):
 		self.run.soon(self._cb_update_summer)
 		self.run.on_every_day(datetime.time(23), self._cb_update_summer)
 
+	def __get_threshold_with_hysteresis(self):
+		"""Getting threshold with hysteresis to avoid toggling of summer / winter."""
+		if bool(self._item_summer):
+			return self._temperature_threshold - 0.5
+		return self._temperature_threshold
+
 	def __get_weighted_mean(self, days_in_past: int) -> float:
 		"""Get weighted mean temperature.
 
@@ -84,7 +90,7 @@ class SummerWinter(HABApp.Rule):
 		if len(values) <= self._days * 0.5:
 			raise SummerWinterException(f"Not enough values to detect summer/winter. Expected: {self._days} | actual: {len(values)}")
 
-		if statistics.mean(values) > self._temperature_threshold:
+		if statistics.mean(values) > self.__get_threshold_with_hysteresis():
 			return True
 		return False
 

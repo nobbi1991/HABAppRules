@@ -103,7 +103,7 @@ class TestSummerWinter(unittest.TestCase):
 		self._summer_winter._SummerWinter__get_weighted_mean.side_effect = [16, 16, 16, 16.1]
 		self.assertTrue(self._summer_winter._SummerWinter__is_summer())
 
-		# check if winter is returned if smaller than threshold
+		# check if winter is returned if smaller / equal than threshold
 		self._summer_winter._SummerWinter__get_weighted_mean.side_effect = [16, 16, 16, 16.0]
 		self.assertFalse(self._summer_winter._SummerWinter__is_summer())
 
@@ -117,6 +117,48 @@ class TestSummerWinter(unittest.TestCase):
 		with self.assertRaises(rules.system.summer_winter.SummerWinterException) as context:
 			self.assertTrue(self._summer_winter._SummerWinter__is_summer())
 		self.assertIn("Not enough values to detect summer/winter. Expected: 4 | actual: 1", str(context.exception))
+
+	def test__is_summer_with_hysteresis(self):
+		"""Test summer / winter with hysteresis."""
+		TestCase = collections.namedtuple("TestCase", "temperature_values, summer_value, expected_summer")
+
+		test_cases = [
+			TestCase([15.5] * 7, None, False),
+			TestCase([15.6] * 7, None, False),
+			TestCase([16] * 7, None, False),
+			TestCase([16.1] * 7, None, True),
+
+			TestCase([15.5] * 7, "OFF", False),
+			TestCase([15.6] * 7, "OFF", False),
+			TestCase([16] * 7, "OFF", False),
+			TestCase([16.1] * 7, "OFF", True),
+
+			TestCase([15.5] * 7, "ON", False),
+			TestCase([15.6] * 7, "ON", True),
+			TestCase([16] * 7, "ON", True),
+			TestCase([16.1] * 7, "ON", True)
+		]
+
+		self._summer_winter._SummerWinter__get_weighted_mean = unittest.mock.MagicMock()
+
+		for test_case in test_cases:
+			self._summer_winter._SummerWinter__get_weighted_mean.side_effect = test_case.temperature_values
+			tests.helper.oh_item.set_state("Unittest_Summer", test_case.summer_value)
+			self.assertEqual(test_case.expected_summer, self._summer_winter._SummerWinter__is_summer())
+
+	def test__get_threshold_with_hysteresis(self):
+		"""Test getting threshold with hysteresis."""
+		TestCase = collections.namedtuple("TestCase", "summer_value, expected_result")
+
+		test_cases = [
+			TestCase(None, 16),
+			TestCase("ON", 15.5),
+			TestCase("OFF", 16)
+		]
+
+		for test_case in test_cases:
+			tests.helper.oh_item.set_state("Unittest_Summer", test_case.summer_value)
+			self.assertEqual(test_case.expected_result, self._summer_winter._SummerWinter__get_threshold_with_hysteresis(), test_case)
 
 	def test_cb_update_summer(self):
 		"""Test correct functionality of summer check callback."""
