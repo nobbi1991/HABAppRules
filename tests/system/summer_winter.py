@@ -123,20 +123,20 @@ class TestSummerWinter(unittest.TestCase):
 		TestCase = collections.namedtuple("TestCase", "temperature_values, summer_value, expected_summer")
 
 		test_cases = [
-			TestCase([15.5] * 7, None, False),
-			TestCase([15.6] * 7, None, False),
-			TestCase([16] * 7, None, False),
-			TestCase([16.1] * 7, None, True),
+			TestCase([15.5] * 5, None, False),
+			TestCase([15.6] * 5, None, False),
+			TestCase([16] * 5, None, False),
+			TestCase([16.1] * 5, None, True),
 
-			TestCase([15.5] * 7, "OFF", False),
-			TestCase([15.6] * 7, "OFF", False),
-			TestCase([16] * 7, "OFF", False),
-			TestCase([16.1] * 7, "OFF", True),
+			TestCase([15.5] * 5, "OFF", False),
+			TestCase([15.6] * 5, "OFF", False),
+			TestCase([16] * 5, "OFF", False),
+			TestCase([16.1] * 5, "OFF", True),
 
-			TestCase([15.5] * 7, "ON", False),
-			TestCase([15.6] * 7, "ON", True),
-			TestCase([16] * 7, "ON", True),
-			TestCase([16.1] * 7, "ON", True)
+			TestCase([15.5] * 5, "ON", False),
+			TestCase([15.6] * 5, "ON", True),
+			TestCase([16] * 5, "ON", True),
+			TestCase([16.1] * 5, "ON", True)
 		]
 
 		self._summer_winter._SummerWinter__get_weighted_mean = unittest.mock.MagicMock()

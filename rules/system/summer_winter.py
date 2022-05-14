@@ -16,7 +16,7 @@ class SummerWinterException(Exception):
 class SummerWinter(HABApp.Rule):
 	"""Rule check if it is summer or winter."""
 
-	def __init__(self, outside_temperature_name: str, summer_name: str, persistence_service: str = None, days: int = 7, temperature_threshold: float = 16, last_check_name: str = None) -> None:
+	def __init__(self, outside_temperature_name: str, summer_name: str, persistence_service: str = None, days: int = 5, temperature_threshold: float = 16, last_check_name: str = None) -> None:
 		"""Init rule to update summer/winter item.
 
 		:param outside_temperature_name: Name of outside temperature item. OpenHAB-Type must be Number item
@@ -114,4 +114,5 @@ class SummerWinter(HABApp.Rule):
 		if self._item_last_check:
 			self._item_last_check.oh_send_command(datetime.datetime.now())
 
-# SummerWinter("I22_99_Temperature", "I02_00_Sommer")
+
+#SummerWinter("I22_99_Temperature", "I02_00_Sommer")
