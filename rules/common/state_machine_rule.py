@@ -27,6 +27,10 @@ class StateMachineRule(HABApp.Rule):
 	state: str
 
 	def __init__(self, state_name: str = None):
+		"""Init rule with state machine.
+
+		:param state_name: name of the item to hold the state
+		"""
 		super().__init__()
 
 		# get prefix for items

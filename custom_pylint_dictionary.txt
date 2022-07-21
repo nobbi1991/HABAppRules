@@ -1,2 +1,7 @@
+dataclass
+enums
+KNX
 msg
+png
 smtp
+unittest

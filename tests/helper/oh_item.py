@@ -4,12 +4,11 @@ from __future__ import annotations
 import datetime
 import typing
 
-import HABApp.core.Items
-import HABApp.core.items
+import HABApp.core
 import HABApp.openhab.events
 
 _MOCKED_ITEM_NAMES = []
-StateTypes: typing.TypeAlias = typing.Union[str, int, float, datetime.datetime]
+StateTypes = typing.Union[str, int, float, datetime.datetime]
 
 
 def add_mock_item(item_type: typing.Type[HABApp.openhab.items.OpenhabItem], name: str, initial_value: typing.Union[str, int, float] = None) -> None:
@@ -19,10 +18,10 @@ def add_mock_item(item_type: typing.Type[HABApp.openhab.items.OpenhabItem], name
 	:param name: Name of the mock item
 	:param initial_value: initial value
 	"""
-	if name in HABApp.core.Items._ALL_ITEMS:  # pylint: disable=no-member,protected-access
-		HABApp.core.Items.pop_item(name)  # pylint: disable=no-member
+	if HABApp.core.Items.item_exists(name):
+		HABApp.core.Items.pop_item(name)
 	item = item_type(name, initial_value)
-	HABApp.core.Items.add_item(item)  # pylint: disable=no-member
+	HABApp.core.Items.add_item(item)
 	_MOCKED_ITEM_NAMES.append(name)
 
 
@@ -68,12 +67,22 @@ def send_command(item_name: str, new_value: StateTypes, old_value: StateTypes = 
 	HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateEvent(item_name, new_value))
 
 
-def item_command_event(item_name: str, value: StateTypes):
+def item_command_event(item_name: str, value: StateTypes) -> None:
+	"""Post a command event to the event bus
+
+	:param item_name: name of item
+	:param value: value of the event
+	"""
 	set_state(item_name, value)
 	HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemCommandEvent(item_name, value))
 
 
-def item_state_event(item_name: str, value: StateTypes):
+def item_state_event(item_name: str, value: StateTypes) -> None:
+	"""Post a state event to the event bus
+
+	:param item_name: name of item
+	:param value: value of the event
+	"""
 	set_state(item_name, value)
 	HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateEvent(item_name, value))
 

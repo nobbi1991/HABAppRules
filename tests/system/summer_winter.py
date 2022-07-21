@@ -23,12 +23,13 @@ class TestSummerWinter(unittest.TestCase):
 		self.addCleanup(self.send_command_mock_patcher.stop)
 		self.send_command_mock = self.send_command_mock_patcher.start()
 
+		self.__runner = tests.helper.rule_runner.SimpleRuleRunner()
+		self.__runner.set_up()
+
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Temperature", 0)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Summer", "OFF")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DatetimeItem, "Unittest_last_check")
 
-		self.__runner = tests.helper.rule_runner.SimpleRuleRunner()
-		self.__runner.set_up()
 		self._summer_winter = rules.system.summer_winter.SummerWinter("Unittest_Temperature", "Unittest_Summer")
 
 	def test__get_weighted_mean(self):

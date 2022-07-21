@@ -63,10 +63,10 @@ class Presence(rules.common.state_machine_rule.StateMachineRule):
 		super()._update_openhab_state()
 
 		# add callbacks
-		self.__leaving_item.listen_event(self._cb_leaving, HABApp.openhab.events.ItemStateChangedEvent)
-		self.__presence_item.listen_event(self._cb_presence, HABApp.openhab.events.ItemStateChangedEvent)
-		HABApp.util.EventListenerGroup().add_listener(self.__outside_door_items, self._cb_outside_door, HABApp.core.events.ValueChangeEvent).listen()
-		HABApp.util.EventListenerGroup().add_listener(self.__phone_items, self._cb_phone, HABApp.core.events.ValueChangeEvent).listen()
+		self.__leaving_item.listen_event(self._cb_leaving, HABApp.openhab.events.ItemStateChangedEventFilter())
+		self.__presence_item.listen_event(self._cb_presence, HABApp.openhab.events.ItemStateChangedEventFilter())
+		HABApp.util.EventListenerGroup().add_listener(self.__outside_door_items, self._cb_outside_door, HABApp.core.events.ValueChangeEventFilter()).listen()
+		HABApp.util.EventListenerGroup().add_listener(self.__phone_items, self._cb_phone, HABApp.core.events.ValueChangeEventFilter()).listen()
 
 		self.__phone_absence_timer: threading.Timer = None
 		LOGGER.debug(f"Init of presence rule {self.rule_name} was successful. Initial state = {self.state}")

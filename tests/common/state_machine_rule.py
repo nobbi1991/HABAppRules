@@ -25,7 +25,7 @@ class TestStateMachineRule(unittest.TestCase):
 		"""tests init of StateMachineRule."""
 		with unittest.mock.patch.object(rules.common.state_machine_rule.StateMachineRule, "_create_additional_item") as create_mock:
 			state_machine = rules.common.state_machine_rule.StateMachineRule()
-			self.assertEqual(state_machine._item_prefix, "rules_common_state_machine_rule_StateMachineRule")
+			self.assertEqual("rules_common_state_machine_rule_StateMachineRule", state_machine._item_prefix)
 			create_mock.assert_called_once_with("rules_common_state_machine_rule_StateMachineRule_state", "String")
 
 	def test_create_additional_item(self):

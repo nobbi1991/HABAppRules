@@ -34,6 +34,9 @@ class TestSleep(unittest.TestCase):
 		self.addCleanup(self.send_command_mock_patcher.stop)
 		self.send_command_mock = self.send_command_mock_patcher.start()
 
+		self.__runner = tests.helper.rule_runner.SimpleRuleRunner()
+		self.__runner.set_up()
+
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Sleep", "OFF")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Sleep_Request", "OFF")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Lock", "OFF")
@@ -41,8 +44,6 @@ class TestSleep(unittest.TestCase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Display_Text", "")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "rules_system_sleep_Sleep_state", "")
 
-		self.__runner = tests.helper.rule_runner.SimpleRuleRunner()
-		self.__runner.set_up()
 		with unittest.mock.patch.object(rules.common.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_sleep_Sleep_state", "")):
 			self._sleep = rules.system.sleep.Sleep("Unittest_Sleep", "Unittest_Sleep_Request", name_lock="Unittest_Lock", name_lock_request="Unittest_Lock_Request", name_display_text="Unittest_Display_Text")
 
@@ -58,6 +59,13 @@ class TestSleep(unittest.TestCase):
 
 		if os.name == "nt":
 			presence_graph.get_graph().draw(pathlib.Path(__file__).parent / "Sleep.png", format="png", prog="dot")
+
+	def test_enums(self):
+		"""Test if all enums from __init__.py are implemented"""
+		implemented_states = list(self._sleep.state_machine.states)
+		enum_states = [state.value for state in rules.system.SleepState]
+		self.assertEqual(len(enum_states), len(implemented_states))
+		self.assertTrue(all(state in enum_states for state in implemented_states))
 
 	def test__init__(self):
 		"""Test init of sleep class."""
@@ -219,7 +227,7 @@ class TestSleep(unittest.TestCase):
 	def test_minimal_items(self):
 		"""Test Sleeping class with minimal set of items."""
 		# delete sleep rule from init
-		self.__runner.loaded_rules[0]._unload()
+		self._TestSleep__runner.loaded_rules[0]._habapp_ctx.unload_rule()
 		self.__runner.loaded_rules.clear()
 
 		tests.helper.oh_item.remove_mocked_item_by_name("Unittest_Lock")

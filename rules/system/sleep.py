@@ -74,9 +74,9 @@ class Sleep(rules.common.state_machine_rule.StateMachineRule):
 		self._update_openhab_state()
 
 		# add callbacks
-		self.__item_sleep_request.listen_event(self._cb_sleep_request, HABApp.openhab.events.ItemStateChangedEvent)
+		self.__item_sleep_request.listen_event(self._cb_sleep_request, HABApp.openhab.events.ItemStateChangedEventFilter())
 		if self.__item_lock_request is not None:
-			self.__item_lock_request.listen_event(self._cb_lock_request, HABApp.openhab.events.ItemStateChangedEvent)
+			self.__item_lock_request.listen_event(self._cb_lock_request, HABApp.openhab.events.ItemStateChangedEventFilter())
 
 	def _get_initial_state(self, default_value: str) -> str:
 		"""Get initial state of state machine.

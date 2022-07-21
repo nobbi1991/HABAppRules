@@ -43,8 +43,11 @@ class SummerWinter(HABApp.Rule):
 		self.run.soon(self._cb_update_summer)
 		self.run.on_every_day(datetime.time(23), self._cb_update_summer)
 
-	def __get_threshold_with_hysteresis(self):
-		"""Getting threshold with hysteresis to avoid toggling of summer / winter."""
+	def __get_threshold_with_hysteresis(self) -> float:
+		"""Getting threshold with hysteresis to avoid toggling of summer / winter.
+
+		:return: temperature threshold with hysteresis depending on summer / winter
+		"""
 		if bool(self._item_summer):
 			return self._temperature_threshold - 0.5
 		return self._temperature_threshold
