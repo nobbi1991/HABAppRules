@@ -25,6 +25,10 @@ def pylint(session):
 	"""Run pylint."""
 	session.install("-r", "requirements.txt")
 	session.install("-r", "requirements_dev.txt")
-	dirs = [f".\\{directory}" for directory in ("rules", "tests")]
+	dir_names = ("habapp_rules", "tests")
+	if os.name == "nt":
+		dirs = [f".\\{directory}" for directory in dir_names]
+	else:
+		dirs = list(dir_names)
 	args = [*dirs, "--rcfile=.pylintrc"]
 	session.run("python", "-m", "pylint", *args)

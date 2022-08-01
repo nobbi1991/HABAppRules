@@ -1,6 +1,4 @@
 """Rules for bridging KNX controller to MQTT items."""
-from __future__ import annotations  # todo update to 3.10 and remove
-
 import logging
 
 import HABApp
