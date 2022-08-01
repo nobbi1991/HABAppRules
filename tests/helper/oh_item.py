@@ -48,6 +48,12 @@ def set_state(item_name: str, value: StateTypes) -> None:
 	:param value: state which should be set
 	"""
 	item = HABApp.openhab.items.OpenhabItem.get_item(item_name)
+	if isinstance(item, HABApp.openhab.items.DimmerItem) and value in {"ON", "OFF"}:
+		if value == "ON":
+			value = 100
+		else:
+			value = 0
+
 	try:
 		item.set_value(value)
 	except AssertionError:
@@ -63,7 +69,7 @@ def send_command(item_name: str, new_value: StateTypes, old_value: StateTypes = 
 	"""
 	set_state(item_name, new_value)
 	if old_value and old_value != new_value:
-		HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateChangedEvent(item_name, new_value, 'OFF'))
+		HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateChangedEvent(item_name, new_value, "OFF"))
 	HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateEvent(item_name, new_value))
 
 
@@ -87,6 +93,18 @@ def item_state_event(item_name: str, value: StateTypes) -> None:
 	HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateEvent(item_name, value))
 
 
+def item_state_change_event(item_name: str, value: StateTypes, old_value: StateTypes = None) -> None:
+	"""Post a state change event to the event bus
+
+	:param item_name: name of item
+	:param value: value of the event
+	:param old_value: previous value
+	"""
+	prev_value = old_value if old_value else HABApp.openhab.items.OpenhabItem.get_item(item_name).value
+	set_state(item_name, value)
+	HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateChangedEvent(item_name, value, prev_value))
+
+
 def assert_value(item_name: str, value: StateTypes, message: StateTypes = None) -> None:
 	"""Helper to assert if item has correct state
 
@@ -98,5 +116,5 @@ def assert_value(item_name: str, value: StateTypes, message: StateTypes = None) 
 	if (current_state := HABApp.openhab.items.OpenhabItem.get_item(item_name).value) != value:
 		msg = f"Wrong state of item '{item_name}'. Expected: {value} | Current: {current_state}"
 		if message:
-			msg += f'message = {message}'
+			msg += f"message = {message}"
 		raise AssertionError(msg)

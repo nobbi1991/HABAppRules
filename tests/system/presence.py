@@ -8,9 +8,8 @@ import unittest.mock
 
 import HABApp.rule.rule
 
+import habapp_rules.system.presence
 import rules.common.state_machine_rule
-import rules.system
-import rules.system.presence
 import tests.common.graph_machines
 import tests.helper.oh_item
 import tests.helper.rule_runner
@@ -47,7 +46,7 @@ class TestPresence(unittest.TestCase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Presence", "ON")
 
 		with unittest.mock.patch.object(rules.common.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_presence_Presence_state", "")):
-			self._presence = rules.system.presence.Presence("Unittest_Presence", outside_door_names=["Unittest_Door1", "Unittest_Door2"], leaving_name="Unittest_Leaving", phone_names=["Unittest_Phone1", "Unittest_Phone2"])
+			self._presence = habapp_rules.system.presence.Presence("Unittest_Presence", outside_door_names=["Unittest_Door1", "Unittest_Door2"], leaving_name="Unittest_Leaving", phone_names=["Unittest_Phone1", "Unittest_Phone2"])
 
 	def test_create_graph(self):
 		"""Create state machine graph for documentation."""
@@ -64,7 +63,7 @@ class TestPresence(unittest.TestCase):
 	def test_enums(self):
 		"""Test if all enums from __init__.py are implemented"""
 		implemented_states = list(self._presence.state_machine.states)
-		enum_states = [state.value for state in rules.system.PresenceState]
+		enum_states = [state.value for state in habapp_rules.system.PresenceState]
 		self.assertEqual(len(enum_states), len(implemented_states))
 		self.assertTrue(all(state in enum_states for state in implemented_states))
 

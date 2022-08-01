@@ -9,7 +9,7 @@ import unittest.mock
 import HABApp.rule.rule
 
 import rules.common.state_machine_rule
-import rules.system.sleep
+import habapp_rules.system.sleep
 import tests.common.graph_machines
 import tests.helper.oh_item
 import tests.helper.rule_runner
@@ -45,7 +45,7 @@ class TestSleep(unittest.TestCase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "rules_system_sleep_Sleep_state", "")
 
 		with unittest.mock.patch.object(rules.common.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_sleep_Sleep_state", "")):
-			self._sleep = rules.system.sleep.Sleep("Unittest_Sleep", "Unittest_Sleep_Request", name_lock="Unittest_Lock", name_lock_request="Unittest_Lock_Request", name_display_text="Unittest_Display_Text")
+			self._sleep = habapp_rules.system.sleep.Sleep("Unittest_Sleep", "Unittest_Sleep_Request", name_lock="Unittest_Lock", name_lock_request="Unittest_Lock_Request", name_display_text="Unittest_Display_Text")
 
 	def test_create_graph(self):
 		"""Create state machine graph for documentation."""
@@ -63,7 +63,7 @@ class TestSleep(unittest.TestCase):
 	def test_enums(self):
 		"""Test if all enums from __init__.py are implemented"""
 		implemented_states = list(self._sleep.state_machine.states)
-		enum_states = [state.value for state in rules.system.SleepState]
+		enum_states = [state.value for state in habapp_rules.system.SleepState]
 		self.assertEqual(len(enum_states), len(implemented_states))
 		self.assertTrue(all(state in enum_states for state in implemented_states))
 
@@ -83,7 +83,7 @@ class TestSleep(unittest.TestCase):
 			tests.helper.oh_item.set_state("Unittest_Lock_Request", test_case.lock_request_state)
 
 			with unittest.mock.patch.object(rules.common.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_sleep_Sleep_state", "")):
-				sleep = rules.system.sleep.Sleep("Unittest_Sleep", "Unittest_Sleep_Request", name_lock="Unittest_Lock", name_lock_request="Unittest_Lock_Request", name_display_text="Unittest_Display_Text")
+				sleep = habapp_rules.system.sleep.Sleep("Unittest_Sleep", "Unittest_Sleep_Request", name_lock="Unittest_Lock", name_lock_request="Unittest_Lock_Request", name_display_text="Unittest_Display_Text")
 
 			self.assertEqual(sleep.sleep_request_active, test_case.sleep_request_state == "ON", test_case)
 			self.assertEqual(sleep.lock_request_active, test_case.lock_request_state == "ON", test_case)
@@ -235,7 +235,7 @@ class TestSleep(unittest.TestCase):
 		tests.helper.oh_item.remove_mocked_item_by_name("Unittest_Display_Text")
 
 		with unittest.mock.patch.object(rules.common.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_sleep_Sleep_state", "")):
-			self._sleep = rules.system.sleep.Sleep("Unittest_Sleep", "Unittest_Sleep_Request")
+			self._sleep = habapp_rules.system.sleep.Sleep("Unittest_Sleep", "Unittest_Sleep_Request")
 
 		self.assertIsNone(self._sleep._Sleep__item_display_text)
 		self.assertIsNone(self._sleep._Sleep__item_lock)
