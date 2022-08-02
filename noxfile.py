@@ -12,7 +12,7 @@ def coverage(session):
 	session.install("-r", "requirements.txt")
 	session.install("-r", "requirements_dev.txt")
 	with session.chdir("tests"):
-		session.run("python", "-m", "coverage", "run", "run_unittest.py")
+		session.run("coverage", "run", "run_unittest.py")
 
 		try:
 			session.run("python", "-m", "coverage", "html", "--skip-covered", "--fail-under=100")
@@ -29,4 +29,4 @@ def pylint(session):
 	session.install("-r", "requirements_dev.txt")
 	dir_names = ["habapp_rules", "tests"]
 	args = [*dir_names, "--rcfile=.pylintrc"]
-	session.run("python", "-m", "pylint", *args)
+	session.run("pylint", *args)
