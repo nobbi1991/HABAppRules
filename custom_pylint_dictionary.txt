@@ -1,6 +1,7 @@
 autoupdate
 dataclass
 enums
+init
 KNX
 msg
 png
