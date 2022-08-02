@@ -3,8 +3,10 @@ import os
 import nox
 import nox.command
 
+python_version = "3.10"
 
-@nox.session
+
+@nox.session(python=python_version)
 def coverage(session):
 	"""Run coverage."""
 	session.install("-r", "requirements.txt")
@@ -20,15 +22,11 @@ def coverage(session):
 			raise exc
 
 
-@nox.session
+@nox.session(python=python_version)
 def pylint(session):
 	"""Run pylint."""
 	session.install("-r", "requirements.txt")
 	session.install("-r", "requirements_dev.txt")
-	dir_names = ("habapp_rules", "tests")
-	if os.name == "nt":
-		dirs = [f".\\{directory}" for directory in dir_names]
-	else:
-		dirs = list(dir_names)
-	args = [*dirs, "--rcfile=.pylintrc"]
+	dir_names = ["habapp_rules", "tests"]
+	args = [*dir_names, "--rcfile=.pylintrc"]
 	session.run("python", "-m", "pylint", *args)
