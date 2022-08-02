@@ -9,7 +9,7 @@ import smtplib
 
 import requests
 
-import rules
+import habapp_rules
 
 LOGGER = logging.getLogger("HABApp.communication")
 LOGGER.setLevel("DEBUG")
@@ -116,8 +116,8 @@ def ensure_is_list(recipient: str | list[str]) -> list[str]:
 	return recipient
 
 
-with open(rules.BASE_PATH / "rules/communication/communication.json", "r", encoding="utf-8") as config_json:
+with open(habapp_rules.BASE_PATH / "rules/communication/communication.json", "r", encoding="utf-8") as config_json:
 	__config: dict = json.load(config_json)
 
-TELEGRAM = Telegram(__config["telegram"]["bot_token"], __config["telegram"]["chat_ids"])
-MAIL = Mail(__config["mail"]["user"], __config["mail"]["password"], __config["mail"]["smtp_host"], __config["mail"]["smtp_port"], )
+# TELEGRAM = Telegram(__config["telegram"]["bot_token"], __config["telegram"]["chat_ids"])
+# MAIL = Mail(__config["mail"]["user"], __config["mail"]["password"], __config["mail"]["smtp_host"], __config["mail"]["smtp_port"], )

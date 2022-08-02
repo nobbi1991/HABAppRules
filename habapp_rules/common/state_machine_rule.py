@@ -7,7 +7,7 @@ import HABApp
 import HABApp.openhab.connection_handler.func_sync
 import transitions.extensions.states
 
-import rules
+import habapp_rules
 
 
 @transitions.extensions.states.add_state_features(transitions.extensions.states.Timeout)
@@ -35,7 +35,7 @@ class StateMachineRule(HABApp.Rule):
 
 		# get prefix for items
 		parent_class_path = pathlib.Path(inspect.getfile(self.__class__.__mro__[0]))
-		parent_class_path_relative = parent_class_path.relative_to(rules.BASE_PATH)
+		parent_class_path_relative = parent_class_path.relative_to(habapp_rules.BASE_PATH)
 		parent_class_path_relative_str = str(parent_class_path_relative).removesuffix(".py").replace(os.path.sep, "_")
 		self._item_prefix = f"{parent_class_path_relative_str}.{self.rule_name}".replace(".", "_")
 

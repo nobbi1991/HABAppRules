@@ -7,15 +7,15 @@ import HABApp.openhab.interface
 import HABApp.openhab.items
 import HABApp.util
 
-import rules.common.helper
-import rules.common.state_machine_rule
+import habapp_rules.common.state_machine_rule
+import habapp_rules.common.helper
 
 LOGGER = logging.getLogger("HABApp.sleep")
 LOGGER.setLevel("DEBUG")
 
 
 # pylint: disable=no-member
-class Sleep(rules.common.state_machine_rule.StateMachineRule):
+class Sleep(habapp_rules.common.state_machine_rule.StateMachineRule):
 	"""Rules class to manage sleep state."""
 
 	states = [
@@ -62,7 +62,7 @@ class Sleep(rules.common.state_machine_rule.StateMachineRule):
 		self._lock_request_active = bool(self.__item_lock_request) if self.__item_lock_request is not None else False
 
 		# init state machine
-		self.state_machine = rules.common.state_machine_rule.StateMachineWithTimeout(
+		self.state_machine = habapp_rules.common.state_machine_rule.StateMachineWithTimeout(
 			model=self,
 			states=self.states,
 			transitions=self.trans,
@@ -118,9 +118,9 @@ class Sleep(rules.common.state_machine_rule.StateMachineRule):
 
 		# update sleep state
 		if self.state in {"pre_sleeping", "sleeping"}:
-			rules.common.helper.send_if_different(self.__item_sleep.name, "ON")
+			habapp_rules.common.helper.send_if_different(self.__item_sleep.name, "ON")
 		else:
-			rules.common.helper.send_if_different(self.__item_sleep.name, "OFF")
+			habapp_rules.common.helper.send_if_different(self.__item_sleep.name, "OFF")
 
 		# update lock state
 		self.__update_lock_state()
@@ -150,9 +150,9 @@ class Sleep(rules.common.state_machine_rule.StateMachineRule):
 		"""Update the return lock state value of OpenHAB item."""
 		if self.__item_lock is not None:
 			if self.state in {"pre_sleeping", "post_sleeping", "locked"}:
-				rules.common.helper.send_if_different(self.__item_lock.name, "ON")
+				habapp_rules.common.helper.send_if_different(self.__item_lock.name, "ON")
 			else:
-				rules.common.helper.send_if_different(self.__item_lock.name, "OFF")
+				habapp_rules.common.helper.send_if_different(self.__item_lock.name, "OFF")
 
 	def _cb_sleep_request(self, event: HABApp.openhab.events.ItemStateChangedEvent):
 		"""Callback, which is called if sleep request item changed state.

@@ -9,15 +9,14 @@ import HABApp.openhab.interface
 import HABApp.openhab.items
 import HABApp.util
 
-import rules.common.helper
-import rules.common.state_machine_rule
+import habapp_rules.common.state_machine_rule
 
 LOGGER = logging.getLogger("HABApp.presence")
 LOGGER.setLevel("DEBUG")
 
 
 # pylint: disable=no-member
-class Presence(rules.common.state_machine_rule.StateMachineRule):
+class Presence(habapp_rules.common.state_machine_rule.StateMachineRule):
 	"""Rules class to manage presence of a home."""
 
 	states = [
@@ -53,7 +52,7 @@ class Presence(rules.common.state_machine_rule.StateMachineRule):
 		self.__phone_items = [HABApp.openhab.items.SwitchItem.get_item(name) for name in phone_names]
 
 		# init state machine
-		self.state_machine = rules.common.state_machine_rule.StateMachineWithTimeout(
+		self.state_machine = habapp_rules.common.state_machine_rule.StateMachineWithTimeout(
 			model=self,
 			states=self.states,
 			transitions=self.trans,
@@ -104,9 +103,9 @@ class Presence(rules.common.state_machine_rule.StateMachineRule):
 
 		# update presence item
 		target_value = "ON" if self.state in {"presence", "leaving"} else "OFF"
-		rules.common.helper.send_if_different(self.__presence_item.name, target_value)
+		habapp_rules.common.helper.send_if_different(self.__presence_item.name, target_value)
 
-		rules.common.helper.send_if_different(self.__leaving_item.name, "ON" if self.state == "leaving" else "OFF")
+		habapp_rules.common.helper.send_if_different(self.__leaving_item.name, "ON" if self.state == "leaving" else "OFF")
 
 	def _cb_outside_door(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
 		"""Callback, which is called if any outside door changed state.
