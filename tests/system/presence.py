@@ -58,7 +58,7 @@ class TestPresence(unittest.TestCase):
 			show_conditions=True)
 
 		if os.name == "nt":
-			presence_graph.get_graph().draw(pathlib.Path(__file__).parent / "Presence.png", format="png", prog="dot")
+			presence_graph.get_graph().draw(pathlib.Path(__file__).parent / "Presence.png", format="png", prog="dot")  # pragma: no cover
 
 	def test_enums(self):
 		"""Test if all enums from __init__.py are implemented"""
