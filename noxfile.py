@@ -15,7 +15,10 @@ def coverage(session):
 		session.run("coverage", "run", "run_unittest.py")
 
 		try:
-			session.run("python", "-m", "coverage", "html", "--skip-covered", "--fail-under=100", "--omit=*oh_item.py,*rule_runner.py")
+			if os.name == "nt":
+				session.run("python", "-m", "coverage", "html", "--skip-covered", "--fail-under=100", "--omit=*oh_item.py,*rule_runner.py")
+			else:
+				session.run("python", "-m", "coverage", "report", "--skip-covered", "--fail-under=100", "--omit=*oh_item.py,*rule_runner.py")
 		except nox.command.CommandFailed as exc:
 			if os.name == "nt":
 				os.startfile("htmlcov\\index.html")
