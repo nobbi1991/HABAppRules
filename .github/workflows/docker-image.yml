@@ -16,7 +16,7 @@ jobs:
       
     - name: Get latest release
       id: latest_version
-      uses: abatilo/release-info-action@v1.3.0
+      uses: abatilo/release-info-action@v1.3.1
       with:
         owner: nobbi1991
         repo: HABAppRules
