@@ -1,12 +1,10 @@
-name: Docker Image CI
+name: Create Docker Image
 
 on:
-  #release:
-   # types: [published]
-  workflow_dispatch
+  release:
+   types: [published]
 
 jobs:
-
   buildx:
     runs-on: ubuntu-latest
     steps:
