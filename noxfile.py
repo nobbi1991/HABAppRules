@@ -1,35 +1,55 @@
-import os
+import pathlib
+import sys
 
-import nox
 import nox.command
 
-python_version = "3.10"
+sys.path.append(str(pathlib.Path(__file__).parent.resolve() / "helper"))
+from helper.nox_checks.common import NoxBase, run_combined_sessions
+
+PYTHON_VERSION = "3.10"
+nox.options.sessions = ["coverage", "pylint"]
 
 
-@nox.session(python=python_version)
+class Nox(NoxBase):
+
+	def __init__(self, session: nox.Session):
+		NoxBase.__init__(self, session, project_name="habapp_rules")
+
+
+@nox.session(python=PYTHON_VERSION)
 def coverage(session):
-	"""Run coverage."""
-	session.install("-r", "requirements.txt")
-	session.install("-r", "requirements_dev.txt")
-	with session.chdir("tests"):
-		session.run("coverage", "run", "run_unittest.py")
-
-		try:
-			if os.name == "nt":
-				session.run("python", "-m", "coverage", "html", "--skip-covered", "--fail-under=100", "--omit=*oh_item.py,*rule_runner.py")
-			else:
-				session.run("python", "-m", "coverage", "report", "-m", "--skip-covered", "--fail-under=100", "--omit=*oh_item.py,*rule_runner.py")
-		except nox.command.CommandFailed as exc:
-			if os.name == "nt":
-				os.startfile("htmlcov\\index.html")
-			raise exc
+	"""Run coverage"""
+	Nox(session).coverage()
 
 
-@nox.session(python=python_version)
+@nox.session(python=PYTHON_VERSION)
 def pylint(session):
 	"""Run pylint."""
-	session.install("-r", "requirements.txt")
-	session.install("-r", "requirements_dev.txt")
-	dir_names = ["habapp_rules", "tests"]
-	args = [*dir_names, "--rcfile=.pylintrc"]
-	session.run("pylint", *args)
+	Nox(session).pylint()
+
+
+@nox.session(python=PYTHON_VERSION)
+def version_check(session):
+	"""Check if version was updated."""
+	Nox(session).version_check()
+
+
+@nox.session(python=PYTHON_VERSION)
+def combined_merge(session: nox.sessions.Session):
+	"""Run all tests for merge."""
+	nox_helper = NoxBase(session)
+	run_combined_sessions(session, [
+		("coverage", nox_helper.coverage),
+		("pylint", nox_helper.pylint)
+	])
+
+
+@nox.session(python=PYTHON_VERSION)
+def combined_release(session: nox.sessions.Session):
+	"""Run all tests for release."""
+	pkg_nox = NoxBase(session)
+	run_combined_sessions(session, [
+		("coverage", pkg_nox.coverage),
+		("pylint", pkg_nox.pylint),
+		("version_check", pkg_nox.version_check)
+	])
