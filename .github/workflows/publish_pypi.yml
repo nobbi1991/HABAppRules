@@ -1,6 +1,5 @@
 name: Publish Python distributions to PyPI
 on:
-  push:
   release:
     types: [published]
   workflow_dispatch:
@@ -13,7 +12,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-        ref: add_version_check
+        ref: main
     - name: Set up Python 3.10
       uses: actions/setup-python@v2
       with:

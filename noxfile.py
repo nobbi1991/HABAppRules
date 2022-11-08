@@ -13,7 +13,7 @@ nox.options.sessions = ["coverage", "pylint"]
 class Nox(NoxBase):
 
 	def __init__(self, session: nox.Session):
-		NoxBase.__init__(self, session, project_name="habapp_rules")
+		NoxBase.__init__(self, session, project_name="habapp_rules", changelog_path=pathlib.Path().resolve() / "changelog.md")
 
 
 @nox.session(python=PYTHON_VERSION)
