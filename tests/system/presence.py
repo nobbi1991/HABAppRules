@@ -2,6 +2,7 @@
 import collections
 import os
 import pathlib
+import sys
 import threading
 import unittest
 import unittest.mock
@@ -48,6 +49,7 @@ class TestPresence(unittest.TestCase):
 		with unittest.mock.patch.object(habapp_rules.common.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_presence_Presence_state", "")):
 			self._presence = habapp_rules.system.presence.Presence("Unittest_Presence", outside_door_names=["Unittest_Door1", "Unittest_Door2"], leaving_name="Unittest_Leaving", phone_names=["Unittest_Phone1", "Unittest_Phone2"])
 
+	@unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
 	def test_create_graph(self):
 		"""Create state machine graph for documentation."""
 		presence_graph = tests.common.graph_machines.GraphMachineTimer(

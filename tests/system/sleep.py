@@ -2,6 +2,7 @@
 import collections
 import os
 import pathlib
+import sys
 import threading
 import unittest
 import unittest.mock
@@ -47,6 +48,7 @@ class TestSleep(unittest.TestCase):
 		with unittest.mock.patch.object(habapp_rules.common.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_sleep_Sleep_state", "")):
 			self._sleep = habapp_rules.system.sleep.Sleep("Unittest_Sleep", "Unittest_Sleep_Request", name_lock="Unittest_Lock", name_lock_request="Unittest_Lock_Request", name_display_text="Unittest_Display_Text")
 
+	@unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
 	def test_create_graph(self):
 		"""Create state machine graph for documentation."""
 		presence_graph = tests.common.graph_machines.GraphMachineTimer(
