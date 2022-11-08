@@ -1,4 +1,11 @@
-# Version 0.1 - 06.03.2022
+# Version 1.1.1 - 08.11.2022
 
 ## Features
-- added initial version for ``rules.system.presence.py`` to set the presence state.
+
+- Added nox checks
+
+# Version 1.1.0 - 08.08.2022
+
+## Features
+
+- Added logical function rules (AND + OR)
