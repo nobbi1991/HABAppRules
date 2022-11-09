@@ -28,6 +28,11 @@ class TestStateMachineRule(unittest.TestCase):
 			self.assertEqual("habapp_rules_common_state_machine_rule_TestRule_StateMachineRule", state_machine._item_prefix)
 			create_mock.assert_called_once_with("habapp_rules_common_state_machine_rule_TestRule_StateMachineRule_state", "String")
 
+		with unittest.mock.patch.object(habapp_rules.common.state_machine_rule.StateMachineRule, "_create_additional_item") as create_mock:
+			state_machine = habapp_rules.common.state_machine_rule.StateMachineRule("state_name")
+			self.assertEqual("habapp_rules_common_state_machine_rule_TestRule_StateMachineRule", state_machine._item_prefix)
+			create_mock.assert_called_once_with("state_name", "String")
+
 	def test_create_additional_item(self):
 		"""Test create additional item."""
 		# check if item is created if NOT existing

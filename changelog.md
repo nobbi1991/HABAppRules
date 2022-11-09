@@ -1,4 +1,8 @@
-# Version 1.1.1 - 08.11.2022
+# Version 2.0.0 - 09.11.2022
+
+## General
+
+- removed communication
 
 ## Features
 

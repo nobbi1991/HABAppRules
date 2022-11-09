@@ -9,6 +9,7 @@ import HABApp.openhab.interface
 import HABApp.openhab.items
 import HABApp.util
 
+import habapp_rules.common.helper
 import habapp_rules.common.state_machine_rule
 
 LOGGER = logging.getLogger("HABApp.presence")

@@ -264,6 +264,23 @@ class TestPresence(unittest.TestCase):
 		tests.helper.oh_item.send_command("Unittest_Phone2", "OFF", "ON")
 		self.assertEqual(self._presence.state, "absence")
 
+	def test__set_leaving_through_phone(self):
+		"""Test if leaving_detected is called correctly after timeout of __phone_absence_timer."""
+		TestCase = collections.namedtuple("TestCase", "state, leaving_detected_called")
+
+		test_cases = [
+			TestCase("presence", True),
+			TestCase("leaving", False),
+			TestCase("absence", False),
+			TestCase("long_absence", False)
+		]
+
+		for test_case in test_cases:
+			with unittest.mock.patch.object(self._presence, "leaving_detected") as leaving_detected_mock:
+				self._presence.state = test_case.state
+				self._presence._Presence__set_leaving_through_phone()
+			self.assertEqual(test_case.leaving_detected_called, leaving_detected_mock.called)
+
 	# pylint: disable=no-member
 	def test_long_absence(self):
 		"""Test entering long_absence and leaving it."""

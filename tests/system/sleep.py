@@ -164,6 +164,10 @@ class TestSleep(unittest.TestCase):
 		tests.helper.oh_item.assert_value("Unittest_Display_Text", "Guten Morgen")
 		self.transitions_timer_mock.assert_called_with(3, unittest.mock.ANY, args=unittest.mock.ANY)
 
+		# post_sleeping check if sleep change is ignored
+		tests.helper.oh_item.send_command("Unittest_Sleep_Request", "ON", "OFF")
+		self.assertEqual(self._sleep.state, "post_sleeping")
+
 		# post_sleeping timeout -> awake
 		tests.helper.timer.call_timeout(self.transitions_timer_mock)
 		self.assertEqual(self._sleep.state, "awake")
