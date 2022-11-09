@@ -52,15 +52,14 @@ class TestPresence(unittest.TestCase):
 	@unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
 	def test_create_graph(self):
 		"""Create state machine graph for documentation."""
-		presence_graph = tests.common.graph_machines.GraphMachineTimer(
+		presence_graph = tests.common.graph_machines.GraphMachineTimer(  # pragma: no cover
 			model=self._presence,
 			states=self._presence.states,
 			transitions=self._presence.trans,
 			initial=self._presence.state,
 			show_conditions=True)
 
-		if os.name == "nt":
-			presence_graph.get_graph().draw(pathlib.Path(__file__).parent / "Presence.png", format="png", prog="dot")  # pragma: no cover
+		presence_graph.get_graph().draw(pathlib.Path(__file__).parent / "Presence.png", format="png", prog="dot")  # pragma: no cover
 
 	def test_enums(self):
 		"""Test if all enums from __init__.py are implemented"""
