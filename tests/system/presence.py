@@ -1,6 +1,5 @@
 """Test Presence rule."""
 import collections
-import os
 import pathlib
 import sys
 import threading

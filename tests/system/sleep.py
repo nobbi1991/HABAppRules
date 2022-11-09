@@ -1,6 +1,5 @@
 """Test sleep rule."""
 import collections
-import os
 import pathlib
 import sys
 import threading
