@@ -1,9 +1,9 @@
-name: Run Nox
+name: Run Version Check
 
 on:
   push:
-    #branches:
-    #  - master
+    branches:
+      - master
   workflow_dispatch:
 
 jobs:
