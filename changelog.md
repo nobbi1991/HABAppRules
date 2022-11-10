@@ -1,4 +1,15 @@
-# Version 0.1 - 06.03.2022
+# Version 2.0.0 - 10.11.2022
+
+## General
+
+- removed communication modules
 
 ## Features
-- added initial version for ``rules.system.presence.py`` to set the presence state.
+
+- Added nox checks
+
+# Version 1.1.0 - 08.08.2022
+
+## Features
+
+- Added logical function rules (AND + OR)

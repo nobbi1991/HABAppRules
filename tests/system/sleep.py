@@ -1,7 +1,7 @@
 """Test sleep rule."""
 import collections
-import os
 import pathlib
+import sys
 import threading
 import unittest
 import unittest.mock
@@ -47,18 +47,17 @@ class TestSleep(unittest.TestCase):
 		with unittest.mock.patch.object(habapp_rules.common.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_sleep_Sleep_state", "")):
 			self._sleep = habapp_rules.system.sleep.Sleep("Unittest_Sleep", "Unittest_Sleep_Request", name_lock="Unittest_Lock", name_lock_request="Unittest_Lock_Request", name_display_text="Unittest_Display_Text")
 
+	@unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
 	def test_create_graph(self):
 		"""Create state machine graph for documentation."""
-		presence_graph = tests.common.graph_machines.GraphMachineTimer(
+		presence_graph = tests.common.graph_machines.GraphMachineTimer(  # pragma: no cover
 			model=self._sleep,
 			states=self._sleep.states,
 			transitions=self._sleep.trans,
 			initial=self._sleep.state,
 			show_conditions=True
 		)
-
-		if os.name == "nt":
-			presence_graph.get_graph().draw(pathlib.Path(__file__).parent / "Sleep.png", format="png", prog="dot")  # pragma: no cover
+		presence_graph.get_graph().draw(pathlib.Path(__file__).parent / "Sleep.png", format="png", prog="dot")  # pragma: no cover
 
 	def test_enums(self):
 		"""Test if all enums from __init__.py are implemented"""
@@ -161,6 +160,10 @@ class TestSleep(unittest.TestCase):
 		tests.helper.oh_item.assert_value("Unittest_Lock", "ON")
 		tests.helper.oh_item.assert_value("Unittest_Display_Text", "Guten Morgen")
 		self.transitions_timer_mock.assert_called_with(3, unittest.mock.ANY, args=unittest.mock.ANY)
+
+		# post_sleeping check if sleep change is ignored
+		tests.helper.oh_item.send_command("Unittest_Sleep_Request", "ON", "OFF")
+		self.assertEqual(self._sleep.state, "post_sleeping")
 
 		# post_sleeping timeout -> awake
 		tests.helper.timer.call_timeout(self.transitions_timer_mock)

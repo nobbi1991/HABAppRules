@@ -1,7 +1,7 @@
 """Test Presence rule."""
 import collections
-import os
 import pathlib
+import sys
 import threading
 import unittest
 import unittest.mock
@@ -48,17 +48,17 @@ class TestPresence(unittest.TestCase):
 		with unittest.mock.patch.object(habapp_rules.common.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_presence_Presence_state", "")):
 			self._presence = habapp_rules.system.presence.Presence("Unittest_Presence", outside_door_names=["Unittest_Door1", "Unittest_Door2"], leaving_name="Unittest_Leaving", phone_names=["Unittest_Phone1", "Unittest_Phone2"])
 
+	@unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
 	def test_create_graph(self):
 		"""Create state machine graph for documentation."""
-		presence_graph = tests.common.graph_machines.GraphMachineTimer(
+		presence_graph = tests.common.graph_machines.GraphMachineTimer(  # pragma: no cover
 			model=self._presence,
 			states=self._presence.states,
 			transitions=self._presence.trans,
 			initial=self._presence.state,
 			show_conditions=True)
 
-		if os.name == "nt":
-			presence_graph.get_graph().draw(pathlib.Path(__file__).parent / "Presence.png", format="png", prog="dot")  # pragma: no cover
+		presence_graph.get_graph().draw(pathlib.Path(__file__).parent / "Presence.png", format="png", prog="dot")  # pragma: no cover
 
 	def test_enums(self):
 		"""Test if all enums from __init__.py are implemented"""
@@ -261,6 +261,23 @@ class TestPresence(unittest.TestCase):
 		# absence on, two phones disappears
 		tests.helper.oh_item.send_command("Unittest_Phone2", "OFF", "ON")
 		self.assertEqual(self._presence.state, "absence")
+
+	def test__set_leaving_through_phone(self):
+		"""Test if leaving_detected is called correctly after timeout of __phone_absence_timer."""
+		TestCase = collections.namedtuple("TestCase", "state, leaving_detected_called")
+
+		test_cases = [
+			TestCase("presence", True),
+			TestCase("leaving", False),
+			TestCase("absence", False),
+			TestCase("long_absence", False)
+		]
+
+		for test_case in test_cases:
+			with unittest.mock.patch.object(self._presence, "leaving_detected") as leaving_detected_mock:
+				self._presence.state = test_case.state
+				self._presence._Presence__set_leaving_through_phone()
+			self.assertEqual(test_case.leaving_detected_called, leaving_detected_mock.called)
 
 	# pylint: disable=no-member
 	def test_long_absence(self):
