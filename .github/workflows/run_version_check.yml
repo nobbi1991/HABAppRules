@@ -1,9 +1,9 @@
-# This is a basic workflow to help you get started with Actions
-
-name: Run Nox
+name: Run Version Check
 
 on:
   push:
+    branches:
+      - master
   workflow_dispatch:
 
 jobs:
@@ -15,4 +15,4 @@ jobs:
        with:
          submodules: recursive
      - uses: excitedleigh/setup-nox@main
-     - run: nox
+     - run: nox -s version_check

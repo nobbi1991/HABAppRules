@@ -116,6 +116,3 @@ class SummerWinter(HABApp.Rule):
 		# update last update item at every call
 		if self._item_last_check:
 			self._item_last_check.oh_send_command(datetime.datetime.now())
-
-
-#SummerWinter("I22_99_Temperature", "I02_00_Sommer")

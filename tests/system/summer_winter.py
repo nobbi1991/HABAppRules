@@ -174,8 +174,9 @@ class TestSummerWinter(unittest.TestCase):
 			# already summer (no update should be sent)
 			is_summer_mock.return_value = True
 			with unittest.mock.patch.object(self._summer_winter, "_item_summer") as summer_item:
+				summer_item.value = "ON"
 				self._summer_winter._cb_update_summer()
-				summer_item.send_command.assert_not_called()
+				summer_item.oh_send_command.assert_not_called()
 				self.assertEqual(2, last_check_mock.oh_send_command.call_count)
 
 			# switch back to winter
@@ -187,8 +188,18 @@ class TestSummerWinter(unittest.TestCase):
 			# already winter (no update should be sent)
 			is_summer_mock.return_value = False
 			with unittest.mock.patch.object(self._summer_winter, "_item_summer") as summer_item:
+				summer_item.value = "OFF"
 				self._summer_winter._cb_update_summer()
-				summer_item.send_command.assert_not_called()
+				summer_item.oh_send_command.assert_not_called()
+				self.assertEqual(4, last_check_mock.oh_send_command.call_count)
+
+			# already winter (no update should be sent) | no last_check item -> send_command should not be triggered
+			is_summer_mock.return_value = False
+			with unittest.mock.patch.object(self._summer_winter, "_item_summer") as summer_item:
+				last_check_mock.__bool__.return_value = False
+				summer_item.value = "OFF"
+				self._summer_winter._cb_update_summer()
+				summer_item.oh_send_command.assert_not_called()
 				self.assertEqual(4, last_check_mock.oh_send_command.call_count)
 
 		# exception from __is_summer
