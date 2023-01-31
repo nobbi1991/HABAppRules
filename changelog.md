@@ -1,3 +1,9 @@
+# Version 2.0.1 - 31.01.2023
+
+## Bugfix
+
+- Fixed bug at summer / winter where `last_check_name` could not be set
+
 # Version 2.0.0 - 10.11.2022
 
 ## General
