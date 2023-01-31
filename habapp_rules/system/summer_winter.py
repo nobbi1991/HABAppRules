@@ -24,7 +24,7 @@ class SummerWinter(HABApp.Rule):
 		:param persistence_service: Name of persistence service
 		:param days: number of days in the past which will be used to check if it is summer
 		:param temperature_threshold: threshold weighted temperature for summer
-		:param last_check_name: Name of last check item. OpenHAB-Type must be String item
+		:param last_check_name: Name of last check item. OpenHAB-Type must be DateTime item
 		"""
 		super().__init__()
 
@@ -37,7 +37,7 @@ class SummerWinter(HABApp.Rule):
 		# get items
 		self._outside_temp_item = HABApp.openhab.items.NumberItem.get_item(outside_temperature_name)
 		self._item_summer = HABApp.openhab.items.SwitchItem.get_item(summer_name)
-		self._item_last_check = HABApp.openhab.items.DatetimeItem.get_item(summer_name) if last_check_name else None
+		self._item_last_check = HABApp.openhab.items.DatetimeItem.get_item(last_check_name) if last_check_name else None
 
 		# run at init and every day at 23:00
 		self.run.soon(self._cb_update_summer)
