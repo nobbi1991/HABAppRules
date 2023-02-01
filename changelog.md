@@ -1,3 +1,9 @@
+# Version 2.0.2 - 01.02.2023
+
+## Bugfix
+
+- Fixed bug where timers would not start at initial state of `habapp_rules.system.sleep.Sleep` and `habapp_rules.system.presence.Presence` would not start
+
 # Version 2.0.1 - 31.01.2023
 
 ## Bugfix

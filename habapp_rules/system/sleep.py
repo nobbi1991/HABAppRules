@@ -66,10 +66,9 @@ class Sleep(habapp_rules.common.state_machine_rule.StateMachineRule):
 			model=self,
 			states=self.states,
 			transitions=self.trans,
-			initial=self._get_initial_state("awake"),
 			ignore_invalid_triggers=True,
 			after_state_change="_update_openhab_state")
-		super()._update_openhab_state()
+		self._set_initial_state()
 
 		self._update_openhab_state()
 
@@ -78,7 +77,7 @@ class Sleep(habapp_rules.common.state_machine_rule.StateMachineRule):
 		if self.__item_lock_request is not None:
 			self.__item_lock_request.listen_event(self._cb_lock_request, HABApp.openhab.events.ItemStateChangedEventFilter())
 
-	def _get_initial_state(self, default_value: str) -> str:
+	def _get_initial_state(self, default_value: str = "awake") -> str:
 		"""Get initial state of state machine.
 
 		:param default_value: default / initial state

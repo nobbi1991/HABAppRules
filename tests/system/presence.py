@@ -63,7 +63,7 @@ class TestPresence(unittest.TestCase):
 	def test_enums(self):
 		"""Test if all enums from __init__.py are implemented"""
 		implemented_states = list(self._presence.state_machine.states)
-		enum_states = [state.value for state in habapp_rules.system.PresenceState]
+		enum_states = [state.value for state in habapp_rules.system.PresenceState] + ["initial"]
 		self.assertEqual(len(enum_states), len(implemented_states))
 		self.assertTrue(all(state in enum_states for state in implemented_states))
 

@@ -57,10 +57,9 @@ class Presence(habapp_rules.common.state_machine_rule.StateMachineRule):
 			model=self,
 			states=self.states,
 			transitions=self.trans,
-			initial=self._get_initial_state("presence"),
 			ignore_invalid_triggers=True,
 			after_state_change="_update_openhab_state")
-		super()._update_openhab_state()
+		self._set_initial_state()
 
 		# add callbacks
 		self.__leaving_item.listen_event(self._cb_leaving, HABApp.openhab.events.ItemStateChangedEventFilter())
@@ -71,7 +70,7 @@ class Presence(habapp_rules.common.state_machine_rule.StateMachineRule):
 		self.__phone_absence_timer: threading.Timer = None
 		LOGGER.debug(f"Init of presence rule {self.rule_name} was successful. Initial state = {self.state}")
 
-	def _get_initial_state(self, default_value: str) -> str:
+	def _get_initial_state(self, default_value: str = "presence") -> str:
 		"""Get initial state of state machine.
 
 		:param default_value: default / initial state
