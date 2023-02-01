@@ -1,5 +1,6 @@
 """Test Light rule."""
 import collections
+import os
 import pathlib
 import threading
 import unittest
@@ -7,9 +8,11 @@ import unittest.mock
 
 import HABApp.rule.rule
 
-import habapp_rules.system
 import habapp_rules.actors.light
+import habapp_rules.common.exceptions
+import habapp_rules.common.exceptions
 import habapp_rules.common.state_machine_rule
+import habapp_rules.system
 import tests.common.graph_machines
 import tests.helper.oh_item
 import tests.helper.rule_runner
@@ -54,16 +57,44 @@ class TestLight(unittest.TestCase):
 		with unittest.mock.patch.object(habapp_rules.common.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")):
 			self._light = habapp_rules.actors.light.Light("Unittest_Light", ["Unittest_Light_ctr"], "Unittest_Manual", "Unittest_Presence_state", "Unittest_Sleep_state", "Unittest_Day", light_config)
 
+	def get_state_names(self, states: dict, parent_state: str | None = None) -> list[str]:
+		"""Helper function to get all state names (also nested states)
+
+		:param states: dict of all states or children states
+		:param parent_state: name of parent state, only if it is a nested state machine
+		:return: list of all state names
+		"""
+		state_names = []
+		prefix = f"{parent_state}_" if parent_state else ""
+		if parent_state:
+			states = states["children"]
+
+		for state in states:
+			if "children" in state:
+				state_names += self.get_state_names(state, state["name"])
+			else:
+				state_names.append(f"{prefix}{state['name']}")
+		return state_names
+
 	def test_create_graph(self):
 		"""Create state machine graph for documentation."""
+		picture_dir = pathlib.Path(__file__).parent / "Light_States"
+		if not picture_dir.is_dir():
+			os.makedirs(picture_dir)  # pragma: no cover
+
 		presence_graph = tests.common.graph_machines.HierarchicalGraphMachineTimer(
 			model=self._light,
 			states=self._light.states,
 			transitions=self._light.trans,
 			initial=self._light.state,
-			show_conditions=True)
+			show_conditions=False)
 
-		presence_graph.get_graph().draw(pathlib.Path(__file__).parent / "Light.png", format="png", prog="dot")
+		presence_graph.get_graph().draw(picture_dir / "Light.png", format="png", prog="dot")
+
+		presence_graph.show_conditions = True
+		for state_name in self.get_state_names(self._light.states):
+			presence_graph.set_state(state_name)
+			presence_graph.get_graph(show_roi=True).draw(picture_dir / f"Light_{state_name}.png", format="png", prog="dot")
 
 	def test_get_initial_state(self):
 		"""Test if correct initial state will be set."""
@@ -177,62 +208,16 @@ class TestLight(unittest.TestCase):
 		# assert that all combinations of sleeping / presence are tested
 		self.assertEqual(2 * 2 * len(habapp_rules.system.SleepState) * len(habapp_rules.system.PresenceState), len(test_cases))
 
-		for test_case in test_cases: # todo
-			tests.helper.oh_item.set_state("Unittest_Light", test_case.light_value)
-			tests.helper.oh_item.set_state("Unittest_Manual", test_case.manual_value)
-			tests.helper.oh_item.set_state("Unittest_Presence_state", test_case.presence_value)
-			tests.helper.oh_item.set_state("Unittest_Sleep_state", test_case.sleep_value)
+		with unittest.mock.patch.object(self._light, "_pre_sleep_configured", return_value=True), unittest.mock.patch.object(self._light, "_leaving_configured", return_value=True):
+			for test_case in test_cases:
+				tests.helper.oh_item.set_state("Unittest_Light", test_case.light_value)
+				tests.helper.oh_item.set_state("Unittest_Manual", test_case.manual_value)
+				tests.helper.oh_item.set_state("Unittest_Presence_state", test_case.presence_value)
+				tests.helper.oh_item.set_state("Unittest_Sleep_state", test_case.sleep_value)
 
-			self.assertEqual(test_case.expected_state, self._light._get_initial_state("default"), test_case)
+				self.assertEqual(test_case.expected_state, self._light._get_initial_state("default"), test_case)
 
 	def tearDown(self) -> None:
 		"""Tear down test case."""
 		tests.helper.oh_item.remove_all_mocked_items()
 		self.__runner.tear_down()
-
-# # pylint: disable=protected-access
-# class TestLightExtended(unittest.TestCase):
-# 	"""Tests cases for testing LightExtended rule."""
-#
-# 	def setUp(self) -> None:
-# 		"""Setup test case."""
-# 		self.transitions_timer_mock_patcher = unittest.mock.patch("transitions.extensions.states.Timer", spec=threading.Timer)
-# 		self.addCleanup(self.transitions_timer_mock_patcher.stop)
-# 		self.transitions_timer_mock = self.transitions_timer_mock_patcher.start()
-#
-# 		self.threading_timer_mock_patcher = unittest.mock.patch("threading.Timer", spec=threading.Timer)
-# 		self.addCleanup(self.threading_timer_mock_patcher.stop)
-# 		self.threading_timer_mock = self.threading_timer_mock_patcher.start()
-#
-# 		self.send_command_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.send_command", new=tests.helper.oh_item.send_command)
-# 		self.addCleanup(self.send_command_mock_patcher.stop)
-# 		self.send_command_mock = self.send_command_mock_patcher.start()
-#
-# 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light", "0")
-# 		# tests.helper.oh_item.add_mock_item(HABApp.openhab.items.ContactItem, "Unittest_Door2", "CLOSED")
-# 		# tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Leaving", "OFF")
-# 		# tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Phone1", "ON")
-# 		# tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Phone2", "OFF")
-# 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "rules_actors_light_LightExtended_state", "")
-# 		# tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Presence", "ON")
-#
-# 		self.__runner = tests.helper.rule_runner.SimpleRuleRunner()
-# 		self.__runner.set_up()
-# 		with unittest.mock.patch.object(rules.common.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_LightExtended_state", "")):
-# 			self._light_extended = rules.actors.light.LightExtended("Unittest_Light")
-#
-# 	def test_create_graph(self):
-# 		"""Create state machine graph for documentation."""
-# 		presence_graph = tests.common.graph_machines.HierarchicalGraphMachineTimer(
-# 			model=self._light_extended,
-# 			states=self._light_extended.states,
-# 			transitions=self._light_extended.trans,
-# 			initial=self._light_extended.state,
-# 			show_conditions=True)
-#
-# 		presence_graph.get_graph().draw(pathlib.Path(__file__).parent / "LightExtended.png", format="png", prog="dot")
-#
-# 	def tearDown(self) -> None:
-# 		"""Tear down test case."""
-# 		tests.helper.oh_item.remove_all_mocked_items()
-# 		self.__runner.tear_down()

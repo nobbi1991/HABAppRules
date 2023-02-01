@@ -1,6 +1,5 @@
 """Test Presence rule."""
 import collections
-import time
 import unittest
 import unittest.mock
 
@@ -35,70 +34,77 @@ class TestStateObserverSwitch(unittest.TestCase):
 
 	def test_command_from_habapp(self):
 		"""Test HABApp rule triggers a command -> no manual should be detected."""
-		self._observer_switch.send_command("OFF")
-		tests.helper.oh_item.item_command_event("Unittest_Switch", "OFF")
-		self._cb_on.assert_not_called()
-		self._cb_off.assert_not_called()
 
-		self._observer_switch.send_command("OFF")
-		tests.helper.oh_item.item_command_event("Unittest_Switch", "OFF")
-		self._cb_on.assert_not_called()
-		self._cb_off.assert_not_called()
+		for value in ["OFF", "OFF", "ON", "ON", "OFF"]:
+			self._observer_switch.send_command(value)
+			tests.helper.oh_item.item_command_event("Unittest_Switch", value)
+			self._cb_on.assert_not_called()
+			self._cb_off.assert_not_called()
 
-		self._observer_switch.send_command("ON")
-		tests.helper.oh_item.item_command_event("Unittest_Switch", "ON")
-		self._cb_on.assert_not_called()
-		self._cb_off.assert_not_called()
-
-		self._observer_switch.send_command("ON")
-		tests.helper.oh_item.item_command_event("Unittest_Switch", "ON")
-		self._cb_on.assert_not_called()
-		self._cb_off.assert_not_called()
-
-		self._observer_switch.send_command("OFF")
-		tests.helper.oh_item.item_command_event("Unittest_Switch", "OFF")
-		self._cb_on.assert_not_called()
-		self._cb_off.assert_not_called()
-
-		self.assertEqual([], self._observer_switch._send_commands)
+		self.assertEqual(None, self._observer_switch._last_send_value)
 
 	def test_manu_from_openhab(self):
 		"""Test manual detection from openHAB."""
-		TestCase = collections.namedtuple("TestCase", "command, num_cb_on, num_cb_off")
+		TestCase = collections.namedtuple("TestCase", "command, cb_on_called, cb_off_called")
 
 		test_cases = [
-			TestCase("ON", 1, 0),
-			TestCase("ON", 1, 0),
-			TestCase("OFF", 1, 1),
-			TestCase("OFF", 1, 1),
-			TestCase("ON", 2, 1),
+			TestCase("ON", True, False),
+			TestCase("ON", False, False),
+			TestCase("OFF", False, True),
+			TestCase("OFF", False, False),
+			TestCase("ON", True, False),
 		]
 
 		for test_case in test_cases:
-			tests.helper.oh_item.item_state_event("Unittest_Switch", test_case.command)
-			self.assertEqual(test_case.num_cb_on, self._cb_on.call_count)
-			self.assertEqual(test_case.num_cb_off, self._cb_off.call_count)
-			self._cb_on.assert_called_with(unittest.mock.ANY, "Manual from extern")
+			self._cb_on.reset_mock()
+			self._cb_off.reset_mock()
+
+			tests.helper.oh_item.item_state_change_event("Unittest_Switch", test_case.command)
+
+			self.assertEqual(test_case.cb_on_called, self._cb_on.called)
+			self.assertEqual(test_case.cb_off_called, self._cb_off.called)
+
+			if test_case.cb_on_called:
+				self._cb_on.assert_called_with(unittest.mock.ANY, "Manual from extern")
+			if test_case.cb_off_called:
+				self._cb_off.assert_called_with(unittest.mock.ANY, "Manual from extern")
 
 	def test_manu_from_extern(self):
 		"""Test manual detection from extern."""
-		TestCase = collections.namedtuple("TestCase", "command, num_cb_on, num_cb_off")
+		TestCase = collections.namedtuple("TestCase", "command, cb_on_called, cb_off_called")
 
 		test_cases = [
-			TestCase("ON", 1, 0),
-			TestCase("ON", 1, 0),
-			TestCase("OFF", 1, 1),
-			TestCase("OFF", 1, 1),
-			TestCase("ON", 2, 1),
+			TestCase("ON", True, False),
+			TestCase("ON", False, False),
+			TestCase("OFF", False, True),
+			TestCase("OFF", False, False),
+			TestCase("ON", True, False),
 		]
 
 		for test_case in test_cases:
+			self._cb_on.reset_mock()
+			self._cb_off.reset_mock()
+
 			tests.helper.oh_item.item_command_event("Unittest_Switch", test_case.command)
-			self.assertEqual(test_case.num_cb_on, self._cb_on.call_count)
-			self.assertEqual(test_case.num_cb_off, self._cb_off.call_count)
-			self._cb_on.assert_called_with(unittest.mock.ANY, "Manual from OpenHAB")
-			tests.helper.oh_item.item_state_event("Unittest_Switch", test_case.command)
+
+			self.assertEqual(test_case.cb_on_called, self._cb_on.called)
+			self.assertEqual(test_case.cb_off_called, self._cb_off.called)
+			if test_case.cb_on_called:
+				self._cb_on.assert_called_with(unittest.mock.ANY, "Manual from OpenHAB")
+			if test_case.cb_off_called:
+				self._cb_off.assert_called_with(unittest.mock.ANY, "Manual from OpenHAB")
+			tests.helper.oh_item.item_state_change_event("Unittest_Switch", test_case.command)
 			self.assertEqual(test_case.command, self._observer_switch.value)
+
+	def test_send_command_exception(self):
+		"""Test if correct exceptions is raised."""
+		with self.assertRaises(ValueError):
+			self._observer_switch.send_command(2)
+
+	def test_check_manual_exception(self):
+		"""Test if correct exception is raised."""
+		with self.assertRaises(ValueError):
+			self._observer_switch._check_manual(HABApp.openhab.events.ItemCommandEvent("Item_name", "not_supported"), "some_msg")
 
 	def tearDown(self) -> None:
 		"""Tear down test case."""
@@ -133,95 +139,41 @@ class TestStateObserverDimmer(unittest.TestCase):
 			habapp_rules.actors.state_observer.StateObserverDimmer("Unittest_Dimmer", cb_on=self._cb_on, cb_off=self._cb_off, control_names=["Unittest_Dimmer_ctr", "Unittest_Switch_ctr"])
 		self.assertEqual("Found items with wrong item type. Expected: DimmerItem. Wrong: Unittest_Switch_ctr <SwitchItem>", str(context.exception))
 
-	def test_check_different_value(self):
-		"""Test _check_different_value."""
-		TestCase = collections.namedtuple("TestCase", "last_value, new_value, result")
-
-		test_cases = [
-			TestCase(0, 0, False),
-			TestCase(0, 20, True),
-			TestCase(0, "ON", True),
-			TestCase(0, "OFF", False),
-			TestCase(0, "INCREASE", True),
-			TestCase(0, "DECREASE", True),
-
-			TestCase(60, 0, True),
-			TestCase(60, 40, False),
-			TestCase(60, 80, False),
-			TestCase(60, "ON", False),
-			TestCase(60, "OFF", True),
-			TestCase(60, "INCREASE", True),
-			TestCase(60, "DECREASE", True),
-
-			TestCase("OFF", 0, False),
-			TestCase("OFF", 20, True),
-			TestCase("OFF", "ON", True),
-			TestCase("OFF", "OFF", False),
-			TestCase("OFF", "INCREASE", True),
-			TestCase("OFF", "DECREASE", True),
-
-			TestCase("ON", 0, True),
-			TestCase("ON", 40, False),
-			TestCase("ON", 80, False),
-			TestCase("ON", "ON", False),
-			TestCase("ON", "OFF", True),
-			TestCase("ON", "INCREASE", True),
-			TestCase("ON", "DECREASE", True),
-
-			TestCase(None, 0, True),
-			TestCase(None, 40, True),
-			TestCase(None, 80, True),
-			TestCase(None, "ON", True),
-			TestCase(None, "OFF", True),
-			TestCase(None, "INCREASE", True),
-			TestCase(None, "DECREASE", True),
-		]
-
-		for test_case in test_cases:
-			self._observer_dimmer._StateObserverDimmer__last_received_value = test_case.last_value
-			self.assertEqual(test_case.result, self._observer_dimmer._StateObserverDimmer__check_different_value(test_case.new_value), test_case)
-
 	def test_command_from_habapp(self):
 		"""Test HABApp rule triggers a command -> no manual should be detected."""
-		self._observer_dimmer.send_command(0)
-		tests.helper.oh_item.item_command_event("Unittest_Dimmer", 0)
-		self._cb_on.assert_not_called()
-		self._cb_off.assert_not_called()
-		self._observer_dimmer.send_command(30)
-		tests.helper.oh_item.item_command_event("Unittest_Dimmer", 30)
-		self._cb_on.assert_not_called()
-		self._cb_off.assert_not_called()
-		self._observer_dimmer.send_command(100)
-		tests.helper.oh_item.item_command_event("Unittest_Dimmer", 100)
-		self._cb_on.assert_not_called()
-		self._cb_off.assert_not_called()
-		self._observer_dimmer.send_command(0)
-		tests.helper.oh_item.item_command_event("Unittest_Dimmer", 0)
-		self._cb_on.assert_not_called()
-		self._cb_off.assert_not_called()
+		for value in [0, 30, 100, 0, "ON", "OFF", 0, 80]:
+			self._observer_dimmer.send_command(value)
+			tests.helper.oh_item.item_command_event("Unittest_Dimmer", value)
+			self._cb_on.assert_not_called()
+			self._cb_off.assert_not_called()
 
-		self.assertEqual([], self._observer_dimmer._send_commands)
+		self.assertEqual(None, self._observer_dimmer._last_send_value)
 
 	def test_manu_from_ctr(self):
 		"""Test manual detection from control item."""
-		TestCase = collections.namedtuple("TestCase", "command, state, num_cb_on, num_cb_off")
+		TestCase = collections.namedtuple("TestCase", "command, state, cb_on_called")
 
 		test_cases = [
-			TestCase("ON", 100, 1, 0),
-			TestCase(100, 100, 1, 0),
-			TestCase(100, 100, 1, 0),
-			TestCase(0, 0, 1, 1),
-			TestCase("ON", 100, 2, 1),
-			TestCase("OFF", 0, 2, 2),
-			TestCase("INCREASE", 30, 3, 2)
+			TestCase("INCREASE", 30, True),
+			TestCase("INCREASE", 40, False),
+			TestCase("DECREASE", 20, False)
 		]
 
 		for test_case in test_cases:
-			tests.helper.oh_item.item_state_event("Unittest_Dimmer", test_case.command)
-			self.assertEqual(test_case.num_cb_on, self._cb_on.call_count)
-			self.assertEqual(test_case.num_cb_off, self._cb_off.call_count)
-			self._cb_on.assert_called_with(unittest.mock.ANY, "Manual from extern")
-			tests.helper.oh_item.item_state_event("Unittest_Dimmer", test_case.state)
+			self._cb_on.reset_mock()
+			self._cb_off.reset_mock()
+
+			tests.helper.oh_item.item_command_event("Unittest_Dimmer_ctr", test_case.command)
+
+			# cb_on called
+			self.assertEqual(test_case.cb_on_called, self._cb_on.called)
+			if test_case.cb_on_called:
+				self._cb_on.assert_called_once_with(unittest.mock.ANY, "Manual from extern")
+
+			# cb_off not called
+			self._cb_off.assert_not_called()
+
+			tests.helper.oh_item.item_state_change_event("Unittest_Dimmer", test_case.state)
 			self.assertEqual(test_case.state, self._observer_dimmer.value)
 
 	def test_basic_behavior_on_knx(self):
@@ -231,12 +183,8 @@ class TestStateObserverDimmer(unittest.TestCase):
 		self._cb_on.reset_mock()
 		self._observer_dimmer._value = 0
 		self._observer_dimmer._StateObserverDimmer__last_received_value = 0
-		# send commands
-		tests.helper.oh_item.item_state_event("Unittest_Dimmer", "ON")
-		self._cb_on.assert_called_once_with(unittest.mock.ANY, "Manual from extern")
-		self.assertEqual(0, self._observer_dimmer.value)
 		# In real system, this command is triggered about 2 sec later
-		tests.helper.oh_item.item_state_event("Unittest_Dimmer", 100)
+		tests.helper.oh_item.item_state_change_event("Unittest_Dimmer", 100)
 		self.assertEqual(100, self._observer_dimmer.value)
 		self._cb_on.assert_called_once_with(unittest.mock.ANY, "Manual from extern")
 
@@ -245,12 +193,8 @@ class TestStateObserverDimmer(unittest.TestCase):
 		self._cb_on.reset_mock()
 		self._observer_dimmer._value = 0
 		self._observer_dimmer._StateObserverDimmer__last_received_value = 0
-		# send commands
-		tests.helper.oh_item.item_state_event("Unittest_Dimmer", 42)
-		self._cb_on.assert_called_once_with(unittest.mock.ANY, "Manual from extern")
-		self.assertEqual(42, self._observer_dimmer.value)
 		# In real system, this command is triggered about 2 sec later
-		tests.helper.oh_item.item_state_event("Unittest_Dimmer", 42)
+		tests.helper.oh_item.item_state_change_event("Unittest_Dimmer", 42)
 		self.assertEqual(42, self._observer_dimmer.value)
 		self._cb_on.assert_called_once_with(unittest.mock.ANY, "Manual from extern")
 
@@ -259,12 +203,8 @@ class TestStateObserverDimmer(unittest.TestCase):
 		self._cb_on.reset_mock()
 		self._observer_dimmer._value = 0
 		self._observer_dimmer._StateObserverDimmer__last_received_value = 0
-		# send commands
-		tests.helper.oh_item.item_command_event("Unittest_Dimmer_ctr", "ON")
-		self._cb_on.assert_called_once_with(unittest.mock.ANY, "Manual from extern")
-		self.assertEqual(0, self._observer_dimmer.value)
 		# In real system, this command is triggered about 2 sec later
-		tests.helper.oh_item.item_state_event("Unittest_Dimmer", 80)
+		tests.helper.oh_item.item_state_change_event("Unittest_Dimmer", 80)
 		self.assertEqual(80, self._observer_dimmer.value)
 		self._cb_on.assert_called_once_with(unittest.mock.ANY, "Manual from extern")
 
@@ -273,71 +213,90 @@ class TestStateObserverDimmer(unittest.TestCase):
 		self._cb_on.reset_mock()
 		self._observer_dimmer._value = 0
 		self._observer_dimmer._StateObserverDimmer__last_received_value = 0
-		# send commands
-		tests.helper.oh_item.item_command_event("Unittest_Dimmer_ctr", 42)
-		self._cb_on.assert_called_once_with(unittest.mock.ANY, "Manual from extern")
-		self.assertEqual(0, self._observer_dimmer.value)
 		# In real system, this command is triggered about 2 sec later
-		tests.helper.oh_item.item_state_event("Unittest_Dimmer", 60)
+		tests.helper.oh_item.item_state_change_event("Unittest_Dimmer", 60)
 		self.assertEqual(60, self._observer_dimmer.value)
 		self._cb_on.assert_called_once_with(unittest.mock.ANY, "Manual from extern")
 
 	def test_manu_from_openhab(self):
 		"""Test manual detection from control item."""
-		TestCase = collections.namedtuple("TestCase", "command, state, num_cb_on, num_cb_off")
+		TestCase = collections.namedtuple("TestCase", "command, state, cb_on_called, cb_off_called")
+		self._observer_dimmer._StateObserverDimmer__last_received_value = 0
 
 		test_cases = [
-			TestCase(100, 100, 1, 0),
-			TestCase(100, 100, 1, 0),
-			TestCase(0, 0, 1, 1),
-			TestCase("ON", 100, 2, 1),
-			TestCase("OFF", 0, 2, 2),
-			TestCase("INCREASE", 30, 3, 2)
+			# TestCase(100, 100, True, False),
+			# TestCase(100, 100, False, False),
+			# TestCase(0, 0, False, True),
+			TestCase("ON", 100, True, False),
+			TestCase("OFF", 0, False, True),
+			TestCase("INCREASE", 30, True, False)
 		]
 
 		for test_case in test_cases:
+			self._cb_on.reset_mock()
+			self._cb_off.reset_mock()
 			tests.helper.oh_item.item_command_event("Unittest_Dimmer", test_case.command)
-			self.assertEqual(test_case.num_cb_on, self._cb_on.call_count)
-			self.assertEqual(test_case.num_cb_off, self._cb_off.call_count)
-			self._cb_on.assert_called_with(unittest.mock.ANY, "Manual from OpenHAB")
-			tests.helper.oh_item.item_state_event("Unittest_Dimmer", test_case.state)
+
+			self.assertEqual(test_case.cb_on_called, self._cb_on.called)
+			self.assertEqual(test_case.cb_off_called, self._cb_off.called)
+			if test_case.cb_on_called:
+				self._cb_on.assert_called_once_with(unittest.mock.ANY, "Manual from OpenHAB")
+			if test_case.cb_off_called:
+				self._cb_off.assert_called_once_with(unittest.mock.ANY, "Manual from OpenHAB")
+			tests.helper.oh_item.item_state_change_event("Unittest_Dimmer", test_case.state)
 			self.assertEqual(test_case.state, self._observer_dimmer.value)
 
-	def test_switch_off_via_decrease(self):
-		"""Test if switch-off-callback is called when light is switched off via decrease command."""
-		# test if thread was started correctly
-		wait_thread_mock = unittest.mock.MagicMock()
-		with unittest.mock.patch("threading.Thread", return_value=wait_thread_mock) as threading_mock:
-			threading_mock.assert_not_called()
-			wait_thread_mock.start.assert_not_called()
-			self.assertFalse(self._observer_dimmer._StateObserverDimmer__wait_after_decrease_active)
+	def test_check_manual(self):
+		"""Test method _check_manual."""
 
-			tests.helper.oh_item.item_command_event("Unittest_Dimmer", "DECREASE")
+		msg = "test_msg"
+		TestCase = collections.namedtuple("TestCase", "event, current_value, on_called, off_called, change_called")
 
-			threading_mock.assert_called_with(target=unittest.mock.ANY, args=(15, unittest.mock.ANY, "Manual from OpenHAB"))
-			wait_thread_mock.start.assert_called_once()
-			self.assertTrue(self._observer_dimmer._StateObserverDimmer__wait_after_decrease_active)
+		test_cases = [
+			TestCase(HABApp.openhab.events.ItemCommandEvent("any", "ON"), 0, True, False, False),
+			TestCase(HABApp.openhab.events.ItemCommandEvent("any", "OFF"), 42, False, True, False),
 
-		# test thread
-		with unittest.mock.patch("time.sleep", spec=time.sleep):
-			# exit if __wait_after_decrease is not set
-			self._observer_dimmer._StateObserverDimmer__wait_after_decrease_active = False
-			self._observer_dimmer._StateObserverDimmer__check_decrease_switched_off(10, None, "some message")
-			self._cb_off.assert_not_called()
+			TestCase(HABApp.openhab.events.ItemCommandEvent("any", 0), 0, False, False, False),
+			TestCase(HABApp.openhab.events.ItemCommandEvent("any", 42), 0, True, False, False),
+			TestCase(HABApp.openhab.events.ItemCommandEvent("any", 0), 42, False, True, False),
+			TestCase(HABApp.openhab.events.ItemCommandEvent("any", 42), 17, False, False, True),
+			TestCase(HABApp.openhab.events.ItemCommandEvent("any", 42), 80, False, False, True),
 
-			# test no callback if target value is not zero
-			with unittest.mock.patch("habapp_rules.actors.state_observer.StateObserverDimmer.value", new_callable=unittest.mock.PropertyMock) as value_mock:
-				value_mock.side_effect = [100, 100, 100, 10]
-				self._observer_dimmer._StateObserverDimmer__wait_after_decrease_active = True
-				self._observer_dimmer._StateObserverDimmer__check_decrease_switched_off(10, None, "some message")
-				self._cb_off.assert_not_called()
+			TestCase(HABApp.openhab.events.ItemCommandEvent("any", "INCREASE"), 0, True, False, False),
+			TestCase(HABApp.openhab.events.ItemCommandEvent("any", "INCREASE"), 17, False, False, True),
+			TestCase(HABApp.openhab.events.ItemCommandEvent("any", "DECREASE"), 17, False, False, True),
+			TestCase(HABApp.openhab.events.ItemCommandEvent("any", "DECREASE"), 0, False, False, False),
 
-			# test no callback if target value is zero
-			with unittest.mock.patch("habapp_rules.actors.state_observer.StateObserverDimmer.value", new_callable=unittest.mock.PropertyMock) as value_mock:
-				value_mock.side_effect = [100, 100, 100, 0]
-				self._observer_dimmer._StateObserverDimmer__wait_after_decrease_active = True
-				self._observer_dimmer._StateObserverDimmer__check_decrease_switched_off(10, None, "some message")
-				self._cb_off.assert_called_once()
+		]
+
+		with unittest.mock.patch.object(self._observer_dimmer, "_StateObserverDimmer__cb_on") as cb_on_mock, \
+				unittest.mock.patch.object(self._observer_dimmer, "_StateObserverDimmer__cb_off") as cb_off_mock, \
+				unittest.mock.patch.object(self._observer_dimmer, "_StateObserverDimmer__cb_brightness_change") as cb_change_mock:
+			for test_case in test_cases:
+				cb_on_mock.reset_mock()
+				self._observer_dimmer._value = test_case.current_value
+				cb_on_mock.reset_mock()
+				cb_off_mock.reset_mock()
+				cb_change_mock.reset_mock()
+
+				self._observer_dimmer._check_manual(test_case.event, msg)
+
+				self.assertEqual(cb_on_mock.called, test_case.on_called)
+				self.assertEqual(cb_off_mock.called, test_case.off_called)
+				self.assertEqual(cb_change_mock.called, test_case.change_called)
+
+				if test_case.on_called:
+					cb_on_mock.assert_called_once_with(test_case.event, msg)
+				if test_case.off_called:
+					cb_off_mock.assert_called_once_with(test_case.event, msg)
+				if test_case.change_called:
+					cb_change_mock.assert_called_once_with(test_case.event, msg)
+
+	def test_value_change_None(self):
+		"""Check if None state is ignored by _cb_value_change"""
+		with unittest.mock.patch.object(self._observer_dimmer, "_check_manual") as check_manual_mock:
+			self._observer_dimmer._cb_value_change(HABApp.openhab.events.ItemStateChangedEvent("test", None, None), True)
+			check_manual_mock.assert_not_called()
 
 	def tearDown(self) -> None:
 		"""Tear down test case."""

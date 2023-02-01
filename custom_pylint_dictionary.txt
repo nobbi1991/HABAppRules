@@ -1,10 +1,12 @@
 autoupdate
+config
 dataclass
 enums
 init
 KNX
 msg
 png
+pre
 pragma
 smtp
 unittest

@@ -1,3 +1,9 @@
+# Version 2.1.0 - dd.mm.yyyy
+
+## Features
+
+- Added ``actors.light`` to control lights
+
 # Version 2.0.0 - 10.11.2022
 
 ## General
