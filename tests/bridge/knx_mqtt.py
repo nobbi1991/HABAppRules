@@ -65,7 +65,7 @@ class TestLight(unittest.TestCase):
 
 	def test_knx_not_supported(self):
 		"""Test not supported command coming from KNX."""
-		with unittest.mock.patch("habapp_rules.bridge.knx_mqtt.habapp_log") as logger_mock:
+		with unittest.mock.patch("habapp_rules.bridge.knx_mqtt.LOGGER") as logger_mock:
 			tests.helper.oh_item.item_command_event("Unittest_KNX_Dimmer_ctr", "NotSupported")
 			logger_mock.error.assert_called_once_with("command 'NotSupported' ist not supported!")
 
