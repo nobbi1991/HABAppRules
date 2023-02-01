@@ -10,7 +10,7 @@ import HABApp.util
 import habapp_rules.common.state_machine_rule
 import habapp_rules.common.helper
 
-LOGGER = logging.getLogger("HABApp.sleep")
+LOGGER = logging.getLogger(f"HABApp.{__name__}")
 LOGGER.setLevel("DEBUG")
 
 
@@ -76,6 +76,7 @@ class Sleep(habapp_rules.common.state_machine_rule.StateMachineRule):
 		self.__item_sleep_request.listen_event(self._cb_sleep_request, HABApp.openhab.events.ItemStateChangedEventFilter())
 		if self.__item_lock_request is not None:
 			self.__item_lock_request.listen_event(self._cb_lock_request, HABApp.openhab.events.ItemStateChangedEventFilter())
+		LOGGER.debug(f"Init of sleep rule {self.rule_name} was successful. Initial state = {self.state}")
 
 	def _get_initial_state(self, default_value: str = "awake") -> str:
 		"""Get initial state of state machine.
@@ -97,7 +98,7 @@ class Sleep(habapp_rules.common.state_machine_rule.StateMachineRule):
 
 	@property
 	def sleep_request_active(self) -> bool:
-		"""Check if a lock request is active
+		"""Check if a sleep request is active
 
 		:return: return true if lock request is active
 		"""
@@ -159,12 +160,14 @@ class Sleep(habapp_rules.common.state_machine_rule.StateMachineRule):
 		:param event: Item state change event of sleep_request item
 		"""
 		if event.value == "ON" and self.state == "awake":
+			LOGGER.debug("Start sleeping through sleep switch")
 			self._sleep_request_active = True
 			self.start_sleeping()
 		elif event.value == "ON" and self.state == "locked":
 			self._sleep_request_active = False
 			self.__item_sleep_request.oh_send_command("OFF")
 		elif event.value == "OFF" and self.state in {"sleeping", "pre_sleeping"}:
+			LOGGER.debug("End sleeping through sleep switch")
 			self._sleep_request_active = True
 			self.end_sleeping()
 

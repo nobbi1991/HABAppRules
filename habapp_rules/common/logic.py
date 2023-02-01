@@ -6,7 +6,7 @@ import HABApp
 
 import habapp_rules.common.helper
 
-habapp_log = logging.getLogger(f"HABApp.{__name__}")
+LOGGER = logging.getLogger(f"HABApp.{__name__}")
 
 
 class _Base(HABApp.Rule):
@@ -38,7 +38,7 @@ class _Base(HABApp.Rule):
 				self._input_items.append(input_item)
 				input_item.listen_event(self._cb_input_event, HABApp.openhab.events.ItemStateEventFilter())
 			else:
-				habapp_log.error(f"Item '{name}' must have the same type like the output item. Expected: {type(self._output_item)} | actual : {type(input_item)}")
+				LOGGER.error(f"Item '{name}' must have the same type like the output item. Expected: {type(self._output_item)} | actual : {type(input_item)}")
 
 		self._cb_input_event(None)
 

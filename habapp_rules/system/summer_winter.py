@@ -6,7 +6,7 @@ import statistics
 
 import HABApp
 
-LOGGER = logging.getLogger("HABApp.summer_winter")
+LOGGER = logging.getLogger(f"HABApp.{__name__}")
 
 
 class SummerWinterException(Exception):
@@ -93,9 +93,12 @@ class SummerWinter(HABApp.Rule):
 		if len(values) <= self._days * 0.5:
 			raise SummerWinterException(f"Not enough values to detect summer/winter. Expected: {self._days} | actual: {len(values)}")
 
-		if statistics.mean(values) > self.__get_threshold_with_hysteresis():
-			return True
-		return False
+		is_summer = False
+		if (mean_value := statistics.mean(values)) > (threshold := self.__get_threshold_with_hysteresis()):
+			is_summer = True
+
+		LOGGER.debug(f"Check Summer/Winter. values = {values} | mean = {mean_value} | threshold = {threshold} | summer = {is_summer}")
+		return is_summer
 
 	def _cb_update_summer(self) -> None:
 		"""Callback to update the summer item."""

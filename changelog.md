@@ -1,4 +1,8 @@
-# Version 2.0.2 - 01.02.2023
+# Version 2.1.0 - 01.02.2023
+
+## Features
+
+- Added more logging to `habapp_rules.system.sleep.Sleep`, `habapp_rules.system.presence.Presence`, `habapp_rules.system.summer_winter.SummerWinter`
 
 ## Bugfix
 
