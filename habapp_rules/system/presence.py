@@ -83,7 +83,7 @@ class Presence(habapp_rules.common.state_machine_rule.StateMachineRule):
 
 			if self.__presence_item.value == "ON":
 				return "leaving"
-			return "absence"
+			return "long_absence" if self._item_state.value == "long_absence" else "absence"
 
 		if self.__leaving_item.value == "ON":
 			return "leaving"
@@ -92,7 +92,7 @@ class Presence(habapp_rules.common.state_machine_rule.StateMachineRule):
 			return "presence"
 
 		if self.__presence_item.value == "OFF":
-			return "absence"
+			return "long_absence" if self._item_state.value == "long_absence" else "absence"
 
 		return default_value
 

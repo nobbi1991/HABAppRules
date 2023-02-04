@@ -1,3 +1,9 @@
+# Version 2.1.1 - 04.02.2023
+
+## Bugfix
+
+- Fixed bug of `habapp_rules.system.presence.Presence` where `long_absence` would be set to `absence ` if there was an restart of HABApp 
+
 # Version 2.1.0 - 01.02.2023
 
 ## Features

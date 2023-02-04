@@ -149,9 +149,25 @@ class TestPresence(unittest.TestCase):
 			self._presence._Presence__leaving_item.value = testcase.leaving
 
 			self._presence._Presence__outside_door_items = [HABApp.openhab.items.ContactItem(f"Unittest_Door{idx}", state) for idx, state in enumerate(testcase.outside_doors)]
-			self._presence._Presence__phone_items = [HABApp.openhab.items.SwitchItem(f"Unittest_Door{idx}", state) for idx, state in enumerate(testcase.phones)]
+			self._presence._Presence__phone_items = [HABApp.openhab.items.SwitchItem(f"Unittest_Phone{idx}", state) for idx, state in enumerate(testcase.phones)]
 
 			self.assertEqual(self._presence._get_initial_state("default"), testcase.expected_result, f"failed testcase: {testcase}")
+
+	def test_get_initial_state_extra(self):
+		"""Test getting correct initial state for special cases."""
+		# current state value is long_absence
+		self._presence._Presence__presence_item.value = "OFF"
+		self._presence._Presence__leaving_item.value = "OFF"
+		self._presence._item_state.value = "long_absence"
+		self._presence._Presence__outside_door_items = []
+
+		# no phones
+		self._presence._Presence__phone_items = []
+		self.assertEqual(self._presence._get_initial_state("default"), "long_absence")
+
+		# with phones
+		self._presence._Presence__phone_items = [HABApp.openhab.items.SwitchItem("Unittest_Phone1}")]
+		self.assertEqual(self._presence._get_initial_state("default"), "long_absence")
 
 	def test_presence_trough_doors(self):
 		"""Test if outside doors set presence correctly."""
