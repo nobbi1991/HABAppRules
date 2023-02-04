@@ -1,3 +1,10 @@
+# Version 2.1.1 - 04.02.2023
+
+## Bugfix
+
+- Fixed bug of `habapp_rules.system.presence.Presence` where `long_absence` would be set to `absence ` if there was an restart of HABApp
+- Fixed bug of `habapp_rules.system.presence.Presence` where it was not possible to change state to `leaving` from `absence` or `long_absence` by leaving-switch
+
 # Version 2.1.0 - 01.02.2023
 
 ## Features
