@@ -205,6 +205,15 @@ class TestPresence(unittest.TestCase):
 		tests.helper.timer.call_timeout(self.transitions_timer_mock)
 		self.assertEqual(self._presence.state, "absence")
 
+		# leaving switches to on again -> state should be leaving again
+		tests.helper.oh_item.send_command("Unittest_Leaving", "ON", "OFF")
+		self.assertEqual(self._presence.state, "leaving")
+
+		# test if also long absence is working
+		self._presence.state = "long_absence"
+		tests.helper.oh_item.send_command("Unittest_Leaving", "ON", "OFF")
+		self.assertEqual(self._presence.state, "leaving")
+
 	def test_abort_leaving(self):
 		"""Test aborting of leaving state."""
 		self._presence.state_machine.set_state("presence")

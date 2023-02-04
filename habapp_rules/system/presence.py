@@ -29,7 +29,7 @@ class Presence(habapp_rules.common.state_machine_rule.StateMachineRule):
 
 	trans = [
 		{"trigger": "presence_detected", "source": ["absence", "long_absence"], "dest": "presence"},
-		{"trigger": "leaving_detected", "source": "presence", "dest": "leaving"},
+		{"trigger": "leaving_detected", "source": ["presence", "absence", "long_absence"], "dest": "leaving"},
 		{"trigger": "abort_leaving", "source": "leaving", "dest": "presence"},
 		{"trigger": "absence_detected", "source": ["presence", "leaving"], "dest": "absence"},
 		{"trigger": "long_absence_detected", "source": "absence", "dest": "long_absence"},
@@ -121,7 +121,7 @@ class Presence(habapp_rules.common.state_machine_rule.StateMachineRule):
 
 		:param event: Item state change event of leaving item
 		"""
-		if event.value == "ON" and self.state == "presence":
+		if event.value == "ON" and self.state in {"presence", "absence", "long_absence"}:
 			LOGGER.debug("Start leaving through leaving switch")
 			self.leaving_detected()
 		if event.value == "OFF" and self.state == "leaving":
