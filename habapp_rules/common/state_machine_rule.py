@@ -63,7 +63,7 @@ class StateMachineRule(HABApp.Rule):
 		time.sleep(0.05)
 		return HABApp.openhab.items.OpenhabItem.get_item(name)
 
-	def _get_initial_state(self, default_value: str) -> str:
+	def _get_initial_state(self, default_value: str = "initial") -> str:
 		"""Get initial state of state machine.
 
 		:param default_value: default / initial state
@@ -72,6 +72,13 @@ class StateMachineRule(HABApp.Rule):
 		if self._item_state.value and self._item_state.value in [item.get("name", None) for item in self.states if isinstance(item, dict)]:
 			return self._item_state.value
 		return default_value
+
+	def _set_initial_state(self) -> None:
+		"""Set initial state.
+		if the ``initial_state`` parameter of the state machine constructor is used the timeouts will not be started for the initial state.
+		"""
+		initial_state = self._get_initial_state()
+		eval(f"self.to_{initial_state}()")  # pylint: disable=eval-used
 
 	def _update_openhab_state(self) -> None:
 		"""Update OpenHAB state item. This should method should be set to "after_state_change" of the state machine."""

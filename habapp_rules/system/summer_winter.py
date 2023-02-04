@@ -6,7 +6,7 @@ import statistics
 
 import HABApp
 
-LOGGER = logging.getLogger("HABApp.summer_winter")
+LOGGER = logging.getLogger(f"HABApp.{__name__}")
 
 
 class SummerWinterException(Exception):
@@ -24,7 +24,7 @@ class SummerWinter(HABApp.Rule):
 		:param persistence_service: Name of persistence service
 		:param days: number of days in the past which will be used to check if it is summer
 		:param temperature_threshold: threshold weighted temperature for summer
-		:param last_check_name: Name of last check item. OpenHAB-Type must be String item
+		:param last_check_name: Name of last check item. OpenHAB-Type must be DateTime item
 		"""
 		super().__init__()
 
@@ -37,7 +37,7 @@ class SummerWinter(HABApp.Rule):
 		# get items
 		self._outside_temp_item = HABApp.openhab.items.NumberItem.get_item(outside_temperature_name)
 		self._item_summer = HABApp.openhab.items.SwitchItem.get_item(summer_name)
-		self._item_last_check = HABApp.openhab.items.DatetimeItem.get_item(summer_name) if last_check_name else None
+		self._item_last_check = HABApp.openhab.items.DatetimeItem.get_item(last_check_name) if last_check_name else None
 
 		# run at init and every day at 23:00
 		self.run.soon(self._cb_update_summer)
@@ -93,9 +93,12 @@ class SummerWinter(HABApp.Rule):
 		if len(values) <= self._days * 0.5:
 			raise SummerWinterException(f"Not enough values to detect summer/winter. Expected: {self._days} | actual: {len(values)}")
 
-		if statistics.mean(values) > self.__get_threshold_with_hysteresis():
-			return True
-		return False
+		is_summer = False
+		if (mean_value := statistics.mean(values)) > (threshold := self.__get_threshold_with_hysteresis()):
+			is_summer = True
+
+		LOGGER.debug(f"Check Summer/Winter. values = {values} | mean = {mean_value} | threshold = {threshold} | summer = {is_summer}")
+		return is_summer
 
 	def _cb_update_summer(self) -> None:
 		"""Callback to update the summer item."""

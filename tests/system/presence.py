@@ -63,7 +63,7 @@ class TestPresence(unittest.TestCase):
 	def test_enums(self):
 		"""Test if all enums from __init__.py are implemented"""
 		implemented_states = list(self._presence.state_machine.states)
-		enum_states = [state.value for state in habapp_rules.system.PresenceState]
+		enum_states = [state.value for state in habapp_rules.system.PresenceState] + ["initial"]
 		self.assertEqual(len(enum_states), len(implemented_states))
 		self.assertTrue(all(state in enum_states for state in implemented_states))
 
@@ -149,9 +149,25 @@ class TestPresence(unittest.TestCase):
 			self._presence._Presence__leaving_item.value = testcase.leaving
 
 			self._presence._Presence__outside_door_items = [HABApp.openhab.items.ContactItem(f"Unittest_Door{idx}", state) for idx, state in enumerate(testcase.outside_doors)]
-			self._presence._Presence__phone_items = [HABApp.openhab.items.SwitchItem(f"Unittest_Door{idx}", state) for idx, state in enumerate(testcase.phones)]
+			self._presence._Presence__phone_items = [HABApp.openhab.items.SwitchItem(f"Unittest_Phone{idx}", state) for idx, state in enumerate(testcase.phones)]
 
 			self.assertEqual(self._presence._get_initial_state("default"), testcase.expected_result, f"failed testcase: {testcase}")
+
+	def test_get_initial_state_extra(self):
+		"""Test getting correct initial state for special cases."""
+		# current state value is long_absence
+		self._presence._Presence__presence_item.value = "OFF"
+		self._presence._Presence__leaving_item.value = "OFF"
+		self._presence._item_state.value = "long_absence"
+		self._presence._Presence__outside_door_items = []
+
+		# no phones
+		self._presence._Presence__phone_items = []
+		self.assertEqual(self._presence._get_initial_state("default"), "long_absence")
+
+		# with phones
+		self._presence._Presence__phone_items = [HABApp.openhab.items.SwitchItem("Unittest_Phone1}")]
+		self.assertEqual(self._presence._get_initial_state("default"), "long_absence")
 
 	def test_presence_trough_doors(self):
 		"""Test if outside doors set presence correctly."""
@@ -188,6 +204,15 @@ class TestPresence(unittest.TestCase):
 		# call timeout and check if absence is active
 		tests.helper.timer.call_timeout(self.transitions_timer_mock)
 		self.assertEqual(self._presence.state, "absence")
+
+		# leaving switches to on again -> state should be leaving again
+		tests.helper.oh_item.send_command("Unittest_Leaving", "ON", "OFF")
+		self.assertEqual(self._presence.state, "leaving")
+
+		# test if also long absence is working
+		self._presence.state = "long_absence"
+		tests.helper.oh_item.send_command("Unittest_Leaving", "ON", "OFF")
+		self.assertEqual(self._presence.state, "leaving")
 
 	def test_abort_leaving(self):
 		"""Test aborting of leaving state."""
