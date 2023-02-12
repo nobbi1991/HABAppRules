@@ -1,3 +1,6 @@
+"""Exceptions for HabAppRules."""
+
+
 class HabAppRulesException(Exception):
 	"""Exception which is raised by this package."""
 

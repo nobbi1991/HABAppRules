@@ -1,3 +1,5 @@
+"""Configuration of lights."""
+
 import collections.abc
 import dataclasses
 import logging
@@ -19,17 +21,26 @@ BrightnessTypes = typing.Union[list[typing.Union[float, bool]], float, bool]
 
 @dataclasses.dataclass
 class BrightnessTimeout:
+	"""Define brightness and timeout for light states."""
 	brightness: int | bool
 	timeout: float
 
 	def __post_init__(self):
-		"""Check if all values where set correct."""
+		"""Check if all values where set correct.
+
+		:raises habapp_rules.common.exceptions.HabAppRulesConfigurationException: if config is not valid."""
+		if self.brightness is False:
+			# Default if the light should be switched off e.g. for leaving / sleeping
+			self.timeout = 0.5
+			return
+
 		if not self.brightness or not self.timeout:
-			raise habapp_rules.common.exceptions.HabAppRulesConfigurationException
+			raise habapp_rules.common.exceptions.HabAppRulesConfigurationException(f"Brightness and timeout are not valid: brightness = {self.brightness} | timeout = {self.timeout}")
 
 
 @dataclasses.dataclass
 class FunctionConfig:
+	"""Define brightness and timeout values for one function."""
 	day: BrightnessTimeout | None
 	night: BrightnessTimeout | None
 	sleeping: BrightnessTimeout | None
@@ -37,6 +48,7 @@ class FunctionConfig:
 
 @dataclasses.dataclass
 class LightConfig:
+	"""Configuration for basic lights"""
 	on: FunctionConfig  # pylint: disable=invalid-name
 	pre_off: FunctionConfig | None
 	leaving: FunctionConfig | None
@@ -44,10 +56,13 @@ class LightConfig:
 	pre_sleep_prevent: collections.abc.Callable[[], bool] | HABApp.openhab.items.OpenhabItem | None = None
 
 	def __post_init__(self):
-		if not all(dataclasses.asdict(self.on).values()):
+		"""Check if light config is correct.
+
+		:raises habapp_rules.common.exceptions.HabAppRulesConfigurationException: if config is not correct."""
+		if not self.on or not all(dataclasses.asdict(self.on).values()):
 			raise habapp_rules.common.exceptions.HabAppRulesConfigurationException("For function 'on' all brightness / timeout values must be set.")
 
-		if self.pre_sleep.sleeping:
+		if getattr(self.pre_sleep, "sleeping", None):
 			LOGGER.warning("It's not allowed to set brightness / timeout for pre_sleep.sleeping. Set it to None")
 			self.pre_sleep.sleeping = None
 
@@ -55,7 +70,7 @@ class LightConfig:
 CONFIG_DEFAULT = LightConfig(
 	on=FunctionConfig(day=BrightnessTimeout(True, 600), night=BrightnessTimeout(80, 180), sleeping=BrightnessTimeout(20, 60)),
 	pre_off=FunctionConfig(day=BrightnessTimeout(50, 10), night=BrightnessTimeout(40, 7), sleeping=BrightnessTimeout(10, 7)),
-	leaving=FunctionConfig(day=None, night=None, sleeping=None),
+	leaving=FunctionConfig(day=BrightnessTimeout(False, 0), night=BrightnessTimeout(False, 0), sleeping=BrightnessTimeout(False, 0)),
 	pre_sleep=FunctionConfig(day=None, night=None, sleeping=None),
 )
 

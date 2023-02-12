@@ -69,7 +69,7 @@ def send_command(item_name: str, new_value: StateTypes, old_value: StateTypes = 
 	"""
 	set_state(item_name, new_value)
 	if old_value and old_value != new_value:
-		HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateChangedEvent(item_name, new_value, "OFF"))
+		HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateChangedEvent(item_name, new_value, old_value))
 	HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateEvent(item_name, new_value))
 
 

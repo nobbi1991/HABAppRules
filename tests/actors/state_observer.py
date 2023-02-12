@@ -292,7 +292,7 @@ class TestStateObserverDimmer(unittest.TestCase):
 				if test_case.change_called:
 					cb_change_mock.assert_called_once_with(test_case.event, msg)
 
-	def test_value_change_None(self):
+	def test_value_change_none(self):
 		"""Check if None state is ignored by _cb_value_change"""
 		with unittest.mock.patch.object(self._observer_dimmer, "_check_manual") as check_manual_mock:
 			self._observer_dimmer._cb_value_change(HABApp.openhab.events.ItemStateChangedEvent("test", None, None), True)

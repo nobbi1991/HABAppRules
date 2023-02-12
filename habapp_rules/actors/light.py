@@ -25,6 +25,7 @@ BrightnessTypes = typing.Union[list[typing.Union[float, bool]], float, bool]
 
 # todo check what happens if timeout value changes. e.g. day to night change and timeout_day = 100 and timeout_night = 5: will the day timeout finish or will it take the night timeout?!
 # todo check if it is possible to configure for leaving/sleeping: No Change / force ON / force OFF / force special value
+# todo add new state `post_sleep`
 
 
 # pylint: disable=no-member,too-many-instance-attributes
@@ -136,7 +137,7 @@ class Light(habapp_rules.common.state_machine_rule.StateMachineRule):
 				return "auto_presleep"
 			if self._leaving_configured():
 				return "auto_leaving"
-			return "auto_off"
+			return "auto_on"
 		return "auto_off"
 
 	def _set_initial_state(self) -> None:
@@ -196,23 +197,24 @@ class Light(habapp_rules.common.state_machine_rule.StateMachineRule):
 
 	def _set_timeouts(self) -> None:
 		"""Set timeouts depending on the current day/night/sleep state."""
-		sleeping_active = self._item_sleeping_state.value in (habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value)
+		sleeping_active = self._item_sleeping_state.value == habapp_rules.system.SleepState.SLEEPING.value
 
 		if sleeping_active:
 			self._timeout_on = self._config.on.sleeping.timeout
-			self._timeout_pre_off = getattr(self._config.pre_off.sleeping, "timeout", None)
-			self._timeout_leaving = getattr(self._config.leaving.sleeping, "timeout", None)
+			self._timeout_pre_off = getattr(self._config.pre_off.sleeping if self._config.pre_off else None, "timeout", None)
+			self._timeout_leaving = getattr(self._config.leaving.sleeping if self._config.leaving else None, "timeout", None)
+			self._timeout_pre_sleep = None
 
 		elif bool(self._item_day):
 			self._timeout_on = self._config.on.day.timeout
-			self._timeout_pre_off = getattr(self._config.pre_off.day, "timeout", None)
-			self._timeout_leaving = getattr(self._config.leaving.day, "timeout", None)
-			self._timeout_pre_sleep = getattr(self._config.pre_sleep.day, "timeout", None)
+			self._timeout_pre_off = getattr(self._config.pre_off.day if self._config.pre_off else None, "timeout", None)
+			self._timeout_leaving = getattr(self._config.leaving.day if self._config.leaving else None, "timeout", None)
+			self._timeout_pre_sleep = getattr(self._config.pre_sleep.day if self._config.pre_sleep else None, "timeout", None)
 		else:
 			self._timeout_on = self._config.on.night.timeout
-			self._timeout_pre_off = getattr(self._config.pre_off.night, "timeout", None)
-			self._timeout_leaving = getattr(self._config.leaving.night, "timeout", None)
-			self._timeout_pre_sleep = getattr(self._config.pre_sleep.night, "timeout", None)
+			self._timeout_pre_off = getattr(self._config.pre_off.night if self._config.pre_off else None, "timeout", None)
+			self._timeout_leaving = getattr(self._config.leaving.night if self._config.leaving else None, "timeout", None)
+			self._timeout_pre_sleep = getattr(self._config.pre_sleep.night if self._config.pre_sleep else None, "timeout", None)
 
 		self.state_machine.states["auto"].states["on"].timeout = self._timeout_on
 		self.state_machine.states["auto"].states["preoff"].timeout = self._timeout_pre_off
@@ -235,7 +237,7 @@ class Light(habapp_rules.common.state_machine_rule.StateMachineRule):
 		self._state_observer.send_command(target_value)
 
 	# pylint: disable=too-many-branches
-	def _get_target_brightness(self) -> typing.Optional[bool, float]:
+	def _get_target_brightness(self) -> typing.Optional[bool, float]:  # todo check if pre_state_change helps eg. for sleeping_active check
 		"""Get configured brightness for the current day/night/sleep state
 
 		:return: brightness value
@@ -257,28 +259,33 @@ class Light(habapp_rules.common.state_machine_rule.StateMachineRule):
 			self._brightness_before = self._state_observer.value
 
 			if sleeping_active:
-				brightness_from_config = self._config.pre_off.sleeping.brightness
+				brightness_from_config = getattr(self._config.pre_off.sleeping if self._config.pre_off else None, "brightness", None)
 			elif bool(self._item_day):
-				brightness_from_config = self._config.pre_off.day.brightness
+				brightness_from_config = getattr(self._config.pre_off.day if self._config.pre_off else None, "brightness", None)
 			else:
-				brightness_from_config = self._config.pre_off.night.brightness
+				brightness_from_config = getattr(self._config.pre_off.night if self._config.pre_off else None, "brightness", None)
 
-			return math.ceil(brightness_from_config if brightness_from_config < self._state_observer.value else self._state_observer.value / 2)
+			if brightness_from_config is None:
+				return None
+
+			if isinstance(self._state_observer.value, int) and brightness_from_config > self._state_observer.value:
+				return math.ceil(self._state_observer.value / 2)
+			return brightness_from_config
 
 		if self.state == "auto_off":
 			return False
 
 		if self.state == "auto_presleep":
 			if bool(self._item_day):
-				return self._config.pre_sleep.day.brightness
-			return self._config.pre_sleep.night.brightness
+				return getattr(self._config.pre_sleep.day if self._config.pre_sleep else None, "brightness", None)
+			return getattr(self._config.pre_sleep.night if self._config.pre_sleep else None, "brightness", None)
 
 		if self.state == "auto_leaving":
 			if sleeping_active:
-				return self._config.leaving.sleeping.brightness
+				return getattr(self._config.leaving.sleeping if self._config.leaving else None, "brightness", None)
 			if bool(self._item_day):
-				return self._config.leaving.day.brightness
-			return self._config.leaving.night.brightness
+				return getattr(self._config.leaving.day if self._config.leaving else None, "brightness", None)
+			return getattr(self._config.leaving.night if self._config.leaving else None, "brightness", None)
 
 		return None
 
@@ -339,7 +346,7 @@ class Light(habapp_rules.common.state_machine_rule.StateMachineRule):
 		if event.value == habapp_rules.system.PresenceState.LEAVING.value:
 			self._brightness_before = self._state_observer.value
 			self.leaving_started()
-		if event.value == habapp_rules.system.PresenceState.PRESENCE.value and self.state == "auto_leaving":
+		elif event.value == habapp_rules.system.PresenceState.PRESENCE.value and self.state == "auto_leaving":
 			self.leaving_aborted()
 
 	def _cb_sleeping(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
@@ -351,8 +358,5 @@ class Light(habapp_rules.common.state_machine_rule.StateMachineRule):
 		if event.value == habapp_rules.system.SleepState.PRE_SLEEPING.value:
 			self._brightness_before = self._state_observer.value
 			self.sleep_started()
-		if event.value == habapp_rules.system.SleepState.POST_SLEEPING.value and self.state == "auto_presleep":
+		elif event.value == habapp_rules.system.SleepState.AWAKE.value and self.state == "auto_presleep":
 			self.sleep_aborted()
-
-
-
