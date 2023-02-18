@@ -9,8 +9,9 @@ import HABApp
 import HABApp.openhab.interface
 import HABApp.openhab.items
 
-LOGGER = logging.getLogger("HABApp.actors.state_observer")
-LOGGER.setLevel("DEBUG")
+import habapp_rules.core.logger
+
+LOGGER = logging.getLogger(__name__)
 
 EventTypes = typing.Union[HABApp.openhab.events.ItemStateChangedEvent, HABApp.openhab.events.ItemCommandEvent]
 CallbackType = typing.Callable[[EventTypes, str], None]
@@ -26,8 +27,10 @@ class StateObserverBase(HABApp.Rule, abc.ABC):
 		:param control_names: list of control items
 		"""
 		super().__init__()
+		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, item_name)
 
 		self._last_send_value = None
+		self._last_manual_event = HABApp.openhab.events.ItemCommandEvent()
 
 		self._item = HABApp.openhab.items.OpenhabItem.get_item(item_name)
 
@@ -45,6 +48,11 @@ class StateObserverBase(HABApp.Rule, abc.ABC):
 		"""Get the current brightness value of the light."""
 		return self._value
 
+	@property
+	def last_manual_event(self) -> EventTypes:
+		"""Get the last manual event."""
+		return self._last_manual_event
+
 	def __check_item_types(self) -> None:
 		"""Check if all command and control items have the correct type.
 
@@ -57,7 +65,7 @@ class StateObserverBase(HABApp.Rule, abc.ABC):
 				wrong_types.append(f"{item.name} <{type(item).__name__}>")
 
 		if wrong_types:
-			LOGGER.error(msg := f"Found items with wrong item type. Expected: {target_type.__name__}. Wrong: {' | '.join(wrong_types)}")
+			self._instance_logger.error(msg := f"Found items with wrong item type. Expected: {target_type.__name__}. Wrong: {' | '.join(wrong_types)}")
 			raise TypeError(msg)
 
 	def send_command(self, value: float | str) -> None:
@@ -106,6 +114,17 @@ class StateObserverBase(HABApp.Rule, abc.ABC):
 		:raises ValueError: if event is not supported
 		"""
 
+	def _trigger_callback(self, cb_name: str, event: EventTypes, message: str) -> None:
+		"""Trigger a manual detected callback.
+
+		:param cb_name: name of callback method
+		:param event: event which triggered the callback
+		:param message: message of the callback
+		"""
+		self._last_manual_event = event
+		callback: CallbackType = getattr(self, cb_name)
+		callback(event, message)
+
 
 class StateObserverSwitch(StateObserverBase):
 	"""Class to observe the on/off state of a switch item."""
@@ -118,8 +137,8 @@ class StateObserverSwitch(StateObserverBase):
 		:param cb_off: callback which should be called if manual_off was detected
 		:param control_names: list of control items
 		"""
-		self.__cb_on = cb_on
-		self.__cb_off = cb_off
+		self._cb_on = cb_on
+		self._cb_off = cb_off
 		super().__init__(item_name, control_names)
 
 	def _check_manual(self, event: EventTypes, message: str) -> None:
@@ -129,12 +148,12 @@ class StateObserverSwitch(StateObserverBase):
 		:param message: message to forward to the callback
 		:raises ValueError: if event is not supported
 		"""
-		print(f"check_manu {event.value} | {self.value}")
+		self._instance_logger.debug(f"check_manu {event.value} | {self.value}")
 		if event.value != self.value:
 			if event.value == "ON":
-				self.__cb_on(event, message)
+				self._trigger_callback("_cb_on", event, message)
 			elif event.value == "OFF":
-				self.__cb_off(event, message)
+				self._trigger_callback("_cb_off", event, message)
 			else:
 				raise ValueError(f"Event '{event.value}' is not supported!")
 			self._value = event.value
@@ -163,9 +182,9 @@ class StateObserverDimmer(StateObserverBase):
 		:param control_names: list of control items
 		"""
 		self.__expected_value: bool | None = None
-		self.__cb_on = cb_on
-		self.__cb_off = cb_off
-		self.__cb_brightness_change = cb_brightness_change
+		self._cb_on = cb_on
+		self._cb_off = cb_off
+		self._cb_brightness_change = cb_brightness_change
 
 		super().__init__(item_name, control_names)
 
@@ -211,21 +230,19 @@ class StateObserverDimmer(StateObserverBase):
 		:raises ValueError: if event is not supported
 		"""
 		if event.value == "ON" and self.value == 0:
-			self.__cb_on(event, message)
+			self._trigger_callback("_cb_on", event, message)
 		elif event.value == "OFF" and self.value > 0:
-			self.__cb_off(event, message)
+			self._trigger_callback("_cb_off", event, message)
 		elif isinstance(event.value, (int, float)):
 			if event.value > 0 and self.value == 0:
-				self.__cb_on(event, message)
+				self._trigger_callback("_cb_on", event, message)
 			elif event.value == 0 and self.value > 0:
-				self.__cb_off(event, message)
-			elif event.value > 0 and self.value > 0 and self.__cb_brightness_change:
-				self.__cb_brightness_change(event, message)
-
+				self._trigger_callback("_cb_off", event, message)
+			elif event.value > 0 and self.value > 0 and self._cb_brightness_change:
+				self._trigger_callback("_cb_brightness_change", event, message)
 		elif event.value == "INCREASE" and self.value == 0:
-			self.__cb_on(event, message)
-		elif event.value == "INCREASE" and self.value > 0 and self.__cb_brightness_change:
-			self.__cb_brightness_change(event, message)
-
-		elif event.value == "DECREASE" and self.value > 0 and self.__cb_brightness_change:
-			self.__cb_brightness_change(event, message)
+			self._trigger_callback("_cb_on", event, message)
+		elif event.value == "INCREASE" and self.value > 0 and self._cb_brightness_change:
+			self._trigger_callback("_cb_brightness_change", event, message)
+		elif event.value == "DECREASE" and self.value > 0 and self._cb_brightness_change:
+			self._trigger_callback("_cb_brightness_change", event, message)

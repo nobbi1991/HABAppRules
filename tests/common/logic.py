@@ -5,7 +5,7 @@ import unittest.mock
 import HABApp.openhab.items.switch_item
 
 import habapp_rules.common.logic
-import habapp_rules.common.state_machine_rule
+import habapp_rules.core.state_machine_rule
 import tests.helper.oh_item
 import tests.helper.rule_runner
 

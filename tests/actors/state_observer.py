@@ -6,7 +6,7 @@ import unittest.mock
 import HABApp.rule.rule
 
 import habapp_rules.actors.state_observer
-import habapp_rules.common.state_machine_rule
+import habapp_rules.core.state_machine_rule
 import tests.common.graph_machines
 import tests.helper.oh_item
 import tests.helper.rule_runner
@@ -269,9 +269,9 @@ class TestStateObserverDimmer(unittest.TestCase):
 
 		]
 
-		with unittest.mock.patch.object(self._observer_dimmer, "_StateObserverDimmer__cb_on") as cb_on_mock, \
-				unittest.mock.patch.object(self._observer_dimmer, "_StateObserverDimmer__cb_off") as cb_off_mock, \
-				unittest.mock.patch.object(self._observer_dimmer, "_StateObserverDimmer__cb_brightness_change") as cb_change_mock:
+		with unittest.mock.patch.object(self._observer_dimmer, "_cb_on") as cb_on_mock, \
+				unittest.mock.patch.object(self._observer_dimmer, "_cb_off") as cb_off_mock, \
+				unittest.mock.patch.object(self._observer_dimmer, "_cb_brightness_change") as cb_change_mock:
 			for test_case in test_cases:
 				cb_on_mock.reset_mock()
 				self._observer_dimmer._value = test_case.current_value

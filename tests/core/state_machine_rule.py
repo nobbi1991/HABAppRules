@@ -5,7 +5,7 @@ import unittest.mock
 
 import HABApp.openhab.items.switch_item
 
-import habapp_rules.common.state_machine_rule
+import habapp_rules.core.state_machine_rule
 import tests.helper.rule_runner
 
 
@@ -18,19 +18,19 @@ class TestStateMachineRule(unittest.TestCase):
 		self.__runner = tests.helper.rule_runner.SimpleRuleRunner()
 		self.__runner.set_up()
 
-		with unittest.mock.patch.object(habapp_rules.common.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_common_state_machine_rule_StateMachineRule_state", "")):
-			self._state_machine = habapp_rules.common.state_machine_rule.StateMachineRule()
+		with unittest.mock.patch.object(habapp_rules.core.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_common_state_machine_rule_StateMachineRule_state", "")):
+			self._state_machine = habapp_rules.core.state_machine_rule.StateMachineRule()
 
 	def test__init(self):
 		"""tests init of StateMachineRule."""
-		with unittest.mock.patch.object(habapp_rules.common.state_machine_rule.StateMachineRule, "_create_additional_item") as create_mock:
-			state_machine = habapp_rules.common.state_machine_rule.StateMachineRule()
-			self.assertEqual("habapp_rules_common_state_machine_rule_TestRule_StateMachineRule", state_machine._item_prefix)
-			create_mock.assert_called_once_with("habapp_rules_common_state_machine_rule_TestRule_StateMachineRule_state", "String", None)
+		with unittest.mock.patch.object(habapp_rules.core.state_machine_rule.StateMachineRule, "_create_additional_item") as create_mock:
+			state_machine = habapp_rules.core.state_machine_rule.StateMachineRule()
+			self.assertEqual("habapp_rules_core_state_machine_rule_TestRule_StateMachineRule", state_machine._item_prefix)
+			create_mock.assert_called_once_with("habapp_rules_core_state_machine_rule_TestRule_StateMachineRule_state", "String", None)
 
-		with unittest.mock.patch.object(habapp_rules.common.state_machine_rule.StateMachineRule, "_create_additional_item") as create_mock:
-			state_machine = habapp_rules.common.state_machine_rule.StateMachineRule("state_name")
-			self.assertEqual("habapp_rules_common_state_machine_rule_TestRule_StateMachineRule", state_machine._item_prefix)
+		with unittest.mock.patch.object(habapp_rules.core.state_machine_rule.StateMachineRule, "_create_additional_item") as create_mock:
+			state_machine = habapp_rules.core.state_machine_rule.StateMachineRule("state_name")
+			self.assertEqual("habapp_rules_core_state_machine_rule_TestRule_StateMachineRule", state_machine._item_prefix)
 			create_mock.assert_called_once_with("state_name", "String", None)
 
 	def test_create_additional_item(self):

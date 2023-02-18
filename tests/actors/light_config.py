@@ -3,8 +3,8 @@ import collections
 import unittest.mock
 
 import habapp_rules.actors.light_config
-import habapp_rules.common.exceptions
-import habapp_rules.common.state_machine_rule
+import habapp_rules.core.exceptions
+import habapp_rules.core.state_machine_rule
 import habapp_rules.system
 from habapp_rules.actors.light_config import BrightnessTimeout, FunctionConfig, LightConfig
 
@@ -21,6 +21,7 @@ class TestBrightnessTimeout(unittest.TestCase):
 			TestCase(100, 1, True),
 			TestCase(1, 100, True),
 			TestCase(True, 20, True),
+			TestCase(False, 0, True),
 			TestCase(False, 10, True),
 			TestCase(False, 100, True),
 
@@ -33,10 +34,14 @@ class TestBrightnessTimeout(unittest.TestCase):
 		for test_case in test_cases:
 			if test_case.valid:
 				brightness_timeout = BrightnessTimeout(test_case.value, test_case.timeout)
+				self.assertEqual(test_case.value, brightness_timeout.brightness)
 				if test_case.value is False:
-					self.assertEqual(0.5, brightness_timeout.timeout)
+					if test_case.timeout:
+						self.assertEqual(test_case.timeout, brightness_timeout.timeout)
+					else:
+						self.assertEqual(0.5, brightness_timeout.timeout)
 			else:
-				with self.assertRaises(habapp_rules.common.exceptions.HabAppRulesConfigurationException):
+				with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
 					BrightnessTimeout(test_case.value, test_case.timeout)
 
 
@@ -84,7 +89,7 @@ class TestLightConfig(unittest.TestCase):
 			if test_case.valid:
 				LightConfig(test_case.on, test_case.pre_off, test_case.leaving, test_case.pre_sleep, test_case.pre_sleep_prevent)
 			else:
-				with self.assertRaises(habapp_rules.common.exceptions.HabAppRulesConfigurationException):
+				with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
 					LightConfig(test_case.on, test_case.pre_off, test_case.leaving, test_case.pre_sleep, test_case.pre_sleep_prevent)
 
 	def test_sleep_of_pre_sleep(self):

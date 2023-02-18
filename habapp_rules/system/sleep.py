@@ -7,15 +7,15 @@ import HABApp.openhab.interface
 import HABApp.openhab.items
 import HABApp.util
 
-import habapp_rules.common.state_machine_rule
-import habapp_rules.common.helper
+import habapp_rules.core.state_machine_rule
+import habapp_rules.core.helper
+import habapp_rules.core.logger
 
-LOGGER = logging.getLogger(f"HABApp.{__name__}")
-LOGGER.setLevel("DEBUG")
+LOGGER = logging.getLogger(__name__)
 
 
 # pylint: disable=no-member
-class Sleep(habapp_rules.common.state_machine_rule.StateMachineRule):
+class Sleep(habapp_rules.core.state_machine_rule.StateMachineRule):
 	"""Rules class to manage sleep state."""
 
 	states = [
@@ -49,6 +49,7 @@ class Sleep(habapp_rules.common.state_machine_rule.StateMachineRule):
 		:param name_display_text: name of OpenHAB display text item (StringItem)
 		"""
 		super().__init__(state_name)
+		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, name_sleep)
 
 		# init items
 		self.__item_sleep = HABApp.openhab.items.SwitchItem.get_item(name_sleep)
@@ -62,7 +63,7 @@ class Sleep(habapp_rules.common.state_machine_rule.StateMachineRule):
 		self._lock_request_active = bool(self.__item_lock_request) if self.__item_lock_request is not None else False
 
 		# init state machine
-		self.state_machine = habapp_rules.common.state_machine_rule.StateMachineWithTimeout(
+		self.state_machine = habapp_rules.core.state_machine_rule.StateMachineWithTimeout(
 			model=self,
 			states=self.states,
 			transitions=self.trans,
@@ -76,7 +77,7 @@ class Sleep(habapp_rules.common.state_machine_rule.StateMachineRule):
 		self.__item_sleep_request.listen_event(self._cb_sleep_request, HABApp.openhab.events.ItemStateChangedEventFilter())
 		if self.__item_lock_request is not None:
 			self.__item_lock_request.listen_event(self._cb_lock_request, HABApp.openhab.events.ItemStateChangedEventFilter())
-		LOGGER.debug(f"Init of sleep rule {self.rule_name} was successful. Initial state = {self.state}")
+		self._instance_logger.debug(f"Init of sleep rule {self.rule_name} was successful. Initial state = {self.state}")
 
 	def _get_initial_state(self, default_value: str = "awake") -> str:
 		"""Get initial state of state machine.
@@ -118,9 +119,9 @@ class Sleep(habapp_rules.common.state_machine_rule.StateMachineRule):
 
 		# update sleep state
 		if self.state in {"pre_sleeping", "sleeping"}:
-			habapp_rules.common.helper.send_if_different(self.__item_sleep.name, "ON")
+			habapp_rules.core.helper.send_if_different(self.__item_sleep.name, "ON")
 		else:
-			habapp_rules.common.helper.send_if_different(self.__item_sleep.name, "OFF")
+			habapp_rules.core.helper.send_if_different(self.__item_sleep.name, "OFF")
 
 		# update lock state
 		self.__update_lock_state()
@@ -150,9 +151,9 @@ class Sleep(habapp_rules.common.state_machine_rule.StateMachineRule):
 		"""Update the return lock state value of OpenHAB item."""
 		if self.__item_lock is not None:
 			if self.state in {"pre_sleeping", "post_sleeping", "locked"}:
-				habapp_rules.common.helper.send_if_different(self.__item_lock.name, "ON")
+				habapp_rules.core.helper.send_if_different(self.__item_lock.name, "ON")
 			else:
-				habapp_rules.common.helper.send_if_different(self.__item_lock.name, "OFF")
+				habapp_rules.core.helper.send_if_different(self.__item_lock.name, "OFF")
 
 	def _cb_sleep_request(self, event: HABApp.openhab.events.ItemStateChangedEvent):
 		"""Callback, which is called if sleep request item changed state.
@@ -160,14 +161,14 @@ class Sleep(habapp_rules.common.state_machine_rule.StateMachineRule):
 		:param event: Item state change event of sleep_request item
 		"""
 		if event.value == "ON" and self.state == "awake":
-			LOGGER.debug("Start sleeping through sleep switch")
+			self._instance_logger.debug("Start sleeping through sleep switch")
 			self._sleep_request_active = True
 			self.start_sleeping()
 		elif event.value == "ON" and self.state == "locked":
 			self._sleep_request_active = False
 			self.__item_sleep_request.oh_send_command("OFF")
 		elif event.value == "OFF" and self.state in {"sleeping", "pre_sleeping"}:
-			LOGGER.debug("End sleeping through sleep switch")
+			self._instance_logger.debug("End sleeping through sleep switch")
 			self._sleep_request_active = True
 			self.end_sleeping()
 

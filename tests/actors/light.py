@@ -9,14 +9,15 @@ import unittest.mock
 import HABApp.rule.rule
 
 import habapp_rules.actors.light
-import habapp_rules.common.exceptions
-import habapp_rules.common.state_machine_rule
-from habapp_rules.actors.light_config import LightConfig, FunctionConfig, BrightnessTimeout
+import habapp_rules.core.exceptions
+import habapp_rules.core.logger
+import habapp_rules.core.state_machine_rule
 import habapp_rules.system
 import tests.common.graph_machines
 import tests.helper.oh_item
 import tests.helper.rule_runner
 import tests.helper.timer
+from habapp_rules.actors.light_config import LightConfig, FunctionConfig, BrightnessTimeout
 
 
 # pylint: disable=protected-access,no-member,too-many-public-methods
@@ -55,13 +56,13 @@ class TestLight(unittest.TestCase):
 			leaving=FunctionConfig(day=None, night=BrightnessTimeout(40, 10), sleeping=None),
 			pre_sleep=FunctionConfig(day=None, night=BrightnessTimeout(10, 20), sleeping=None)
 		)
-		with unittest.mock.patch.object(habapp_rules.common.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")):
+		with unittest.mock.patch.object(habapp_rules.core.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")):
 			self.light = habapp_rules.actors.light.Light("Unittest_Light", ["Unittest_Light_ctr"], "Unittest_Manual", "Unittest_Presence_state", "Unittest_Sleep_state", "Unittest_Day", self.light_config)
 
 	def test_init_with_switch(self):
 		"""Test init with switch_item"""
 		with self.assertRaises(TypeError), \
-				unittest.mock.patch.object(habapp_rules.common.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")):
+				unittest.mock.patch.object(habapp_rules.core.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")):
 			habapp_rules.actors.light.Light("Unittest_Light_Switch", ["Unittest_Light_ctr"], "Unittest_Manual", "Unittest_Presence_state", "Unittest_Sleep_state", "Unittest_Day", self.light_config)
 
 	def get_state_names(self, states: dict, parent_state: str | None = None) -> list[str]:
@@ -405,12 +406,7 @@ class TestLight(unittest.TestCase):
 		self.light._config = light_config
 		self.light._brightness_before = 42
 		self.light._state_observer._value = 100
-
-		# auto_on
-		# auto_preoff
-		# auto_off
-		# auto_leaving
-		# auto_presleep
+		self.light._state_observer._last_manual_event = HABApp.openhab.events.ItemCommandEvent("Item_name", "ON")
 
 		test_cases = [
 			# ============================== auto ON ==============================
@@ -520,7 +516,14 @@ class TestLight(unittest.TestCase):
 			self.light.state = test_case.state
 			self.light._previous_state = test_case.previous_state
 
-			self.assertEqual(test_case.expected_value, self.light._get_target_brightness())
+			self.assertEqual(test_case.expected_value, self.light._get_target_brightness(), test_case)
+
+		# switch on by value
+		for switch_on_value in [20, "INCREASE"]:
+			self.light._state_observer._last_manual_event = HABApp.openhab.events.ItemCommandEvent("Item_name", switch_on_value)
+			for test_case in test_cases:
+				if test_case.state == "auto_on" and test_case.previous_state == "auto_off":
+					self.assertIsNone(self.light._get_target_brightness())
 
 	def test_auto_off_transitions(self):
 		"""Test transitions of auto_off."""

@@ -6,7 +6,9 @@ import statistics
 
 import HABApp
 
-LOGGER = logging.getLogger(f"HABApp.{__name__}")
+import habapp_rules.core.logger
+
+LOGGER = logging.getLogger(__name__)
 
 
 class SummerWinterException(Exception):
@@ -27,6 +29,7 @@ class SummerWinter(HABApp.Rule):
 		:param last_check_name: Name of last check item. OpenHAB-Type must be DateTime item
 		"""
 		super().__init__()
+		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, summer_name)
 
 		# set class variables
 		self._persistence_service = persistence_service
@@ -88,7 +91,7 @@ class SummerWinter(HABApp.Rule):
 			try:
 				values.append(self.__get_weighted_mean(day))
 			except SummerWinterException:
-				LOGGER.warning(f"Could not get mean value of day -{day}")
+				self._instance_logger.warning(f"Could not get mean value of day -{day}")
 
 		if len(values) <= self._days * 0.5:
 			raise SummerWinterException(f"Not enough values to detect summer/winter. Expected: {self._days} | actual: {len(values)}")
@@ -97,7 +100,7 @@ class SummerWinter(HABApp.Rule):
 		if (mean_value := statistics.mean(values)) > (threshold := self.__get_threshold_with_hysteresis()):
 			is_summer = True
 
-		LOGGER.debug(f"Check Summer/Winter. values = {values} | mean = {mean_value} | threshold = {threshold} | summer = {is_summer}")
+		self._instance_logger.debug(f"Check Summer/Winter. values = {values} | mean = {mean_value} | threshold = {threshold} | summer = {is_summer}")
 		return is_summer
 
 	def _cb_update_summer(self) -> None:
@@ -105,7 +108,7 @@ class SummerWinter(HABApp.Rule):
 		try:
 			is_summer = self.__is_summer()
 		except SummerWinterException:
-			LOGGER.exception("Could not get summer / winter")
+			self._instance_logger.exception("Could not get summer / winter")
 			return
 
 		# get target state of summer
@@ -114,7 +117,7 @@ class SummerWinter(HABApp.Rule):
 		# send state
 		if self._item_summer.value != target_value:
 			self._item_summer.oh_send_command(target_value)
-			LOGGER.info(f"Summer changed to {target_value}")
+			self._instance_logger.info(f"Summer changed to {target_value}")
 
 		# update last update item at every call
 		if self._item_last_check:

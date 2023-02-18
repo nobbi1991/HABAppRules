@@ -11,25 +11,24 @@ import HABApp.openhab.interface
 import HABApp.openhab.items
 import HABApp.util
 
-import habapp_rules.actors.state_observer
 import habapp_rules.actors.light_config
-import habapp_rules.common.helper
-import habapp_rules.common.state_machine_rule
+import habapp_rules.actors.state_observer
+import habapp_rules.core.helper
+import habapp_rules.core.state_machine_rule
+import habapp_rules.core.logger
 import habapp_rules.system
 
-LOGGER = logging.getLogger("HABApp.actors.light")
-LOGGER.setLevel("DEBUG")
+LOGGER = logging.getLogger(__name__)
 
 BrightnessTypes = typing.Union[list[typing.Union[float, bool]], float, bool]
 
 
 # todo check what happens if timeout value changes. e.g. day to night change and timeout_day = 100 and timeout_night = 5: will the day timeout finish or will it take the night timeout?!
-# todo check if it is possible to configure for leaving/sleeping: No Change / force ON / force OFF / force special value
-# todo add new state `post_sleep`
+# todo: test switch on at night. there is one cb_brightness_change which should not be there!
 
 
 # pylint: disable=no-member,too-many-instance-attributes
-class Light(habapp_rules.common.state_machine_rule.StateMachineRule):
+class Light(habapp_rules.core.state_machine_rule.StateMachineRule):
 	"""Rules class to manage sleep state."""
 
 	states = [
@@ -79,7 +78,7 @@ class Light(habapp_rules.common.state_machine_rule.StateMachineRule):
 		self._config = config
 
 		super().__init__(f"H{name_light}_state")
-		print(f"init of {self._item_state.name} | state_item: {self._item_state.name}")
+		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, name_light)
 
 		# init items
 		light_item = HABApp.core.Items.get_item(name_light)
@@ -96,7 +95,7 @@ class Light(habapp_rules.common.state_machine_rule.StateMachineRule):
 
 		# init state machine
 		self._previous_state = None
-		self.state_machine = habapp_rules.common.state_machine_rule.HierarchicalStateMachineWithTimeout(
+		self.state_machine = habapp_rules.core.state_machine_rule.HierarchicalStateMachineWithTimeout(
 			model=self,
 			states=self.states,
 			transitions=self.trans,
@@ -118,6 +117,7 @@ class Light(habapp_rules.common.state_machine_rule.StateMachineRule):
 		self._item_day.listen_event(self._cb_day, HABApp.openhab.events.ItemStateChangedEventFilter())
 
 		self._update_openhab_state()
+		self._instance_logger.info(f"init of light {self._item_light.name}  with state_item = {self._item_state.name} was successful.")
 
 	def _get_initial_state(self, default_value: str = "") -> str:
 		"""Get initial state of state machine.
@@ -155,7 +155,7 @@ class Light(habapp_rules.common.state_machine_rule.StateMachineRule):
 		"""
 		if self.state != self._previous_state:
 			super()._update_openhab_state()
-			print(f"State change: {self._previous_state} -> {self.state}")
+			self._instance_logger.debug(f"State change: {self._previous_state} -> {self.state}")
 
 			self._set_brightness()
 			self._previous_state = self.state
@@ -233,11 +233,11 @@ class Light(habapp_rules.common.state_machine_rule.StateMachineRule):
 				target_value = "ON"
 			else:
 				target_value = "OFF"
-		print(f"set brightness {target_value}")
+		self._instance_logger.debug(f"set brightness {target_value}")
 		self._state_observer.send_command(target_value)
 
-	# pylint: disable=too-many-branches
-	def _get_target_brightness(self) -> typing.Optional[bool, float]:  # todo check if pre_state_change helps eg. for sleeping_active check
+	# pylint: disable=too-many-branches, too-many-return-statements
+	def _get_target_brightness(self) -> typing.Optional[bool, float]:
 		"""Get configured brightness for the current day/night/sleep state
 
 		:return: brightness value
@@ -246,6 +246,8 @@ class Light(habapp_rules.common.state_machine_rule.StateMachineRule):
 
 		if self.state == "auto_on":
 			if self._previous_state == "manual":
+				return None
+			if self._previous_state == "auto_off" and self._state_observer.last_manual_event.value not in {"ON", 100.0}:
 				return None
 			if self._previous_state in {"auto_preoff", "auto_leaving", "auto_presleep"}:
 				return self._brightness_before
@@ -268,7 +270,7 @@ class Light(habapp_rules.common.state_machine_rule.StateMachineRule):
 			if brightness_from_config is None:
 				return None
 
-			if isinstance(self._state_observer.value, int) and brightness_from_config > self._state_observer.value:
+			if isinstance(self._state_observer.value, (float, int)) and brightness_from_config > self._state_observer.value:
 				return math.ceil(self._state_observer.value / 2)
 			return brightness_from_config
 

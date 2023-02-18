@@ -8,7 +8,7 @@ import unittest.mock
 
 import HABApp.rule.rule
 
-import habapp_rules.common.state_machine_rule
+import habapp_rules.core.state_machine_rule
 import habapp_rules.system.presence
 import tests.common.graph_machines
 import tests.helper.oh_item
@@ -45,7 +45,7 @@ class TestPresence(unittest.TestCase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "rules_system_presence_Presence_state", "")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Presence", "ON")
 
-		with unittest.mock.patch.object(habapp_rules.common.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_presence_Presence_state", "")):
+		with unittest.mock.patch.object(habapp_rules.core.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_presence_Presence_state", "")):
 			self._presence = habapp_rules.system.presence.Presence("Unittest_Presence", outside_door_names=["Unittest_Door1", "Unittest_Door2"], leaving_name="Unittest_Leaving", phone_names=["Unittest_Phone1", "Unittest_Phone2"])
 
 	@unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
