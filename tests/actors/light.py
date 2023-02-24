@@ -2,6 +2,7 @@
 import collections
 import os
 import pathlib
+import sys
 import threading
 import unittest
 import unittest.mock
@@ -84,6 +85,7 @@ class TestLight(unittest.TestCase):
 				state_names.append(f"{prefix}{state['name']}")
 		return state_names
 
+	@unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
 	def test_create_graph(self):
 		"""Create state machine graph for documentation."""
 		picture_dir = pathlib.Path(__file__).parent / "Light_States"
