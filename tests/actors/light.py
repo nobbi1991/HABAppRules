@@ -422,7 +422,7 @@ class TestLight(unittest.TestCase):
 
 			TestCase("auto_on", previous_state="auto_off", day=False, sleeping=False, expected_value=80),
 			TestCase("auto_on", previous_state="auto_off", day=False, sleeping=True, expected_value=40),
-			TestCase("auto_on", previous_state="auto_off", day=True, sleeping=False, expected_value=True),
+			TestCase("auto_on", previous_state="auto_off", day=True, sleeping=False, expected_value=None),
 			TestCase("auto_on", previous_state="auto_off", day=True, sleeping=True, expected_value=40),
 
 			TestCase("auto_on", previous_state="auto_leaving", day=False, sleeping=False, expected_value=42),
@@ -523,6 +523,8 @@ class TestLight(unittest.TestCase):
 			self.light._state_observer._last_manual_event = HABApp.openhab.events.ItemCommandEvent("Item_name", switch_on_value)
 			for test_case in test_cases:
 				if test_case.state == "auto_on" and test_case.previous_state == "auto_off":
+					self.light.state = test_case.state
+					self.light._previous_state = test_case.previous_state
 					self.assertIsNone(self.light._get_target_brightness())
 
 	def test_auto_off_transitions(self):
@@ -598,20 +600,23 @@ class TestLight(unittest.TestCase):
 
 	def test_auto_pre_off_transitions(self):
 		"""Test transitions of auto_preoff."""
+		event_mock = unittest.mock.MagicMock()
+		msg = ""
+
 		# to auto off by timeout
 		self.light.to_auto_preoff()
 		self.light.preoff_timeout()
+		tests.helper.oh_item.item_state_change_event("Unittest_Light", 0.0)
 		self.assertEqual("auto_off", self.light.state)
 
 		# to auto on by hand_on
 		self.light.to_auto_preoff()
-		tests.helper.oh_item.send_command("Unittest_Light", "ON", "OFF")
+		self.light._cb_hand_on(event_mock, msg)
 		self.assertEqual("auto_on", self.light.state)
 
 		# to auto on by hand_off
 		self.light.to_auto_preoff()
-		self.light._state_observer._value = 20
-		tests.helper.oh_item.send_command("Unittest_Light", "OFF", "ON")
+		self.light._cb_hand_off(event_mock, msg)
 		self.assertEqual("auto_on", self.light.state)
 
 		# to leaving (configured)

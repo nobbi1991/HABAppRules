@@ -14,8 +14,8 @@ import HABApp.util
 import habapp_rules.actors.light_config
 import habapp_rules.actors.state_observer
 import habapp_rules.core.helper
-import habapp_rules.core.state_machine_rule
 import habapp_rules.core.logger
+import habapp_rules.core.state_machine_rule
 import habapp_rules.system
 
 LOGGER = logging.getLogger(__name__)
@@ -24,7 +24,6 @@ BrightnessTypes = typing.Union[list[typing.Union[float, bool]], float, bool]
 
 
 # todo check what happens if timeout value changes. e.g. day to night change and timeout_day = 100 and timeout_night = 5: will the day timeout finish or will it take the night timeout?!
-# todo: test switch on at night. there is one cb_brightness_change which should not be there!
 
 
 # pylint: disable=no-member,too-many-instance-attributes
@@ -247,15 +246,26 @@ class Light(habapp_rules.core.state_machine_rule.StateMachineRule):
 		if self.state == "auto_on":
 			if self._previous_state == "manual":
 				return None
-			if self._previous_state == "auto_off" and self._state_observer.last_manual_event.value not in {"ON", 100.0}:
-				return None
 			if self._previous_state in {"auto_preoff", "auto_leaving", "auto_presleep"}:
 				return self._brightness_before
+
+			# starting from here: previous state == auto_off
+			if isinstance(self._state_observer.last_manual_event.value, (int, float)):
+				return None
+			if self._state_observer.last_manual_event.value == "INCREASE":
+				return None
+
 			if sleeping_active:
-				return self._config.on.sleeping.brightness
-			if bool(self._item_day):
-				return self._config.on.day.brightness
-			return self._config.on.night.brightness
+				brightness_from_config = self._config.on.sleeping.brightness
+			elif bool(self._item_day):
+				brightness_from_config = self._config.on.day.brightness
+			else:
+				brightness_from_config = self._config.on.night.brightness
+
+			if brightness_from_config is True and self._state_observer.last_manual_event.value == "ON":
+				return None
+
+			return brightness_from_config
 
 		if self.state == "auto_preoff":
 			self._brightness_before = self._state_observer.value

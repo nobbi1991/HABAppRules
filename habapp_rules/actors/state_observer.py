@@ -29,7 +29,7 @@ class StateObserverBase(HABApp.Rule, abc.ABC):
 		super().__init__()
 		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, item_name)
 
-		self._last_send_value = None
+		self._expected_values = []
 		self._last_manual_event = HABApp.openhab.events.ItemCommandEvent()
 
 		self._item = HABApp.openhab.items.OpenhabItem.get_item(item_name)
@@ -39,7 +39,7 @@ class StateObserverBase(HABApp.Rule, abc.ABC):
 
 		self._value = self._item.value
 
-		self._item.listen_event(self._cb_value_change, HABApp.openhab.events.ItemStateChangedEventFilter())
+		self._item.listen_event(self._cb_state_change, HABApp.openhab.events.ItemStateChangedEventFilter())
 		self._item.listen_event(self._cb_command, HABApp.openhab.events.ItemCommandEventFilter())
 		HABApp.util.EventListenerGroup().add_listener(self.__control_items, self.__cb_control, HABApp.openhab.events.ItemCommandEventFilter()).listen()
 
@@ -74,8 +74,8 @@ class StateObserverBase(HABApp.Rule, abc.ABC):
 		:param value: Value to send to the light
 		:raises ValueError: if value has wrong format
 		"""
-		self._value = value
-		self._last_send_value = value
+		print(f"send_command: {value} | {self._item.value} | {self._expected_values}")
+		self._expected_values.append(value)
 		self._item.oh_send_command(value)
 
 	def _cb_command(self, event: HABApp.openhab.events.ItemCommandEvent) -> None:
@@ -83,12 +83,13 @@ class StateObserverBase(HABApp.Rule, abc.ABC):
 
 		:param event: event, which triggered this callback
 		"""
-		if event.value == self._last_send_value:
-			self._last_send_value = None
-		else:
-			self._check_manual(event, "Manual from OpenHAB")
+		if event.value in self._expected_values:
+			return
 
-	def _cb_value_change(self, event: HABApp.openhab.events.ItemStateChangedEvent, call_check_manual: bool = True):
+		self._check_manual(event, "Manual from OpenHAB")
+		self._expected_values.append(event.value)
+
+	def _cb_state_change(self, event: HABApp.openhab.events.ItemStateChangedEvent, call_check_manual: bool = True):
 		"""Callback, which is called if a value change of the light item was detected.
 
 		:param event: event, which triggered this callback
@@ -121,6 +122,7 @@ class StateObserverBase(HABApp.Rule, abc.ABC):
 		:param event: event which triggered the callback
 		:param message: message of the callback
 		"""
+		print(f"{cb_name} | {event} | {message}")
 		self._last_manual_event = event
 		callback: CallbackType = getattr(self, cb_name)
 		callback(event, message)
@@ -148,7 +150,6 @@ class StateObserverSwitch(StateObserverBase):
 		:param message: message to forward to the callback
 		:raises ValueError: if event is not supported
 		"""
-		self._instance_logger.debug(f"check_manu {event.value} | {self.value}")
 		if event.value != self.value:
 			if event.value == "ON":
 				self._trigger_callback("_cb_on", event, message)
@@ -156,17 +157,18 @@ class StateObserverSwitch(StateObserverBase):
 				self._trigger_callback("_cb_off", event, message)
 			else:
 				raise ValueError(f"Event '{event.value}' is not supported!")
-			self._value = event.value
 
-	def _cb_value_change(self, event: HABApp.openhab.events.ItemStateChangedEvent, call_check_manual: bool = True):
+	def _cb_state_change(self, event: HABApp.openhab.events.ItemStateChangedEvent, call_check_manual: bool = True):
 		"""Callback, which is called if a value change of the light item was detected.
 
 		:param event: event, which triggered this callback
 		:param call_check_manual: If true: _check_manual() will be called, otherwise not. This is for dimmer lights
 		"""
-		if event.value != self.value:
-			self._check_manual(event, "Manual from extern")
-			self._value = event.value
+		if event.value in self._expected_values:
+			self._expected_values.remove(event.value)
+			call_check_manual = False
+
+		super()._cb_state_change(event, call_check_manual)
 
 
 class StateObserverDimmer(StateObserverBase):
@@ -181,46 +183,34 @@ class StateObserverDimmer(StateObserverBase):
 		:param cb_brightness_change: callback which is called if dimmer is on and brightness changed
 		:param control_names: list of control items
 		"""
-		self.__expected_value: bool | None = None
 		self._cb_on = cb_on
 		self._cb_off = cb_off
 		self._cb_brightness_change = cb_brightness_change
 
 		super().__init__(item_name, control_names)
 
-	def send_command(self, value: float | str) -> None:
-		"""Send brightness command to light (this should be used by rules, to not trigger a manual action)
-
-		:param value: Value to send to the light
-		"""
-		self._last_send_value = value
-		self._item.oh_send_command(value)
-
-	def _cb_command(self, event: HABApp.openhab.events.ItemCommandEvent) -> None:
-		"""Callback, which is called if a command event of one of the command items was detected.
-
-		:param event: event, which triggered this callback
-		"""
-		if event.value == "ON" or isinstance(event.value, (int, float)) and event.value > 0:
-			self.__expected_value = True
-		elif event.value == "OFF" or isinstance(event.value, (int, float)) and event.value == 0:
-			self.__expected_value = False
-		super()._cb_command(event)
-
-	def _cb_value_change(self, event: HABApp.openhab.events.ItemStateChangedEvent, call_check_manual: bool = True) -> None:
+	def _cb_state_change(self, event: HABApp.openhab.events.ItemStateChangedEvent, call_check_manual: bool = True) -> None:
 		"""Callback, which is called if a value change of the light item was detected.
 
 		:param event: event, which triggered this callback
 		:param call_check_manual: If true: _check_manual() will be called, otherwise not. This is used to avoid calling manual check if this class is waiting for a state update
 		"""
 		if event.value is None:
+			self._instance_logger.warning("Received None command. Check your OpenHAB configuration if you have set increaseDecrease for the KNX channel")
 			return
-		super()._cb_value_change(event, self.__expected_value is None)
 
-		if self.__expected_value is True and event.value > 0:
-			self.__expected_value = None
-		elif self.__expected_value is False and event.value == 0:
-			self.__expected_value = None
+		if event.value in self._expected_values:
+			self._expected_values.remove(event.value)
+			call_check_manual = False
+		elif isinstance(event.value, (float, int)):
+			if event.value > 0 and "ON" in self._expected_values:
+				self._expected_values.remove("ON")
+				call_check_manual = False
+			elif event.value == 0 and "OFF" in self._expected_values:
+				self._expected_values.remove("OFF")
+				call_check_manual = False
+
+		super()._cb_state_change(event, call_check_manual)
 
 	def _check_manual(self, event: EventTypes, message: str) -> None:
 		"""Check if light was triggered by a manual action

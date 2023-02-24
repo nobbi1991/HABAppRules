@@ -38,10 +38,11 @@ class TestStateObserverSwitch(unittest.TestCase):
 		for value in ["OFF", "OFF", "ON", "ON", "OFF"]:
 			self._observer_switch.send_command(value)
 			tests.helper.oh_item.item_command_event("Unittest_Switch", value)
+			tests.helper.oh_item.item_state_change_event("Unittest_Switch", value)
 			self._cb_on.assert_not_called()
 			self._cb_off.assert_not_called()
 
-		self.assertEqual(None, self._observer_switch._last_send_value)
+		self.assertEqual([], self._observer_switch._expected_values)
 
 	def test_manu_from_openhab(self):
 		"""Test manual detection from openHAB."""
@@ -131,7 +132,8 @@ class TestStateObserverDimmer(unittest.TestCase):
 
 		self._cb_on = unittest.mock.MagicMock()
 		self._cb_off = unittest.mock.MagicMock()
-		self._observer_dimmer = habapp_rules.actors.state_observer.StateObserverDimmer("Unittest_Dimmer", cb_on=self._cb_on, cb_off=self._cb_off, control_names=["Unittest_Dimmer_ctr"])
+		self._cb_changed = unittest.mock.MagicMock()
+		self._observer_dimmer = habapp_rules.actors.state_observer.StateObserverDimmer("Unittest_Dimmer", cb_on=self._cb_on, cb_off=self._cb_off, cb_brightness_change=self._cb_changed, control_names=["Unittest_Dimmer_ctr"])
 
 	def test__check_item_types(self):
 		"""Test if wrong item types are detected correctly."""
@@ -141,13 +143,15 @@ class TestStateObserverDimmer(unittest.TestCase):
 
 	def test_command_from_habapp(self):
 		"""Test HABApp rule triggers a command -> no manual should be detected."""
-		for value in [0, 30, 100, 0, "ON", "OFF", 0, 80]:
+		for value in [100, 0, 30, 100, 0, "ON", "OFF", 0, 80]:
 			self._observer_dimmer.send_command(value)
 			tests.helper.oh_item.item_command_event("Unittest_Dimmer", value)
+			tests.helper.oh_item.item_state_change_event("Unittest_Dimmer", value)
 			self._cb_on.assert_not_called()
 			self._cb_off.assert_not_called()
+			self._cb_changed.assert_not_called()
 
-		self.assertEqual(None, self._observer_dimmer._last_send_value)
+		self.assertEqual([], self._observer_dimmer._expected_values)
 
 	def test_manu_from_ctr(self):
 		"""Test manual detection from control item."""
@@ -224,11 +228,11 @@ class TestStateObserverDimmer(unittest.TestCase):
 		self._observer_dimmer._StateObserverDimmer__last_received_value = 0
 
 		test_cases = [
-			# TestCase(100, 100, True, False),
-			# TestCase(100, 100, False, False),
-			# TestCase(0, 0, False, True),
-			TestCase("ON", 100, True, False),
-			TestCase("OFF", 0, False, True),
+			TestCase(100, 100, True, False),
+			TestCase(100, 100, False, False),
+			TestCase(0, 0, False, True),
+			TestCase("ON", 100.0, True, False),
+			TestCase("OFF", 0.0, False, True),
 			TestCase("INCREASE", 30, True, False)
 		]
 
@@ -295,7 +299,7 @@ class TestStateObserverDimmer(unittest.TestCase):
 	def test_value_change_none(self):
 		"""Check if None state is ignored by _cb_value_change"""
 		with unittest.mock.patch.object(self._observer_dimmer, "_check_manual") as check_manual_mock:
-			self._observer_dimmer._cb_value_change(HABApp.openhab.events.ItemStateChangedEvent("test", None, None), True)
+			self._observer_dimmer._cb_state_change(HABApp.openhab.events.ItemStateChangedEvent("test", None, None), True)
 			check_manual_mock.assert_not_called()
 
 	def tearDown(self) -> None:
