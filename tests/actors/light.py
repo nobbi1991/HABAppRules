@@ -444,6 +444,11 @@ class TestLight(unittest.TestCase):
 			TestCase("auto_preoff", previous_state="auto_on", day=True, sleeping=True, expected_value=None),
 
 			# ============================== auto OFF ==============================
+			TestCase("auto_off", previous_state="manual", day=False, sleeping=False, expected_value=None),
+			TestCase("auto_off", previous_state="manual", day=False, sleeping=True, expected_value=None),
+			TestCase("auto_off", previous_state="manual", day=True, sleeping=False, expected_value=None),
+			TestCase("auto_off", previous_state="manual", day=True, sleeping=True, expected_value=None),
+
 			TestCase("auto_off", previous_state="auto_on", day=False, sleeping=False, expected_value=False),
 			TestCase("auto_off", previous_state="auto_on", day=False, sleeping=True, expected_value=False),
 			TestCase("auto_off", previous_state="auto_on", day=True, sleeping=False, expected_value=False),

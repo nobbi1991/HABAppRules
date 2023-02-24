@@ -282,6 +282,8 @@ class Light(habapp_rules.core.state_machine_rule.StateMachineRule):
 			return brightness_from_config
 
 		if self.state == "auto_off":
+			if self._previous_state == "manual":
+				return None
 			return False
 
 		if self.state == "auto_presleep":
