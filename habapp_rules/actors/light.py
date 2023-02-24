@@ -23,9 +23,6 @@ LOGGER = logging.getLogger(__name__)
 BrightnessTypes = typing.Union[list[typing.Union[float, bool]], float, bool]
 
 
-# todo check what happens if timeout value changes. e.g. day to night change and timeout_day = 100 and timeout_night = 5: will the day timeout finish or will it take the night timeout?!
-
-
 # pylint: disable=no-member,too-many-instance-attributes
 class Light(habapp_rules.core.state_machine_rule.StateMachineRule):
 	"""Rules class to manage sleep state."""

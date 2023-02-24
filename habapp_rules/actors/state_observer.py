@@ -74,7 +74,6 @@ class StateObserverBase(HABApp.Rule, abc.ABC):
 		:param value: Value to send to the light
 		:raises ValueError: if value has wrong format
 		"""
-		print(f"send_command: {value} | {self._item.value} | {self._expected_values}")
 		self._expected_values.append(value)
 		self._item.oh_send_command(value)
 
@@ -122,7 +121,6 @@ class StateObserverBase(HABApp.Rule, abc.ABC):
 		:param event: event which triggered the callback
 		:param message: message of the callback
 		"""
-		print(f"{cb_name} | {event} | {message}")
 		self._last_manual_event = event
 		callback: CallbackType = getattr(self, cb_name)
 		callback(event, message)
