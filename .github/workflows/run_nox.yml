@@ -11,8 +11,14 @@ jobs:
     name: Run nox
     runs-on: ubuntu-latest
     steps:
-     - uses: actions/checkout@v2
-       with:
-         submodules: recursive
-     - uses: excitedleigh/setup-nox@main
-     - run: nox
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: run nox
+        uses: excitedleigh/setup-nox@main
+        run: nox
+      - name: upload coverage report
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage-report
+          path: ///home/runner/work/HABAppRules/HABAppRules/tests/htmlcov/index.html
