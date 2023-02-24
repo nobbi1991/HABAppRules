@@ -66,7 +66,7 @@ class TestLight(unittest.TestCase):
 				unittest.mock.patch.object(habapp_rules.core.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")):
 			habapp_rules.actors.light.Light("Unittest_Light_Switch", ["Unittest_Light_ctr"], "Unittest_Manual", "Unittest_Presence_state", "Unittest_Sleep_state", "Unittest_Day", self.light_config)
 
-	def get_state_names(self, states: dict, parent_state: str | None = None) -> list[str]:
+	def _get_state_names(self, states: dict, parent_state: str | None = None) -> list[str]:  # pragma: no cover
 		"""Helper function to get all state names (also nested states)
 
 		:param states: dict of all states or children states
@@ -80,17 +80,17 @@ class TestLight(unittest.TestCase):
 
 		for state in states:
 			if "children" in state:
-				state_names += self.get_state_names(state, state["name"])
+				state_names += self._get_state_names(state, state["name"])
 			else:
 				state_names.append(f"{prefix}{state['name']}")
 		return state_names
 
 	@unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
-	def test_create_graph(self):
+	def test_create_graph(self):  # pragma: no cover
 		"""Create state machine graph for documentation."""
 		picture_dir = pathlib.Path(__file__).parent / "Light_States"
 		if not picture_dir.is_dir():
-			os.makedirs(picture_dir)  # pragma: no cover
+			os.makedirs(picture_dir)
 
 		presence_graph = tests.common.graph_machines.HierarchicalGraphMachineTimer(
 			model=self.light,
@@ -102,7 +102,7 @@ class TestLight(unittest.TestCase):
 		presence_graph.get_graph().draw(picture_dir / "Light.png", format="png", prog="dot")
 
 		presence_graph.show_conditions = True
-		for state_name in self.get_state_names(self.light.states):
+		for state_name in self._get_state_names(self.light.states):
 			presence_graph.set_state(state_name)
 			presence_graph.get_graph(show_roi=True).draw(picture_dir / f"Light_{state_name}.png", format="png", prog="dot")
 
