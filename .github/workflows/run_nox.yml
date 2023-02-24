@@ -24,4 +24,4 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: coverage-report
-          path: ///home/runner/work/HABAppRules/HABAppRules/tests/htmlcov/index.html
+          path: ///home/runner/work/HABAppRules/HABAppRules/tests/htmlcov
