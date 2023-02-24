@@ -11,11 +11,13 @@ jobs:
     name: Run nox
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: checkout repo
+        uses: actions/checkout@v2
         with:
           submodules: recursive
-      - name: run nox
+      - name: setup nox
         uses: excitedleigh/setup-nox@main
+      - name: run nox
         run: nox
       - name: upload coverage report
         uses: actions/upload-artifact@v2
