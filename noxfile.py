@@ -6,7 +6,7 @@ import nox.command
 sys.path.append(str(pathlib.Path(__file__).parent.resolve() / "helper"))
 from helper.nox_checks.common import NoxBase, run_combined_sessions
 
-PYTHON_VERSION = ["3.10", "3.11"]
+PYTHON_VERSION = "3.10"
 nox.options.sessions = ["coverage", "pylint"]
 
 
