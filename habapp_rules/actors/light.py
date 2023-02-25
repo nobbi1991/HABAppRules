@@ -66,9 +66,9 @@ class Light(habapp_rules.core.state_machine_rule.StateMachineRule):
 		:param control_names: names of OpenHab items which must be configured as control (-ctr) items. This can be used for KNX items to detect increase / decrease commands from physical wall controllers
 		:param manual_name: name of OpenHAB switch item to disable all automatic functions
 		:param presence_state_name: name of OpenHAB presence state item
-		:param sleeping_state_name: [optional] name of OpenHAB sleeping state item
 		:param day_name: name of OpenHAB switch item which is 'ON' during day and 'OFF' during night
 		:param config: configuration of the light object
+		:param sleeping_state_name: [optional] name of OpenHAB sleeping state item
 		:raises TypeError: if type of light_item is not supported
 		"""
 		self._config = config
