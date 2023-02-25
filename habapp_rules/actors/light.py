@@ -59,14 +59,14 @@ class Light(habapp_rules.core.state_machine_rule.StateMachineRule):
 		{"trigger": "presleep_timeout", "source": "auto_presleep", "dest": "auto_off"},
 	]
 
-	def __init__(self, name_light: str, control_names: list[str], manual_name: str, presence_state_name: str, sleeping_state_name: str, day_name: str, config: habapp_rules.actors.light_config.LightConfig) -> None:
+	def __init__(self, name_light: str, control_names: list[str], manual_name: str, presence_state_name: str, day_name: str, config: habapp_rules.actors.light_config.LightConfig, sleeping_state_name: str | None = None) -> None:
 		"""Init of Sleep object.
 
 		:param name_light: name of OpenHAB light item (SwitchItem | DimmerItem)
 		:param control_names: names of OpenHab items which must be configured as control (-ctr) items. This can be used for KNX items to detect increase / decrease commands from physical wall controllers
 		:param manual_name: name of OpenHAB switch item to disable all automatic functions
 		:param presence_state_name: name of OpenHAB presence state item
-		:param sleeping_state_name: name of OpenHAB sleeping state item
+		:param sleeping_state_name: [optional] name of OpenHAB sleeping state item
 		:param day_name: name of OpenHAB switch item which is 'ON' during day and 'OFF' during night
 		:param config: configuration of the light object
 		:raises TypeError: if type of light_item is not supported
@@ -86,7 +86,7 @@ class Light(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 		self._item_manual = HABApp.openhab.items.switch_item.SwitchItem.get_item(manual_name)
 		self._item_presence_state = HABApp.openhab.items.string_item.StringItem.get_item(presence_state_name)
-		self._item_sleeping_state = HABApp.openhab.items.string_item.StringItem.get_item(sleeping_state_name)
+		self._item_sleeping_state = HABApp.openhab.items.string_item.StringItem.get_item(sleeping_state_name) if sleeping_state_name else None
 		self._item_day = HABApp.openhab.items.switch_item.SwitchItem.get_item(day_name)
 
 		# init state machine
@@ -108,7 +108,8 @@ class Light(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 		# callbacks
 		self._item_manual.listen_event(self._cb_manu, HABApp.openhab.events.ItemStateEventFilter())
-		self._item_sleeping_state.listen_event(self._cb_sleeping, HABApp.openhab.events.ItemStateChangedEventFilter())
+		if self._item_sleeping_state:
+			self._item_sleeping_state.listen_event(self._cb_sleeping, HABApp.openhab.events.ItemStateChangedEventFilter())
 		self._item_presence_state.listen_event(self._cb_presence, HABApp.openhab.events.ItemStateChangedEventFilter())
 		self._item_day.listen_event(self._cb_day, HABApp.openhab.events.ItemStateChangedEventFilter())
 
@@ -125,11 +126,11 @@ class Light(habapp_rules.core.state_machine_rule.StateMachineRule):
 			return "manual"
 		if bool(self._item_light):
 			if self._item_presence_state.value == habapp_rules.system.PresenceState.PRESENCE.value and \
-					self._item_sleeping_state.value in (habapp_rules.system.SleepState.AWAKE.value, habapp_rules.system.SleepState.POST_SLEEPING.value, habapp_rules.system.SleepState.LOCKED.value):
+					getattr(self._item_sleeping_state, "value", "awake") in (habapp_rules.system.SleepState.AWAKE.value, habapp_rules.system.SleepState.POST_SLEEPING.value, habapp_rules.system.SleepState.LOCKED.value):
 				return "auto_on"
 			if self._pre_sleep_configured() and \
 					self._item_presence_state.value in (habapp_rules.system.PresenceState.PRESENCE.value, habapp_rules.system.PresenceState.LEAVING.value) and \
-					self._item_sleeping_state.value in (habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value):
+					getattr(self._item_sleeping_state, "value", "") in (habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value):
 				return "auto_presleep"
 			if self._leaving_configured():
 				return "auto_leaving"
@@ -175,6 +176,9 @@ class Light(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 		:return: True if pre-sleep is configured
 		"""
+		if not self._item_sleeping_state:
+			return False
+
 		pre_sleep_prevent = False
 		if self._config.pre_sleep_prevent:
 			if callable(self._config.pre_sleep_prevent):
@@ -193,7 +197,7 @@ class Light(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 	def _set_timeouts(self) -> None:
 		"""Set timeouts depending on the current day/night/sleep state."""
-		sleeping_active = self._item_sleeping_state.value == habapp_rules.system.SleepState.SLEEPING.value
+		sleeping_active = getattr(self._item_sleeping_state, "value", "") == habapp_rules.system.SleepState.SLEEPING.value
 
 		if sleeping_active:
 			self._timeout_on = self._config.on.sleeping.timeout
@@ -238,7 +242,7 @@ class Light(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 		:return: brightness value
 		"""
-		sleeping_active = self._item_sleeping_state.value in (habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value)
+		sleeping_active = getattr(self._item_sleeping_state, "value", "") in (habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value)
 
 		if self.state == "auto_on":
 			if self._previous_state == "manual":

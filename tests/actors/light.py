@@ -43,12 +43,19 @@ class TestLight(unittest.TestCase):
 		self.__runner.set_up()
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Light_Switch", "OFF")
+
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light", 0)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light_ctr", 0)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual", True)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "rules_actors_light_Light_state", "")
+
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light_2", 0)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light_2_ctr", 0)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual_2", True)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "rules_actors_light_Light_2_state", "")
+
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Presence_state", habapp_rules.system.PresenceState.PRESENCE.value)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Sleep_state", habapp_rules.system.SleepState.AWAKE.value)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "rules_actors_light_Light_state", "")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Day", True)
 
 		self.light_config = LightConfig(
@@ -58,13 +65,14 @@ class TestLight(unittest.TestCase):
 			pre_sleep=FunctionConfig(day=None, night=BrightnessTimeout(10, 20), sleeping=None)
 		)
 		with unittest.mock.patch.object(habapp_rules.core.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")):
-			self.light = habapp_rules.actors.light.Light("Unittest_Light", ["Unittest_Light_ctr"], "Unittest_Manual", "Unittest_Presence_state", "Unittest_Sleep_state", "Unittest_Day", self.light_config)
+			self.light = habapp_rules.actors.light.Light("Unittest_Light", ["Unittest_Light_ctr"], "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", self.light_config, "Unittest_Sleep_state")
+			self.light_without_sleep = habapp_rules.actors.light.Light("Unittest_Light_2", ["Unittest_Light_2_ctr"], "Unittest_Manual_2", "Unittest_Presence_state", "Unittest_Day", self.light_config)
 
 	def test_init_with_switch(self):
 		"""Test init with switch_item"""
 		with self.assertRaises(TypeError), \
 				unittest.mock.patch.object(habapp_rules.core.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")):
-			habapp_rules.actors.light.Light("Unittest_Light_Switch", ["Unittest_Light_ctr"], "Unittest_Manual", "Unittest_Presence_state", "Unittest_Sleep_state", "Unittest_Day", self.light_config)
+			habapp_rules.actors.light.Light("Unittest_Light_Switch", ["Unittest_Light_ctr"], "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", self.light_config, "Unittest_Sleep_state")
 
 	def _get_state_names(self, states: dict, parent_state: str | None = None) -> list[str]:  # pragma: no cover
 		"""Helper function to get all state names (also nested states)
@@ -215,15 +223,28 @@ class TestLight(unittest.TestCase):
 			TestCase(42, "ON", habapp_rules.system.SleepState.LOCKED.value, habapp_rules.system.PresenceState.LONG_ABSENCE.value, "manual"),
 		]
 
-		with unittest.mock.patch.object(self.light, "_pre_sleep_configured", return_value=True), unittest.mock.patch.object(self.light, "_leaving_configured", return_value=True):
+		# pre sleep configured
+		with unittest.mock.patch.object(self.light, "_pre_sleep_configured", return_value=True), unittest.mock.patch.object(self.light, "_leaving_configured", return_value=True),  \
+				unittest.mock.patch.object(self.light_without_sleep, "_pre_sleep_configured", return_value=False), unittest.mock.patch.object(self.light, "_leaving_configured", return_value=True):
 			for test_case in test_cases:
 				tests.helper.oh_item.set_state("Unittest_Light", test_case.light_value)
 				tests.helper.oh_item.set_state("Unittest_Manual", test_case.manual_value)
+				tests.helper.oh_item.set_state("Unittest_Light_2", test_case.light_value)
+				tests.helper.oh_item.set_state("Unittest_Manual_2", test_case.manual_value)
 				tests.helper.oh_item.set_state("Unittest_Presence_state", test_case.presence_value)
 				tests.helper.oh_item.set_state("Unittest_Sleep_state", test_case.sleep_value)
 
 				self.assertEqual(test_case.expected_state, self.light._get_initial_state("default"), test_case)
 
+				if (expected_state := test_case.expected_state) == "auto_presleep":
+					if test_case.presence_value == habapp_rules.system.PresenceState.LEAVING.value:
+						expected_state = "auto_leaving"
+					else:
+						expected_state = "auto_on"
+
+				self.assertEqual(expected_state, self.light_without_sleep._get_initial_state("default"), test_case)
+
+		# pre sleep not configured
 		with unittest.mock.patch.object(self.light, "_pre_sleep_configured", return_value=False), unittest.mock.patch.object(self.light, "_leaving_configured", return_value=False):
 			for test_case in test_cases:
 				tests.helper.oh_item.set_state("Unittest_Light", test_case.light_value)
@@ -308,7 +329,12 @@ class TestLight(unittest.TestCase):
 		for test_case in test_cases:
 			self.light._timeout_pre_sleep = test_case.timeout
 			self.light._config.pre_sleep_prevent = test_case.prevent
+
+			self.light_without_sleep._timeout_pre_sleep = test_case.timeout
+			self.light_without_sleep._config.pre_sleep_prevent = test_case.prevent
+
 			self.assertEqual(test_case.result, self.light._pre_sleep_configured())
+			self.assertFalse(self.light_without_sleep._pre_sleep_configured())
 
 	def test_was_on_before(self):
 		"""Test _was_on_before."""
@@ -409,6 +435,11 @@ class TestLight(unittest.TestCase):
 		self.light._brightness_before = 42
 		self.light._state_observer._value = 100
 		self.light._state_observer._last_manual_event = HABApp.openhab.events.ItemCommandEvent("Item_name", "ON")
+
+		self.light_without_sleep._config = light_config
+		self.light_without_sleep._brightness_before = 42
+		self.light_without_sleep._state_observer._value = 100
+		self.light_without_sleep._state_observer._last_manual_event = HABApp.openhab.events.ItemCommandEvent("Item_name", "ON")
 
 		test_cases = [
 			# ============================== auto ON ==============================
@@ -523,7 +554,14 @@ class TestLight(unittest.TestCase):
 			self.light.state = test_case.state
 			self.light._previous_state = test_case.previous_state
 
+			self.light_without_sleep._item_day.value = "ON" if test_case.day else "OFF"
+			self.light_without_sleep.state = test_case.state
+			self.light_without_sleep._previous_state = test_case.previous_state
+
 			self.assertEqual(test_case.expected_value, self.light._get_target_brightness(), test_case)
+
+			if test_case.state != "auto_presleep" and test_case.previous_state != "auto_presleep" and not test_case.sleeping:
+				self.assertEqual(test_case.expected_value, self.light_without_sleep._get_target_brightness(), test_case)
 
 		# switch on by value
 		for switch_on_value in [20, "INCREASE"]:
