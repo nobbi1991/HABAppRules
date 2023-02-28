@@ -3,6 +3,10 @@
 ## Features
 
 - Added ``actors.light`` to control lights
+- Added ``core.timeout_list``
+- Moved some modules from ``common`` to ``core``
+- removed ``helper`` submodule and switched to ``nose_helper`` package
+- Added logging of ``habapp_rules`` version
 
 # Version 2.1.1 - 04.02.2023
 

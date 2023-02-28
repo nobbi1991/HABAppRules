@@ -5,6 +5,7 @@ import os
 import typing
 import HABApp.config.config
 import HABApp.config.logging
+import habapp_rules.__version__
 
 LOG_PATH = HABApp.config.config.CONFIG.directories.logging.absolute()
 
@@ -52,3 +53,5 @@ class InstanceLogger(logging.LoggerAdapter):
 
 
 setup_logger()
+LOGGER = logging.getLogger(__name__)
+LOGGER.info(f"Start logging of habapp_rules. Version = {habapp_rules.__version__.__version__}")

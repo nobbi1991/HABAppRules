@@ -1,19 +1,16 @@
 import pathlib
-import sys
 
-import nox.command
-
-sys.path.append(str(pathlib.Path(__file__).parent.resolve() / "helper"))
-from helper.nox_checks.common import NoxBase, run_combined_sessions
+import nose_helper.nox_checks.common
+import nox
 
 PYTHON_VERSION = "3.10"
 nox.options.sessions = ["coverage", "pylint"]
 
 
-class Nox(NoxBase):
+class Nox(nose_helper.nox_checks.common.NoxBase):
 
 	def __init__(self, session: nox.Session):
-		NoxBase.__init__(self, session, project_name="habapp_rules", changelog_path=pathlib.Path().resolve() / "changelog.md")
+		nose_helper.nox_checks.common.NoxBase.__init__(self, session, project_name="habapp_rules", changelog_path=pathlib.Path().resolve() / "changelog.md")
 
 
 @nox.session(python=PYTHON_VERSION)
@@ -37,8 +34,8 @@ def version_check(session):
 @nox.session(python=PYTHON_VERSION)
 def combined_merge(session: nox.sessions.Session):
 	"""Run all tests for merge."""
-	nox_helper = NoxBase(session)
-	run_combined_sessions(session, [
+	nox_helper = nose_helper.nox_checks.common.NoxBase(session)
+	nose_helper.nox_checks.common.run_combined_sessions(session, [
 		("coverage", nox_helper.coverage),
 		("pylint", nox_helper.pylint)
 	])
@@ -47,8 +44,8 @@ def combined_merge(session: nox.sessions.Session):
 @nox.session(python=PYTHON_VERSION)
 def combined_release(session: nox.sessions.Session):
 	"""Run all tests for release."""
-	pkg_nox = NoxBase(session)
-	run_combined_sessions(session, [
+	pkg_nox = nose_helper.nox_checks.common.NoxBase(session)
+	nose_helper.nox_checks.common.run_combined_sessions(session, [
 		("coverage", pkg_nox.coverage),
 		("pylint", pkg_nox.pylint),
 		("version_check", pkg_nox.version_check)

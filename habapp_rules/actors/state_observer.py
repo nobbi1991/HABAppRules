@@ -10,6 +10,7 @@ import HABApp.openhab.interface
 import HABApp.openhab.items
 
 import habapp_rules.core.logger
+import habapp_rules.core.timeout_list
 
 LOGGER = logging.getLogger(__name__)
 
@@ -29,7 +30,7 @@ class StateObserverBase(HABApp.Rule, abc.ABC):
 		super().__init__()
 		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, item_name)
 
-		self._expected_values = []
+		self._expected_values = habapp_rules.core.timeout_list.TimeoutList()
 		self._last_manual_event = HABApp.openhab.events.ItemCommandEvent()
 
 		self._item = HABApp.openhab.items.OpenhabItem.get_item(item_name)
@@ -74,7 +75,7 @@ class StateObserverBase(HABApp.Rule, abc.ABC):
 		:param value: Value to send to the light
 		:raises ValueError: if value has wrong format
 		"""
-		self._expected_values.append(value)
+		self._expected_values.append(value, 20)
 		self._item.oh_send_command(value)
 
 	def _cb_command(self, event: HABApp.openhab.events.ItemCommandEvent) -> None:
@@ -86,7 +87,7 @@ class StateObserverBase(HABApp.Rule, abc.ABC):
 			return
 
 		self._check_manual(event, "Manual from OpenHAB")
-		self._expected_values.append(event.value)
+		self._expected_values.append(event.value, 20)
 
 	def _cb_state_change(self, event: HABApp.openhab.events.ItemStateChangedEvent, call_check_manual: bool = True):
 		"""Callback, which is called if a value change of the light item was detected.

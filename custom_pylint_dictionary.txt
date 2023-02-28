@@ -1,4 +1,5 @@
 autoupdate
+bool
 config
 dataclass
 enums
@@ -9,5 +10,6 @@ msg
 png
 pre
 pragma
+repr
 smtp
 unittest
