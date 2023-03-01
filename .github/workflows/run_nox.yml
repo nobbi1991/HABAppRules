@@ -13,8 +13,6 @@ jobs:
     steps:
       - name: checkout repo
         uses: actions/checkout@v2
-        with:
-          submodules: recursive
       - name: setup nox
         uses: excitedleigh/setup-nox@main
       - name: run nox

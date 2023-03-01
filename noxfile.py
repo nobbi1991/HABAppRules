@@ -1,6 +1,17 @@
 import pathlib
+import subprocess
+import sys
 
-import nose_helper.nox_checks.common
+try:
+	import nose_helper.nox_checks.common
+except ImportError:
+	with (pathlib.Path.cwd() / "requirements_dev.txt").open() as req_file:
+		nose_pkg = next((pkg for pkg in req_file.read().split("\n") if pkg.startswith("nose_helper")), None)
+		if not nose_pkg:
+			raise Exception("nose_helper package is missing in requirements_dev.txt")
+		subprocess.check_call([sys.executable, "-m", "pip", "install", nose_pkg])
+	import nose_helper.nox_checks.common
+
 import nox
 
 PYTHON_VERSION = "3.10"
