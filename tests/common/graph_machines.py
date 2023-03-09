@@ -14,7 +14,7 @@ os.environ["PATH"] += r"C:\Program Files\Graphviz\bin"
 
 
 # pylint: disable=protected-access, missing-type-doc
-def get_graph_with_previous_state(self, title=None, roi_state=None) -> pgv.Digraph:
+def get_graph_with_previous_state(self, title=None, roi_state=None) -> object:
 	"""Monkey patch for transtitions.extentions.diagrams_graphviz.Graph.get_graph, which also adds all previous states.
 
 	:param self: graph object
