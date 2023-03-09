@@ -21,6 +21,10 @@ import tests.helper.timer
 from habapp_rules.actors.light_config import LightConfig, FunctionConfig, BrightnessTimeout
 
 
+class FakeModel:
+	"""This class is used as fake model for graph creation"""
+
+
 # pylint: disable=protected-access,no-member,too-many-public-methods
 class TestLight(unittest.TestCase):
 	"""Tests cases for testing Light rule."""
@@ -68,6 +72,41 @@ class TestLight(unittest.TestCase):
 			self.light = habapp_rules.actors.light.Light("Unittest_Light", ["Unittest_Light_ctr"], "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", self.light_config, "Unittest_Sleep_state")
 			self.light_without_sleep = habapp_rules.actors.light.Light("Unittest_Light_2", ["Unittest_Light_2_ctr"], "Unittest_Manual_2", "Unittest_Presence_state", "Unittest_Day", self.light_config)
 
+	def test__init__(self):
+		"""Test __init__."""
+		expected_states = [
+			{"name": "manual"},
+			{"name": "auto", "initial": "init",
+			 "children": [
+				 {"name": "init"},
+				 {"name": "on", "timeout": 10, "on_timeout": "auto_on_timeout"},
+				 {"name": "preoff", "timeout": 4, "on_timeout": "preoff_timeout"},
+				 {"name": "off"},
+				 {"name": "leaving", "timeout": 5, "on_timeout": "leaving_timeout"},
+				 {"name": "presleep", "timeout": 5, "on_timeout": "presleep_timeout"}]}]
+		self.assertEqual(expected_states, self.light.states)
+
+		expected_trans = [
+			{"trigger": "manual_on", "source": "auto", "dest": "manual"},
+			{"trigger": "manual_off", "source": "manual", "dest": "auto"},
+			{"trigger": "hand_on", "source": ["auto_off", "auto_preoff"], "dest": "auto_on"},
+			{"trigger": "hand_off", "source": ["auto_on", "auto_leaving", "auto_presleep"], "dest": "auto_off"},
+			{"trigger": "hand_off", "source": "auto_preoff", "dest": "auto_on"},
+			{"trigger": "hand_changed", "source": "auto_on", "dest": "auto_on"},
+			{"trigger": "auto_on_timeout", "source": "auto_on", "dest": "auto_preoff", "conditions": "_pre_off_configured"},
+			{"trigger": "auto_on_timeout", "source": "auto_on", "dest": "auto_off", "unless": "_pre_off_configured"},
+			{"trigger": "preoff_timeout", "source": "auto_preoff", "dest": "auto_off"},
+			{"trigger": "leaving_started", "source": ["auto_on", "auto_off", "auto_preoff"], "dest": "auto_leaving", "conditions": "_leaving_configured"},
+			{"trigger": "leaving_aborted", "source": "auto_leaving", "dest": "auto_on", "conditions": "_was_on_before"},
+			{"trigger": "leaving_aborted", "source": "auto_leaving", "dest": "auto_off", "unless": "_was_on_before"},
+			{"trigger": "leaving_timeout", "source": "auto_leaving", "dest": "auto_off"},
+			{"trigger": "sleep_started", "source": ["auto_on", "auto_off", "auto_preoff"], "dest": "auto_presleep", "conditions": "_pre_sleep_configured"},
+			{"trigger": "sleep_aborted", "source": "auto_presleep", "dest": "auto_on", "conditions": "_was_on_before"},
+			{"trigger": "sleep_aborted", "source": "auto_presleep", "dest": "auto_off", "unless": "_was_on_before"},
+			{"trigger": "presleep_timeout", "source": "auto_presleep", "dest": "auto_off"}
+		]
+		self.assertEqual(expected_trans, self.light.trans)
+
 	def test_init_with_switch(self):
 		"""Test init with switch_item"""
 		with self.assertRaises(TypeError), \
@@ -100,19 +139,23 @@ class TestLight(unittest.TestCase):
 		if not picture_dir.is_dir():
 			os.makedirs(picture_dir)
 
-		presence_graph = tests.common.graph_machines.HierarchicalGraphMachineTimer(
-			model=self.light,
+		light_graph = tests.common.graph_machines.HierarchicalGraphMachineTimer(
+			model=FakeModel(),
 			states=self.light.states,
 			transitions=self.light.trans,
 			initial=self.light.state,
 			show_conditions=False)
 
-		presence_graph.get_graph().draw(picture_dir / "Light.png", format="png", prog="dot")
+		light_graph.get_graph().draw(picture_dir / "Light.png", format="png", prog="dot")
 
-		presence_graph.show_conditions = True
-		for state_name in self._get_state_names(self.light.states):
-			presence_graph.set_state(state_name)
-			presence_graph.get_graph(show_roi=True).draw(picture_dir / f"Light_{state_name}.png", format="png", prog="dot")
+		for state_name in [state for state in self._get_state_names(self.light.states) if state not in ["auto_init"]]:
+			light_graph = tests.common.graph_machines.HierarchicalGraphMachineTimer(
+				model=FakeModel(),
+				states=self.light.states,
+				transitions=self.light.trans,
+				initial=state_name,
+				show_conditions=True)
+			light_graph.get_graph(force_new=True, show_roi=True).draw(picture_dir / f"Light_{state_name}.png", format="png", prog="dot")
 
 	def test_get_initial_state(self):
 		"""Test if correct initial state will be set."""
@@ -224,7 +267,7 @@ class TestLight(unittest.TestCase):
 		]
 
 		# pre sleep configured
-		with unittest.mock.patch.object(self.light, "_pre_sleep_configured", return_value=True), unittest.mock.patch.object(self.light, "_leaving_configured", return_value=True),  \
+		with unittest.mock.patch.object(self.light, "_pre_sleep_configured", return_value=True), unittest.mock.patch.object(self.light, "_leaving_configured", return_value=True), \
 				unittest.mock.patch.object(self.light_without_sleep, "_pre_sleep_configured", return_value=False), unittest.mock.patch.object(self.light, "_leaving_configured", return_value=True):
 			for test_case in test_cases:
 				tests.helper.oh_item.set_state("Unittest_Light", test_case.light_value)
@@ -787,6 +830,127 @@ class TestLight(unittest.TestCase):
 				set_timeouts_mock.assert_called_once()
 				started_mock.assert_not_called()
 				aborted_mock.assert_not_called()
+
+	def tearDown(self) -> None:
+		"""Tear down test case."""
+		tests.helper.oh_item.remove_all_mocked_items()
+		self.__runner.tear_down()
+
+
+class TestLightExtended(unittest.TestCase):
+	"""Tests cases for testing LightExtended rule."""
+
+	def setUp(self) -> None:
+		"""Setup test case."""
+		self.transitions_timer_mock_patcher = unittest.mock.patch("transitions.extensions.states.Timer", spec=threading.Timer)
+		self.addCleanup(self.transitions_timer_mock_patcher.stop)
+		self.transitions_timer_mock = self.transitions_timer_mock_patcher.start()
+
+		self.threading_timer_mock_patcher = unittest.mock.patch("threading.Timer", spec=threading.Timer)
+		self.addCleanup(self.threading_timer_mock_patcher.stop)
+		self.threading_timer_mock = self.threading_timer_mock_patcher.start()
+
+		self.send_command_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.send_command", new=tests.helper.oh_item.send_command)
+		self.addCleanup(self.send_command_mock_patcher.stop)
+		self.send_command_mock = self.send_command_mock_patcher.start()
+
+		self.__runner = tests.helper.rule_runner.SimpleRuleRunner()
+		self.__runner.set_up()
+
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Light_Switch", "OFF")
+
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light", 0)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light_ctr", 0)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual", True)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "rules_actors_light_Light_state", "")
+
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light_2", 0)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light_2_ctr", 0)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual_2", True)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "rules_actors_light_Light_2_state", "")
+
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Presence_state", habapp_rules.system.PresenceState.PRESENCE.value)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Sleep_state", habapp_rules.system.SleepState.AWAKE.value)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Day", True)
+
+		self.light_config = habapp_rules.actors.light_config.CONFIG_EXTENDED_TEST
+		with unittest.mock.patch.object(habapp_rules.core.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")):
+			self.light_extended = habapp_rules.actors.light.LightExtended("Unittest_Light", ["Unittest_Light_ctr"], "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", self.light_config, "Unittest_Sleep_state")
+
+	def test__init__(self):
+		"""Test __init__."""
+		expected_states = [
+			{"name": "manual"},
+			{"name": "auto", "initial": "init",
+			 "children": [
+				 {"name": "init"},
+				 {"name": "on", "timeout": 10, "on_timeout": "auto_on_timeout"},
+				 {"name": "preoff", "timeout": 4, "on_timeout": "preoff_timeout"},
+				 {"name": "off"},
+				 {"name": "leaving", "timeout": 5, "on_timeout": "leaving_timeout"},
+				 {"name": "presleep", "timeout": 5, "on_timeout": "presleep_timeout"},
+				 {"name": "door"},
+				 {"name": "movement"}]}]
+		self.assertEqual(expected_states, self.light_extended.states)
+
+		expected_trans = [
+			{"trigger": "manual_on", "source": "auto", "dest": "manual"},
+			{"trigger": "manual_off", "source": "manual", "dest": "auto"},
+			{"trigger": "hand_on", "source": ["auto_off", "auto_preoff"], "dest": "auto_on"},
+			{"trigger": "hand_off", "source": ["auto_on", "auto_leaving", "auto_presleep"], "dest": "auto_off"},
+			{"trigger": "hand_off", "source": "auto_preoff", "dest": "auto_on"},
+			{"trigger": "hand_changed", "source": "auto_on", "dest": "auto_on"},
+			{"trigger": "auto_on_timeout", "source": "auto_on", "dest": "auto_preoff", "conditions": "_pre_off_configured"},
+			{"trigger": "auto_on_timeout", "source": "auto_on", "dest": "auto_off", "unless": "_pre_off_configured"},
+			{"trigger": "preoff_timeout", "source": "auto_preoff", "dest": "auto_off"},
+			{"trigger": "leaving_started", "source": ["auto_on", "auto_off", "auto_preoff"], "dest": "auto_leaving", "conditions": "_leaving_configured"},
+			{"trigger": "leaving_aborted", "source": "auto_leaving", "dest": "auto_on", "conditions": "_was_on_before"},
+			{"trigger": "leaving_aborted", "source": "auto_leaving", "dest": "auto_off", "unless": "_was_on_before"},
+			{"trigger": "leaving_timeout", "source": "auto_leaving", "dest": "auto_off"},
+			{"trigger": "sleep_started", "source": ["auto_on", "auto_off", "auto_preoff"], "dest": "auto_presleep", "conditions": "_pre_sleep_configured"},
+			{"trigger": "sleep_aborted", "source": "auto_presleep", "dest": "auto_on", "conditions": "_was_on_before"}, {"trigger": "sleep_aborted", "source": "auto_presleep", "dest": "auto_off", "unless": "_was_on_before"},
+			{"trigger": "presleep_timeout", "source": "auto_presleep", "dest": "auto_off"},
+			{"trigger": "movement_on", "source": "auto_door", "dest": "auto_movement", "conditions": "_movement_configured"},
+			{"trigger": "movement_on", "source": "auto_off", "dest": "auto_movement", "conditions": "_movement_configured"},
+			{"trigger": "movement_on", "source": "auto_preoff", "dest": "auto_movement", "conditions": "_movement_configured"},
+			{"trigger": "movement_off", "source": "auto_movement", "dest": "auto_preoff", "conditions": "_pre_off_configured"},
+			{"trigger": "movement_off", "source": "auto_movement", "dest": "auto_off", "unless": "_pre_off_configured"},
+			{"trigger": "movement_timeout", "source": "auto_movement", "dest": "auto_preoff", "conditions": "_pre_off_configured"},
+			{"trigger": "movement_timeout", "source": "auto_movement", "dest": "auto_off", "unless": "_pre_off_configured"},
+			{"trigger": "door_opened", "source": "auto_off", "dest": "auto_door", "conditions": "_door_configured"},
+			{"trigger": "door_timeout", "source": "auto_door", "dest": "auto_preoff", "conditions": "_pre_off_configured"},
+			{"trigger": "door_timeout", "source": "auto_door", "dest": "auto_off", "unless": "_pre_off_configured"},
+			{"trigger": "door_closed", "source": "auto_leaving", "dest": "auto_off", "conditions": "_door_off_configured"}
+		]
+
+		self.assertEqual(expected_trans, self.light_extended.trans)
+
+	@unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
+	def test_create_graph(self):  # pragma: no cover
+		"""Create state machine graph for documentation."""
+		picture_dir = pathlib.Path(__file__).parent / "LightExtended_States"
+		if not picture_dir.is_dir():
+			os.makedirs(picture_dir)
+
+		light_extended_graph = tests.common.graph_machines.HierarchicalGraphMachineTimer(
+			model=self.light_extended,
+			states=self.light_extended.states,
+			transitions=self.light_extended.trans,
+			initial=self.light_extended.state,
+			show_conditions=False)
+
+		light_extended_graph.get_graph().draw(picture_dir / "LightExtended.png", format="png", prog="dot")
+
+		for state_name in ["auto_door", "auto_movement", "auto_leaving"]:
+			light_extended_graph = tests.common.graph_machines.HierarchicalGraphMachineTimer(
+				model=FakeModel(),
+				states=self.light_extended.states,
+				transitions=self.light_extended.trans,
+				initial=self.light_extended.state,
+				show_conditions=True)
+
+			light_extended_graph.set_state(state_name)
+			light_extended_graph.get_graph(force_new=True, show_roi=True).draw(picture_dir / f"LightExtended_{state_name}.png", format="png", prog="dot")
 
 	def tearDown(self) -> None:
 		"""Tear down test case."""

@@ -2,8 +2,10 @@
 
 ## Features
 
-- Added ``actors.light`` to control lights
-- Added ``core.timeout_list``
+- Added ``habapp_rules.actors.light`` to control lights:
+  - ``habapp_rules.actors.light.Light`` for basic light functionality like switch-on brightness or leaving / sleeping light
+  - ``habapp_rules.actors.light.LightExtended`` includes everything from ``habapp_rules.actors.light.Light`` plus switch on depending on movement or opening of a door
+- Added ``habapp_rules.core.timeout_list``
 - Moved some modules from ``common`` to ``core``
 - removed ``helper`` submodule and switched to ``nose_helper`` package
 - Added logging of ``habapp_rules`` version
