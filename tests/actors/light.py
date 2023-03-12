@@ -951,7 +951,9 @@ class TestLightExtended(unittest.TestCase):
 			{"trigger": "door_timeout", "source": "auto_door", "dest": "auto_preoff", "conditions": "_pre_off_configured"},
 			{"trigger": "door_timeout", "source": "auto_door", "dest": "auto_off", "unless": "_pre_off_configured"},
 			{"trigger": "door_closed", "source": "auto_leaving", "dest": "auto_off", "conditions": "_door_off_leaving_configured"},
-			{"trigger": "hand_off", "source": "auto_door", "dest": "auto_off"}
+			{"trigger": "hand_off", "source": "auto_door", "dest": "auto_off"},
+			{"trigger": "leaving_started", "source": ["auto_movement", "auto_door"], "dest": "auto_leaving", "conditions": "_leaving_configured"},
+			{"trigger": "sleep_started", "source": ["auto_movement", "auto_door"], "dest": "auto_presleep", "conditions": "_pre_sleep_configured"}
 		]
 
 		self.assertEqual(expected_trans, self.light_extended.trans)
@@ -1225,6 +1227,28 @@ class TestLightExtended(unittest.TestCase):
 			tests.helper.oh_item.send_command("Unittest_Movement", "ON", "OFF")
 		self.assertEqual("auto_preoff", self.light_extended.state)
 
+		# from auto_movement to auto_leaving (leaving configured)
+		self.light_extended.to_auto_movement()
+		tests.helper.oh_item.send_command("Unittest_Presence_state", habapp_rules.system.PresenceState.LEAVING.value, habapp_rules.system.PresenceState.PRESENCE.value)
+		self.assertEqual("auto_leaving", self.light_extended.state)
+
+		# auto_movement no change at leaving (leaving NOT configured)
+		self.light_extended.to_auto_movement()
+		with unittest.mock.patch.object(self.light_extended, "_leaving_configured", return_value=False):
+			tests.helper.oh_item.send_command("Unittest_Presence_state", habapp_rules.system.PresenceState.LEAVING.value, habapp_rules.system.PresenceState.PRESENCE.value)
+		self.assertEqual("auto_movement", self.light_extended.state)
+
+		# from auto_movement to auto_presleep (pre sleep configured)
+		self.light_extended.to_auto_movement()
+		tests.helper.oh_item.send_command("Unittest_Sleep_state", habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value)
+		self.assertEqual("auto_presleep", self.light_extended.state)
+
+		# auto_movement no change at leaving (pre sleep NOT configured)
+		self.light_extended.to_auto_movement()
+		with unittest.mock.patch.object(self.light_extended, "_pre_sleep_configured", return_value=False):
+			tests.helper.oh_item.send_command("Unittest_Sleep_state", habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value)
+		self.assertEqual("auto_movement", self.light_extended.state)
+
 	def test_auto_door(self):
 		"""Test transitions of auto_door."""
 		# to auto_off by hand_off
@@ -1270,6 +1294,28 @@ class TestLightExtended(unittest.TestCase):
 		with unittest.mock.patch.object(self.light_extended, "_door_configured", return_value=False):
 			tests.helper.oh_item.send_command("Unittest_Door_1", "OPEN", "CLOSED")
 		self.assertEqual("auto_off", self.light_extended.state)
+
+		# from auto_door to auto_leaving (leaving configured)
+		self.light_extended.to_auto_door()
+		tests.helper.oh_item.send_command("Unittest_Presence_state", habapp_rules.system.PresenceState.LEAVING.value, habapp_rules.system.PresenceState.PRESENCE.value)
+		self.assertEqual("auto_leaving", self.light_extended.state)
+
+		# auto_door no change at leaving (leaving NOT configured)
+		self.light_extended.to_auto_door()
+		with unittest.mock.patch.object(self.light_extended, "_leaving_configured", return_value=False):
+			tests.helper.oh_item.send_command("Unittest_Presence_state", habapp_rules.system.PresenceState.LEAVING.value, habapp_rules.system.PresenceState.PRESENCE.value)
+		self.assertEqual("auto_door", self.light_extended.state)
+
+		# from auto_door to auto_presleep (pre sleep configured)
+		self.light_extended.to_auto_door()
+		tests.helper.oh_item.send_command("Unittest_Sleep_state", habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value)
+		self.assertEqual("auto_presleep", self.light_extended.state)
+
+		# auto_door no change at leaving (pre sleep NOT configured)
+		self.light_extended.to_auto_door()
+		with unittest.mock.patch.object(self.light_extended, "_pre_sleep_configured", return_value=False):
+			tests.helper.oh_item.send_command("Unittest_Sleep_state", habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value)
+		self.assertEqual("auto_door", self.light_extended.state)
 
 	def test_leaving(self):
 		"""Test new extended transitions of auto_leaving."""

@@ -413,6 +413,9 @@ class LightExtended(Light):
 	trans.append({"trigger": "door_closed", "source": "auto_leaving", "dest": "auto_off", "conditions": "_door_off_leaving_configured"})
 	trans.append({"trigger": "hand_off", "source": "auto_door", "dest": "auto_off"})
 
+	trans.append({"trigger": "leaving_started", "source": ["auto_movement", "auto_door"], "dest": "auto_leaving", "conditions": "_leaving_configured"})
+	trans.append({"trigger": "sleep_started", "source": ["auto_movement", "auto_door"], "dest": "auto_presleep", "conditions": "_pre_sleep_configured"})
+
 	def __init__(self, name_light: str, control_names: list[str], manual_name: str, presence_state_name: str, day_name: str, config: habapp_rules.actors.light_config.LightConfigExtended, sleeping_state_name: str | None = None,
 	             name_movement: str | None = None, door_names: list[str] | None = None) -> None:
 		"""Init of extended light object.
