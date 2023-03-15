@@ -2,7 +2,7 @@
 
 ## Features
 
-- Added ``habapp_rules.actors.light`` to control lights:
+- Added ``habapp_rules.actors.light`` to control dimmer lights (switch lights will be supported later):
   - ``habapp_rules.actors.light.Light`` for basic light functionality like switch-on brightness or leaving / sleeping light
   - ``habapp_rules.actors.light.LightExtended`` includes everything from ``habapp_rules.actors.light.Light`` plus switch on depending on movement or opening of a door
 - Added ``habapp_rules.core.timeout_list``
