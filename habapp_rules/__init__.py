@@ -2,5 +2,5 @@
 import logging
 import pathlib
 
-LOGGER = logging.getLogger('HABApp.Rules')
+LOGGER = logging.getLogger(__name__)
 BASE_PATH = pathlib.Path(__file__).parent.parent.resolve()

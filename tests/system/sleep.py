@@ -8,7 +8,7 @@ import unittest.mock
 
 import HABApp.rule.rule
 
-import habapp_rules.common.state_machine_rule
+import habapp_rules.core.state_machine_rule
 import habapp_rules.system.sleep
 import tests.common.graph_machines
 import tests.helper.oh_item
@@ -44,20 +44,20 @@ class TestSleep(unittest.TestCase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Display_Text", "")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "rules_system_sleep_Sleep_state", "")
 
-		with unittest.mock.patch.object(habapp_rules.common.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_sleep_Sleep_state", "")):
+		with unittest.mock.patch.object(habapp_rules.core.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_sleep_Sleep_state", "")):
 			self._sleep = habapp_rules.system.sleep.Sleep("Unittest_Sleep", "Unittest_Sleep_Request", name_lock="Unittest_Lock", name_lock_request="Unittest_Lock_Request", name_display_text="Unittest_Display_Text")
 
 	@unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
-	def test_create_graph(self):
+	def test_create_graph(self):  # pragma: no cover
 		"""Create state machine graph for documentation."""
-		presence_graph = tests.common.graph_machines.GraphMachineTimer(  # pragma: no cover
+		presence_graph = tests.common.graph_machines.GraphMachineTimer(
 			model=self._sleep,
 			states=self._sleep.states,
 			transitions=self._sleep.trans,
 			initial=self._sleep.state,
 			show_conditions=True
 		)
-		presence_graph.get_graph().draw(pathlib.Path(__file__).parent / "Sleep.png", format="png", prog="dot")  # pragma: no cover
+		presence_graph.get_graph().draw(pathlib.Path(__file__).parent / "Sleep.png", format="png", prog="dot")
 
 	def test_enums(self):
 		"""Test if all enums from __init__.py are implemented"""
@@ -81,7 +81,7 @@ class TestSleep(unittest.TestCase):
 			tests.helper.oh_item.set_state("Unittest_Sleep_Request", test_case.sleep_request_state)
 			tests.helper.oh_item.set_state("Unittest_Lock_Request", test_case.lock_request_state)
 
-			with unittest.mock.patch.object(habapp_rules.common.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_sleep_Sleep_state", "")):
+			with unittest.mock.patch.object(habapp_rules.core.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_sleep_Sleep_state", "")):
 				sleep = habapp_rules.system.sleep.Sleep("Unittest_Sleep", "Unittest_Sleep_Request", name_lock="Unittest_Lock", name_lock_request="Unittest_Lock_Request", name_display_text="Unittest_Display_Text")
 
 			self.assertEqual(sleep.sleep_request_active, test_case.sleep_request_state == "ON", test_case)
@@ -237,7 +237,7 @@ class TestSleep(unittest.TestCase):
 		tests.helper.oh_item.remove_mocked_item_by_name("Unittest_Lock_Request")
 		tests.helper.oh_item.remove_mocked_item_by_name("Unittest_Display_Text")
 
-		with unittest.mock.patch.object(habapp_rules.common.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_sleep_Sleep_state", "")):
+		with unittest.mock.patch.object(habapp_rules.core.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_sleep_Sleep_state", "")):
 			self._sleep = habapp_rules.system.sleep.Sleep("Unittest_Sleep", "Unittest_Sleep_Request")
 
 		self.assertIsNone(self._sleep._Sleep__item_display_text)

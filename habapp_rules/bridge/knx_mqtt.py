@@ -3,7 +3,9 @@ import logging
 
 import HABApp
 
-LOGGER = logging.getLogger(f"HABApp.{__name__}")
+import habapp_rules.core.logger
+
+LOGGER = logging.getLogger(__name__)
 
 
 class KnxMqttDimmerBridge(HABApp.Rule):
@@ -25,6 +27,7 @@ class KnxMqttDimmerBridge(HABApp.Rule):
 		:param decrease_value: value which is set when DECREASE was received.
 		"""
 		HABApp.Rule.__init__(self)
+		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, f"{knx_dimmer_ctr}__{mqtt_dimmer}")
 
 		self.__increase_value = increase_value
 		self.__decrease_value = decrease_value
@@ -55,7 +58,7 @@ class KnxMqttDimmerBridge(HABApp.Rule):
 			else:
 				self._mqtt_item.oh_send_command(0)
 		else:
-			LOGGER.error(f"command '{event.value}' ist not supported!")
+			self._instance_logger.error(f"command '{event.value}' ist not supported!")
 
 	def _cb_mqtt_event(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
 		"""Callback, which is called if a MQTT state change event happens.

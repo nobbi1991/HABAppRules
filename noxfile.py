@@ -1,19 +1,27 @@
 import pathlib
+import subprocess
 import sys
 
-import nox.command
+try:
+	import nose_helper.nox_checks.common
+except ImportError:
+	with (pathlib.Path.cwd() / "requirements_dev.txt").open() as req_file:
+		nose_pkg = next((pkg for pkg in req_file.read().split("\n") if pkg.startswith("nose_helper")), None)
+		if not nose_pkg:
+			raise Exception("nose_helper package is missing in requirements_dev.txt")
+		subprocess.check_call([sys.executable, "-m", "pip", "install", nose_pkg])
+	import nose_helper.nox_checks.common
 
-sys.path.append(str(pathlib.Path(__file__).parent.resolve() / "helper"))
-from helper.nox_checks.common import NoxBase, run_combined_sessions
+import nox
 
 PYTHON_VERSION = "3.10"
-nox.options.sessions = ["coverage", "pylint"]
+nox.options.sessions = ["version_check", "coverage", "pylint"]
 
 
-class Nox(NoxBase):
+class Nox(nose_helper.nox_checks.common.NoxBase):
 
 	def __init__(self, session: nox.Session):
-		NoxBase.__init__(self, session, project_name="habapp_rules", changelog_path=pathlib.Path().resolve() / "changelog.md")
+		nose_helper.nox_checks.common.NoxBase.__init__(self, session, project_name="habapp_rules", changelog_path=pathlib.Path().resolve() / "changelog.md")
 
 
 @nox.session(python=PYTHON_VERSION)
@@ -32,24 +40,3 @@ def pylint(session):
 def version_check(session):
 	"""Check if version was updated."""
 	Nox(session).version_check()
-
-
-@nox.session(python=PYTHON_VERSION)
-def combined_merge(session: nox.sessions.Session):
-	"""Run all tests for merge."""
-	nox_helper = NoxBase(session)
-	run_combined_sessions(session, [
-		("coverage", nox_helper.coverage),
-		("pylint", nox_helper.pylint)
-	])
-
-
-@nox.session(python=PYTHON_VERSION)
-def combined_release(session: nox.sessions.Session):
-	"""Run all tests for release."""
-	pkg_nox = NoxBase(session)
-	run_combined_sessions(session, [
-		("coverage", pkg_nox.coverage),
-		("pylint", pkg_nox.pylint),
-		("version_check", pkg_nox.version_check)
-	])

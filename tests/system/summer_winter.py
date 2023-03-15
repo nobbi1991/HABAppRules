@@ -204,7 +204,7 @@ class TestSummerWinter(unittest.TestCase):
 
 		# exception from __is_summer
 		with unittest.mock.patch.object(self._summer_winter, "_SummerWinter__is_summer", side_effect=habapp_rules.system.summer_winter.SummerWinterException("No update")), \
-				unittest.mock.patch("habapp_rules.system.summer_winter.LOGGER", spec=logging.Logger) as logger_mock:
+				unittest.mock.patch.object(self._summer_winter, "_instance_logger", spec=logging.Logger) as logger_mock:
 			self._summer_winter._cb_update_summer()
 			logger_mock.exception.assert_called_once()
 

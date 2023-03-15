@@ -1,10 +1,15 @@
 autoupdate
+bool
+config
 dataclass
 enums
 init
 KNX
+kwargs
 msg
 png
+pre
 pragma
+repr
 smtp
 unittest

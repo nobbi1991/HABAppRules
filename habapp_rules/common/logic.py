@@ -4,9 +4,10 @@ import logging
 
 import HABApp
 
-import habapp_rules.common.helper
+import habapp_rules.core.helper
+import habapp_rules.core.logger
 
-LOGGER = logging.getLogger(f"HABApp.{__name__}")
+LOGGER = logging.getLogger(__name__)
 
 
 class _Base(HABApp.Rule):
@@ -20,6 +21,7 @@ class _Base(HABApp.Rule):
 		:raises TypeError: if unsupported item-type is given for output_name
 		"""
 		HABApp.Rule.__init__(self)
+		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, output_name)
 
 		self._output_item = HABApp.openhab.items.OpenhabItem.get_item(output_name)
 
@@ -38,7 +40,7 @@ class _Base(HABApp.Rule):
 				self._input_items.append(input_item)
 				input_item.listen_event(self._cb_input_event, HABApp.openhab.events.ItemStateEventFilter())
 			else:
-				LOGGER.error(f"Item '{name}' must have the same type like the output item. Expected: {type(self._output_item)} | actual : {type(input_item)}")
+				self._instance_logger.error(f"Item '{name}' must have the same type like the output item. Expected: {type(self._output_item)} | actual : {type(input_item)}")
 
 		self._cb_input_event(None)
 
@@ -57,7 +59,7 @@ class _Base(HABApp.Rule):
 		if isinstance(self._output_item, HABApp.openhab.items.ContactItem):
 			self._output_item.oh_post_update(output_state)
 		else:
-			habapp_rules.common.helper.send_if_different(self._output_item.name, output_state)
+			habapp_rules.core.helper.send_if_different(self._output_item.name, output_state)
 
 
 class And(_Base):
