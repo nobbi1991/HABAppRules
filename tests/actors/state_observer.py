@@ -7,7 +7,6 @@ import HABApp.rule.rule
 
 import habapp_rules.actors.state_observer
 import habapp_rules.core.state_machine_rule
-import tests.common.graph_machines
 import tests.helper.oh_item
 import tests.helper.rule_runner
 import tests.helper.timer

@@ -13,6 +13,10 @@ except ImportError:
 os.environ["PATH"] += r"C:\Program Files\Graphviz\bin"
 
 
+class FakeModel:
+	"""This class is used as fake model for graph creation"""
+
+
 # pylint: disable=protected-access, missing-type-doc
 def get_graph_with_previous_state(self, title=None, roi_state=None) -> object:
 	"""Monkey patch for transtitions.extentions.diagrams_graphviz.Graph.get_graph, which also adds all previous states.

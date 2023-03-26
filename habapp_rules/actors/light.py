@@ -1,4 +1,4 @@
-"""Rule manage a light."""
+"""Rules to manage lights."""
 from __future__ import annotations
 
 import copy
@@ -116,7 +116,7 @@ class Light(habapp_rules.core.state_machine_rule.StateMachineRule):
 		self._item_day.listen_event(self._cb_day, HABApp.openhab.events.ItemStateChangedEventFilter())
 
 		self._update_openhab_state()
-		self._instance_logger.info(f"init of {self.__class__.__name__} '{self._item_light.name}' with state_item = {self._item_state.name} was successful.")
+		self._instance_logger.info(f"init of {self.__class__.__name__} '{name_light}' with state_item = {self._item_state.name} was successful.")
 
 	def _get_initial_state(self, default_value: str = "") -> str:
 		"""Get initial state of state machine.
@@ -138,14 +138,6 @@ class Light(habapp_rules.core.state_machine_rule.StateMachineRule):
 				return "auto_leaving"
 			return "auto_on"
 		return "auto_off"
-
-	def _set_initial_state(self) -> None:
-		"""Set initial state.
-
-		if the ``initial_state`` parameter of the state machine constructor is used the timeouts will not be started for the initial state.
-		"""
-		initial_state = self._get_initial_state()
-		eval(f"self.to_{initial_state}()")  # pylint: disable=eval-used
 
 	def _update_openhab_state(self) -> None:
 		"""Update OpenHAB state item and other states.

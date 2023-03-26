@@ -6,6 +6,7 @@ import statistics
 
 import HABApp
 
+import habapp_rules.common.hysteresis
 import habapp_rules.core.logger
 
 LOGGER = logging.getLogger(__name__)
@@ -34,7 +35,7 @@ class SummerWinter(HABApp.Rule):
 		# set class variables
 		self._persistence_service = persistence_service
 		self._days = days
-		self._temperature_threshold = temperature_threshold
+		self._hysteresis_switch = habapp_rules.common.hysteresis.HysteresisSwitch(temperature_threshold, 0.5)
 		self.__now = datetime.datetime.now()
 
 		# get items
@@ -45,15 +46,6 @@ class SummerWinter(HABApp.Rule):
 		# run at init and every day at 23:00
 		self.run.soon(self._cb_update_summer)
 		self.run.on_every_day(datetime.time(23), self._cb_update_summer)
-
-	def __get_threshold_with_hysteresis(self) -> float:
-		"""Getting threshold with hysteresis to avoid toggling of summer / winter.
-
-		:return: temperature threshold with hysteresis depending on summer / winter
-		"""
-		if bool(self._item_summer):
-			return self._temperature_threshold - 0.5
-		return self._temperature_threshold
 
 	def __get_weighted_mean(self, days_in_past: int) -> float:
 		"""Get weighted mean temperature.
@@ -96,11 +88,8 @@ class SummerWinter(HABApp.Rule):
 		if len(values) <= self._days * 0.5:
 			raise SummerWinterException(f"Not enough values to detect summer/winter. Expected: {self._days} | actual: {len(values)}")
 
-		is_summer = False
-		if (mean_value := statistics.mean(values)) > (threshold := self.__get_threshold_with_hysteresis()):
-			is_summer = True
-
-		self._instance_logger.debug(f"Check Summer/Winter. values = {values} | mean = {mean_value} | threshold = {threshold} | summer = {is_summer}")
+		is_summer = self._hysteresis_switch.get_output(mean_value := statistics.mean(values))
+		self._instance_logger.debug(f"Check Summer/Winter. values = {values} | mean = {mean_value} | summer = {is_summer}")
 		return is_summer
 
 	def _cb_update_summer(self) -> None:

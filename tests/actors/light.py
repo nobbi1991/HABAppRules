@@ -15,15 +15,11 @@ import habapp_rules.core.exceptions
 import habapp_rules.core.logger
 import habapp_rules.core.state_machine_rule
 import habapp_rules.system
-import tests.common.graph_machines
+import tests.helper.graph_machines
 import tests.helper.oh_item
 import tests.helper.rule_runner
 import tests.helper.timer
 from habapp_rules.actors.light_config import LightConfig, LightConfigExtended, FunctionConfig, BrightnessTimeout
-
-
-class FakeModel:
-	"""This class is used as fake model for graph creation"""
 
 
 # pylint: disable=protected-access,no-member,too-many-public-methods
@@ -140,8 +136,8 @@ class TestLight(unittest.TestCase):
 		if not picture_dir.is_dir():
 			os.makedirs(picture_dir)
 
-		light_graph = tests.common.graph_machines.HierarchicalGraphMachineTimer(
-			model=FakeModel(),
+		light_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
+			model=tests.helper.graph_machines.FakeModel(),
 			states=self.light.states,
 			transitions=self.light.trans,
 			initial=self.light.state,
@@ -150,8 +146,8 @@ class TestLight(unittest.TestCase):
 		light_graph.get_graph().draw(picture_dir / "Light.png", format="png", prog="dot")
 
 		for state_name in [state for state in self._get_state_names(self.light.states) if state not in ["auto_init"]]:
-			light_graph = tests.common.graph_machines.HierarchicalGraphMachineTimer(
-				model=FakeModel(),
+			light_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
+				model=tests.helper.graph_machines.FakeModel(),
 				states=self.light.states,
 				transitions=self.light.trans,
 				initial=state_name,
@@ -966,7 +962,7 @@ class TestLightExtended(unittest.TestCase):
 		if not picture_dir.is_dir():
 			os.makedirs(picture_dir)
 
-		light_extended_graph = tests.common.graph_machines.HierarchicalGraphMachineTimer(
+		light_extended_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
 			model=self.light_extended,
 			states=self.light_extended.states,
 			transitions=self.light_extended.trans,
@@ -976,8 +972,8 @@ class TestLightExtended(unittest.TestCase):
 		light_extended_graph.get_graph().draw(picture_dir / "LightExtended.png", format="png", prog="dot")
 
 		for state_name in ["auto_door", "auto_movement", "auto_leaving"]:
-			light_extended_graph = tests.common.graph_machines.HierarchicalGraphMachineTimer(
-				model=FakeModel(),
+			light_extended_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
+				model=tests.helper.graph_machines.FakeModel(),
 				states=self.light_extended.states,
 				transitions=self.light_extended.trans,
 				initial=self.light_extended.state,

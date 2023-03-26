@@ -10,7 +10,7 @@ import HABApp.rule.rule
 
 import habapp_rules.core.state_machine_rule
 import habapp_rules.system.sleep
-import tests.common.graph_machines
+import tests.helper.graph_machines
 import tests.helper.oh_item
 import tests.helper.rule_runner
 import tests.helper.timer
@@ -50,7 +50,7 @@ class TestSleep(unittest.TestCase):
 	@unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
 	def test_create_graph(self):  # pragma: no cover
 		"""Create state machine graph for documentation."""
-		presence_graph = tests.common.graph_machines.GraphMachineTimer(
+		presence_graph = tests.helper.graph_machines.GraphMachineTimer(
 			model=self._sleep,
 			states=self._sleep.states,
 			transitions=self._sleep.trans,

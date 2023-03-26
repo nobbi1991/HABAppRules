@@ -2,7 +2,6 @@
 import inspect
 import os
 import pathlib
-import time
 
 import HABApp
 import HABApp.openhab.connection_handler.func_sync
@@ -59,8 +58,7 @@ class StateMachineRule(HABApp.Rule):
 				label = f"{name.replace('_', ' ')}"
 			if item_type == "String" and not label.endswith("[%s]"):
 				label = f"{label} [%s]"
-			HABApp.openhab.interface.create_item(item_type=item_type, name=name, label=label)
-		time.sleep(0.05)
+			return HABApp.openhab.interface.create_item(item_type=item_type, name=name, label=label)
 		return HABApp.openhab.items.OpenhabItem.get_item(name)
 
 	def _get_initial_state(self, default_value: str = "initial") -> str:

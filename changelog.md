@@ -7,8 +7,10 @@
   - ``habapp_rules.actors.light.LightExtended`` includes everything from ``habapp_rules.actors.light.Light`` plus switch on depending on movement or opening of a door
 - Added ``habapp_rules.core.timeout_list``
 - Moved some modules from ``common`` to ``core``
-- removed ``helper`` submodule and switched to ``nose_helper`` package
+- Removed ``helper`` submodule and switched to ``nose_helper`` package
 - Added logging of ``habapp_rules`` version
+- Added ``habapp_rules.common.hysteresis`` which implements an hysteresis switch
+
 
 # Version 2.1.1 - 04.02.2023
 
