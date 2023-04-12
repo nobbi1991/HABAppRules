@@ -9,9 +9,9 @@ class HysteresisSwitch:
 		"""
 		self._threshold = threshold_on
 		self._hysteresis = hysteresis
-
 		self._return_bool = return_bool
 		self._on_off_state = False
+		self._value_last = 0
 
 	def set_threshold_on(self, threshold_on: float) -> None:
 		"""Update threshold.
@@ -20,13 +20,16 @@ class HysteresisSwitch:
 		"""
 		self._threshold = threshold_on
 
-	def get_output(self, value: float) -> bool | str:
+	def get_output(self, value: float | None = None) -> bool | str:
 		"""Get output of hysteresis switch
 		:param value: value which should be checked
 		:return: on / off state
 		"""
 		# get threshold depending on the current state
 		threshold = self._threshold - 0.5 * self._hysteresis if self._on_off_state else self._threshold + 0.5 * self._hysteresis
+
+		# use new value if given, otherwise last value
+		value = value if value else self._value_last # todo: add unittest for self._last_value
 
 		# get on / off state
 		self._on_off_state = value >= threshold
