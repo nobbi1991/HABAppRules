@@ -4,6 +4,7 @@ from __future__ import annotations
 import copy
 import logging
 import math
+import time
 import typing
 
 import HABApp.openhab.definitions
@@ -391,7 +392,7 @@ class LightExtended(Light):
 	trans = copy.deepcopy(Light.trans)
 
 	trans.append({"trigger": "movement_on", "source": "auto_door", "dest": "auto_movement", "conditions": "_movement_configured"})
-	trans.append({"trigger": "movement_on", "source": "auto_off", "dest": "auto_movement", "conditions": "_movement_configured"})
+	trans.append({"trigger": "movement_on", "source": "auto_off", "dest": "auto_movement", "conditions": ["_movement_configured", "_movement_door_allowed"]})
 	trans.append({"trigger": "movement_on", "source": "auto_preoff", "dest": "auto_movement", "conditions": "_movement_configured"})
 	trans.append({"trigger": "movement_off", "source": "auto_movement", "dest": "auto_preoff", "conditions": "_pre_off_configured"})
 	trans.append({"trigger": "movement_off", "source": "auto_movement", "dest": "auto_off", "unless": "_pre_off_configured"})
@@ -399,7 +400,7 @@ class LightExtended(Light):
 	trans.append({"trigger": "movement_timeout", "source": "auto_movement", "dest": "auto_off", "unless": "_pre_off_configured"})
 	trans.append({"trigger": "hand_off", "source": "auto_movement", "dest": "auto_off"})
 
-	trans.append({"trigger": "door_opened", "source": "auto_off", "dest": "auto_door", "conditions": "_door_configured"})
+	trans.append({"trigger": "door_opened", "source": "auto_off", "dest": "auto_door", "conditions": ["_door_configured", "_movement_door_allowed"]})
 	trans.append({"trigger": "door_timeout", "source": "auto_door", "dest": "auto_preoff", "conditions": "_pre_off_configured"})
 	trans.append({"trigger": "door_timeout", "source": "auto_door", "dest": "auto_off", "unless": "_pre_off_configured"})
 	trans.append({"trigger": "door_closed", "source": "auto_leaving", "dest": "auto_off", "conditions": "_door_off_leaving_configured"})
@@ -431,6 +432,8 @@ class LightExtended(Light):
 		self._item_movement = HABApp.openhab.items.switch_item.SwitchItem.get_item(name_movement) if name_movement else None
 		self._items_door = [HABApp.openhab.items.contact_item.ContactItem.get_item(name) for name in door_names]
 
+		self._hand_off_lock_time = config.hand_off_lock_time
+		self._hand_off_timestamp = 0
 		Light.__init__(self, name_light, control_names, manual_name, presence_state_name, day_name, config, sleeping_state_name)
 
 		# callbacks
@@ -517,6 +520,22 @@ class LightExtended(Light):
 		if self._item_movement is None:
 			return False
 		return bool(self._timeout_movement)
+
+	def _movement_door_allowed(self) -> bool:
+		"""Check if transition to movement and door state is allowed
+
+		:return: True if transition is allowed
+		"""
+		return time.time() - self._hand_off_timestamp > self._hand_off_lock_time
+
+	def _cb_hand_off(self, event: HABApp.openhab.events.ItemStateEvent | HABApp.openhab.events.ItemCommandEvent, msg: str) -> None:
+		"""Callback, which is triggered by the state observer if a manual OFF command was detected.
+
+		:param event: original trigger event
+		:param msg: message from state observer
+		"""
+		self._hand_off_timestamp = time.time()
+		Light._cb_hand_off(self, event, msg)
 
 	def _cb_movement(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
 		"""Callback, which is triggered if the movement state changed.

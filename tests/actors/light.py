@@ -936,14 +936,14 @@ class TestLightExtended(unittest.TestCase):
 			{"trigger": "sleep_aborted", "source": "auto_presleep", "dest": "auto_on", "conditions": "_was_on_before"}, {"trigger": "sleep_aborted", "source": "auto_presleep", "dest": "auto_off", "unless": "_was_on_before"},
 			{"trigger": "presleep_timeout", "source": "auto_presleep", "dest": "auto_off"},
 			{"trigger": "movement_on", "source": "auto_door", "dest": "auto_movement", "conditions": "_movement_configured"},
-			{"trigger": "movement_on", "source": "auto_off", "dest": "auto_movement", "conditions": "_movement_configured"},
+			{"trigger": "movement_on", "source": "auto_off", "dest": "auto_movement", "conditions": ["_movement_configured", "_movement_door_allowed"]},
 			{"trigger": "movement_on", "source": "auto_preoff", "dest": "auto_movement", "conditions": "_movement_configured"},
 			{"trigger": "movement_off", "source": "auto_movement", "dest": "auto_preoff", "conditions": "_pre_off_configured"},
 			{"trigger": "movement_off", "source": "auto_movement", "dest": "auto_off", "unless": "_pre_off_configured"},
 			{"trigger": "movement_timeout", "source": "auto_movement", "dest": "auto_preoff", "conditions": "_pre_off_configured"},
 			{"trigger": "movement_timeout", "source": "auto_movement", "dest": "auto_off", "unless": "_pre_off_configured"},
 			{"trigger": "hand_off", "source": "auto_movement", "dest": "auto_off"},
-			{"trigger": "door_opened", "source": "auto_off", "dest": "auto_door", "conditions": "_door_configured"},
+			{"trigger": "door_opened", "source": "auto_off", "dest": "auto_door", "conditions": ["_door_configured", "_movement_door_allowed"]},
 			{"trigger": "door_timeout", "source": "auto_door", "dest": "auto_preoff", "conditions": "_pre_off_configured"},
 			{"trigger": "door_timeout", "source": "auto_door", "dest": "auto_off", "unless": "_pre_off_configured"},
 			{"trigger": "door_closed", "source": "auto_leaving", "dest": "auto_off", "conditions": "_door_off_leaving_configured"},
@@ -1171,6 +1171,17 @@ class TestLightExtended(unittest.TestCase):
 		self.light_extended._config.door_off_leaving_configured = False
 		self.assertFalse(self.light_extended._door_off_leaving_configured())
 
+	def test_movement_door_allowed(self):
+		"""Test _movement_door_allowed"""
+		with unittest.mock.patch("time.time", return_value=1000), unittest.mock.patch.object(self.light_extended, "_hand_off_timestamp", 100):
+			self.assertTrue(self.light_extended._movement_door_allowed())
+
+		with unittest.mock.patch("time.time", return_value=121), unittest.mock.patch.object(self.light_extended, "_hand_off_timestamp", 100):
+			self.assertTrue(self.light_extended._movement_door_allowed())
+
+		with unittest.mock.patch("time.time", return_value=120), unittest.mock.patch.object(self.light_extended, "_hand_off_timestamp", 100):
+			self.assertFalse(self.light_extended._movement_door_allowed())
+
 	def test_auto_movement(self):
 		"""Test transitions of auto_movement."""
 		# to auto_off by hand_off
@@ -1201,10 +1212,17 @@ class TestLightExtended(unittest.TestCase):
 		tests.helper.oh_item.send_command("Unittest_Movement", "OFF", "ON")
 		self.assertEqual("auto_preoff", self.light_extended.state)
 
-		# from auto_off to auto_movement (movement configured)
-		self.light_extended.to_auto_off()
-		tests.helper.oh_item.send_command("Unittest_Movement", "ON", "OFF")
-		self.assertEqual("auto_movement", self.light_extended.state)
+		# from auto_off to auto_movement (movement configured) | _movement_door_allowed = True
+		with unittest.mock.patch.object(self.light_extended, "_movement_door_allowed", return_value=True):
+			self.light_extended.to_auto_off()
+			tests.helper.oh_item.send_command("Unittest_Movement", "ON", "OFF")
+			self.assertEqual("auto_movement", self.light_extended.state)
+
+		# from auto_off NOT to auto_movement (movement configured) | _movement_door_allowed = False
+		with unittest.mock.patch.object(self.light_extended, "_movement_door_allowed", return_value=False):
+			self.light_extended.to_auto_off()
+			tests.helper.oh_item.send_command("Unittest_Movement", "ON", "OFF")
+			self.assertEqual("auto_off", self.light_extended.state)
 
 		# from auto_off to auto_movement (movement NOT configured)
 		self.light_extended.to_auto_off()
@@ -1275,15 +1293,29 @@ class TestLightExtended(unittest.TestCase):
 			tests.helper.oh_item.send_command("Unittest_Movement", "ON", "OFF")
 		self.assertEqual("auto_door", self.light_extended.state)
 
-		# auto_off to auto_door by first door (door configured)
-		self.light_extended.to_auto_off()
-		tests.helper.oh_item.send_command("Unittest_Door_1", "OPEN", "CLOSED")
-		self.assertEqual("auto_door", self.light_extended.state)
+		# auto_off to auto_door by first door (door configured) | _movement_door_allowed = True
+		with unittest.mock.patch.object(self.light_extended, "_movement_door_allowed", return_value=True):
+			self.light_extended.to_auto_off()
+			tests.helper.oh_item.send_command("Unittest_Door_1", "OPEN", "CLOSED")
+			self.assertEqual("auto_door", self.light_extended.state)
 
-		# auto_off to auto_door by second door (door configured)
-		self.light_extended.to_auto_off()
-		tests.helper.oh_item.send_command("Unittest_Door_2", "OPEN", "CLOSED")
-		self.assertEqual("auto_door", self.light_extended.state)
+		# auto_off NOT to auto_door by first door (door configured) | _movement_door_allowed = False
+		with unittest.mock.patch.object(self.light_extended, "_movement_door_allowed", return_value=False):
+			self.light_extended.to_auto_off()
+			tests.helper.oh_item.send_command("Unittest_Door_1", "OPEN", "CLOSED")
+			self.assertEqual("auto_off", self.light_extended.state)
+
+		# auto_off to auto_door by second door (door configured) | _movement_door_allowed = True
+		with unittest.mock.patch.object(self.light_extended, "_movement_door_allowed", return_value=True):
+			self.light_extended.to_auto_off()
+			tests.helper.oh_item.send_command("Unittest_Door_2", "OPEN", "CLOSED")
+			self.assertEqual("auto_door", self.light_extended.state)
+
+		# auto_off NOT to auto_door by second door (door configured) | _movement_door_allowed = False
+		with unittest.mock.patch.object(self.light_extended, "_movement_door_allowed", return_value=False):
+			self.light_extended.to_auto_off()
+			tests.helper.oh_item.send_command("Unittest_Door_2", "OPEN", "CLOSED")
+			self.assertEqual("auto_off", self.light_extended.state)
 
 		# auto_off NOT to auto_door first door (door NOT configured)
 		self.light_extended.to_auto_off()

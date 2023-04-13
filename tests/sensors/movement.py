@@ -76,7 +76,9 @@ class TestLight(unittest.TestCase):
 			{"trigger": "sleep_started", "source": "Unlocked", "dest": "SleepLocked"},
 			{"trigger": "sleep_end", "source": "SleepLocked", "dest": "Unlocked", "unless": "_post_sleep_lock_active"},
 			{"trigger": "sleep_end", "source": "SleepLocked", "dest": "PostSleepLocked", "conditions": "_post_sleep_lock_active"},
-			{"trigger": "timeout_post_sleep_locked", "source": "PostSleepLocked", "dest": "Unlocked"},
+			{"trigger": "timeout_post_sleep_locked", "source": "PostSleepLocked", "dest": "Unlocked", "unless": "_raw_movement_active"},
+			{"trigger": "movement_off", "source": "PostSleepLocked", "dest": "PostSleepLocked"},
+			{"trigger": "movement_on", "source": "PostSleepLocked", "dest": "PostSleepLocked"},
 			{"trigger": "movement_on", "source": "Unlocked_Wait", "dest": "Unlocked_Movement"},
 			{"trigger": "movement_off", "source": "Unlocked_Movement", "dest": "Unlocked_MovementExtended", "conditions": "_movement_extended_active"},
 			{"trigger": "movement_off", "source": "Unlocked_Movement", "dest": "Unlocked_Wait", "unless": "_movement_extended_active"},
@@ -263,10 +265,31 @@ class TestLight(unittest.TestCase):
 
 	def test_transitions_post_sleep_locked(self):
 		"""Test leaving transitions of post sleep locked state."""
-		# to Unlocked
+		# to Unlocked | movement not active
 		self.movement_max.state = "PostSleepLocked"
-		self.movement_max.timeout_post_sleep_locked()
-		self.assertEqual("Unlocked_Wait", self.movement_max.state)
+		with unittest.mock.patch.object(self.movement_max, "_raw_movement_active", return_value=False):
+			self.movement_max.timeout_post_sleep_locked()
+			self.assertEqual("Unlocked_Wait", self.movement_max.state)
+
+		# no change after timeout and movement
+		self.movement_max.state = "PostSleepLocked"
+		with unittest.mock.patch.object(self.movement_max, "_raw_movement_active", return_value=True):
+			self.movement_max.timeout_post_sleep_locked()
+			self.assertEqual("PostSleepLocked", self.movement_max.state)
+
+		# reset timer if movement off
+		self.movement_max.state = "PostSleepLocked"
+		self.transitions_timer_mock.reset_mock()
+		tests.helper.oh_item.item_state_change_event("Unittest_Movement_max_raw", "OFF", "ON")
+		self.assertEqual("PostSleepLocked", self.movement_max.state)
+		self.assertEqual(1, self.transitions_timer_mock.call_count)
+
+		# reset timer if movement on
+		self.movement_max.state = "PostSleepLocked"
+		self.transitions_timer_mock.reset_mock()
+		tests.helper.oh_item.item_state_change_event("Unittest_Movement_max_raw", "ON", "OFF")
+		self.assertEqual("PostSleepLocked", self.movement_max.state)
+		self.assertEqual(1, self.transitions_timer_mock.call_count)
 
 	def test_unlocked_wait(self):
 		"""Test leaving transitions of Unlocked_Wait state."""

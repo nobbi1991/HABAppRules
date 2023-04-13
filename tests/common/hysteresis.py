@@ -70,6 +70,18 @@ class TestHysteresis(unittest.TestCase):
 			self.assertEqual(test_case.expected_result, self.hysteresis_switch._on_off_state)
 			self.assertEqual(test_case.expected_result, self.hysteresis_switch_on_off._on_off_state)
 
+	def test_get_output_without_argument(self):
+		"""Test get_output without value argument."""
+		self.hysteresis_switch._value_last = 10
+		self.assertFalse(self.hysteresis_switch.get_output())
+
+		self.hysteresis_switch._value_last = 100
+		self.assertTrue(self.hysteresis_switch.get_output())
+
+		self.hysteresis_switch.get_output(50)
+		self.assertEqual(50, self.hysteresis_switch._value_last)
+
+
 	def test_set_threshold(self):
 		"""test set_threshold."""
 

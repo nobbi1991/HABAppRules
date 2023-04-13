@@ -6,6 +6,7 @@ import HABApp
 
 import habapp_rules.common.hysteresis
 import habapp_rules.core.exceptions
+import habapp_rules.core.helper
 import habapp_rules.core.logger
 import habapp_rules.core.state_machine_rule
 import habapp_rules.system.sleep
@@ -16,7 +17,6 @@ LOGGER = logging.getLogger(__name__)
 # pylint: disable=no-member, too-many-instance-attributes
 class Movement(habapp_rules.core.state_machine_rule.StateMachineRule):
 	"""Class for filtering movement sensors."""
-	# todo: extend sleep lock if movement is active during sleep_lock
 	states = [
 		{"name": "Locked"},
 		{"name": "SleepLocked"},
@@ -40,7 +40,9 @@ class Movement(habapp_rules.core.state_machine_rule.StateMachineRule):
 		{"trigger": "sleep_started", "source": "Unlocked", "dest": "SleepLocked"},
 		{"trigger": "sleep_end", "source": "SleepLocked", "dest": "Unlocked", "unless": "_post_sleep_lock_active"},
 		{"trigger": "sleep_end", "source": "SleepLocked", "dest": "PostSleepLocked", "conditions": "_post_sleep_lock_active"},
-		{"trigger": "timeout_post_sleep_locked", "source": "PostSleepLocked", "dest": "Unlocked"},
+		{"trigger": "timeout_post_sleep_locked", "source": "PostSleepLocked", "dest": "Unlocked", "unless": "_raw_movement_active"},
+		{"trigger": "movement_off", "source": "PostSleepLocked", "dest": "PostSleepLocked"},
+		{"trigger": "movement_on", "source": "PostSleepLocked", "dest": "PostSleepLocked"},
 
 		# movement
 		{"trigger": "movement_on", "source": "Unlocked_Wait", "dest": "Unlocked_Movement"},
@@ -148,7 +150,8 @@ class Movement(habapp_rules.core.state_machine_rule.StateMachineRule):
 	def __send_filtered_movement(self) -> None:
 		"""Send filtered movement state to OpenHAB item."""
 		target_state = "ON" if self.state in {"Unlocked_Movement", "Unlocked_MovementExtended"} else "OFF"
-		self._item_movement_filtered.oh_post_update_if(target_state, not_equal=target_state)  # todo: check if working as expected
+		if target_state != self._item_movement_filtered.value:
+			self._item_movement_filtered.oh_send_command(target_state)
 
 	def _raw_movement_active(self) -> bool:
 		"""Check if raw movement is active
