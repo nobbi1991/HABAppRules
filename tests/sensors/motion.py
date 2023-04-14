@@ -303,7 +303,7 @@ class TestLight(unittest.TestCase):
 		self.motion_max.brightness_over_threshold()
 		self.assertEqual("Unlocked_TooBright", self.motion_max.state)
 
-	def test_Unlocked_Motion(self):
+	def test_unlocked_motion(self):
 		"""Test leaving transitions of Unlocked_Motion state."""
 		# motion off | extended active
 		self.motion_max.state = "Unlocked_Motion"
@@ -317,7 +317,7 @@ class TestLight(unittest.TestCase):
 			self.motion_max.motion_off()
 		self.assertEqual("Unlocked_Wait", self.motion_max.state)
 
-	def test_Unlocked_Motion_extended(self):
+	def test_unlocked_motion_extended(self):
 		"""Test leaving transitions of Unlocked_MotionExtended state."""
 		# timeout
 		self.motion_max.state = "Unlocked_MotionExtended"
