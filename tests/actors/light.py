@@ -1033,7 +1033,7 @@ class TestLightExtended(unittest.TestCase):
 			pre_sleep=FunctionConfig(day=None, night=BrightnessTimeout(10, 7), sleeping=None),
 			motion=FunctionConfig(day=None, night=BrightnessTimeout(40, 20), sleeping=BrightnessTimeout(40, 9)),
 			door=FunctionConfig(day=None, night=BrightnessTimeout(10, 21), sleeping=BrightnessTimeout(40, 8)),
-			door_off_leaving_configured=True
+			off_at_door_closed_during_leaving=True
 		)
 
 		light_config_min = LightConfigExtended(
@@ -1165,10 +1165,10 @@ class TestLightExtended(unittest.TestCase):
 
 	def test_door_off_leaving_configured(self):
 		"""Test _door_off_leaving_configured."""
-		self.light_extended._config.door_off_leaving_configured = True
+		self.light_extended._config.off_at_door_closed_during_leaving = True
 		self.assertTrue(self.light_extended._door_off_leaving_configured())
 
-		self.light_extended._config.door_off_leaving_configured = False
+		self.light_extended._config.off_at_door_closed_during_leaving = False
 		self.assertFalse(self.light_extended._door_off_leaving_configured())
 
 	def test_motion_door_allowed(self):
@@ -1349,20 +1349,20 @@ class TestLightExtended(unittest.TestCase):
 		"""Test new extended transitions of auto_leaving."""
 		# auto_leaving to auto_off by last door (door_off_leaving_configured configured)
 		self.light_extended.to_auto_leaving()
-		with unittest.mock.patch.object(self.light_extended._config, "door_off_leaving_configured", True):
+		with unittest.mock.patch.object(self.light_extended._config, "off_at_door_closed_during_leaving", True):
 			tests.helper.oh_item.send_command("Unittest_Door_1", "CLOSED", "OPEN")
 		self.assertEqual("auto_off", self.light_extended.state)
 
-		# auto_leaving no change by last door (door_off_leaving_configured NOT configured)
+		# auto_leaving no change by last door (off_at_door_closed_during_leaving NOT configured)
 		self.light_extended.to_auto_leaving()
-		with unittest.mock.patch.object(self.light_extended._config, "door_off_leaving_configured", False):
+		with unittest.mock.patch.object(self.light_extended._config, "off_at_door_closed_during_leaving", False):
 			tests.helper.oh_item.send_command("Unittest_Door_1", "CLOSED", "OPEN")
 		self.assertEqual("auto_leaving", self.light_extended.state)
 
-		# auto_leaving no change by door closed, but other door open (door_off_leaving_configured configured)
+		# auto_leaving no change by door closed, but other door open (off_at_door_closed_during_leaving configured)
 		self.light_extended.to_auto_leaving()
 		tests.helper.oh_item.set_state("Unittest_Door_2", "OPEN")
-		with unittest.mock.patch.object(self.light_extended._config, "door_off_leaving_configured", True):
+		with unittest.mock.patch.object(self.light_extended._config, "off_at_door_closed_during_leaving", True):
 			tests.helper.oh_item.send_command("Unittest_Door_1", "CLOSED", "OPEN")
 		self.assertEqual("auto_leaving", self.light_extended.state)
 

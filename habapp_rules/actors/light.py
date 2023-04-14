@@ -510,7 +510,7 @@ class LightExtended(Light):
 
 		:return: True if door-off is configured
 		"""
-		return self._config.door_off_leaving_configured
+		return self._config.off_at_door_closed_during_leaving
 
 	def _motion_configured(self) -> bool:
 		"""Check whether motion functionality is configured for the current day/night state

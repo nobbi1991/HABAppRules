@@ -72,7 +72,7 @@ class LightConfigExtended(LightConfig):
 	"""Configuration for extended lights."""
 	motion: FunctionConfig | None = None
 	door: FunctionConfig | None = None
-	door_off_leaving_configured: bool = False  # this can be used to switch lights off, when door is closed in leaving state
+	off_at_door_closed_during_leaving: bool = False  # this can be used to switch lights off, when door is closed in leaving state
 	hand_off_lock_time: int = 20
 
 
@@ -80,5 +80,15 @@ CONFIG_DEFAULT = LightConfig(
 	on=FunctionConfig(day=BrightnessTimeout(True, 600), night=BrightnessTimeout(80, 180), sleeping=BrightnessTimeout(20, 60)),
 	pre_off=FunctionConfig(day=BrightnessTimeout(50, 10), night=BrightnessTimeout(40, 7), sleeping=BrightnessTimeout(10, 7)),
 	leaving=FunctionConfig(day=BrightnessTimeout(False, 0), night=BrightnessTimeout(False, 0), sleeping=BrightnessTimeout(False, 0)),
-	pre_sleep=FunctionConfig(day=None, night=None, sleeping=None),
+	pre_sleep=FunctionConfig(day=BrightnessTimeout(False, 10), night=BrightnessTimeout(False, 10), sleeping=None),
+)
+
+CONFIG_DEFAULT_EXTENDED = LightConfigExtended(
+	on=FunctionConfig(day=BrightnessTimeout(True, 600), night=BrightnessTimeout(80, 180), sleeping=BrightnessTimeout(20, 60)),
+	pre_off=FunctionConfig(day=BrightnessTimeout(50, 10), night=BrightnessTimeout(40, 7), sleeping=BrightnessTimeout(10, 7)),
+	leaving=FunctionConfig(day=BrightnessTimeout(False, 0), night=BrightnessTimeout(False, 0), sleeping=BrightnessTimeout(False, 0)),
+	pre_sleep=FunctionConfig(day=BrightnessTimeout(False, 10), night=BrightnessTimeout(False, 10), sleeping=None),
+	motion=FunctionConfig(day=BrightnessTimeout(True, 600), night=BrightnessTimeout(80, 180), sleeping=BrightnessTimeout(20, 60)),
+	door=FunctionConfig(day=BrightnessTimeout(True, 60), night=BrightnessTimeout(80, 30), sleeping=None),
+	off_at_door_closed_during_leaving=False
 )
