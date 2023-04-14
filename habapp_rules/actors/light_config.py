@@ -70,7 +70,7 @@ class LightConfig:
 @dataclasses.dataclass
 class LightConfigExtended(LightConfig):
 	"""Configuration for extended lights."""
-	movement: FunctionConfig | None = None
+	motion: FunctionConfig | None = None
 	door: FunctionConfig | None = None
 	door_off_leaving_configured: bool = False  # this can be used to switch lights off, when door is closed in leaving state
 	hand_off_lock_time: int = 20

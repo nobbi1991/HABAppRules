@@ -1,5 +1,4 @@
-"""Rules for managing movement sensors."""
-
+"""Rules for managing motion sensors."""
 import logging
 
 import HABApp
@@ -15,8 +14,8 @@ LOGGER = logging.getLogger(__name__)
 
 
 # pylint: disable=no-member, too-many-instance-attributes
-class Movement(habapp_rules.core.state_machine_rule.StateMachineRule):
-	"""Class for filtering movement sensors."""
+class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
+	"""Class for filtering motion sensors."""
 	states = [
 		{"name": "Locked"},
 		{"name": "SleepLocked"},
@@ -24,8 +23,8 @@ class Movement(habapp_rules.core.state_machine_rule.StateMachineRule):
 		{"name": "Unlocked", "initial": "Init", "children": [
 			{"name": "Init"},
 			{"name": "Wait"},
-			{"name": "Movement"},
-			{"name": "MovementExtended", "timeout": 99, "on_timeout": "timeout_movement_extended"},
+			{"name": "Motion"},
+			{"name": "MotionExtended", "timeout": 99, "on_timeout": "timeout_motion_extended"},
 			{"name": "TooBright"},
 		]}
 	]
@@ -40,36 +39,36 @@ class Movement(habapp_rules.core.state_machine_rule.StateMachineRule):
 		{"trigger": "sleep_started", "source": "Unlocked", "dest": "SleepLocked"},
 		{"trigger": "sleep_end", "source": "SleepLocked", "dest": "Unlocked", "unless": "_post_sleep_lock_active"},
 		{"trigger": "sleep_end", "source": "SleepLocked", "dest": "PostSleepLocked", "conditions": "_post_sleep_lock_active"},
-		{"trigger": "timeout_post_sleep_locked", "source": "PostSleepLocked", "dest": "Unlocked", "unless": "_raw_movement_active"},
-		{"trigger": "movement_off", "source": "PostSleepLocked", "dest": "PostSleepLocked"},
-		{"trigger": "movement_on", "source": "PostSleepLocked", "dest": "PostSleepLocked"},
+		{"trigger": "timeout_post_sleep_locked", "source": "PostSleepLocked", "dest": "Unlocked", "unless": "_raw_motion_active"},
+		{"trigger": "motion_off", "source": "PostSleepLocked", "dest": "PostSleepLocked"},
+		{"trigger": "motion_on", "source": "PostSleepLocked", "dest": "PostSleepLocked"},
 
-		# movement
-		{"trigger": "movement_on", "source": "Unlocked_Wait", "dest": "Unlocked_Movement"},
-		{"trigger": "movement_off", "source": "Unlocked_Movement", "dest": "Unlocked_MovementExtended", "conditions": "_movement_extended_active"},
-		{"trigger": "movement_off", "source": "Unlocked_Movement", "dest": "Unlocked_Wait", "unless": "_movement_extended_active"},
-		{"trigger": "timeout_movement_extended", "source": "Unlocked_MovementExtended", "dest": "Unlocked_Wait"},
-		{"trigger": "movement_on", "source": "Unlocked_MovementExtended", "dest": "Unlocked_Movement"},
+		# motion
+		{"trigger": "motion_on", "source": "Unlocked_Wait", "dest": "Unlocked_Motion"},
+		{"trigger": "motion_off", "source": "Unlocked_Motion", "dest": "Unlocked_MotionExtended", "conditions": "_motion_extended_active"},
+		{"trigger": "motion_off", "source": "Unlocked_Motion", "dest": "Unlocked_Wait", "unless": "_motion_extended_active"},
+		{"trigger": "timeout_motion_extended", "source": "Unlocked_MotionExtended", "dest": "Unlocked_Wait"},
+		{"trigger": "motion_on", "source": "Unlocked_MotionExtended", "dest": "Unlocked_Motion"},
 
 		# brightness
 		{"trigger": "brightness_over_threshold", "source": "Unlocked_Wait", "dest": "Unlocked_TooBright"},
-		{"trigger": "brightness_below_threshold", "source": "Unlocked_TooBright", "dest": "Unlocked_Wait", "unless": "_raw_movement_active"},
-		{"trigger": "brightness_below_threshold", "source": "Unlocked_TooBright", "dest": "Unlocked_Movement", "conditions": "_raw_movement_active"}
+		{"trigger": "brightness_below_threshold", "source": "Unlocked_TooBright", "dest": "Unlocked_Wait", "unless": "_raw_motion_active"},
+		{"trigger": "brightness_below_threshold", "source": "Unlocked_TooBright", "dest": "Unlocked_Motion", "conditions": "_raw_motion_active"}
 	]
 
 	def __init__(self,
 	             name_raw: str,
 	             name_filtered: str,
-	             extended_movement_time: int = 5,
+	             extended_motion_time: int = 5,
 	             name_brightness: str | None = None,
 	             brightness_threshold: int | str | None = None,
 	             name_lock: str | None = None, name_sleep_state: str | None = None,
 	             post_sleep_lock_time: int = 10):
-		"""Init of movement filter.
+		"""Init of motion filter.
 
-		:param name_raw: name of OpenHAB unfiltered movement item (SwitchItem)
-		:param name_filtered: name of OpenHAB filtered movement item (SwitchItem)
-		:param extended_movement_time: time in seconds which will extend the movement after movement is off. If it is set to 0 the time will not be extended
+		:param name_raw: name of OpenHAB unfiltered motion item (SwitchItem)
+		:param name_filtered: name of OpenHAB filtered motion item (SwitchItem)
+		:param extended_motion_time: time in seconds which will extend the motion after motion is off. If it is set to 0 the time will not be extended
 		:param name_brightness: name of OpenHAB brightness item (NumberItem)
 		:param brightness_threshold: brightness threshold value (float) or name of OpenHAB brightness threshold item (NumberItem)
 		:param name_lock: name of OpenHAB lock item (SwitchItem)
@@ -81,17 +80,17 @@ class Movement(habapp_rules.core.state_machine_rule.StateMachineRule):
 		if bool(name_brightness) != bool(brightness_threshold):
 			raise habapp_rules.core.exceptions.HabAppRulesConfigurationException("'name_brightness' or 'brightness_threshold' is missing!")
 
-		super().__init__(f"H_Movement_{name_raw}_state")
+		super().__init__(f"H_Motion_{name_raw}_state")
 		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, name_raw)
 		self._brightness_threshold_value = brightness_threshold if isinstance(brightness_threshold, int) else None
-		self._timeout_extended_movement = extended_movement_time
+		self._timeout_extended_motion = extended_motion_time
 		self._timeout_post_sleep_lock = post_sleep_lock_time
 		self.states[2]["timeout"] = self._timeout_post_sleep_lock
-		self.states[3]["children"][3]["timeout"] = self._timeout_extended_movement
+		self.states[3]["children"][3]["timeout"] = self._timeout_extended_motion
 
 		# get items
-		self._item_movement_raw = HABApp.openhab.items.SwitchItem.get_item(name_raw)
-		self._item_movement_filtered = HABApp.openhab.items.SwitchItem.get_item(name_filtered)
+		self._item_motion_raw = HABApp.openhab.items.SwitchItem.get_item(name_raw)
+		self._item_motion_filtered = HABApp.openhab.items.SwitchItem.get_item(name_filtered)
 		self._item_brightness = HABApp.openhab.items.NumberItem.get_item(name_brightness) if name_brightness else None
 		self._item_brightness_threshold = HABApp.openhab.items.NumberItem.get_item(brightness_threshold) if isinstance(brightness_threshold, str) else None
 		self._item_lock = HABApp.openhab.items.SwitchItem.get_item(name_lock) if name_lock else None
@@ -110,7 +109,7 @@ class Movement(habapp_rules.core.state_machine_rule.StateMachineRule):
 		self._set_initial_state()
 
 		# register callbacks
-		self._item_movement_raw.listen_event(self._cb_movement_raw, HABApp.openhab.events.ItemStateChangedEventFilter())
+		self._item_motion_raw.listen_event(self._cb_motion_raw, HABApp.openhab.events.ItemStateChangedEventFilter())
 		if self._item_brightness is not None:
 			self._item_brightness.listen_event(self._cb_brightness, HABApp.openhab.events.ItemStateChangedEventFilter())
 		if self._item_brightness_threshold is not None:
@@ -134,38 +133,38 @@ class Movement(habapp_rules.core.state_machine_rule.StateMachineRule):
 			return "SleepLocked"
 		if self._item_brightness and self._hysteresis_switch.get_output(self._item_brightness.value):
 			return "Unlocked_TooBright"
-		if self._item_movement_raw:
-			return "Unlocked_Movement"
+		if self._item_motion_raw:
+			return "Unlocked_Motion"
 		return "Unlocked_Wait"
 
 	def _update_openhab_state(self):
 		"""Update OpenHAB state item. This should method should be set to "after_state_change" of the state machine."""
 		if self.state != self._previous_state:
 			super()._update_openhab_state()
-			self.__send_filtered_movement()
+			self.__send_filtered_motion()
 
 			self._instance_logger.debug(f"State change: {self._previous_state} -> {self.state}")
 			self._previous_state = self.state
 
-	def __send_filtered_movement(self) -> None:
-		"""Send filtered movement state to OpenHAB item."""
-		target_state = "ON" if self.state in {"Unlocked_Movement", "Unlocked_MovementExtended"} else "OFF"
-		if target_state != self._item_movement_filtered.value:
-			self._item_movement_filtered.oh_send_command(target_state)
+	def __send_filtered_motion(self) -> None:
+		"""Send filtered motion state to OpenHAB item."""
+		target_state = "ON" if self.state in {"Unlocked_Motion", "Unlocked_MotionExtended"} else "OFF"
+		if target_state != self._item_motion_filtered.value:
+			self._item_motion_filtered.oh_send_command(target_state)
 
-	def _raw_movement_active(self) -> bool:
-		"""Check if raw movement is active
-
-		:return: True if active, else False
-		"""
-		return bool(self._item_movement_raw)
-
-	def _movement_extended_active(self) -> bool:
-		"""Check if extended movement is active
+	def _raw_motion_active(self) -> bool:
+		"""Check if raw motion is active
 
 		:return: True if active, else False
 		"""
-		return self._timeout_extended_movement > 0
+		return bool(self._item_motion_raw)
+
+	def _motion_extended_active(self) -> bool:
+		"""Check if extended motion is active
+
+		:return: True if active, else False
+		"""
+		return self._timeout_extended_motion > 0
 
 	def _post_sleep_lock_active(self) -> bool:
 		"""Check if post sleep lock is active
@@ -198,8 +197,8 @@ class Movement(habapp_rules.core.state_machine_rule.StateMachineRule):
 		"""Callback, which is called on enter of Unlocked_Init state"""
 		if self._item_brightness and self._hysteresis_switch.get_output(self._item_brightness.value):
 			self.to_Unlocked_TooBright()
-		elif self._item_movement_raw:
-			self.to_Unlocked_Movement()
+		elif self._item_motion_raw:
+			self.to_Unlocked_Motion()
 		else:
 			self.to_Unlocked_Wait()
 
@@ -221,15 +220,15 @@ class Movement(habapp_rules.core.state_machine_rule.StateMachineRule):
 		self._hysteresis_switch.set_threshold_on(event.value)
 		self._check_brightness()
 
-	def _cb_movement_raw(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
-		"""Callback, which is triggered if the raw movement state changed.
+	def _cb_motion_raw(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+		"""Callback, which is triggered if the raw motion state changed.
 
 		:param event: trigger event
 		"""
 		if event.value == "ON":
-			self.movement_on()
+			self.motion_on()
 		else:
-			self.movement_off()
+			self.motion_off()
 
 	def _cb_brightness(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
 		"""Callback, which is triggered if the brightness state changed.
