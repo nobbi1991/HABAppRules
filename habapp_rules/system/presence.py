@@ -1,16 +1,15 @@
 """Rule to detect presence or absence."""
 import logging
 import threading
-import typing
 
 import HABApp.openhab.definitions
 import HABApp.openhab.events
 import HABApp.openhab.interface
 import HABApp.openhab.items
 import HABApp.util
-import habapp_rules.core.logger
 
 import habapp_rules.core.helper
+import habapp_rules.core.logger
 import habapp_rules.core.state_machine_rule
 
 LOGGER = logging.getLogger(__name__)
@@ -18,7 +17,31 @@ LOGGER = logging.getLogger(__name__)
 
 # pylint: disable=no-member
 class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
-	"""Rules class to manage presence of a home."""
+	"""Rules class to manage presence of a home.
+
+	Example OpenHAB configuration:
+	# KNX-things:
+	Thing device T00_99_OpenHab_Sleep "KNX OpenHAB Sleep"{
+        Type switch             : sleep             "Sleep Request"             [ ga="0/2/30"]
+        Type switch-control     : sleep_RM          "Sleep RM"                  [ ga="0/2/31"]
+
+        Type switch             : sleep_lock        "Sleep Lock Request"        [ ga="0/2/32"]
+        Type switch-control     : sleep_lock_RM     "Sleep Lock RM"             [ ga="0/2/33"]
+
+        Type string-control     : sleep_text        "Sleep Text"                [ ga="16.000:0/2/34"]
+    }
+
+    # Items:
+    Switch    I01_02_Sleep              "Sleep [%s]"                <moon>     {channel="knx:device:bridge:T00_99_OpenHab_Sleep:sleep_RM"}
+	Switch    I01_02_Sleep_req          "Sleep request"             <moon>     {channel="knx:device:bridge:T00_99_OpenHab_Sleep:sleep"}
+	String    I01_02_Sleep_text         "Text for display [%s]"                {channel="knx:device:bridge:T00_99_OpenHab_Sleep:sleep_text"}
+	Switch    I01_02_Sleep_lock         "Lock [%s]"                 <lock>     {channel="knx:device:bridge:T00_99_OpenHab_Sleep:sleep_lock_RM"}
+	Switch    I01_02_Sleep_lock_req     "Lock request"              <lock>     {channel="knx:device:bridge:T00_99_OpenHab_Sleep:sleep_lock"}
+	String    I01_02_Sleep_State        "State [%s]"                <state>
+
+	# Rule init:
+	habapp_rules.system.presence.Presence("I01_00_Presence", "I01_00_Leaving")
+	"""
 
 	states = [
 		{"name": "presence"},
@@ -35,16 +58,22 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
 		{"trigger": "long_absence_detected", "source": "absence", "dest": "long_absence"},
 	]
 
-	def __init__(self, name_presence: str, outside_door_names: typing.List[str], leaving_name: str, state_name: str = None, phone_names: typing.List[str] = None) -> None:
+	def __init__(self, name_presence: str, leaving_name: str, outside_door_names: list[str] | None = None, phone_names: list[str] | None = None, state_name: str | None = None, state_label: str = "Presence state") -> None:
 		"""Init of Presence object.
 
 		:param name_presence: name of OpenHAB presence item
-		:param outside_door_names: list of names of OpenHAB outdoor door items
 		:param leaving_name: name of OpenHAB leaving item (SwitchItem)
-		:param state_name: name of OpenHAB item for storing the current state (StringItem)
+		:param outside_door_names: list of names of OpenHAB outdoor door items
 		:param phone_names: list of names of OpenHAB phone items
+		:param state_name: name of OpenHAB item for storing the current state (StringItem)
+		:param state_label: label of OpenHAB item for storing the current state (StringItem)
 		"""
-		super().__init__(state_name)
+		if not outside_door_names:
+			outside_door_names = []
+		if not phone_names:
+			phone_names = []
+
+		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, state_name, state_label)
 		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, name_presence)
 
 		# init items
@@ -68,8 +97,8 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
 		HABApp.util.EventListenerGroup().add_listener(self.__outside_door_items, self._cb_outside_door, HABApp.core.events.ValueChangeEventFilter()).listen()
 		HABApp.util.EventListenerGroup().add_listener(self.__phone_items, self._cb_phone, HABApp.core.events.ValueChangeEventFilter()).listen()
 
-		self.__phone_absence_timer: threading.Timer = None
-		self._instance_logger.debug(f"Init of presence rule {self.rule_name} was successful. Initial state = {self.state}")
+		self.__phone_absence_timer: threading.Timer | None = None
+		self._instance_logger.debug(super().get_initial_log_message())
 
 	def _get_initial_state(self, default_value: str = "presence") -> str:
 		"""Get initial state of state machine.

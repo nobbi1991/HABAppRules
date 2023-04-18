@@ -63,7 +63,8 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
 	             name_brightness: str | None = None,
 	             brightness_threshold: int | str | None = None,
 	             name_lock: str | None = None, name_sleep_state: str | None = None,
-	             post_sleep_lock_time: int = 10):
+	             post_sleep_lock_time: int = 10,
+	             state_label: str | None = None):
 		"""Init of motion filter.
 
 		:param name_raw: name of OpenHAB unfiltered motion item (SwitchItem)
@@ -74,13 +75,14 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
 		:param name_lock: name of OpenHAB lock item (SwitchItem)
 		:param name_sleep_state: name of OpenHAB sleep state item (StringItem)
 		:param post_sleep_lock_time: Lock time after sleep
+		:param state_label: label of OpenHAB item for storing the current state (StringItem)
 		:raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: if configuration is not valid
 		"""
 
 		if bool(name_brightness) != bool(brightness_threshold):
 			raise habapp_rules.core.exceptions.HabAppRulesConfigurationException("'name_brightness' or 'brightness_threshold' is missing!")
 
-		super().__init__(f"H_Motion_{name_raw}_state")
+		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, f"H_Motion_{name_raw}_state", state_label)
 		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, name_raw)
 		self._brightness_threshold_value = brightness_threshold if isinstance(brightness_threshold, int) else None
 		self._timeout_extended_motion = extended_motion_time
@@ -119,7 +121,7 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
 		if self._item_sleep is not None:
 			self._item_sleep.listen_event(self._cb_sleep, HABApp.openhab.events.ItemStateChangedEventFilter())
 
-		self._instance_logger.info(f"init of {self.__class__.__name__} '{name_raw}' with state_item = {self._item_state.name} was successful.")
+		self._instance_logger.debug(super().get_initial_log_message())
 
 	def _get_initial_state(self, default_value: str = "initial") -> str:
 		"""Get initial state of state machine.

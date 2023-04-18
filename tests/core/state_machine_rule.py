@@ -5,6 +5,7 @@ import unittest.mock
 
 import HABApp.openhab.items.switch_item
 
+import habapp_rules.core.exceptions
 import habapp_rules.core.state_machine_rule
 import tests.helper.rule_runner
 
@@ -60,6 +61,13 @@ class TestStateMachineRule(unittest.TestCase):
 				unittest.mock.patch("HABApp.openhab.items.OpenhabItem.get_item"):
 			self._state_machine._create_additional_item("Name_of_Item", "Switch")
 			create_mock.assert_not_called()
+
+	def test_test_create_additional_item_exception(self):
+		"""Test exceptions of _create_additional_item."""
+		with unittest.mock.patch("HABApp.openhab.interface.item_exists", spec=HABApp.openhab.interface.item_exists, return_value=False), \
+				unittest.mock.patch("HABApp.openhab.interface.create_item", spec=HABApp.openhab.interface.create_item, return_value=False), \
+				self.assertRaises(habapp_rules.core.exceptions.HabAppRulesException):
+			self._state_machine._create_additional_item("Name_of_Item", "Switch")
 
 	def test_get_initial_state(self):
 		"""Test getting of initial state."""

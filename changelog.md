@@ -3,6 +3,7 @@
 ## Breaking changes
 - Renamed all ``movement`` to ``motion``
 - Moved some modules from ``common`` to ``core``
+- Changed parameter order of ``habapp_rules.system.presence.Presence``
 
 ## Features
 
@@ -14,6 +15,12 @@
 - Added ``habapp_rules.core.timeout_list``
 - Added logging of ``habapp_rules`` version
 - Added ``habapp_rules.common.hysteresis`` which implements a hysteresis switch
+- Changed ``habapp_rules.system.summer_winter`` that one full day of data is enough for summer / winter detected, also if more days are set for mean calculation
+
+## Bugfix
+
+- fixed bug of ``habapp_rules.system.presence.Presence`` which avoided instantiation if no phone outside_doors where given
+- fixed bug of ``habapp_rules.core.state_machine.StateMachineRule._create_additional_item`` which returned a bool value instead of the created item if an item was created
 
 ## GitHub Actions
 

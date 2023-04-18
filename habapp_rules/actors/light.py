@@ -62,7 +62,15 @@ class Light(habapp_rules.core.state_machine_rule.StateMachineRule):
 		{"trigger": "presleep_timeout", "source": "auto_presleep", "dest": "auto_off"},
 	]
 
-	def __init__(self, name_light: str, control_names: list[str], manual_name: str, presence_state_name: str, day_name: str, config: habapp_rules.actors.light_config.LightConfig, sleeping_state_name: str | None = None) -> None:
+	def __init__(self,
+	             name_light: str,
+	             control_names: list[str],
+	             manual_name: str,
+	             presence_state_name: str,
+	             day_name: str,
+	             config: habapp_rules.actors.light_config.LightConfig,
+	             sleeping_state_name: str | None = None,
+	             state_label: str | None = None) -> None:
 		"""Init of basic light object.
 
 		:param name_light: name of OpenHAB light item (SwitchItem | DimmerItem)
@@ -72,11 +80,12 @@ class Light(habapp_rules.core.state_machine_rule.StateMachineRule):
 		:param day_name: name of OpenHAB switch item which is 'ON' during day and 'OFF' during night
 		:param config: configuration of the light object
 		:param sleeping_state_name: [optional] name of OpenHAB sleeping state item
+		:param state_label: label of OpenHAB item for storing the current state (StringItem)
 		:raises TypeError: if type of light_item is not supported
 		"""
 		self._config = config
 
-		super().__init__(f"H{name_light}_state")
+		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, f"H{name_light}_state", state_label)
 		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, name_light)
 
 		# init items
@@ -117,7 +126,8 @@ class Light(habapp_rules.core.state_machine_rule.StateMachineRule):
 		self._item_day.listen_event(self._cb_day, HABApp.openhab.events.ItemStateChangedEventFilter())
 
 		self._update_openhab_state()
-		self._instance_logger.info(f"init of {self.__class__.__name__} '{name_light}' with state_item = {self._item_state.name} was successful.")
+		self._instance_logger.debug(super().get_initial_log_message())
+
 
 	def _get_initial_state(self, default_value: str = "") -> str:
 		"""Get initial state of state machine.
@@ -329,13 +339,14 @@ class Light(habapp_rules.core.state_machine_rule.StateMachineRule):
 		"""
 		self.hand_off()
 
-	def _cb_hand_changed(self, event: HABApp.openhab.events.ItemStateEvent | HABApp.openhab.events.ItemCommandEvent, msg: str) -> None:
+	def _cb_hand_changed(self, event: HABApp.openhab.events.ItemStateEvent | HABApp.openhab.events.ItemCommandEvent | HABApp.openhab.events.ItemStateChangedEvent, msg: str) -> None:
 		"""Callback, which is triggered by the state observer if a manual OFF command was detected.
 
 		:param event: original trigger event
 		:param msg: message from state observer
 		"""
-		self.hand_changed()
+		if isinstance(event, HABApp.openhab.events.ItemStateChangedEvent) and abs(event.value -event.old_value) > 5:
+			self.hand_changed()
 
 	def _cb_manu(self, event: HABApp.openhab.events.ItemStateEvent) -> None:
 		"""Callback, which is triggered if the manual switch has a state event.

@@ -659,14 +659,23 @@ class TestLight(unittest.TestCase):
 
 	def test_auto_on_transitions(self):
 		"""Test transitions of auto_on."""
-		# timer is re triggered by hand_changed
+		# timer is re-triggered by hand_changed if value change > 5
 		self.light._state_observer._value = 20
 		self.light.to_auto_on()
 		self.light.state_machine.states["auto"].states["on"].runner = {}  # remove timer
 		self.transitions_timer_mock.reset_mock()
-		tests.helper.oh_item.send_command("Unittest_Light", 40, 20)
+		tests.helper.oh_item.send_command("Unittest_Light", 26, 20)
 		self.assertEqual("auto_on", self.light.state)
 		next(iter(self.light.state_machine.states["auto"].states["on"].runner.values())).start.assert_called_once()  # check if timer was called
+
+		# timer is NOT re-triggered by hand_changed if value change <= 5
+		self.light._state_observer._value = 20
+		self.light.to_auto_on()
+		self.light.state_machine.states["auto"].states["on"].runner = {}  # remove timer
+		self.transitions_timer_mock.reset_mock()
+		tests.helper.oh_item.send_command("Unittest_Light", 25, 20)
+		self.assertEqual("auto_on", self.light.state)
+		self.assertTrue(not self.light.state_machine.states["auto"].states["on"].runner)  # check if timer was NOT called
 
 		# to auto_off by hand
 		self.light.to_auto_on()

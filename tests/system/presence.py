@@ -60,6 +60,14 @@ class TestPresence(unittest.TestCase):
 
 		presence_graph.get_graph().draw(pathlib.Path(__file__).parent / "Presence.png", format="png", prog="dot")
 
+	def test_minimal_init(self):
+		"""Test init with minimal set of arguments."""
+		with unittest.mock.patch.object(habapp_rules.core.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_presence_Presence_state", "")):
+			presence_min = habapp_rules.system.presence.Presence("Unittest_Presence", "Unittest_Leaving")
+
+		self.assertEqual([], presence_min._Presence__outside_door_items)
+		self.assertEqual([], presence_min._Presence__phone_items)
+
 	def test_enums(self):
 		"""Test if all enums from __init__.py are implemented"""
 		implemented_states = list(self._presence.state_machine.states)
