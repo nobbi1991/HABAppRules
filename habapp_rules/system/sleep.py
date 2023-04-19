@@ -20,14 +20,23 @@ class Sleep(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 	Example OpenHAB configuration:
 	# KNX-things:
-	Thing device T00_99_OpenHab_Presence "KNX OpenHAB Presence"{
-        Type switch-control        : presence       "Presence"      [ ga="0/2/11+0/2/10"]
-        Type switch-control        : leaving        "Leaving"       [ ga="0/2/21+0/2/20"]
+	Thing device T00_99_OpenHab_Sleep "KNX OpenHAB Sleep"{
+        Type switch             : sleep             "Sleep Request"             [ ga="0/2/30"]
+        Type switch-control     : sleep_RM          "Sleep RM"                  [ ga="0/2/31"]
+
+        Type switch             : sleep_lock        "Sleep Lock Request"        [ ga="0/2/32"]
+        Type switch-control     : sleep_lock_RM     "Sleep Lock RM"             [ ga="0/2/33"]
+
+        Type string-control     : sleep_text        "Sleep Text"                [ ga="16.000:0/2/34"]
     }
 
     # Items:
-    Switch    I01_00_Presence    "Presence [%s]"    <presence>    (G00_00_rrd4j)    ["Status", "Presence"]    {channel="knx:device:bridge:T00_99_OpenHab_Presence:presence"}
-	Switch    I01_00_Leaving     "Leaving [%s]"     <leaving>                                                 {channel="knx:device:bridge:T00_99_OpenHab_Presence:leaving"}
+    Switch    I01_02_Sleep              "Sleep [%s]"                <moon>     {channel="knx:device:bridge:T00_99_OpenHab_Sleep:sleep_RM"}
+	Switch    I01_02_Sleep_req          "Sleep request"             <moon>     {channel="knx:device:bridge:T00_99_OpenHab_Sleep:sleep"}
+	String    I01_02_Sleep_text         "Text for display [%s]"                {channel="knx:device:bridge:T00_99_OpenHab_Sleep:sleep_text"}
+	Switch    I01_02_Sleep_lock         "Lock [%s]"                 <lock>     {channel="knx:device:bridge:T00_99_OpenHab_Sleep:sleep_lock_RM"}
+	Switch    I01_02_Sleep_lock_req     "Lock request"              <lock>     {channel="knx:device:bridge:T00_99_OpenHab_Sleep:sleep_lock"}
+	String    I01_02_Sleep_State        "State [%s]"                <state>
 
 	# Rule init:
 	habapp_rules.system.sleep.Sleep("I01_02_Sleep","I01_02_Sleep_req", "I01_02_Sleep_State", "I01_02_Sleep_lock", "I01_02_Sleep_lock_req", "I01_02_Sleep_text")
