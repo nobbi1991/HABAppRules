@@ -19,7 +19,7 @@ LOGGER = logging.getLogger(__name__)
 class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
 	"""Rules class to manage presence of a home.
 
-	Hint: If you have some kind of guest-modus, use a guest-available switch as a phone to enable a persistent presence, also if all phones are not at home
+	Hint: If you have some kind of guest-mode, use a guest-available switch as a phone to enable a persistent presence, also if all phones are not at home
 
 	Example OpenHAB configuration:
 	# KNX-things:
