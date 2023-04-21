@@ -1,14 +1,32 @@
-# Version 2.2.0 - dd.mm.yyyy
+# Version 3.0.0 - dd.mm.yyyy
+
+## Breaking changes
+- Renamed all ``movement`` to ``motion``
+- Moved some modules from ``common`` to ``core``
+- Changed parameter order of ``habapp_rules.system.presence.Presence``
 
 ## Features
 
 - Added ``habapp_rules.actors.light`` to control dimmer lights (switch lights will be supported later):
   - ``habapp_rules.actors.light.Light`` for basic light functionality like switch-on brightness or leaving / sleeping light
-  - ``habapp_rules.actors.light.LightExtended`` includes everything from ``habapp_rules.actors.light.Light`` plus switch on depending on movement or opening of a door
+  - ``habapp_rules.actors.light.LightExtended`` includes everything from ``habapp_rules.actors.light.Light`` plus switch on depending on motion or opening of a door
+- Added ``habapp_rules.sensors.motion`` to filter motion sensors
+- Added ``habapp_rules.common.hysteresis`` as a helper for value depended switch with hysteresis
 - Added ``habapp_rules.core.timeout_list``
-- Moved some modules from ``common`` to ``core``
-- removed ``helper`` submodule and switched to ``nose_helper`` package
 - Added logging of ``habapp_rules`` version
+- Added ``habapp_rules.common.hysteresis`` which implements a hysteresis switch
+- Changed ``habapp_rules.system.summer_winter`` that one full day of data is enough for summer / winter detected, also if more days are set for mean calculation
+
+## Bugfix
+
+- fixed bug of ``habapp_rules.system.presence.Presence`` which avoided instantiation if no phone outside_doors where given
+- fixed bug of ``habapp_rules.core.state_machine.StateMachineRule._create_additional_item`` which returned a bool value instead of the created item if an item was created
+
+## GitHub Actions
+
+- Changed updated checkout@v2 to checkout@v3 which uses node16
+- Removed ``helper`` submodule and switched to ``nose_helper`` package
+
 
 # Version 2.1.1 - 04.02.2023
 

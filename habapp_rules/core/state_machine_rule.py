@@ -9,6 +9,7 @@ import HABApp.openhab.connection_handler.func_sync
 import transitions.extensions.states
 
 import habapp_rules
+import habapp_rules.core.exceptions
 
 
 @transitions.extensions.states.add_state_features(transitions.extensions.states.Timeout)
@@ -27,13 +28,13 @@ class StateMachineRule(HABApp.Rule):
 	trans: list[dict] = []
 	state: str
 
-	def __init__(self, state_item_name: str | None = None, state_item_label: str | None = None):
+	def __init__(self, state_item_name: str | None = None, state_item_label: str | None = None):  # add possibility to give icon
 		"""Init rule with state machine.
 
 		:param state_item_name: name of the item to hold the state
 		:param state_item_label: OpenHAB label of the state_item; This will be used if the state_item will be created by HABApp
 		"""
-		super().__init__()
+		HABApp.Rule.__init__(self)
 
 		# get prefix for items
 		parent_class_path = pathlib.Path(inspect.getfile(self.__class__.__mro__[0]))
@@ -53,15 +54,24 @@ class StateMachineRule(HABApp.Rule):
 		:param item_type: Type of item (e.g. String)
 		:param label: Label of the item
 		:return: returns the created item
+		:raises habapp_rules.core.exceptions.HabAppRulesException: if item could not be created
 		"""
 		if not HABApp.openhab.interface.item_exists(name):
 			if not label:
 				label = f"{name.replace('_', ' ')}"
 			if item_type == "String" and not label.endswith("[%s]"):
 				label = f"{label} [%s]"
-			HABApp.openhab.interface.create_item(item_type=item_type, name=name, label=label)
-		time.sleep(0.05)
+			if not HABApp.openhab.interface.create_item(item_type=item_type, name=name, label=label):
+				raise habapp_rules.core.exceptions.HabAppRulesException(f"Could not create item '{name}'")
+			time.sleep(0.05)
 		return HABApp.openhab.items.OpenhabItem.get_item(name)
+
+	def get_initial_log_message(self) -> str:
+		"""Get log message which can be logged at the init of a rule with a state machine.
+
+		:return: log message
+		"""
+		return f"Init of rule '{self.__class__.__name__}' with name '{self.rule_name}' was successful. Initial state = '{self.state}' | State item = '{self._item_state.name}'"
 
 	def _get_initial_state(self, default_value: str = "initial") -> str:
 		"""Get initial state of state machine.

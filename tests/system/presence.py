@@ -10,7 +10,7 @@ import HABApp.rule.rule
 
 import habapp_rules.core.state_machine_rule
 import habapp_rules.system.presence
-import tests.common.graph_machines
+import tests.helper.graph_machines
 import tests.helper.oh_item
 import tests.helper.rule_runner
 import tests.helper.timer
@@ -51,7 +51,7 @@ class TestPresence(unittest.TestCase):
 	@unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
 	def test_create_graph(self):  # pragma: no cover
 		"""Create state machine graph for documentation."""
-		presence_graph = tests.common.graph_machines.GraphMachineTimer(
+		presence_graph = tests.helper.graph_machines.GraphMachineTimer(
 			model=self._presence,
 			states=self._presence.states,
 			transitions=self._presence.trans,
@@ -59,6 +59,14 @@ class TestPresence(unittest.TestCase):
 			show_conditions=True)
 
 		presence_graph.get_graph().draw(pathlib.Path(__file__).parent / "Presence.png", format="png", prog="dot")
+
+	def test_minimal_init(self):
+		"""Test init with minimal set of arguments."""
+		with unittest.mock.patch.object(habapp_rules.core.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_presence_Presence_state", "")):
+			presence_min = habapp_rules.system.presence.Presence("Unittest_Presence", "Unittest_Leaving")
+
+		self.assertEqual([], presence_min._Presence__outside_door_items)
+		self.assertEqual([], presence_min._Presence__phone_items)
 
 	def test_enums(self):
 		"""Test if all enums from __init__.py are implemented"""

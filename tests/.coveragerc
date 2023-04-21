@@ -16,7 +16,7 @@ omit =
 
 [report]
 omit =
-    */common/graph_machines.py
+    */helper/graph_machines.py
 
 # Regexes for lines to exclude from consideration
 exclude_lines =

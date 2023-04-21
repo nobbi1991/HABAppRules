@@ -83,12 +83,11 @@ class TestSummerWinter(unittest.TestCase):
 		with unittest.mock.patch.object(self._summer_winter, "_outside_temp_item", spec=HABApp.openhab.items.NumberItem) as outside_temp_mock, self.assertRaises(habapp_rules.system.summer_winter.SummerWinterException) as context:
 			outside_temp_mock.get_persistence_data.return_value = HABApp.openhab.definitions.helpers.persistence_data.OpenhabPersistenceData.from_dict({"data": []})
 			self._summer_winter._SummerWinter__get_weighted_mean(0)
-		self.assertIn("No data for days_in_past = 0 and hour = 7", str(context.exception))
+		self.assertIn("No data for", str(context.exception))
 
 	def test__is_summer(self):
 		"""Test if __is_summer method is detecting summer/winter correctly."""
 		self._summer_winter._days = 4
-		self._summer_winter._temperature_threshold = 16
 		self._summer_winter._SummerWinter__get_weighted_mean = unittest.mock.MagicMock()
 
 		# check if __get_wighted_mean was called correctly
@@ -101,65 +100,54 @@ class TestSummerWinter(unittest.TestCase):
 		self._summer_winter._SummerWinter__get_weighted_mean.assert_any_call(3)
 
 		# check if summer is returned if greater than threshold
-		self._summer_winter._SummerWinter__get_weighted_mean.side_effect = [16, 16, 16, 16.1]
+		self._summer_winter._SummerWinter__get_weighted_mean.side_effect = [16, 16, 16, 17.1]
 		self.assertTrue(self._summer_winter._SummerWinter__is_summer())
 
 		# check if winter is returned if smaller / equal than threshold
-		self._summer_winter._SummerWinter__get_weighted_mean.side_effect = [16, 16, 16, 16.0]
+		self._summer_winter._SummerWinter__get_weighted_mean.side_effect = [16, 16, 16, 14]
 		self.assertFalse(self._summer_winter._SummerWinter__is_summer())
 
 		# check if exceptions are handled correctly (single Exception)
-		self._summer_winter._SummerWinter__get_weighted_mean.side_effect = [16, habapp_rules.system.summer_winter.SummerWinterException("not found"), 16.1, 16.0]
+		self._summer_winter._SummerWinter__get_weighted_mean.side_effect = [16, habapp_rules.system.summer_winter.SummerWinterException("not found"), 16.1, 18.0]
 		self.assertTrue(self._summer_winter._SummerWinter__is_summer())
 
-		# check if exceptions are handled correctly (3 Exceptions)
+		# check if exceptions are handled correctly (single valid value)
 		exc = habapp_rules.system.summer_winter.SummerWinterException("not found")
 		self._summer_winter._SummerWinter__get_weighted_mean.side_effect = [exc, exc, 16.1, exc]
-		with self.assertRaises(habapp_rules.system.summer_winter.SummerWinterException) as context:
-			self.assertTrue(self._summer_winter._SummerWinter__is_summer())
-		self.assertIn("Not enough values to detect summer/winter. Expected: 4 | actual: 1", str(context.exception))
+		self.assertTrue(self._summer_winter._SummerWinter__is_summer())
+
+		# check if exceptions are handled correctly (no value)
+		exc = habapp_rules.system.summer_winter.SummerWinterException("not found")
+		self._summer_winter._SummerWinter__get_weighted_mean.side_effect = [exc, exc, exc, exc]
+		with self.assertRaises(habapp_rules.system.summer_winter.SummerWinterException):
+			self._summer_winter._SummerWinter__is_summer()
 
 	def test__is_summer_with_hysteresis(self):
 		"""Test summer / winter with hysteresis."""
 		TestCase = collections.namedtuple("TestCase", "temperature_values, summer_value, expected_summer")
 
 		test_cases = [
-			TestCase([15.5] * 5, None, False),
-			TestCase([15.6] * 5, None, False),
-			TestCase([16] * 5, None, False),
-			TestCase([16.1] * 5, None, True),
+			TestCase([15.74] * 5, False, False),
+			TestCase([15.75] * 5, False, False),
+			TestCase([15.76] * 5, False, False),
+			TestCase([16.24] * 5, False, False),
+			TestCase([16.25] * 5, False, True),
+			TestCase([16.26] * 5, False, True),
 
-			TestCase([15.5] * 5, "OFF", False),
-			TestCase([15.6] * 5, "OFF", False),
-			TestCase([16] * 5, "OFF", False),
-			TestCase([16.1] * 5, "OFF", True),
-
-			TestCase([15.5] * 5, "ON", False),
-			TestCase([15.6] * 5, "ON", True),
-			TestCase([16] * 5, "ON", True),
-			TestCase([16.1] * 5, "ON", True)
+			TestCase([15.74] * 5, True, False),
+			TestCase([15.75] * 5, True, True),
+			TestCase([15.76] * 5, True, True),
+			TestCase([16.24] * 5, True, True),
+			TestCase([16.25] * 5, True, True),
+			TestCase([16.26] * 5, True, True),
 		]
 
 		self._summer_winter._SummerWinter__get_weighted_mean = unittest.mock.MagicMock()
 
 		for test_case in test_cases:
 			self._summer_winter._SummerWinter__get_weighted_mean.side_effect = test_case.temperature_values
-			tests.helper.oh_item.set_state("Unittest_Summer", test_case.summer_value)
+			self._summer_winter._hysteresis_switch._on_off_state = test_case.summer_value
 			self.assertEqual(test_case.expected_summer, self._summer_winter._SummerWinter__is_summer())
-
-	def test__get_threshold_with_hysteresis(self):
-		"""Test getting threshold with hysteresis."""
-		TestCase = collections.namedtuple("TestCase", "summer_value, expected_result")
-
-		test_cases = [
-			TestCase(None, 16),
-			TestCase("ON", 15.5),
-			TestCase("OFF", 16)
-		]
-
-		for test_case in test_cases:
-			tests.helper.oh_item.set_state("Unittest_Summer", test_case.summer_value)
-			self.assertEqual(test_case.expected_result, self._summer_winter._SummerWinter__get_threshold_with_hysteresis(), test_case)
 
 	def test_cb_update_summer(self):
 		"""Test correct functionality of summer check callback."""
@@ -206,7 +194,7 @@ class TestSummerWinter(unittest.TestCase):
 		with unittest.mock.patch.object(self._summer_winter, "_SummerWinter__is_summer", side_effect=habapp_rules.system.summer_winter.SummerWinterException("No update")), \
 				unittest.mock.patch.object(self._summer_winter, "_instance_logger", spec=logging.Logger) as logger_mock:
 			self._summer_winter._cb_update_summer()
-			logger_mock.exception.assert_called_once()
+			logger_mock.error.assert_called_once()
 
 	def tearDown(self) -> None:
 		"""Tear down test case."""

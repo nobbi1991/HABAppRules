@@ -27,7 +27,7 @@ class StateObserverBase(HABApp.Rule, abc.ABC):
 		:param item_name: Name of observed item
 		:param control_names: list of control items
 		"""
-		super().__init__()
+		HABApp.Rule.__init__(self)
 		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, item_name)
 
 		self._expected_values = habapp_rules.core.timeout_list.TimeoutList()
@@ -104,6 +104,7 @@ class StateObserverBase(HABApp.Rule, abc.ABC):
 
 		:param event: event, which triggered this callback
 		"""
+		print(event)
 		self._check_manual(event, "Manual from extern")
 
 	@abc.abstractmethod
@@ -140,7 +141,7 @@ class StateObserverSwitch(StateObserverBase):
 		"""
 		self._cb_on = cb_on
 		self._cb_off = cb_off
-		super().__init__(item_name, control_names)
+		StateObserverBase.__init__(self, item_name, control_names)
 
 	def _check_manual(self, event: EventTypes, message: str) -> None:
 		"""Check if light was triggered by a manual action
@@ -186,7 +187,7 @@ class StateObserverDimmer(StateObserverBase):
 		self._cb_off = cb_off
 		self._cb_brightness_change = cb_brightness_change
 
-		super().__init__(item_name, control_names)
+		StateObserverBase.__init__(self, item_name, control_names)
 
 	def _cb_state_change(self, event: HABApp.openhab.events.ItemStateChangedEvent, call_check_manual: bool = True) -> None:
 		"""Callback, which is called if a value change of the light item was detected.
