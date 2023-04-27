@@ -28,8 +28,33 @@ BrightnessTypes = typing.Union[list[typing.Union[float, bool]], float, bool]
 
 # pylint: disable=no-member,too-many-instance-attributes
 class Light(habapp_rules.core.state_machine_rule.StateMachineRule):
-	"""Rules class to manage basic light states."""
+	"""Rules class to manage basic light states.
 
+	# KNX-things:
+	Thing device T00_99_OpenHab_DimmerObserver "KNX OpenHAB dimmer observer"{
+        Type dimmer             : light             "Light"             [ switch="1/1/10", position="1/1/13+<1/1/15" ]
+        Type dimmer-control     : light_ctr         "Light control"     [ increaseDecrease="1/1/12"]
+        Type dimmer             : light_group       "Light Group"       [ switch="1/1/240", position="1/1/243"]
+    }
+
+    # Items:
+    Dimmer    I01_01_Light              "Light [%s]"        {channel="knx:device:bridge:T00_99_OpenHab_DimmerObserver:light"}
+	Dimmer    I01_01_Light_ctr          "Light ctr"         {channel="knx:device:bridge:T00_99_OpenHab_DimmerObserver:light_ctr"}
+	Dimmer    I01_01_Light_group        "Light Group"       {channel="knx:device:bridge:T00_99_OpenHab_DimmerObserver:light_group"}
+	Switch    I00_00_Light_manual       "Light manual"
+
+	# Rule init:
+	light_sofa = habapp_rules.actors.light.Light(
+		"I01_01_Light",
+		control_names=["I01_01_Light_ctr"],
+		manual_name="I00_00_Light_manual",
+		presence_state_name="I999_00_Presence_state", # string item!
+		sleeping_state_name="I999_00_Sleeping_state", # string item!
+		day_name="I999_00_Day",
+		config=CONFIG_TEST,
+		group_names=["I01_01_Light_group"]
+	)
+	"""
 	states = [
 		{"name": "manual"},
 		{"name": "auto", "initial": "init", "children": [
@@ -70,7 +95,8 @@ class Light(habapp_rules.core.state_machine_rule.StateMachineRule):
 	             day_name: str,
 	             config: habapp_rules.actors.light_config.LightConfig,
 	             sleeping_state_name: str | None = None,
-	             state_label: str | None = None) -> None:
+	             state_label: str | None = None,
+	             group_names: list[str] | None = None) -> None:
 		"""Init of basic light object.
 
 		:param name_light: name of OpenHAB light item (SwitchItem | DimmerItem)
@@ -81,6 +107,7 @@ class Light(habapp_rules.core.state_machine_rule.StateMachineRule):
 		:param config: configuration of the light object
 		:param sleeping_state_name: [optional] name of OpenHAB sleeping state item
 		:param state_label: label of OpenHAB item for storing the current state (StringItem)
+		:param group_names: list of group items where the light is a part of. Group item type must match with type of the light item
 		:raises TypeError: if type of light_item is not supported
 		"""
 		self._config = config
@@ -92,7 +119,7 @@ class Light(habapp_rules.core.state_machine_rule.StateMachineRule):
 		light_item = HABApp.core.Items.get_item(name_light)
 		if isinstance(light_item, HABApp.openhab.items.dimmer_item.DimmerItem):
 			self._item_light = HABApp.openhab.items.DimmerItem.get_item(name_light)
-			self._state_observer = habapp_rules.actors.state_observer.StateObserverDimmer(name_light, self._cb_hand_on, self._cb_hand_off, self._cb_hand_changed, control_names=control_names)
+			self._state_observer = habapp_rules.actors.state_observer.StateObserverDimmer(name_light, self._cb_hand_on, self._cb_hand_off, self._cb_hand_changed, control_names=control_names, group_names=group_names)
 		else:
 			raise TypeError(f"type: {type(light_item)} is not supported!")
 
@@ -127,7 +154,6 @@ class Light(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 		self._update_openhab_state()
 		self._instance_logger.debug(super().get_initial_log_message())
-
 
 	def _get_initial_state(self, default_value: str = "") -> str:
 		"""Get initial state of state machine.
@@ -323,29 +349,26 @@ class Light(habapp_rules.core.state_machine_rule.StateMachineRule):
 		sleep_states = [habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value] if include_pre_sleep else [habapp_rules.system.SleepState.SLEEPING.value]
 		return getattr(self._item_sleeping_state, "value", "") in sleep_states
 
-	def _cb_hand_on(self, event: HABApp.openhab.events.ItemStateEvent | HABApp.openhab.events.ItemCommandEvent, msg: str) -> None:
+	def _cb_hand_on(self, event: HABApp.openhab.events.ItemStateEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
 		"""Callback, which is triggered by the state observer if a manual ON command was detected.
 
 		:param event: original trigger event
-		:param msg: message from state observer
 		"""
 		self.hand_on()
 
-	def _cb_hand_off(self, event: HABApp.openhab.events.ItemStateEvent | HABApp.openhab.events.ItemCommandEvent, msg: str) -> None:
+	def _cb_hand_off(self, event: HABApp.openhab.events.ItemStateEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
 		"""Callback, which is triggered by the state observer if a manual OFF command was detected.
 
 		:param event: original trigger event
-		:param msg: message from state observer
 		"""
 		self.hand_off()
 
-	def _cb_hand_changed(self, event: HABApp.openhab.events.ItemStateEvent | HABApp.openhab.events.ItemCommandEvent | HABApp.openhab.events.ItemStateChangedEvent, msg: str) -> None:
+	def _cb_hand_changed(self, event: HABApp.openhab.events.ItemStateEvent | HABApp.openhab.events.ItemCommandEvent | HABApp.openhab.events.ItemStateChangedEvent) -> None:
 		"""Callback, which is triggered by the state observer if a manual OFF command was detected.
 
 		:param event: original trigger event
-		:param msg: message from state observer
 		"""
-		if isinstance(event, HABApp.openhab.events.ItemStateChangedEvent) and abs(event.value -event.old_value) > 5:
+		if isinstance(event, HABApp.openhab.events.ItemStateChangedEvent) and abs(event.value - event.old_value) > 5:
 			self.hand_changed()
 
 	def _cb_manu(self, event: HABApp.openhab.events.ItemStateEvent) -> None:
@@ -391,7 +414,12 @@ class Light(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 
 class LightExtended(Light):
-	"""Extended Light."""
+	"""Extended Light.
+
+	Example config is given at Light base class.
+	With this class additionally motion or door items can be given.
+	"""
+
 	_config: LightConfigExtended
 
 	# add additional states
@@ -431,8 +459,8 @@ class LightExtended(Light):
 		:param day_name: name of OpenHAB switch item which is 'ON' during day and 'OFF' during night
 		:param config: configuration of the light object
 		:param sleeping_state_name: [optional] name of OpenHAB sleeping state item
-		:param name_motion: [optional] name of OpenHAB motion item
-		:param door_names: [optional] list of OpenHAB door items
+		:param name_motion: [optional] name of OpenHAB motion item (SwitchItem)
+		:param door_names: [optional] list of OpenHAB door items (ContactItem)
 		:raises TypeError: if type of light_item is not supported
 		"""
 		door_names = door_names if door_names else []
@@ -539,14 +567,13 @@ class LightExtended(Light):
 		"""
 		return time.time() - self._hand_off_timestamp > self._hand_off_lock_time
 
-	def _cb_hand_off(self, event: HABApp.openhab.events.ItemStateEvent | HABApp.openhab.events.ItemCommandEvent, msg: str) -> None:
+	def _cb_hand_off(self, event: HABApp.openhab.events.ItemStateEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
 		"""Callback, which is triggered by the state observer if a manual OFF command was detected.
 
 		:param event: original trigger event
-		:param msg: message from state observer
 		"""
 		self._hand_off_timestamp = time.time()
-		Light._cb_hand_off(self, event, msg)
+		Light._cb_hand_off(self, event)
 
 	def _cb_motion(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
 		"""Callback, which is triggered if the motion state changed.

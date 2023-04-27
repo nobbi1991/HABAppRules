@@ -709,7 +709,6 @@ class TestLight(unittest.TestCase):
 	def test_auto_pre_off_transitions(self):
 		"""Test transitions of auto_preoff."""
 		event_mock = unittest.mock.MagicMock()
-		msg = ""
 
 		# to auto off by timeout
 		self.light.to_auto_preoff()
@@ -719,12 +718,12 @@ class TestLight(unittest.TestCase):
 
 		# to auto on by hand_on
 		self.light.to_auto_preoff()
-		self.light._cb_hand_on(event_mock, msg)
+		self.light._cb_hand_on(event_mock)
 		self.assertEqual("auto_on", self.light.state)
 
 		# to auto on by hand_off
 		self.light.to_auto_preoff()
-		self.light._cb_hand_off(event_mock, msg)
+		self.light._cb_hand_off(event_mock)
 		self.assertEqual("auto_on", self.light.state)
 
 		# to leaving (configured)

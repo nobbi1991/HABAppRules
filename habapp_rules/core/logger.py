@@ -3,8 +3,10 @@ import collections.abc
 import logging
 import os
 import typing
+
 import HABApp.config.config
 import HABApp.config.logging
+
 import habapp_rules.__version__
 
 LOG_PATH = HABApp.config.config.CONFIG.directories.logging.absolute()
@@ -12,7 +14,7 @@ LOG_PATH = HABApp.config.config.CONFIG.directories.logging.absolute()
 
 def setup_logger() -> None:
 	"""Setup the logger"""
-	log_formatter = logging.Formatter("%(asctime)s | %(threadName)20s | %(levelname)8s | %(name)s:%(lineno)d | %(message)s", datefmt="%Y-%m-%d | %H:%M:%S")
+	log_formatter = logging.Formatter("%(asctime)s.%(msecs)03d | %(threadName)20s | %(levelname)8s | %(name)s:%(lineno)d | %(message)s", datefmt="%Y-%m-%d | %H:%M:%S")
 	habapp_rules_logger = logging.getLogger("habapp_rules")
 	habapp_rules_logger.setLevel(logging.DEBUG)
 
