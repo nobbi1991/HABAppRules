@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import abc
 import logging
+import time
 import typing
 
 import HABApp
@@ -41,10 +42,11 @@ class _StateObserverBase(HABApp.Rule, abc.ABC):
 		self.__check_item_types()
 
 		self._value = self._item.value
+		self._group_last_event = 0
 
-		self._item.listen_event(self._cb_state_change, HABApp.openhab.events.ItemStateChangedEventFilter())
-		HABApp.util.EventListenerGroup().add_listener(self.__control_items, self._cb_control, HABApp.openhab.events.ItemCommandEventFilter()).listen()
-		HABApp.util.EventListenerGroup().add_listener(self.__group_items, self._cb_state_change, HABApp.openhab.events.ItemStateChangedEventFilter()).listen()
+		self._item.listen_event(self._cb_item, HABApp.openhab.events.ItemStateChangedEventFilter())
+		HABApp.util.EventListenerGroup().add_listener(self.__control_items, self._cb_control_item, HABApp.openhab.events.ItemCommandEventFilter()).listen()
+		HABApp.util.EventListenerGroup().add_listener(self.__group_items, self._cb_group_item, HABApp.openhab.events.ItemStateEventFilter()).listen()
 
 	@property
 	def value(self) -> float | bool:
@@ -79,16 +81,24 @@ class _StateObserverBase(HABApp.Rule, abc.ABC):
 		:raises ValueError: if value has wrong format
 		"""
 
-	def _cb_state_change(self, event: HABApp.openhab.events.ItemStateChangedEvent):
+	def _cb_item(self, event: HABApp.openhab.events.ItemStateChangedEvent):
 		"""Callback, which is called if a value change of the light item was detected.
 
 		:param event: event, which triggered this callback
 		"""
-		print(event)
 		self._check_manual(event)
 
+	def _cb_group_item(self, event: HABApp.openhab.events.ItemStateEvent):
+		"""Callback, which is called if a value change of the light item was detected.
+
+		:param event: event, which triggered this callback
+		"""
+		if event.value in {"ON", "OFF"} and time.time() - self._group_last_event > 0.3:  # this is some kind of workaround. For some reason all events are doubled.
+			self._group_last_event = time.time()
+			self._check_manual(event)
+
 	@abc.abstractmethod
-	def _cb_control(self, event: HABApp.openhab.events.ItemCommandEvent):
+	def _cb_control_item(self, event: HABApp.openhab.events.ItemCommandEvent):
 		"""Callback, which is called if a command event of one of the control items was detected.
 
 		:param event: event, which triggered this callback
@@ -116,7 +126,18 @@ class _StateObserverBase(HABApp.Rule, abc.ABC):
 class StateObserverSwitch(_StateObserverBase):
 	"""Class to observe the on/off state of a switch item.
 
-	todo add example config
+	This class is normally not used standalone. Anyway here is an example config:
+
+	# KNX-things:
+	Thing device T00_99_OpenHab_DimmerSwitch "KNX OpenHAB switch observer"{
+        Type switch             : switch             "Switch"             [ switch="1/1/10" ]
+    }
+
+    # Items:
+	    Switch    I01_01_Switch    "Switch [%s]" {channel="knx:device:bridge:T00_99_OpenHab_DimmerSwitch:switch"}
+
+	# Rule init:
+	habapp_rules.actors.state_observer.StateObserverSwitch("I01_01_Switch", callback_on, callback_off)
 	"""
 
 	def __init__(self, item_name: str, cb_on: CallbackType, cb_off: CallbackType):
@@ -146,12 +167,13 @@ class StateObserverSwitch(_StateObserverBase):
 		else:
 			raise ValueError(f"Event {event} is not supported. value must be ether a number or 'ON' / 'OFF'")
 
-	def _cb_control(self, event: HABApp.openhab.events.ItemCommandEvent):
+	def _cb_control_item(self, event: HABApp.openhab.events.ItemCommandEvent):
 		"""Callback, which is called if a command event of one of the control items was detected.
 
 		:param event: event, which triggered this callback
 		"""
-		# not used by StateObserverSwitch
+
+	# not used by StateObserverSwitch
 
 	def send_command(self, value: str) -> None:
 		"""Send brightness command to light (this should be used by rules, to not trigger a manual action)
@@ -173,7 +195,29 @@ class StateObserverSwitch(_StateObserverBase):
 class StateObserverDimmer(_StateObserverBase):
 	"""Class to observe the on / off / change events of a dimmer item.
 
-	# todo add example config
+	Known limitation: if the items of group_names are KNX-items, the channel types must be dimmer (not dimmer-control)
+	This class is normally not used standalone. Anyway here is an example config:
+
+	# KNX-things:
+	Thing device T00_99_OpenHab_DimmerObserver "KNX OpenHAB dimmer observer"{
+        Type dimmer             : light             "Light"             [ switch="1/1/10", position="1/1/13+<1/1/15" ]
+        Type dimmer-control     : light_ctr         "Light control"     [ increaseDecrease="1/1/12"]
+        Type dimmer             : light_group       "Light Group"       [ switch="1/1/240", position="1/1/243"]
+    }
+
+    # Items:
+    Dimmer    I01_01_Light              "Light [%s]"        {channel="knx:device:bridge:T00_99_OpenHab_DimmerObserver:light"}
+	Dimmer    I01_01_Light_ctr          "Light ctr"         {channel="knx:device:bridge:T00_99_OpenHab_DimmerObserver:light_ctr"}
+	Dimmer    I01_01_Light_group        "Light Group"       {channel="knx:device:bridge:T00_99_OpenHab_DimmerObserver:light_group"}
+
+	# Rule init:
+	habapp_rules.actors.state_observer.StateObserverDimmer(
+			"I01_01_Light",
+			control_names=["I01_01_Light_ctr"],
+			group_names=["I01_01_Light_group"],
+			cb_on=callback_on,
+			cb_off=callback_off,
+			cb_brightness_change=callback_change)
 	"""
 
 	def __init__(self, item_name: str, cb_on: CallbackType, cb_off: CallbackType, cb_brightness_change: CallbackType | None = None, control_names: list[str] | None = None, group_names: list[str] | None = None) -> None:
@@ -220,9 +264,11 @@ class StateObserverDimmer(_StateObserverBase):
 			self._value = 0
 			self._trigger_callback("_cb_off", event)
 		else:
-			raise ValueError(f"Event {event} is not supported. value must be ether a number or 'ON' / 'OFF'")
+			pass
 
-	def _cb_control(self, event: HABApp.openhab.events.ItemCommandEvent):
+	# raise ValueError(f"Event {event} is not supported. value must be ether a number or 'ON' / 'OFF'")
+
+	def _cb_control_item(self, event: HABApp.openhab.events.ItemCommandEvent):
 		"""Callback, which is called if a command event of one of the control items was detected.
 
 		:param event: event, which triggered this callback
