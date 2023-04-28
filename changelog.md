@@ -1,3 +1,9 @@
+# Version 3.0.1 - 28.04.2023
+
+## Bugfix
+
+- fixed build of docker image
+
 # Version 3.0.0 - 28.04.2023
 
 ## Breaking changes
