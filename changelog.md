@@ -1,7 +1,6 @@
 # Version 3.0.0 - dd.mm.yyyy
 
 ## Breaking changes
-- Renamed all ``movement`` to ``motion``
 - Moved some modules from ``common`` to ``core``
 - Changed parameter order of ``habapp_rules.system.presence.Presence``
 

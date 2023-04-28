@@ -74,15 +74,16 @@ class TestLight(unittest.TestCase):
 			{"trigger": "lock_off", "source": "Locked", "dest": "Unlocked", "unless": "_sleep_active"},
 			{"trigger": "lock_off", "source": "Locked", "dest": "SleepLocked", "conditions": "_sleep_active"},
 			{"trigger": "sleep_started", "source": "Unlocked", "dest": "SleepLocked"},
-			{"trigger": "sleep_end", "source": "SleepLocked", "dest": "Unlocked", "unless": "_post_sleep_lock_active"},
-			{"trigger": "sleep_end", "source": "SleepLocked", "dest": "PostSleepLocked", "conditions": "_post_sleep_lock_active"},
+			{"trigger": "sleep_end", "source": "SleepLocked", "dest": "Unlocked", "unless": "_post_sleep_lock_configured"},
+			{"trigger": "sleep_end", "source": "SleepLocked", "dest": "PostSleepLocked", "conditions": "_post_sleep_lock_configured"},
 			{"trigger": "timeout_post_sleep_locked", "source": "PostSleepLocked", "dest": "Unlocked", "unless": "_raw_motion_active"},
 			{"trigger": "motion_off", "source": "PostSleepLocked", "dest": "PostSleepLocked"},
 			{"trigger": "motion_on", "source": "PostSleepLocked", "dest": "PostSleepLocked"},
 			{"trigger": "motion_on", "source": "Unlocked_Wait", "dest": "Unlocked_Motion"},
-			{"trigger": "motion_off", "source": "Unlocked_Motion", "dest": "Unlocked_MotionExtended", "conditions": "_motion_extended_active"},
-			{"trigger": "motion_off", "source": "Unlocked_Motion", "dest": "Unlocked_Wait", "unless": "_motion_extended_active"},
-			{"trigger": "timeout_motion_extended", "source": "Unlocked_MotionExtended", "dest": "Unlocked_Wait"},
+			{"trigger": "motion_off", "source": "Unlocked_Motion", "dest": "Unlocked_MotionExtended", "conditions": "_motion_extended_configured"},
+			{"trigger": "motion_off", "source": "Unlocked_Motion", "dest": "Unlocked_Wait", "unless": "_motion_extended_configured"},
+			{"trigger": "timeout_motion_extended", "source": "Unlocked_MotionExtended", "dest": "Unlocked_Wait", "unless": "_brightness_over_threshold"},
+			{"trigger": "timeout_motion_extended", "source": "Unlocked_MotionExtended", "dest": "Unlocked_TooBright", "conditions": "_brightness_over_threshold"},
 			{"trigger": "motion_on", "source": "Unlocked_MotionExtended", "dest": "Unlocked_Motion"},
 			{"trigger": "brightness_over_threshold", "source": "Unlocked_Wait", "dest": "Unlocked_TooBright"},
 			{"trigger": "brightness_below_threshold", "source": "Unlocked_TooBright", "dest": "Unlocked_Wait", "unless": "_raw_motion_active"},
@@ -205,27 +206,27 @@ class TestLight(unittest.TestCase):
 			tests.helper.oh_item.send_command("Unittest_Motion_max_lock", "ON", "OFF")
 			self.assertEqual("Locked", self.motion_max.state)
 
-	def test_motion_extended_active(self):
-		"""Test _motion_extended_active"""
+	def test_motion_extended_configured(self):
+		"""Test _motion_extended_configured"""
 		self.motion_max._timeout_extended_motion = -1
-		self.assertFalse(self.motion_max._motion_extended_active())
+		self.assertFalse(self.motion_max._motion_extended_configured())
 
 		self.motion_max._timeout_extended_motion = 0
-		self.assertFalse(self.motion_max._motion_extended_active())
+		self.assertFalse(self.motion_max._motion_extended_configured())
 
 		self.motion_max._timeout_extended_motion = 1
-		self.assertTrue(self.motion_max._motion_extended_active())
+		self.assertTrue(self.motion_max._motion_extended_configured())
 
-	def test_post_sleep_lock_active(self):
-		"""Test _post_sleep_lock_active"""
+	def test_post_sleep_lock_configured(self):
+		"""Test _post_sleep_lock_configured"""
 		self.motion_max._timeout_post_sleep_lock = -1
-		self.assertFalse(self.motion_max._post_sleep_lock_active())
+		self.assertFalse(self.motion_max._post_sleep_lock_configured())
 
 		self.motion_max._timeout_post_sleep_lock = 0
-		self.assertFalse(self.motion_max._post_sleep_lock_active())
+		self.assertFalse(self.motion_max._post_sleep_lock_configured())
 
 		self.motion_max._timeout_post_sleep_lock = 1
-		self.assertTrue(self.motion_max._post_sleep_lock_active())
+		self.assertTrue(self.motion_max._post_sleep_lock_configured())
 
 	def test_sleep_active(self):
 		"""Test _sleep_active"""
@@ -253,13 +254,13 @@ class TestLight(unittest.TestCase):
 		"""Test leaving transitions of sleep locked state."""
 		# to Unlocked
 		self.motion_max.state = "SleepLocked"
-		with unittest.mock.patch.object(self.motion_max, "_post_sleep_lock_active", return_value=False):
+		with unittest.mock.patch.object(self.motion_max, "_post_sleep_lock_configured", return_value=False):
 			self.motion_max.sleep_end()
 		self.assertEqual("Unlocked_Wait", self.motion_max.state)
 
 		# to PostSleepLocked
 		self.motion_max.state = "SleepLocked"
-		with unittest.mock.patch.object(self.motion_max, "_post_sleep_lock_active", return_value=True):
+		with unittest.mock.patch.object(self.motion_max, "_post_sleep_lock_configured", return_value=True):
 			self.motion_max.sleep_end()
 		self.assertEqual("PostSleepLocked", self.motion_max.state)
 
@@ -307,22 +308,29 @@ class TestLight(unittest.TestCase):
 		"""Test leaving transitions of Unlocked_Motion state."""
 		# motion off | extended active
 		self.motion_max.state = "Unlocked_Motion"
-		with unittest.mock.patch.object(self.motion_max, "_motion_extended_active", return_value=True):
+		with unittest.mock.patch.object(self.motion_max, "_motion_extended_configured", return_value=True):
 			self.motion_max.motion_off()
 		self.assertEqual("Unlocked_MotionExtended", self.motion_max.state)
 
 		# motion off | extended not active
 		self.motion_max.state = "Unlocked_Motion"
-		with unittest.mock.patch.object(self.motion_max, "_motion_extended_active", return_value=False):
+		with unittest.mock.patch.object(self.motion_max, "_motion_extended_configured", return_value=False):
 			self.motion_max.motion_off()
 		self.assertEqual("Unlocked_Wait", self.motion_max.state)
 
 	def test_unlocked_motion_extended(self):
 		"""Test leaving transitions of Unlocked_MotionExtended state."""
-		# timeout
+		# timeout | brightness over threshold
 		self.motion_max.state = "Unlocked_MotionExtended"
-		self.motion_max.timeout_motion_extended()
-		self.assertEqual("Unlocked_Wait", self.motion_max.state)
+		with unittest.mock.patch.object(self.motion_max, "_brightness_over_threshold", return_value=True):
+			self.motion_max.timeout_motion_extended()
+			self.assertEqual("Unlocked_TooBright", self.motion_max.state)
+
+		# timeout | brightness below threshold
+		self.motion_max.state = "Unlocked_MotionExtended"
+		with unittest.mock.patch.object(self.motion_max, "_brightness_over_threshold", return_value=False):
+			self.motion_max.timeout_motion_extended()
+			self.assertEqual("Unlocked_Wait", self.motion_max.state)
 
 		# motion on
 		self.motion_max.state = "Unlocked_MotionExtended"

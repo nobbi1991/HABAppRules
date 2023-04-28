@@ -15,7 +15,29 @@ LOGGER = logging.getLogger(__name__)
 
 # pylint: disable=no-member, too-many-instance-attributes
 class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
-	"""Class for filtering motion sensors."""
+	"""Class for filtering motion sensors.
+
+	# MQTT-things:
+	Thing topic Motion "Motion Sensor"{
+        Channels:
+        Type switch : motion        "Motion"        [stateTopic="zigbee2mqtt/Motion/occupancy", on="true", off="false"]
+        Type number : brightness    "Brightness"    [stateTopic="zigbee2mqtt/Motion/illuminance_lux"]
+    }
+
+    # Items:
+    Switch    Motion_raw                "Motion raw"                <motion>        {channel="mqtt:topic:broker:Motion:motion"}
+	Switch    Motion_filtered           "Motion filtered"           <motion>
+	Number    Motion_Brightness         "Brightness"                                {channel="mqtt:topic:broker:Motion:brightness"}
+
+	# Rule init:
+	habapp_rules.sensors.motion.Motion(
+		"Motion_raw",
+		"Motion_filtered",
+		name_brightness="Motion_Brightness",
+		brightness_threshold=100,
+		name_sleep_state="I999_00_Sleeping_state"
+	)
+	"""
 	states = [
 		{"name": "Locked"},
 		{"name": "SleepLocked"},
@@ -37,17 +59,18 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 		# sleep
 		{"trigger": "sleep_started", "source": "Unlocked", "dest": "SleepLocked"},
-		{"trigger": "sleep_end", "source": "SleepLocked", "dest": "Unlocked", "unless": "_post_sleep_lock_active"},
-		{"trigger": "sleep_end", "source": "SleepLocked", "dest": "PostSleepLocked", "conditions": "_post_sleep_lock_active"},
+		{"trigger": "sleep_end", "source": "SleepLocked", "dest": "Unlocked", "unless": "_post_sleep_lock_configured"},
+		{"trigger": "sleep_end", "source": "SleepLocked", "dest": "PostSleepLocked", "conditions": "_post_sleep_lock_configured"},
 		{"trigger": "timeout_post_sleep_locked", "source": "PostSleepLocked", "dest": "Unlocked", "unless": "_raw_motion_active"},
 		{"trigger": "motion_off", "source": "PostSleepLocked", "dest": "PostSleepLocked"},
 		{"trigger": "motion_on", "source": "PostSleepLocked", "dest": "PostSleepLocked"},
 
 		# motion
 		{"trigger": "motion_on", "source": "Unlocked_Wait", "dest": "Unlocked_Motion"},
-		{"trigger": "motion_off", "source": "Unlocked_Motion", "dest": "Unlocked_MotionExtended", "conditions": "_motion_extended_active"},
-		{"trigger": "motion_off", "source": "Unlocked_Motion", "dest": "Unlocked_Wait", "unless": "_motion_extended_active"},
-		{"trigger": "timeout_motion_extended", "source": "Unlocked_MotionExtended", "dest": "Unlocked_Wait"},
+		{"trigger": "motion_off", "source": "Unlocked_Motion", "dest": "Unlocked_MotionExtended", "conditions": "_motion_extended_configured"},
+		{"trigger": "motion_off", "source": "Unlocked_Motion", "dest": "Unlocked_Wait", "unless": "_motion_extended_configured"},
+		{"trigger": "timeout_motion_extended", "source": "Unlocked_MotionExtended", "dest": "Unlocked_Wait", "unless": "_brightness_over_threshold"},
+		{"trigger": "timeout_motion_extended", "source": "Unlocked_MotionExtended", "dest": "Unlocked_TooBright", "conditions": "_brightness_over_threshold"},
 		{"trigger": "motion_on", "source": "Unlocked_MotionExtended", "dest": "Unlocked_Motion"},
 
 		# brightness
@@ -133,7 +156,7 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
 			return "Locked"
 		if self._item_sleep and self._item_sleep.value == habapp_rules.system.SleepState.SLEEPING.value:
 			return "SleepLocked"
-		if self._item_brightness and self._hysteresis_switch.get_output(self._item_brightness.value):
+		if self._item_brightness and self._brightness_over_threshold():
 			return "Unlocked_TooBright"
 		if self._item_motion_raw:
 			return "Unlocked_Motion"
@@ -161,15 +184,22 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
 		"""
 		return bool(self._item_motion_raw)
 
-	def _motion_extended_active(self) -> bool:
-		"""Check if extended motion is active
+	def _brightness_over_threshold(self) -> bool:
+		"""Check if brightness is over threshold
+
+		:return: True if active, else False
+		"""
+		return self._hysteresis_switch.get_output(self._item_brightness.value)
+
+	def _motion_extended_configured(self) -> bool:
+		"""Check if extended motion is configured
 
 		:return: True if active, else False
 		"""
 		return self._timeout_extended_motion > 0
 
-	def _post_sleep_lock_active(self) -> bool:
-		"""Check if post sleep lock is active
+	def _post_sleep_lock_configured(self) -> bool:
+		"""Check if post sleep lock is configured
 
 		:return: True if active, else False
 		"""
@@ -197,7 +227,7 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
 	# pylint: disable=invalid-name
 	def on_enter_Unlocked_Init(self):
 		"""Callback, which is called on enter of Unlocked_Init state"""
-		if self._item_brightness and self._hysteresis_switch.get_output(self._item_brightness.value):
+		if self._item_brightness and self._brightness_over_threshold():
 			self.to_Unlocked_TooBright()
 		elif self._item_motion_raw:
 			self.to_Unlocked_Motion()
