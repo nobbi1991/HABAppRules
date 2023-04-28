@@ -15,7 +15,29 @@ LOGGER = logging.getLogger(__name__)
 
 # pylint: disable=no-member, too-many-instance-attributes
 class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
-	"""Class for filtering motion sensors."""
+	"""Class for filtering motion sensors.
+
+	# MQTT-things:
+	Thing topic Motion "Motion Sensor"{
+        Channels:
+        Type switch : motion        "Motion"        [stateTopic="zigbee2mqtt/Motion/occupancy", on="true", off="false"]
+        Type number : brightness    "Brightness"    [stateTopic="zigbee2mqtt/Motion/illuminance_lux"]
+    }
+
+    # Items:
+    Switch    Motion_raw                "Motion raw"                <motion>        {channel="mqtt:topic:broker:Motion:motion"}
+	Switch    Motion_filtered           "Motion filtered"           <motion>
+	Number    Motion_Brightness         "Brightness"                                {channel="mqtt:topic:broker:Motion:brightness"}
+
+	# Rule init:
+	habapp_rules.sensors.motion.Motion(
+		"Motion_raw",
+		"Motion_filtered",
+		name_brightness="Motion_Brightness",
+		brightness_threshold=100,
+		name_sleep_state="I999_00_Sleeping_state"
+	)
+	"""
 	states = [
 		{"name": "Locked"},
 		{"name": "SleepLocked"},
