@@ -1,4 +1,4 @@
-# Version 3.0.0 - dd.mm.yyyy
+# Version 3.0.0 - 28.04.2023
 
 ## Breaking changes
 - Moved some modules from ``common`` to ``core``
