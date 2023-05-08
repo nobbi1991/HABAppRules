@@ -1,3 +1,9 @@
+# Version 3.1.0 - 08.05.2023
+
+## Features
+
+- added ``habapp_rules.actors.irrigation.Irrigation`` to control basic irrigation systems
+
 # Version 3.0.1 - 28.04.2023
 
 ## Bugfix
