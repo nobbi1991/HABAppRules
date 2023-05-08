@@ -77,13 +77,16 @@ class Irrigation(HABApp.Rule):
 				f"OpenHAB item values are not valid for hour / minute / duration. See current values: hour={self._item_hour.value} | minute={self._item_minute.value} | duration={self._item_duration.value}")
 
 		repetitions = self._item_repetitions.value if self._item_repetitions else 0
-		brake = self._item_brake.value if self._item_brake else 0
+		brake = int(self._item_brake.value) if self._item_brake else 0
 
 		now = datetime.datetime.now()
+		hour = int(self._item_hour.value)
+		minute = int(self._item_minute.value)
+		duration = int(self._item_duration.value)
 
 		for idx in range(repetitions + 1):
-			start_time = datetime.datetime.combine(date=now, time=datetime.time(self._item_hour.value, self._item_minute.value)) + datetime.timedelta(minutes=idx * (self._item_duration.value + brake))
-			end_time = start_time + datetime.timedelta(minutes=self._item_duration.value)
+			start_time = datetime.datetime.combine(date=now, time=datetime.time(hour, minute)) + datetime.timedelta(minutes=idx * (duration + brake))
+			end_time = start_time + datetime.timedelta(minutes=duration)
 			if self._is_in_time_range(start_time.time(), end_time.time(), now.time()):
 				return True
 		return False
