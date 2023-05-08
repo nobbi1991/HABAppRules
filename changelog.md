@@ -1,3 +1,9 @@
+# Version 3.1.1 - 08.05.2023
+
+## Bugfix
+
+- fixed bug of ``habapp_rules.actors.irrigation.Irrigation`` where type of Number item could be float type
+
 # Version 3.1.0 - 08.05.2023
 
 ## Features
