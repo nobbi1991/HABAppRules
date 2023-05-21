@@ -1,3 +1,9 @@
+# Version 3.2.0 - dd.mm.2023
+
+## Features
+
+- added support for switch lights to ``habapp_rules.actors.light.Light``
+
 # Version 3.1.1 - 08.05.2023
 
 ## Bugfix

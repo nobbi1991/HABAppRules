@@ -150,6 +150,7 @@ class StateObserverSwitch(_StateObserverBase):
 		self._cb_on = cb_on
 		self._cb_off = cb_off
 		_StateObserverBase.__init__(self, item_name)
+		self._value = self._value == "ON"
 
 	def _check_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
 		"""Check if light was triggered by a manual action
@@ -165,7 +166,8 @@ class StateObserverSwitch(_StateObserverBase):
 			self._value = False
 			self._trigger_callback("_cb_off", event)
 		else:
-			raise ValueError(f"Event {event} is not supported. value must be ether a number or 'ON' / 'OFF'")
+			print(f"{event.value} | {self._value}")
+			#raise ValueError(f"Event {event.value} is not supported. value must be ether a number or 'ON' / 'OFF'")
 
 	def _cb_control_item(self, event: HABApp.openhab.events.ItemCommandEvent):
 		"""Callback, which is called if a command event of one of the control items was detected.
