@@ -165,9 +165,6 @@ class StateObserverSwitch(_StateObserverBase):
 		elif event.value == "OFF" and self._value:
 			self._value = False
 			self._trigger_callback("_cb_off", event)
-		else:
-			print(f"{event.value} | {self._value}")
-			#raise ValueError(f"Event {event.value} is not supported. value must be ether a number or 'ON' / 'OFF'")
 
 	def _cb_control_item(self, event: HABApp.openhab.events.ItemCommandEvent):
 		"""Callback, which is called if a command event of one of the control items was detected.

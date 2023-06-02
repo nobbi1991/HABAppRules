@@ -1,5 +1,4 @@
 """Rules to manage lights."""
-# todo check if all examples are still correct
 from __future__ import annotations
 
 import abc
@@ -222,7 +221,7 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 		"""Set brightness to light."""
 
 	# pylint: disable=too-many-branches, too-many-return-statements
-	def _get_target_brightness(self) -> bool | float | None:  # todo check if unittest is in base class
+	def _get_target_brightness(self) -> bool | float | None:
 		"""Get configured brightness for the current day/night/sleep state
 
 		:return: brightness value
@@ -362,7 +361,27 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 
 
 class LightSwitch(_LightBase):
-	# todo: add doc and example
+	"""Rules class to manage basic light states.
+
+		# KNX-things:
+		Thing device T00_99_OpenHab_DimmerObserver "KNX OpenHAB dimmer observer"{
+			Type switch             : light             "Light"             [ switch="1/1/10+1/1/13" ]
+		}
+
+		# Items:
+		Switch    I01_01_Light              "Light [%s]"        {channel="knx:device:bridge:T00_99_OpenHab_DimmerObserver:light"}
+		Switch    I00_00_Light_manual       "Light manual"
+
+		# Rule init:
+		light_sofa = habapp_rules.actors.light.Light(
+			"I01_01_Light",
+			manual_name="I00_00_Light_manual",
+			presence_state_name="I999_00_Presence_state", # string item!
+			sleeping_state_name="I999_00_Sleeping_state", # string item!
+			day_name="I999_00_Day",
+			config=CONFIG_TEST,
+		)
+		"""
 
 	def __init__(self,
 	             name_light: str,
@@ -399,10 +418,12 @@ class LightSwitch(_LightBase):
 			timeout = self.state_machine.get_state(self.state).timeout
 
 			warn_thread_1 = threading.Thread(target=self.__trigger_warning, args=("auto_preoff", 0, 1), daemon=True)
-			warn_thread_2 = threading.Thread(target=self.__trigger_warning, args=("auto_preoff", timeout / 2, 2), daemon=True)  # todo check if wait time is working also for very short timeouts
-
 			warn_thread_1.start()
-			warn_thread_2.start()
+
+			if timeout > 60:
+				# add additional warning for long timeouts
+				warn_thread_2 = threading.Thread(target=self.__trigger_warning, args=("auto_preoff", timeout / 2, 2), daemon=True)
+				warn_thread_2.start()
 
 	def __trigger_warning(self, state_name: str, wait_time: float, switch_off_amount: int) -> None:
 		"""Trigger light switch off warning.
@@ -566,8 +587,8 @@ class _LightExtendedMixin:
 		:return: current + new states
 		"""
 		states_dict = copy.deepcopy(states_dict)
-		states_dict[1]["children"].append({"name": "door", "timeout": 999, "on_timeout": "door_timeout"})  # todo add unittest for timeout!
-		states_dict[1]["children"].append({"name": "motion", "timeout": 999, "on_timeout": "motion_timeout"})  # todo add unittest for timeout!
+		states_dict[1]["children"].append({"name": "door", "timeout": 999, "on_timeout": "door_timeout"})
+		states_dict[1]["children"].append({"name": "motion", "timeout": 999, "on_timeout": "motion_timeout"})
 		return states_dict
 
 	@staticmethod
