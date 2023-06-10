@@ -16,10 +16,11 @@ import habapp_rules.system
 import tests.helper.graph_machines
 import tests.helper.oh_item
 import tests.helper.rule_runner
+import tests.helper.test_case_base
 
 
 # pylint: disable=no-member, protected-access, too-many-public-methods
-class TestLight(unittest.TestCase):
+class TestLight(tests.helper.test_case_base.TestCaseBase):
 	"""Tests cases for testing Light rule."""
 
 	def setUp(self) -> None:
@@ -32,12 +33,7 @@ class TestLight(unittest.TestCase):
 		self.addCleanup(self.threading_timer_mock_patcher.stop)
 		self.threading_timer_mock = self.threading_timer_mock_patcher.start()
 
-		self.send_command_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.send_command", new=tests.helper.oh_item.send_command)
-		self.addCleanup(self.send_command_mock_patcher.stop)
-		self.send_command_mock = self.send_command_mock_patcher.start()
-
-		self.__runner = tests.helper.rule_runner.SimpleRuleRunner()
-		self.__runner.set_up()
+		tests.helper.test_case_base.TestCaseBase.setUp(self)
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Motion_min_raw", "OFF")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Motion_min_filtered", "OFF")
@@ -428,7 +424,4 @@ class TestLight(unittest.TestCase):
 				state_names.append(f"{prefix}{state['name']}")
 		return state_names
 
-	def tearDown(self) -> None:
-		"""Tear down test case."""
-		tests.helper.oh_item.remove_all_mocked_items()
-		self.__runner.tear_down()
+

@@ -11,20 +11,16 @@ import HABApp.openhab.items
 import habapp_rules.system.summer_winter
 import tests.helper.oh_item
 import tests.helper.rule_runner
+import tests.helper.test_case_base
 
 
 # pylint: disable=protected-access
-class TestSummerWinter(unittest.TestCase):
+class TestSummerWinter(tests.helper.test_case_base.TestCaseBase):
 	"""Tests for SummerWinter Rule."""
 
 	def setUp(self) -> None:
 		"""Setup test case."""
-		self.send_command_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.send_command", new=tests.helper.oh_item.send_command)
-		self.addCleanup(self.send_command_mock_patcher.stop)
-		self.send_command_mock = self.send_command_mock_patcher.start()
-
-		self.__runner = tests.helper.rule_runner.SimpleRuleRunner()
-		self.__runner.set_up()
+		tests.helper.test_case_base.TestCaseBase.setUp(self)
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Temperature", 0)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Summer", "OFF")
@@ -195,8 +191,3 @@ class TestSummerWinter(unittest.TestCase):
 				unittest.mock.patch.object(self._summer_winter, "_instance_logger", spec=logging.Logger) as logger_mock:
 			self._summer_winter._cb_update_summer()
 			logger_mock.error.assert_called_once()
-
-	def tearDown(self) -> None:
-		"""Tear down test case."""
-		tests.helper.oh_item.remove_all_mocked_items()
-		self.__runner.tear_down()

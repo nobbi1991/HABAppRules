@@ -9,21 +9,17 @@ import habapp_rules.actors.state_observer
 import habapp_rules.core.state_machine_rule
 import tests.helper.oh_item
 import tests.helper.rule_runner
+import tests.helper.test_case_base
 import tests.helper.timer
 
 
 # pylint: disable=protected-access
-class TestStateObserverSwitch(unittest.TestCase):
+class TestStateObserverSwitch(tests.helper.test_case_base.TestCaseBase):
 	"""Tests cases for testing StateObserver for switch item."""
 
 	def setUp(self) -> None:
 		"""Setup test case."""
-		self.send_command_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.send_command", new=tests.helper.oh_item.send_command)
-		self.addCleanup(self.send_command_mock_patcher.stop)
-		self.send_command_mock = self.send_command_mock_patcher.start()
-
-		self.__runner = tests.helper.rule_runner.SimpleRuleRunner()
-		self.__runner.set_up()
+		tests.helper.test_case_base.TestCaseBase.setUp(self)
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch", 0)
 
@@ -99,24 +95,14 @@ class TestStateObserverSwitch(unittest.TestCase):
 		with self.assertRaises(ValueError):
 			self._observer_switch.send_command(2)
 
-	def tearDown(self) -> None:
-		"""Tear down test case."""
-		tests.helper.oh_item.remove_all_mocked_items()
-		self.__runner.tear_down()
-
 
 # pylint: disable=protected-access, no-member
-class TestStateObserverDimmer(unittest.TestCase):
+class TestStateObserverDimmer(tests.helper.test_case_base.TestCaseBase):
 	"""Tests cases for testing StateObserver for dimmer item."""
 
 	def setUp(self) -> None:
 		"""Setup test case."""
-		self.send_command_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.send_command", new=tests.helper.oh_item.send_command)
-		self.addCleanup(self.send_command_mock_patcher.stop)
-		self.send_command_mock = self.send_command_mock_patcher.start()
-
-		self.__runner = tests.helper.rule_runner.SimpleRuleRunner()
-		self.__runner.set_up()
+		tests.helper.test_case_base.TestCaseBase.setUp(self)
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Dimmer", 0)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Dimmer_ctr", 0)
@@ -306,8 +292,3 @@ class TestStateObserverDimmer(unittest.TestCase):
 
 		with self.assertRaises(ValueError):
 			self._observer_dimmer.send_command("dimmer")
-
-	def tearDown(self) -> None:
-		"""Tear down test case."""
-		tests.helper.oh_item.remove_all_mocked_items()
-		self.__runner.tear_down()

@@ -13,11 +13,12 @@ import habapp_rules.system.presence
 import tests.helper.graph_machines
 import tests.helper.oh_item
 import tests.helper.rule_runner
+import tests.helper.test_case_base
 import tests.helper.timer
 
 
 # pylint: disable=protected-access
-class TestPresence(unittest.TestCase):
+class TestPresence(tests.helper.test_case_base.TestCaseBase):
 	"""Tests cases for testing presence rule."""
 
 	def setUp(self) -> None:
@@ -30,12 +31,7 @@ class TestPresence(unittest.TestCase):
 		self.addCleanup(self.threading_timer_mock_patcher.stop)
 		self.threading_timer_mock = self.threading_timer_mock_patcher.start()
 
-		self.send_command_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.send_command", new=tests.helper.oh_item.send_command)
-		self.addCleanup(self.send_command_mock_patcher.stop)
-		self.send_command_mock = self.send_command_mock_patcher.start()
-
-		self.__runner = tests.helper.rule_runner.SimpleRuleRunner()
-		self.__runner.set_up()
+		tests.helper.test_case_base.TestCaseBase.setUp(self)
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.ContactItem, "Unittest_Door1", "CLOSED")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.ContactItem, "Unittest_Door2", "CLOSED")
@@ -183,7 +179,6 @@ class TestPresence(unittest.TestCase):
 		self._presence.state_machine.set_state("absence")
 		self.assertEqual(self._presence.state, "absence")
 
-		self.__runner.process_events()
 		tests.helper.oh_item.send_command("Unittest_Door1", "CLOSED", "CLOSED")
 		self.assertEqual(self._presence.state, "absence")
 
@@ -398,8 +393,3 @@ class TestPresence(unittest.TestCase):
 		# timeout is over -> absence expected
 		tests.helper.timer.call_timeout(self.transitions_timer_mock)
 		self.assertEqual(self._presence.state, "absence")
-
-	def tearDown(self) -> None:
-		"""Tear down test case."""
-		tests.helper.oh_item.remove_all_mocked_items()
-		self.__runner.tear_down()

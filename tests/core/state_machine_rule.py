@@ -8,16 +8,16 @@ import HABApp.openhab.items.switch_item
 import habapp_rules.core.exceptions
 import habapp_rules.core.state_machine_rule
 import tests.helper.rule_runner
+import tests.helper.test_case_base
 
 
 # pylint: disable=protected-access
-class TestStateMachineRule(unittest.TestCase):
+class TestStateMachineRule(tests.helper.test_case_base.TestCaseBase):
 	"""Tests for StateMachineRule."""
 
 	def setUp(self) -> None:
 		"""Setup unit-tests."""
-		self.__runner = tests.helper.rule_runner.SimpleRuleRunner()
-		self.__runner.set_up()
+		tests.helper.test_case_base.TestCaseBase.setUp(self)
 
 		with unittest.mock.patch.object(habapp_rules.core.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_common_state_machine_rule_StateMachineRule_state", "")):
 			self._state_machine = habapp_rules.core.state_machine_rule.StateMachineRule()
@@ -91,7 +91,3 @@ class TestStateMachineRule(unittest.TestCase):
 		with unittest.mock.patch.object(self._state_machine, "_item_state") as state_item:
 			self._state_machine._update_openhab_state()
 			state_item.oh_send_command.assert_called_once_with("some_state")
-
-	def tearDown(self) -> None:
-		"""Tear down unit-test."""
-		self.__runner.tear_down()

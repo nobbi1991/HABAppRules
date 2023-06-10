@@ -20,6 +20,7 @@ import habapp_rules.system
 import tests.helper.graph_machines
 import tests.helper.oh_item
 import tests.helper.rule_runner
+import tests.helper.test_case_base
 import tests.helper.timer
 from habapp_rules.actors.light_config import LightConfig, LightConfigExtended, FunctionConfig, BrightnessTimeout
 
@@ -52,7 +53,7 @@ def _get_state_names(states: dict, parent_state: str | None = None) -> list[str]
 
 
 # pylint: disable=protected-access,no-member,too-many-public-methods
-class TestLightBase(unittest.TestCase):
+class TestLightBase(tests.helper.test_case_base.TestCaseBase):
 	"""Tests cases for testing Light rule."""
 
 	def setUp(self) -> None:
@@ -65,12 +66,7 @@ class TestLightBase(unittest.TestCase):
 		self.addCleanup(self.threading_timer_mock_patcher.stop)
 		self.threading_timer_mock = self.threading_timer_mock_patcher.start()
 
-		self.send_command_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.send_command", new=tests.helper.oh_item.send_command)
-		self.addCleanup(self.send_command_mock_patcher.stop)
-		self.send_command_mock = self.send_command_mock_patcher.start()
-
-		self.__runner = tests.helper.rule_runner.SimpleRuleRunner()
-		self.__runner.set_up()
+		tests.helper.test_case_base.TestCaseBase.setUp(self)
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Light_Switch", "OFF")
 
@@ -816,15 +812,10 @@ class TestLightBase(unittest.TestCase):
 				started_mock.assert_not_called()
 				aborted_mock.assert_not_called()
 
-	def tearDown(self) -> None:
-		"""Tear down test case."""
-		tests.helper.oh_item.remove_all_mocked_items()
-		self.__runner.tear_down()
-
 
 # pylint: disable=protected-access,no-member,too-many-public-methods
 
-class TestLightSwitch(unittest.TestCase):
+class TestLightSwitch(tests.helper.test_case_base.TestCaseBase):
 	"""Tests cases for testing Light rule."""
 
 	def setUp(self) -> None:
@@ -837,12 +828,7 @@ class TestLightSwitch(unittest.TestCase):
 		self.addCleanup(self.threading_timer_mock_patcher.stop)
 		self.threading_timer_mock = self.threading_timer_mock_patcher.start()
 
-		self.send_command_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.send_command", new=tests.helper.oh_item.send_command)
-		self.addCleanup(self.send_command_mock_patcher.stop)
-		self.send_command_mock = self.send_command_mock_patcher.start()
-
-		self.__runner = tests.helper.rule_runner.SimpleRuleRunner()
-		self.__runner.set_up()
+		tests.helper.test_case_base.TestCaseBase.setUp(self)
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light_Dimmer", 0)
 
@@ -1016,14 +1002,9 @@ class TestLightSwitch(unittest.TestCase):
 
 			send_mock.assert_called_once_with("OFF")
 
-	def tearDown(self) -> None:
-		"""Tear down test case."""
-		tests.helper.oh_item.remove_all_mocked_items()
-		self.__runner.tear_down()
-
 
 # pylint: disable=protected-access,no-member,too-many-public-methods
-class TestLightDimmer(unittest.TestCase):
+class TestLightDimmer(tests.helper.test_case_base.TestCaseBase):
 	"""Tests cases for testing Light rule."""
 
 	def setUp(self) -> None:
@@ -1036,12 +1017,7 @@ class TestLightDimmer(unittest.TestCase):
 		self.addCleanup(self.threading_timer_mock_patcher.stop)
 		self.threading_timer_mock = self.threading_timer_mock_patcher.start()
 
-		self.send_command_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.send_command", new=tests.helper.oh_item.send_command)
-		self.addCleanup(self.send_command_mock_patcher.stop)
-		self.send_command_mock = self.send_command_mock_patcher.start()
-
-		self.__runner = tests.helper.rule_runner.SimpleRuleRunner()
-		self.__runner.set_up()
+		tests.helper.test_case_base.TestCaseBase.setUp(self)
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Light_Switch", "OFF")
 
@@ -1150,13 +1126,8 @@ class TestLightDimmer(unittest.TestCase):
 		self.assertEqual("auto_on", self.light_dimmer.state)
 		self.assertTrue(not self.light_dimmer.state_machine.states["auto"].states["on"].runner)  # check if timer was NOT called
 
-	def tearDown(self) -> None:
-		"""Tear down test case."""
-		tests.helper.oh_item.remove_all_mocked_items()
-		self.__runner.tear_down()
 
-
-class TestLightExtended(unittest.TestCase):
+class TestLightExtended(tests.helper.test_case_base.TestCaseBase):
 	"""Tests cases for testing LightExtended rule."""
 
 	def setUp(self) -> None:
@@ -1169,12 +1140,7 @@ class TestLightExtended(unittest.TestCase):
 		self.addCleanup(self.threading_timer_mock_patcher.stop)
 		self.threading_timer_mock = self.threading_timer_mock_patcher.start()
 
-		self.send_command_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.send_command", new=tests.helper.oh_item.send_command)
-		self.addCleanup(self.send_command_mock_patcher.stop)
-		self.send_command_mock = self.send_command_mock_patcher.start()
-
-		self.__runner = tests.helper.rule_runner.SimpleRuleRunner()
-		self.__runner.set_up()
+		tests.helper.test_case_base.TestCaseBase.setUp(self)
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Light_Switch", "OFF")
 
@@ -1688,8 +1654,3 @@ class TestLightExtended(unittest.TestCase):
 		with unittest.mock.patch.object(self.light_extended._config, "off_at_door_closed_during_leaving", True):
 			tests.helper.oh_item.send_command("Unittest_Door_1", "CLOSED", "OPEN")
 		self.assertEqual("auto_leaving", self.light_extended.state)
-
-	def tearDown(self) -> None:
-		"""Tear down test case."""
-		tests.helper.oh_item.remove_all_mocked_items()
-		self.__runner.tear_down()

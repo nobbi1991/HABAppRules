@@ -13,11 +13,12 @@ import habapp_rules.system.sleep
 import tests.helper.graph_machines
 import tests.helper.oh_item
 import tests.helper.rule_runner
+import tests.helper.test_case_base
 import tests.helper.timer
 
 
 # pylint: disable=protected-access
-class TestSleep(unittest.TestCase):
+class TestSleep(tests.helper.test_case_base.TestCaseBase):
 	"""Tests cases for testing presence rule."""
 
 	def setUp(self) -> None:
@@ -30,12 +31,7 @@ class TestSleep(unittest.TestCase):
 		self.addCleanup(self.threading_timer_mock_patcher.stop)
 		self.threading_timer_mock = self.threading_timer_mock_patcher.start()
 
-		self.send_command_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.send_command", new=tests.helper.oh_item.send_command)
-		self.addCleanup(self.send_command_mock_patcher.stop)
-		self.send_command_mock = self.send_command_mock_patcher.start()
-
-		self.__runner = tests.helper.rule_runner.SimpleRuleRunner()
-		self.__runner.set_up()
+		tests.helper.test_case_base.TestCaseBase.setUp(self)
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Sleep", "OFF")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Sleep_Request", "OFF")
@@ -230,8 +226,8 @@ class TestSleep(unittest.TestCase):
 	def test_minimal_items(self):
 		"""Test Sleeping class with minimal set of items."""
 		# delete sleep rule from init
-		self._TestSleep__runner.loaded_rules[0]._habapp_ctx.unload_rule()
-		self.__runner.loaded_rules.clear()
+		self._runner.loaded_rules[0]._habapp_ctx.unload_rule()
+		self._runner.loaded_rules.clear()
 
 		tests.helper.oh_item.remove_mocked_item_by_name("Unittest_Lock")
 		tests.helper.oh_item.remove_mocked_item_by_name("Unittest_Lock_Request")
@@ -273,8 +269,3 @@ class TestSleep(unittest.TestCase):
 		self.assertEqual(self._sleep.state, "awake")
 		tests.helper.oh_item.assert_value("rules_system_sleep_Sleep_state", "awake")
 		tests.helper.oh_item.assert_value("Unittest_Sleep", "OFF")
-
-	def tearDown(self) -> None:
-		"""Tear down test case."""
-		tests.helper.oh_item.remove_all_mocked_items()
-		self.__runner.tear_down()

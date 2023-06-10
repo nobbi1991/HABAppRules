@@ -8,20 +8,16 @@ import HABApp.rule.rule
 import habapp_rules.bridge.knx_mqtt
 import tests.helper.oh_item
 import tests.helper.rule_runner
+import tests.helper.test_case_base
 
 
 # pylint: disable=protected-access
-class TestLight(unittest.TestCase):
+class TestLight(tests.helper.test_case_base.TestCaseBase):
 	"""Tests cases for testing Light rule."""
 
 	def setUp(self) -> None:
 		"""Setup test case."""
-		self.send_command_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.send_command", new=tests.helper.oh_item.send_command)
-		self.addCleanup(self.send_command_mock_patcher.stop)
-		self.send_command_mock = self.send_command_mock_patcher.start()
-
-		self.__runner = tests.helper.rule_runner.SimpleRuleRunner()
-		self.__runner.set_up()
+		tests.helper.test_case_base.TestCaseBase.setUp(self)
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_KNX_Dimmer_ctr", 0)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_MQTT_dimmer", 0)
@@ -86,8 +82,3 @@ class TestLight(unittest.TestCase):
 				knx_item_mock.oh_post_update.reset_mock()
 				tests.helper.oh_item.item_state_change_event("Unittest_MQTT_dimmer", test_case.send_value)
 				knx_item_mock.oh_post_update.assert_has_calls(test_case.expected_calls)
-
-	def tearDown(self) -> None:
-		"""Tear down test case."""
-		tests.helper.oh_item.remove_all_mocked_items()
-		self.__runner.tear_down()

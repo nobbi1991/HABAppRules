@@ -8,24 +8,20 @@ import habapp_rules.common.logic
 import habapp_rules.core.state_machine_rule
 import tests.helper.oh_item
 import tests.helper.rule_runner
+import tests.helper.test_case_base
 
 
 # pylint: disable=protected-access
-class TestAndOR(unittest.TestCase):
+class TestAndOR(tests.helper.test_case_base.TestCaseBase):
 	"""Tests for AND / OR."""
 
 	def setUp(self) -> None:
 		"""Setup unit-tests."""
-		self.send_command_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.send_command", new=tests.helper.oh_item.send_command)
-		self.addCleanup(self.send_command_mock_patcher.stop)
-		self.send_command_mock = self.send_command_mock_patcher.start()
+		tests.helper.test_case_base.TestCaseBase.setUp(self)
 
 		self.post_update_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.post_update", new=tests.helper.oh_item.send_command)
 		self.addCleanup(self.post_update_mock_patcher.stop)
 		self.post_update_mock_patcher.start()
-
-		self.__runner = tests.helper.rule_runner.SimpleRuleRunner()
-		self.__runner.set_up()
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch_out", "OFF")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch_in1", "OFF")
@@ -179,8 +175,3 @@ class TestAndOR(unittest.TestCase):
 		for step in test_steps:
 			tests.helper.oh_item.send_command(step.event_item_name, step.event_item_value)
 			self.assertEqual(step.expected_output, output_item.value)
-
-	def tearDown(self) -> None:
-		"""Tear down unit-test."""
-		tests.helper.oh_item.remove_all_mocked_items()
-		self.__runner.tear_down()
