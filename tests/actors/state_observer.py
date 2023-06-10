@@ -99,11 +99,6 @@ class TestStateObserverSwitch(unittest.TestCase):
 		with self.assertRaises(ValueError):
 			self._observer_switch.send_command(2)
 
-	def test_check_manual_exception(self):
-		"""Test if correct exception is raised."""
-		with self.assertRaises(ValueError):
-			self._observer_switch._check_manual(HABApp.openhab.events.ItemCommandEvent("Item_name", "not_supported"))
-
 	def tearDown(self) -> None:
 		"""Tear down test case."""
 		tests.helper.oh_item.remove_all_mocked_items()

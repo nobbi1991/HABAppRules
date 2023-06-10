@@ -1,8 +1,20 @@
+# Version 4.0.0 - dd.mm.2023
+
+## Breaking changes
+
+- renamed ``habapp_rules.actors.light.Light`` to ``habapp_rules.actors.light.LightDimmer`` and ``habapp_rules.actors.light.LightExtended`` to ``habapp_rules.actors.light.LightDimmerExtended``
+
+## Features
+
+- added ``habapp_rules.actors.light.LightSwitch`` and ``habapp_rules.actors.light.LightSwitchExtended`` which add the support for ``switch`` lights
+
+
 # Version 3.1.1 - 08.05.2023
 
 ## Bugfix
 
 - fixed bug of ``habapp_rules.actors.irrigation.Irrigation`` where type of Number item could be float type
+
 
 # Version 3.1.0 - 08.05.2023
 
@@ -10,15 +22,18 @@
 
 - added ``habapp_rules.actors.irrigation.Irrigation`` to control basic irrigation systems
 
+
 # Version 3.0.1 - 28.04.2023
 
 ## Bugfix
 
 - fixed build of docker image
 
+
 # Version 3.0.0 - 28.04.2023
 
 ## Breaking changes
+
 - Moved some modules from ``common`` to ``core``
 - Changed parameter order of ``habapp_rules.system.presence.Presence``
 
@@ -52,6 +67,7 @@
 - Fixed bug of `habapp_rules.system.presence.Presence` where `long_absence` would be set to `absence ` if there was an restart of HABApp
 - Fixed bug of `habapp_rules.system.presence.Presence` where it was not possible to change state to `leaving` from `absence` or `long_absence` by leaving-switch
 
+
 # Version 2.1.0 - 01.02.2023
 
 ## Features
@@ -62,11 +78,13 @@
 
 - Fixed bug where timers would not start at initial state of `habapp_rules.system.sleep.Sleep` and `habapp_rules.system.presence.Presence` would not start
 
+
 # Version 2.0.1 - 31.01.2023
 
 ## Bugfix
 
 - Fixed bug at summer / winter where `last_check_name` could not be set
+
 
 # Version 2.0.0 - 10.11.2022
 
@@ -77,6 +95,7 @@
 ## Features
 
 - Added nox checks
+
 
 # Version 1.1.0 - 08.08.2022
 
