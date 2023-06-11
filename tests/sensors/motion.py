@@ -423,5 +423,3 @@ class TestLight(tests.helper.test_case_base.TestCaseBase):
 			else:
 				state_names.append(f"{prefix}{state['name']}")
 		return state_names
-
-

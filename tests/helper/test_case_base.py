@@ -1,3 +1,4 @@
+"""Common part for tests with simulated OpenHAB items."""
 import unittest
 import unittest.mock
 
@@ -6,7 +7,7 @@ import tests.helper.rule_runner
 
 
 class TestCaseBase(unittest.TestCase):
-	"""Tests cases for testing Light rule."""
+	"""Base class for tests with simulated OpenHAB items."""
 
 	def setUp(self) -> None:
 		"""Setup test case."""
