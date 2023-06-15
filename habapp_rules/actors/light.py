@@ -112,7 +112,7 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 		self._set_initial_state()
 
 		# callbacks
-		self._item_manual.listen_event(self._cb_manu, HABApp.openhab.events.ItemStateEventFilter())
+		self._item_manual.listen_event(self._cb_manu, HABApp.openhab.events.ItemStateUpdatedEventFilter())
 		if self._item_sleeping_state is not None:
 			self._item_sleeping_state.listen_event(self._cb_sleeping, HABApp.openhab.events.ItemStateChangedEventFilter())
 		self._item_presence_state.listen_event(self._cb_presence, HABApp.openhab.events.ItemStateChangedEventFilter())
@@ -304,21 +304,21 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 		sleep_states = [habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value] if include_pre_sleep else [habapp_rules.system.SleepState.SLEEPING.value]
 		return getattr(self._item_sleeping_state, "value", "") in sleep_states
 
-	def _cb_hand_on(self, event: HABApp.openhab.events.ItemStateEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
+	def _cb_hand_on(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
 		"""Callback, which is triggered by the state observer if a manual ON command was detected.
 
 		:param event: original trigger event
 		"""
 		self.hand_on()
 
-	def _cb_hand_off(self, event: HABApp.openhab.events.ItemStateEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
+	def _cb_hand_off(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
 		"""Callback, which is triggered by the state observer if a manual OFF command was detected.
 
 		:param event: original trigger event
 		"""
 		self.hand_off()
 
-	def _cb_manu(self, event: HABApp.openhab.events.ItemStateEvent) -> None:
+	def _cb_manu(self, event: HABApp.openhab.events.ItemStateUpdatedEvent) -> None:
 		"""Callback, which is triggered if the manual switch has a state event.
 
 		:param event: trigger event
@@ -538,7 +538,7 @@ class LightDimmer(_LightBase):
 		self._instance_logger.debug(f"set brightness {target_value}")
 		self._state_observer.send_command(target_value)
 
-	def _cb_hand_changed(self, event: HABApp.openhab.events.ItemStateEvent | HABApp.openhab.events.ItemCommandEvent | HABApp.openhab.events.ItemStateChangedEvent) -> None:
+	def _cb_hand_changed(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | HABApp.openhab.events.ItemCommandEvent | HABApp.openhab.events.ItemStateChangedEvent) -> None:
 		"""Callback, which is triggered by the state observer if a manual OFF command was detected.
 
 		:param event: original trigger event
@@ -712,7 +712,7 @@ class _LightExtendedMixin:
 		"""
 		return time.time() - self._hand_off_timestamp > self._hand_off_lock_time
 
-	def _cb_hand_off(self, event: HABApp.openhab.events.ItemStateEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
+	def _cb_hand_off(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
 		"""Callback, which is triggered by the state observer if a manual OFF command was detected.
 
 		:param event: original trigger event

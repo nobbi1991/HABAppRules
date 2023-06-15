@@ -140,7 +140,7 @@ class TestIrrigation(tests.helper.test_case_base.TestCaseBase):
 
 		# called by event
 		with unittest.mock.patch.object(self._irrigation_min, "_get_target_valve_state", return_value=False):
-			self._irrigation_min._cb_set_valve_state(HABApp.openhab.events.ItemStateChangedEvent("Unittest_active", "ON"))
+			self._irrigation_min._cb_set_valve_state(HABApp.openhab.events.ItemStateChangedEvent("Unittest_active", "ON", "OFF"))
 		self.assertEqual("OFF", self._irrigation_min._item_valve.value)
 
 		# same state -> no oh command

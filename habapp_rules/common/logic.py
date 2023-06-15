@@ -38,14 +38,14 @@ class _Base(HABApp.Rule):
 		for name in input_names:
 			if isinstance(input_item := HABApp.openhab.items.OpenhabItem.get_item(name), type(self._output_item)):
 				self._input_items.append(input_item)
-				input_item.listen_event(self._cb_input_event, HABApp.openhab.events.ItemStateEventFilter())
+				input_item.listen_event(self._cb_input_event, HABApp.openhab.events.ItemStateUpdatedEventFilter())
 			else:
 				self._instance_logger.error(f"Item '{name}' must have the same type like the output item. Expected: {type(self._output_item)} | actual : {type(input_item)}")
 
 		self._cb_input_event(None)
 
 	@abc.abstractmethod
-	def _cb_input_event(self, event: HABApp.openhab.events.ItemStateEvent | None) -> None:
+	def _cb_input_event(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | None) -> None:
 		"""Callback, which is called if one of the input items had a state event.
 
 		:param event: item event of the updated item
@@ -65,7 +65,7 @@ class _Base(HABApp.Rule):
 class And(_Base):
 	"""Logical AND function."""
 
-	def _cb_input_event(self, event: HABApp.openhab.events.ItemStateEvent | None) -> None:
+	def _cb_input_event(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | None) -> None:
 		"""Callback, which is called if one of the input items had a state event.
 
 		:param event: item event of the updated item
@@ -77,7 +77,7 @@ class And(_Base):
 class Or(_Base):
 	"""Logical OR function."""
 
-	def _cb_input_event(self, event: HABApp.openhab.events.ItemStateEvent | None) -> None:
+	def _cb_input_event(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | None) -> None:
 		"""Callback, which is called if one of the input items had a state event.
 
 		:param event: item event of the updated item

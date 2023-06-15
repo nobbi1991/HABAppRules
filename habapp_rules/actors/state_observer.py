@@ -33,7 +33,7 @@ class _StateObserverBase(HABApp.Rule, abc.ABC):
 		HABApp.Rule.__init__(self)
 		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, item_name)
 
-		self._last_manual_event = HABApp.openhab.events.ItemCommandEvent()
+		self._last_manual_event = HABApp.openhab.events.ItemCommandEvent("", None)
 
 		self._item = HABApp.openhab.items.OpenhabItem.get_item(item_name)
 
@@ -46,7 +46,7 @@ class _StateObserverBase(HABApp.Rule, abc.ABC):
 
 		self._item.listen_event(self._cb_item, HABApp.openhab.events.ItemStateChangedEventFilter())
 		HABApp.util.EventListenerGroup().add_listener(self.__control_items, self._cb_control_item, HABApp.openhab.events.ItemCommandEventFilter()).listen()
-		HABApp.util.EventListenerGroup().add_listener(self.__group_items, self._cb_group_item, HABApp.openhab.events.ItemStateEventFilter()).listen()
+		HABApp.util.EventListenerGroup().add_listener(self.__group_items, self._cb_group_item, HABApp.openhab.events.ItemStateUpdatedEventFilter()).listen()
 
 	@property
 	def value(self) -> float | bool:
@@ -88,7 +88,7 @@ class _StateObserverBase(HABApp.Rule, abc.ABC):
 		"""
 		self._check_manual(event)
 
-	def _cb_group_item(self, event: HABApp.openhab.events.ItemStateEvent):
+	def _cb_group_item(self, event: HABApp.openhab.events.ItemStateUpdatedEvent):
 		"""Callback, which is called if a value change of the light item was detected.
 
 		:param event: event, which triggered this callback
@@ -295,3 +295,23 @@ class StateObserverDimmer(_StateObserverBase):
 			raise ValueError(f"The given value is not supported for StateObserverDimmer: {value}")
 
 		self._item.oh_send_command(value)
+
+
+class StateObserverJal(_StateObserverBase):
+
+	def __init__(self, item_name: str, cb_up: CallbackType, cb_down: CallbackType, cb_brightness_stop: CallbackType | None = None, control_names: list[str] | None = None, group_names: list[str] | None = None) -> None:
+		"""Init state observer for dimmer item.
+
+		:param item_name: Name of dimmer item
+		:param cb_on: callback which is called if manual_on was detected
+		:param cb_off: callback which is called if manual_off was detected
+		:param cb_brightness_change: callback which is called if dimmer is on and brightness changed
+		:param control_names: list of control items. They are used to also respond to switch on/off via INCREASE/DECREASE
+		:param group_names: list of group items where the item is a part of. Group item type must match with type of item_name
+		"""
+
+		_StateObserverBase.__init__(self, item_name, control_names, group_names)
+
+		self._cb_on = cb_on
+		self._cb_off = cb_off
+		self._cb_brightness_change = cb_brightness_change

@@ -280,9 +280,9 @@ class TestStateObserverDimmer(tests.helper.test_case_base.TestCaseBase):
 		self._observer_dimmer._group_last_event = 0
 		with unittest.mock.patch("time.time") as time_mock, unittest.mock.patch.object(self._observer_dimmer, "_check_manual") as check_manual_mock:
 			time_mock.return_value = 10
-			self._observer_dimmer._cb_group_item(HABApp.openhab.events.ItemStateEvent("item_name", "ON"))
+			self._observer_dimmer._cb_group_item(HABApp.openhab.events.ItemStateUpdatedEvent("item_name", "ON"))
 			time_mock.return_value = 10.2
-			self._observer_dimmer._cb_group_item(HABApp.openhab.events.ItemStateEvent("item_name", "ON"))
+			self._observer_dimmer._cb_group_item(HABApp.openhab.events.ItemStateUpdatedEvent("item_name", "ON"))
 		check_manual_mock.assert_called_once()
 
 	def test_send_command_exception(self):

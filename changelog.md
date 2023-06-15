@@ -7,7 +7,7 @@
 ## Features
 
 - added ``habapp_rules.actors.light.LightSwitch`` and ``habapp_rules.actors.light.LightSwitchExtended`` which add the support for ``switch`` lights
-
+- increased startup speed by upgrading to habapp~=1.1.0
 
 # Version 3.1.1 - 08.05.2023
 

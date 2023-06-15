@@ -1,4 +1,4 @@
-"""Test Light rule."""
+"""Test light rules."""
 # pylint: disable=too-many-lines
 import collections
 import os
