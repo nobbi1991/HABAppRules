@@ -54,6 +54,15 @@ class TestHysteresis(unittest.TestCase):
 			TestCase(42, 4, True, 43.9, True),
 			TestCase(42, 4, True, 44, True),
 			TestCase(42, 4, True, 44.1, True),
+
+			# threshold not set -> always False
+			TestCase(None, 4, True, 39.9, False),
+			TestCase(None, 4, True, 40, False),
+			TestCase(None, 4, True, 40.1, False),
+			TestCase(None, 4, True, 42, False),
+			TestCase(None, 4, True, 43.9, False),
+			TestCase(None, 4, True, 44, False),
+			TestCase(None, 4, True, 44.1, False),
 		]
 
 		for test_case in test_cases:

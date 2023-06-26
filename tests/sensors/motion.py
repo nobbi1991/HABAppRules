@@ -1,4 +1,4 @@
-"""Tests for motion."""
+"""Tests for motion sensors."""
 import collections
 import os
 import pathlib
@@ -20,8 +20,8 @@ import tests.helper.test_case_base
 
 
 # pylint: disable=no-member, protected-access, too-many-public-methods
-class TestLight(tests.helper.test_case_base.TestCaseBase):
-	"""Tests cases for testing Light rule."""
+class TestMotion(tests.helper.test_case_base.TestCaseBase):
+	"""Tests cases for testing motion sensors rule."""
 
 	def setUp(self) -> None:
 		"""Setup test case."""
@@ -94,14 +94,14 @@ class TestLight(tests.helper.test_case_base.TestCaseBase):
 		if not picture_dir.is_dir():
 			os.makedirs(picture_dir)
 
-		light_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
+		motion_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
 			model=tests.helper.graph_machines.FakeModel(),
 			states=self.motion_min.states,
 			transitions=self.motion_min.trans,
 			initial=self.motion_min.state,
 			show_conditions=True)
 
-		light_graph.get_graph().draw(picture_dir / "Motion.png", format="png", prog="dot")
+		motion_graph.get_graph().draw(picture_dir / "Motion.png", format="png", prog="dot")
 
 	def test_init_exceptions(self):
 		"""Test exceptions of __init__."""
