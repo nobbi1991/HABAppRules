@@ -32,26 +32,6 @@ LIGHT_CONFIG = LightConfig(
 )
 
 
-def _get_state_names(states: dict, parent_state: str | None = None) -> list[str]:  # pragma: no cover
-	"""Helper function to get all state names (also nested states)
-
-	:param states: dict of all states or children states
-	:param parent_state: name of parent state, only if it is a nested state machine
-	:return: list of all state names
-	"""
-	state_names = []
-	prefix = f"{parent_state}_" if parent_state else ""
-	if parent_state:
-		states = states["children"]
-
-	for state in states:
-		if "children" in state:
-			state_names += _get_state_names(state, state["name"])
-		else:
-			state_names.append(f"{prefix}{state['name']}")
-	return state_names
-
-
 # pylint: disable=protected-access,no-member,too-many-public-methods
 class TestLightBase(tests.helper.test_case_base.TestCaseBase):
 	"""Tests cases for testing Light rule."""
@@ -145,7 +125,7 @@ class TestLightBase(tests.helper.test_case_base.TestCaseBase):
 
 		light_graph.get_graph().draw(picture_dir / "Light.png", format="png", prog="dot")
 
-		for state_name in [state for state in _get_state_names(self.light_base.states) if state not in ["auto_init"]]:
+		for state_name in [state for state in self._get_state_names(self.light_base.states) if state not in ["auto_init"]]:
 			light_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
 				model=tests.helper.graph_machines.FakeModel(),
 				states=self.light_base.states,
@@ -916,7 +896,7 @@ class TestLightSwitch(tests.helper.test_case_base.TestCaseBase):
 
 	def test_update_openhab_state(self):
 		"""Test _update_openhab_state"""
-		states = _get_state_names(self.light_switch.states)
+		states = self._get_state_names(self.light_switch.states)
 
 		# test auto_preoff state with timeout <= 60
 		self.light_switch.state_machine.set_state("auto_preoff")

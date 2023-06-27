@@ -152,8 +152,8 @@ class TestSunPositionFilter(tests.helper.test_case_base.TestCaseBase):
 
 	def test_init(self):
 		"""Test __init__"""
-		self.assertEqual([self.position_window_1], self._filter_1._position_window)
-		self.assertEqual([self.position_window_1, self.position_window_2], self._filter_2._position_window)
+		self.assertEqual([self.position_window_1], self._filter_1._position_windows)
+		self.assertEqual([self.position_window_1, self.position_window_2], self._filter_2._position_windows)
 
 	def test_filter(self):
 		"""Test if filter is working correctly."""

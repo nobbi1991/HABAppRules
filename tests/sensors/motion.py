@@ -404,22 +404,3 @@ class TestMotion(tests.helper.test_case_base.TestCaseBase):
 				else:
 					self.motion_max.sleep_started.assert_not_called()
 					self.motion_max.sleep_end.assert_not_called()
-
-	def _get_state_names(self, states: dict, parent_state: str | None = None) -> list[str]:  # pragma: no cover
-		"""Helper function to get all state names (also nested states)
-
-		:param states: dict of all states or children states
-		:param parent_state: name of parent state, only if it is a nested state machine
-		:return: list of all state names
-		"""
-		state_names = []
-		prefix = f"{parent_state}_" if parent_state else ""
-		if parent_state:
-			states = states["children"]
-
-		for state in states:
-			if "children" in state:
-				state_names += self._get_state_names(state, state["name"])
-			else:
-				state_names.append(f"{prefix}{state['name']}")
-		return state_names

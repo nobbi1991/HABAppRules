@@ -202,7 +202,7 @@ class SunPositionFilter(HABApp.Rule):
 		# init HABApp Rule
 		HABApp.Rule.__init__(self)
 		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, name_output)
-		self._position_window: list[SunPositionWindow] = sun_position_window if isinstance(sun_position_window, list) else [sun_position_window]
+		self._position_windows: list[SunPositionWindow] = sun_position_window if isinstance(sun_position_window, list) else [sun_position_window]
 
 		# init items
 		self._item_azimuth = HABApp.openhab.items.NumberItem.get_item(name_azimuth)
@@ -224,9 +224,9 @@ class SunPositionFilter(HABApp.Rule):
 		:return: True if the sun hits the target, else False
 		"""
 		sun_in_window = False
-		for window in self._position_window:
-			if window.azimuth_min <= azimuth <= window.azimuth_max and window.elevation_min <= elevation <= window.elevation_max: # pylint: disable=consider-using-any-or-all
-				sun_in_window = True
+
+		if any(window.azimuth_min <= azimuth <= window.azimuth_max and window.elevation_min <= elevation <= window.elevation_max for window in self._position_windows):
+			sun_in_window = True
 
 		return sun_in_window
 
@@ -238,7 +238,7 @@ class SunPositionFilter(HABApp.Rule):
 		if azimuth is None or elevation is None:
 			self._instance_logger.warning(f"Azimuth or elevation is None -> will set output to input. azimuth = {azimuth} | elevation = {elevation}")
 			filter_output = self._item_input.value
-		elif self._item_input.value in ("OFF", None):
+		elif self._item_input.value in {"OFF", None}:
 			filter_output = "OFF"
 		else:
 			filter_output = "ON" if self._sun_in_window(azimuth, elevation) else "OFF"
