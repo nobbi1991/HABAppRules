@@ -373,7 +373,7 @@ class LightSwitch(_LightBase):
 		Switch    I00_00_Light_manual       "Light manual"
 
 		# Rule init:
-		light_sofa = habapp_rules.actors.light.Light(
+		habapp_rules.actors.light.Light(
 			"I01_01_Light",
 			manual_name="I00_00_Light_manual",
 			presence_state_name="I999_00_Presence_state", # string item!
@@ -403,11 +403,11 @@ class LightSwitch(_LightBase):
 		:raises TypeError: if type of light_item is not supported
 		"""
 		light_item = HABApp.core.Items.get_item(name_light)
-		if isinstance(light_item, HABApp.openhab.items.switch_item.SwitchItem):
-			self._item_light = HABApp.openhab.items.SwitchItem.get_item(name_light)
-			self._state_observer = habapp_rules.actors.state_observer.StateObserverSwitch(name_light, self._cb_hand_on, self._cb_hand_off)
-		else:
+		if not isinstance(light_item, HABApp.openhab.items.switch_item.SwitchItem):
 			raise TypeError(f"type: {type(light_item)} is not supported!")
+
+		self._item_light = HABApp.openhab.items.SwitchItem.get_item(name_light)
+		self._state_observer = habapp_rules.actors.state_observer.StateObserverSwitch(name_light, self._cb_hand_on, self._cb_hand_off)
 
 		_LightBase.__init__(self, name_light, manual_name, presence_state_name, day_name, config, sleeping_state_name, state_label)
 
@@ -476,7 +476,7 @@ class LightDimmer(_LightBase):
 	Switch    I00_00_Light_manual       "Light manual"
 
 	# Rule init:
-	light_sofa = habapp_rules.actors.light.Light(
+	habapp_rules.actors.light.Light(
 		"I01_01_Light",
 		control_names=["I01_01_Light_ctr"],
 		manual_name="I00_00_Light_manual",
@@ -515,11 +515,11 @@ class LightDimmer(_LightBase):
 		:raises TypeError: if type of light_item is not supported
 		"""
 		light_item = HABApp.core.Items.get_item(name_light)
-		if isinstance(light_item, HABApp.openhab.items.dimmer_item.DimmerItem):
-			self._item_light = HABApp.openhab.items.DimmerItem.get_item(name_light)
-			self._state_observer = habapp_rules.actors.state_observer.StateObserverDimmer(name_light, self._cb_hand_on, self._cb_hand_off, self._cb_hand_changed, control_names=control_names, group_names=group_names)
-		else:
+		if not isinstance(light_item, HABApp.openhab.items.dimmer_item.DimmerItem):
 			raise TypeError(f"type: {type(light_item)} is not supported!")
+
+		self._item_light = HABApp.openhab.items.DimmerItem.get_item(name_light)
+		self._state_observer = habapp_rules.actors.state_observer.StateObserverDimmer(name_light, self._cb_hand_on, self._cb_hand_off, self._cb_hand_changed, control_names=control_names, group_names=group_names)
 
 		_LightBase.__init__(self, name_light, manual_name, presence_state_name, day_name, config, sleeping_state_name, state_label)
 

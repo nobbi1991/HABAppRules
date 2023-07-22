@@ -105,7 +105,7 @@ def item_state_change_event(item_name: str, value: StateTypes, old_value: StateT
 	HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateChangedEvent(item_name, value, prev_value))
 
 
-def assert_value(item_name: str, value: StateTypes, message: StateTypes = None) -> None:
+def assert_value(item_name: str, value: StateTypes, message: str = None) -> None:
 	"""Helper to assert if item has correct state
 
 	:param item_name: name of item
