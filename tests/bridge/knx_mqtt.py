@@ -6,10 +6,10 @@ import unittest.mock
 import HABApp.rule.rule
 
 import habapp_rules.bridge.knx_mqtt
+import habapp_rules.core.exceptions
 import tests.helper.oh_item
 import tests.helper.rule_runner
 import tests.helper.test_case_base
-import habapp_rules.core.exceptions
 
 
 # pylint: disable=protected-access

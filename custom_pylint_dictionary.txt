@@ -4,6 +4,7 @@ bool
 config
 dataclass
 enums
+ga
 init
 KNX
 kwargs

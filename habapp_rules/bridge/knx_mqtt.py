@@ -23,10 +23,12 @@ class KnxMqttDimmerBridge(HABApp.Rule):
 	def __init__(self, mqtt_dimmer: str, knx_switch_ctr: str | None = None, knx_dimmer_ctr: str | None = None, increase_value: int = 60, decrease_value: int = 30) -> None:
 		"""Create object of KNX to MQTT bridge
 
-		:param knx_dimmer_ctr: name of KNX control item
 		:param mqtt_dimmer: name of MQTT item
+		:param knx_switch_ctr: name of KNX switch-control item
+		:param knx_dimmer_ctr: name of KNX dimmer-control item
 		:param increase_value: value which is set when INCREASE was received.
 		:param decrease_value: value which is set when DECREASE was received.
+		:raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: If config is not valid
 		"""
 		if knx_switch_ctr is None and knx_dimmer_ctr is None:
 			raise habapp_rules.core.exceptions.HabAppRulesConfigurationException(f"At least one KNX item must be given! knx_switch_ctr = {knx_switch_ctr} | knx_dimmer_ctr = {knx_dimmer_ctr}")
