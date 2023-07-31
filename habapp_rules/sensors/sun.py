@@ -1,10 +1,10 @@
 """Rules to handle sun sensors."""
-import abc
 import dataclasses
 import logging
 
 import HABApp
 
+import habapp_rules.common.filter
 import habapp_rules.common.hysteresis
 import habapp_rules.core.logger
 import habapp_rules.core.state_machine_rule
@@ -40,26 +40,36 @@ class SunPositionWindow:
 class _SensorBase(HABApp.Rule):
 	"""Base class for sun sensors."""
 
-	def __init__(self, threshold: str | float, name_output: str) -> None:
+	def __init__(self, name_input: str, name_output: str, threshold: str | float, filter_tau: int, filter_instant_increase: bool = True, filter_instant_decrease: bool = False) -> None:
 		"""Init of base class for sun sensors.
 
-		:param threshold: threshold for the temperature difference which is supposed that sun is shining. Can be given as float value or name of OpenHAB NumberItem
+		:param name_input: name of OpenHAB input item (NumberItem)
 		:param name_output: name of OpenHAB output item (SwitchItem)
+		:param threshold: threshold for the temperature difference which is supposed that sun is shining. Can be given as float value or name of OpenHAB NumberItem
+		:param filter_tau: filter constant for the exponential filter. Default is set to 20 minutes
+		:param filter_instant_increase: if set to True, increase of input values will not be filtered
+		:param filter_instant_decrease: if set to True, decrease of input values will not be filtered
 		"""
 		# init HABApp Rule
 		HABApp.Rule.__init__(self)
 		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, name_output)
 
+		# init exponential filter
+		name_input_exponential_filtered = f"H_{name_input.removeprefix('H_')}_filtered"
+		HABApp.openhab.interface.create_item("Number", name_input_exponential_filtered, name_input_exponential_filtered.replace("_", " "))
+		habapp_rules.common.filter.ExponentialFilter(name_input, name_input_exponential_filtered, filter_tau, filter_instant_increase, filter_instant_decrease)
+
 		# init items
+		self._item_input_filtered = HABApp.openhab.items.NumberItem.get_item(name_input_exponential_filtered)
 		self._item_output = HABApp.openhab.items.SwitchItem.get_item(name_output)
 		self._item_threshold = HABApp.openhab.items.NumberItem.get_item(threshold) if isinstance(threshold, str) else None
 
-		# init hysteresis
-		threshold = self._item_threshold.value if self._item_threshold is not None else threshold
-		self._hysteresis = habapp_rules.common.hysteresis.HysteresisSwitch(threshold, 1, False)
+		# attributes
+		self._threshold = self._item_threshold.value if self._item_threshold is not None else threshold
 
 		# callbacks
-		if self._item_threshold:
+		self._item_input_filtered.listen_event(self._cb_input_filtered, HABApp.openhab.events.ItemStateChangedEventFilter())
+		if self._item_threshold is not None:
 			self._item_threshold.listen_event(self._cb_threshold, HABApp.openhab.events.ItemStateChangedEventFilter())
 
 	def _send_output(self, new_value: str) -> None:
@@ -67,74 +77,28 @@ class _SensorBase(HABApp.Rule):
 
 		:param new_value: new value which should be sent
 		"""
-
 		if new_value != self._item_output.value:
 			self._item_output.oh_send_command(new_value)
 			self._instance_logger.debug(f"Set output '{self._item_output.name}' to {new_value}")
 
+	def _cb_input_filtered(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+		"""Callback, which is triggered if the filtered input value changed.
+
+		:param event: trigger event
+		"""
+		if self._threshold is None:
+			self._instance_logger.debug("The threshold value is None -> Can not check if new value is greater / smaller then the threshold")
+			return
+
+		value = "ON" if event.value >= self._threshold else "OFF"
+		self._send_output(value)
+
 	def _cb_threshold(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
 		"""Callback, which is triggered if the threshold changed.
 
-		:param event:  trigger event
-		"""
-		self._hysteresis.set_threshold_on(event.value)
-		self._cb_sensor_value(None)
-
-	@abc.abstractmethod
-	def _cb_sensor_value(self, event: HABApp.openhab.events.ItemStateChangedEvent | None) -> None:
-		"""Callback, which is triggered if the sensor value changed.
-
 		:param event: trigger event
 		"""
-
-
-class SensorTempDiff(_SensorBase):
-	"""Rules class to set sun protection depending on temperature difference. E.g. temperature in the sun / temperature in the shadow.
-
-	# Items:
-	Number    temperature_sun               "Temperature sun [%.1f °C]"         {channel="..."}
-	Number    temperature_shadow            "Temperature shadow [%.1f °C]"      {channel="..."}
-	Number    temperature_threshold         "Temperature threshold [%.1f °C]"
-	Switch    sun_protection_temperature    "Sun protection temperature [%s]    {channel="..."}
-
-	# Rule init:
-	habapp_rules.sensors.sun.SensorTempDiff("temperature_sun", "temperature_shadow", "temperature_threshold", "sun_protection_temperature")
-	"""
-
-	def __init__(self, name_temperature_1: str, name_temperature_2: str, threshold: str | float, name_output: str) -> None:
-		"""Init of sun sensor which takes two temperature values (one in the sun, and one in the shadow).
-
-		:param name_temperature_1: name of OpenHAB temperature item (NumberItem)
-		:param name_temperature_2: name of OpenHAB temperature item (NumberItem)
-		:param threshold: threshold for the temperature difference which is supposed that sun is shining. Can be given as float value or name of OpenHAB NumberItem
-		:param name_output: name of OpenHAB output item (SwitchItem)
-		"""
-		_SensorBase.__init__(self, threshold, name_output)
-
-		# init items
-		self._item_temperature_1 = HABApp.openhab.items.NumberItem.get_item(name_temperature_1)
-		self._item_temperature_2 = HABApp.openhab.items.NumberItem.get_item(name_temperature_2)
-
-		# callbacks
-		self._item_temperature_1.listen_event(self._cb_sensor_value, HABApp.openhab.events.ItemStateChangedEventFilter())
-		self._item_temperature_2.listen_event(self._cb_sensor_value, HABApp.openhab.events.ItemStateChangedEventFilter())
-
-		self._cb_sensor_value(None)
-		self._instance_logger.debug(f"Init of rule '{self.__class__.__name__}' with name '{self.rule_name}' was successful.")
-
-	def _cb_sensor_value(self, event: HABApp.openhab.events.ItemStateChangedEvent | None) -> None:
-		"""Callback, which is triggered if the sensor value changed.
-
-		:param event: trigger event
-		"""
-		if self._item_temperature_1.value is None or self._item_temperature_2.value is None:
-			self._instance_logger.warning(f"Can not get temperature difference. At least one temperature is None: temperature_1: {self._item_temperature_2.value} | temperature_2: {self._item_temperature_2.value}")
-			return
-
-		temp_diff = abs(self._item_temperature_1.value - self._item_temperature_2.value)
-		new_output = self._hysteresis.get_output(temp_diff)
-
-		self._send_output(new_output)
+		self._threshold = event.value
 
 
 class SensorBrightness(_SensorBase):
@@ -146,34 +110,64 @@ class SensorBrightness(_SensorBase):
 	Switch    sun_protection_brightness     "Sun protection brightness [%s]     {channel="..."}
 
 	# Rule init:
-	habapp_rules.sensors.sun.SensorBrightness("brightness","brightness_threshold", "sun_protection_brightness")
+	habapp_rules.sensors.sun.SensorBrightness("brightness", "sun_protection_brightness", "brightness_threshold")
 	"""
 
-	def __init__(self, name_brightness: str, name_threshold: str | float, name_output: str) -> None:
+	def __init__(self, name_brightness: str, name_output: str, threshold: str | float, filter_tau: int = 20 * 60, filter_instant_increase: bool = True, filter_instant_decrease: bool = False) -> None:
 		"""Init of sun sensor which takes a brightness value
 
 		:param name_brightness: name of OpenHAB brightness item (NumberItem)
-		:param name_threshold: threshold for the temperature difference which is supposed that sun is shining. Can be given as float value or name of OpenHAB NumberItem
 		:param name_output: name of OpenHAB output item (SwitchItem)
+		:param threshold: threshold for the temperature difference which is supposed that sun is shining. Can be given as float value or name of OpenHAB NumberItem
+		:param filter_tau: filter constant for the exponential filter. Default is set to 20 minutes
+		:param filter_instant_increase: if set to True, increase of input values will not be filtered
+		:param filter_instant_decrease: if set to True, decrease of input values will not be filtered
 		"""
-		_SensorBase.__init__(self, name_threshold, name_output)
+		_SensorBase.__init__(self, name_brightness, name_output, threshold, filter_tau, filter_instant_increase, filter_instant_decrease)
+
+
+class SensorTemperatureDifference(_SensorBase):
+	"""Rules class to set sun protection depending on temperature difference. E.g. temperature in the sun / temperature in the shadow.
+
+	# Items:
+	Number    temperature_sun               "Temperature sun [%.1f °C]"         {channel="..."}
+	Number    temperature_shadow            "Temperature shadow [%.1f °C]"      {channel="..."}
+	Number    temperature_threshold         "Temperature threshold [%.1f °C]"
+	Switch    sun_protection_temperature    "Sun protection temperature [%s]    {channel="..."}
+
+	# Rule init:
+	habapp_rules.sensors.sun.SensorTempDiff("temperature_sun", "temperature_shadow", "sun_protection_temperature", "temperature_threshold")
+	"""
+
+	def __init__(self, name_temperature_1: str, name_temperature_2: str, name_output: str, threshold: str | float, filter_tau: int = 30 * 60, filter_instant_increase: bool = True, filter_instant_decrease: bool = False) -> None:
+		"""Init of sun sensor which takes a two temperature values (one in the sun and one in the shadow)
+
+		:param name_temperature_1: name of OpenHAB first temperature item (NumberItem)
+		:param name_temperature_2: name of OpenHAB second temperature item (NumberItem)
+		:param name_output: name of OpenHAB output item (SwitchItem)
+		:param threshold: threshold for the temperature difference which is supposed that sun is shining. Can be given as float value or name of OpenHAB NumberItem
+		:param filter_tau: filter constant for the exponential filter. Default is set to 30 minutes
+		:param filter_instant_increase: if set to True, increase of input values will not be filtered
+		:param filter_instant_decrease: if set to True, decrease of input values will not be filtered
+		"""
+		name_temperature_diff = f"H_{name_temperature_1}_{name_temperature_2}_diff"
+		HABApp.openhab.interface.create_item("Number", name_temperature_diff, name_temperature_diff.replace("_", " "))
+
+		_SensorBase.__init__(self, name_temperature_diff, name_output, threshold, filter_tau, filter_instant_increase, filter_instant_decrease)
 
 		# init items
-		self._item_brightness = HABApp.openhab.items.NumberItem.get_item(name_brightness)
+		self._item_temperature_1 = HABApp.openhab.items.NumberItem.get_item(name_temperature_1)
+		self._item_temperature_2 = HABApp.openhab.items.NumberItem.get_item(name_temperature_2)
+		self._item_temp_diff = HABApp.openhab.items.NumberItem.get_item(name_temperature_diff)
 
 		# callbacks
-		self._item_brightness.listen_event(self._cb_sensor_value, HABApp.openhab.events.ItemStateChangedEventFilter())
+		self._item_temperature_1.listen_event(self._cb_temperature, HABApp.openhab.events.ItemStateChangedEventFilter())
+		self._item_temperature_2.listen_event(self._cb_temperature, HABApp.openhab.events.ItemStateChangedEventFilter())
 
-		self._cb_sensor_value(None)
-		self._instance_logger.debug(f"Init of rule '{self.__class__.__name__}' with name '{self.rule_name}' was successful.")
-
-	def _cb_sensor_value(self, event: HABApp.openhab.events.ItemStateChangedEvent | None) -> None:
-		"""Callback, which is triggered if the brightness changed.
-
-		:param event:  trigger event
-		"""
-		value = event.value if event else self._item_brightness.value
-		self._send_output(self._hysteresis.get_output(value))
+	def _cb_temperature(self, _: HABApp.openhab.events.ItemStateChangedEvent | None):
+		"""Callback, which is triggered if a temperature value changed."""
+		if all(isinstance(temperature.value, (int, float)) for temperature in (self._item_temperature_1, self._item_temperature_2)):
+			self._item_temp_diff.oh_send_command(abs(self._item_temperature_1.value - self._item_temperature_2.value))
 
 
 class SunPositionFilter(HABApp.Rule):
