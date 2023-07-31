@@ -70,7 +70,7 @@ class ExponentialFilter(HABApp.Rule):
 
 		:param event: event which triggered this event
 		"""
-		if self._instant_increase and event.value > self._previous_value or self._instant_decrease and event.value < self._previous_value:
+		if self._previous_value is None or self._instant_increase and event.value > self._previous_value or self._instant_decrease and event.value < self._previous_value:
 			self._send_output(event.value)
 			self._previous_value = event.value
 

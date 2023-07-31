@@ -18,9 +18,9 @@ class TestExponentialFilter(tests.helper.test_case_base.TestCaseBase):
 		"""Setup unit-tests."""
 		tests.helper.test_case_base.TestCaseBase.setUp(self)
 
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Raw", 0)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Filtered", 0)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Filtered_2", 0)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Raw", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Filtered", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Filtered_2", None)
 
 		self._rule_run_mock = unittest.mock.MagicMock()
 		with unittest.mock.patch("HABApp.rule.rule._HABAppSchedulerView", return_value=self._rule_run_mock):
@@ -85,21 +85,27 @@ class TestExponentialFilter(tests.helper.test_case_base.TestCaseBase):
 
 	def test_cb_item_raw(self):
 		"""Test _cb_item_raw."""
-		TestCase = collections.namedtuple("TestCase", "new_value, instant_increase, instant_decrease, expected_value")
+		TestCase = collections.namedtuple("TestCase", "new_value, previous_value, instant_increase, instant_decrease, expected_value")
 
 		test_cases = [
-			TestCase(200, False, False, 100),
-			TestCase(200, False, True, 100),
-			TestCase(200, True, False, 200),
+			TestCase(200, 100, False, False, 100),
+			TestCase(200, 100, False, True, 100),
+			TestCase(200, 100, True, False, 200),
+			TestCase(200, None, False, False, 200),
+			TestCase(200, None, False, True, 200),
+			TestCase(200, None, True, False, 200),
 
-			TestCase(50, False, False, 100),
-			TestCase(50, False, True, 50),
-			TestCase(50, True, False, 100),
+			TestCase(50, 100, False, False, 100),
+			TestCase(50, 100, False, True, 50),
+			TestCase(50, 100, True, False, 100),
+			TestCase(50, None, False, False, 50),
+			TestCase(50, None, False, True, 50),
+			TestCase(50, None, True, False, 50),
 		]
 
 		for test_case in test_cases:
 			tests.helper.oh_item.set_state("Unittest_Filtered_2", 100)  # set some random value
-			self.filter_increase._previous_value = 100
+			self.filter_increase._previous_value = test_case.previous_value
 			self.filter_increase._instant_increase = test_case.instant_increase
 			self.filter_increase._instant_decrease = test_case.instant_decrease
 
