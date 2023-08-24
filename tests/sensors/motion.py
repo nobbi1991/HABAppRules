@@ -47,7 +47,7 @@ class TestMotion(tests.helper.test_case_base.TestCaseBase):
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Motion_Unittest_Motion_min_raw_state", "")
 
-		with unittest.mock.patch.object(habapp_rules.core.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("H_Motion_Unittest_Motion_min_raw_state", "")):
+		with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("H_Motion_Unittest_Motion_min_raw_state", "")):
 			self.motion_min = habapp_rules.sensors.motion.Motion("Unittest_Motion_min_raw", "Unittest_Motion_min_filtered")
 			self.motion_max = habapp_rules.sensors.motion.Motion("Unittest_Motion_max_raw", "Unittest_Motion_max_filtered", 5, "Unittest_Brightness", "Unittest_Brightness_Threshold", "Unittest_Motion_max_lock", "Unittest_Sleep_state")
 

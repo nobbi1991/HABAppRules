@@ -41,7 +41,7 @@ class TestPresence(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "rules_system_presence_Presence_state", "")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Presence", "ON")
 
-		with unittest.mock.patch.object(habapp_rules.core.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_presence_Presence_state", "")):
+		with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_presence_Presence_state", "")):
 			self._presence = habapp_rules.system.presence.Presence("Unittest_Presence", outside_door_names=["Unittest_Door1", "Unittest_Door2"], leaving_name="Unittest_Leaving", phone_names=["Unittest_Phone1", "Unittest_Phone2"])
 
 	@unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
@@ -58,7 +58,7 @@ class TestPresence(tests.helper.test_case_base.TestCaseBase):
 
 	def test_minimal_init(self):
 		"""Test init with minimal set of arguments."""
-		with unittest.mock.patch.object(habapp_rules.core.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_presence_Presence_state", "")):
+		with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_presence_Presence_state", "")):
 			presence_min = habapp_rules.system.presence.Presence("Unittest_Presence", "Unittest_Leaving")
 
 		self.assertEqual([], presence_min._Presence__outside_door_items)

@@ -4,6 +4,8 @@
 
 - renamed ``habapp_rules.actors.light.Light`` to ``habapp_rules.actors.light.LightDimmer`` and ``habapp_rules.actors.light.LightExtended`` to ``habapp_rules.actors.light.LightDimmerExtended``
 - changed parameter names and order of ``habapp_rules.bridge.knx_mqtt.KnxMqttDimmerBridge`` and added support for KNX switch items
+- all items which are created from habapp_rules start with prefix ``H_`` 
+- removed ``_create_additional_item`` from ``habapp_rules.core.state_machine_rule.StateMachineRule`` and added it as standalone function: ``habapp_rules.core.helper.create_additional_item`` 
 
 ## Features
 

@@ -63,7 +63,11 @@ class _Base(HABApp.Rule):
 
 
 class And(_Base):
-	"""Logical AND function."""
+	"""Logical AND function.
+
+	Example:
+	habapp_rules.common.logic.And(["Item_1", "Item_2"], "Item_result")
+	"""
 
 	def _cb_input_event(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | None) -> None:
 		"""Callback, which is called if one of the input items had a state event.
@@ -75,7 +79,11 @@ class And(_Base):
 
 
 class Or(_Base):
-	"""Logical OR function."""
+	"""Logical OR function.
+
+	Example:
+	habapp_rules.common.logic.Or(["Item_1", "Item_2"], "Item_result")
+	"""
 
 	def _cb_input_event(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | None) -> None:
 		"""Callback, which is called if one of the input items had a state event.

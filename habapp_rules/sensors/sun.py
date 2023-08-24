@@ -6,6 +6,7 @@ import HABApp
 
 import habapp_rules.common.filter
 import habapp_rules.common.hysteresis
+import habapp_rules.core.helper
 import habapp_rules.core.logger
 import habapp_rules.core.state_machine_rule
 
@@ -56,7 +57,7 @@ class _SensorBase(HABApp.Rule):
 
 		# init exponential filter
 		name_input_exponential_filtered = f"H_{name_input.removeprefix('H_')}_filtered"
-		HABApp.openhab.interface.create_item("Number", name_input_exponential_filtered, name_input_exponential_filtered.replace("_", " "))
+		habapp_rules.core.helper.create_additional_item(name_input_exponential_filtered, "Number", name_input_exponential_filtered.replace("_", " "))
 		habapp_rules.common.filter.ExponentialFilter(name_input, name_input_exponential_filtered, filter_tau, filter_instant_increase, filter_instant_decrease)
 
 		# init items
@@ -151,7 +152,7 @@ class SensorTemperatureDifference(_SensorBase):
 		:param filter_instant_decrease: if set to True, decrease of input values will not be filtered
 		"""
 		name_temperature_diff = f"H_{name_temperature_1}_{name_temperature_2}_diff"
-		HABApp.openhab.interface.create_item("Number", name_temperature_diff, name_temperature_diff.replace("_", " "))
+		habapp_rules.core.helper.create_additional_item(name_temperature_diff, "Number", name_temperature_diff.replace("_", " "))
 
 		_SensorBase.__init__(self, name_temperature_diff, name_output, threshold, filter_tau, filter_instant_increase, filter_instant_decrease)
 

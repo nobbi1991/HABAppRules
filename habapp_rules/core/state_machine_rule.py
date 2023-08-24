@@ -2,7 +2,6 @@
 import inspect
 import os
 import pathlib
-import time
 
 import HABApp
 import HABApp.openhab.connection_handler.func_sync
@@ -10,6 +9,7 @@ import transitions.extensions.states
 
 import habapp_rules
 import habapp_rules.core.exceptions
+import habapp_rules.core.helper
 
 
 @transitions.extensions.states.add_state_features(transitions.extensions.states.Timeout)
@@ -42,29 +42,9 @@ class StateMachineRule(HABApp.Rule):
 		parent_class_path_relative_str = str(parent_class_path_relative).removesuffix(".py").replace(os.path.sep, "_")
 		self._item_prefix = f"{parent_class_path_relative_str}.{self.rule_name}".replace(".", "_")
 
-		if not state_item_name:
-			state_item_name = f"{self._item_prefix}_state"
-		self._item_state = self._create_additional_item(state_item_name, "String", state_item_label)
+		state_item_name = f"H_{state_item_name.removeprefix('H_')}" if state_item_name else f"H_{self._item_prefix}_state"
 
-	@staticmethod
-	def _create_additional_item(name: str, item_type: str, label: str | None = None) -> HABApp.openhab.items.OpenhabItem:
-		"""Create additional item if it does not already exist
-
-		:param name: Name of item
-		:param item_type: Type of item (e.g. String)
-		:param label: Label of the item
-		:return: returns the created item
-		:raises habapp_rules.core.exceptions.HabAppRulesException: if item could not be created
-		"""
-		if not HABApp.openhab.interface.item_exists(name):
-			if not label:
-				label = f"{name.replace('_', ' ')}"
-			if item_type == "String" and not label.endswith("[%s]"):
-				label = f"{label} [%s]"
-			if not HABApp.openhab.interface.create_item(item_type=item_type, name=name, label=label):
-				raise habapp_rules.core.exceptions.HabAppRulesException(f"Could not create item '{name}'")
-			time.sleep(0.05)
-		return HABApp.openhab.items.OpenhabItem.get_item(name)
+		self._item_state = habapp_rules.core.helper.create_additional_item(state_item_name, "String", state_item_label)
 
 	def get_initial_log_message(self) -> str:
 		"""Get log message which can be logged at the init of a rule with a state machine.
