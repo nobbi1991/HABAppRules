@@ -11,7 +11,6 @@ import typing
 
 import HABApp.openhab.definitions
 import HABApp.openhab.events
-import HABApp.openhab.interface
 import HABApp.openhab.items
 import HABApp.util
 
@@ -40,6 +39,7 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 			{"name": "off"},
 			{"name": "leaving", "timeout": 5, "on_timeout": "leaving_timeout"},
 			{"name": "presleep", "timeout": 5, "on_timeout": "presleep_timeout"},
+			{"name": "restoreState"}
 		]}
 	]
 
@@ -53,12 +53,10 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 		{"trigger": "auto_on_timeout", "source": "auto_on", "dest": "auto_off", "unless": "_pre_off_configured"},
 		{"trigger": "preoff_timeout", "source": "auto_preoff", "dest": "auto_off"},
 		{"trigger": "leaving_started", "source": ["auto_on", "auto_off", "auto_preoff"], "dest": "auto_leaving", "conditions": "_leaving_configured"},
-		{"trigger": "leaving_aborted", "source": "auto_leaving", "dest": "auto_on", "conditions": "_was_on_before"},
-		{"trigger": "leaving_aborted", "source": "auto_leaving", "dest": "auto_off", "unless": "_was_on_before"},
+		{"trigger": "leaving_aborted", "source": "auto_leaving", "dest": "auto_restoreState"},
 		{"trigger": "leaving_timeout", "source": "auto_leaving", "dest": "auto_off"},
 		{"trigger": "sleep_started", "source": ["auto_on", "auto_off", "auto_preoff"], "dest": "auto_presleep", "conditions": "_pre_sleep_configured"},
-		{"trigger": "sleep_aborted", "source": "auto_presleep", "dest": "auto_on", "conditions": "_was_on_before"},
-		{"trigger": "sleep_aborted", "source": "auto_presleep", "dest": "auto_off", "unless": "_was_on_before"},
+		{"trigger": "sleep_aborted", "source": "auto_presleep", "dest": "auto_restoreState"},
 		{"trigger": "presleep_timeout", "source": "auto_presleep", "dest": "auto_off"},
 	]
 	_item_light: HABApp.openhab.items.switch_item.SwitchItem | HABApp.openhab.items.dimmer_item.DimmerItem
@@ -96,6 +94,7 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 
 		# init state machine
 		self._previous_state = None
+		self._restore_state = None
 		self.state_machine = habapp_rules.core.state_machine_rule.HierarchicalStateMachineWithTimeout(
 			model=self,
 			states=self.states,
@@ -184,6 +183,13 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 				pre_sleep_prevent = bool(self._config.pre_sleep_prevent)
 
 		return bool(self._timeout_pre_sleep) and not pre_sleep_prevent
+
+	def on_enter_auto_restoreState(self):  # pylint: disable=invalid-name
+		"""On enter of state auto_restoreState."""
+		self._restore_state = "auto_off" if self._restore_state == "auto_preoff" else self._restore_state
+
+		if self._restore_state:
+			self._set_state(self._restore_state)
 
 	def _was_on_before(self) -> bool:
 		"""Check whether the dimmer was on before
@@ -343,6 +349,7 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 		self._set_timeouts()
 		if event.value == habapp_rules.system.PresenceState.LEAVING.value:
 			self._brightness_before = self._state_observer.value
+			self._restore_state = self._previous_state
 			self.leaving_started()
 		elif event.value == habapp_rules.system.PresenceState.PRESENCE.value and self.state == "auto_leaving":
 			self.leaving_aborted()
@@ -355,6 +362,7 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 		self._set_timeouts()
 		if event.value == habapp_rules.system.SleepState.PRE_SLEEPING.value:
 			self._brightness_before = self._state_observer.value
+			self._restore_state = self._previous_state
 			self.sleep_started()
 		elif event.value == habapp_rules.system.SleepState.AWAKE.value and self.state == "auto_presleep":
 			self.sleep_aborted()
@@ -373,7 +381,7 @@ class LightSwitch(_LightBase):
 		Switch    I00_00_Light_manual       "Light manual"
 
 		# Rule init:
-		habapp_rules.actors.light.Light(
+		habapp_rules.actors.light.LightSwitch(
 			"I01_01_Light",
 			manual_name="I00_00_Light_manual",
 			presence_state_name="I999_00_Presence_state", # string item!
@@ -476,7 +484,7 @@ class LightDimmer(_LightBase):
 	Switch    I00_00_Light_manual       "Light manual"
 
 	# Rule init:
-	habapp_rules.actors.light.Light(
+	habapp_rules.actors.light.LightDimmer(
 		"I01_01_Light",
 		control_names=["I01_01_Light_ctr"],
 		manual_name="I00_00_Light_manual",
@@ -605,8 +613,8 @@ class _LightExtendedMixin:
 		transitions_list.append({"trigger": "motion_on", "source": "auto_preoff", "dest": "auto_motion", "conditions": "_motion_configured"})
 		transitions_list.append({"trigger": "motion_off", "source": "auto_motion", "dest": "auto_preoff", "conditions": "_pre_off_configured"})
 		transitions_list.append({"trigger": "motion_off", "source": "auto_motion", "dest": "auto_off", "unless": "_pre_off_configured"})
-		transitions_list.append({"trigger": "motion_timeout", "source": "auto_motion", "dest": "auto_preoff", "conditions": "_pre_off_configured"})
-		transitions_list.append({"trigger": "motion_timeout", "source": "auto_motion", "dest": "auto_off", "unless": "_pre_off_configured"})
+		transitions_list.append({"trigger": "motion_timeout", "source": "auto_motion", "dest": "auto_preoff", "conditions": "_pre_off_configured", "before": "_log_motion_timeout_warning"})
+		transitions_list.append({"trigger": "motion_timeout", "source": "auto_motion", "dest": "auto_off", "unless": "_pre_off_configured", "before": "_log_motion_timeout_warning"})
 		transitions_list.append({"trigger": "hand_off", "source": "auto_motion", "dest": "auto_off"})
 
 		transitions_list.append({"trigger": "door_opened", "source": "auto_off", "dest": "auto_door", "conditions": ["_door_configured", "_motion_door_allowed"]})
@@ -743,6 +751,10 @@ class _LightExtendedMixin:
 			# only if all doors are closed door_closed() is called
 			self.door_closed()
 
+	def _log_motion_timeout_warning(self):
+		"""Log warning if motion state was left because of timeout."""
+		self._instance_logger.warning("Timeout of motion was triggered, before motion stopped. Thing about to increase motion timeout!")
+
 
 # pylint: disable=protected-access
 class LightSwitchExtended(_LightExtendedMixin, LightSwitch):
@@ -793,7 +805,8 @@ class LightDimmerExtended(_LightExtendedMixin, LightDimmer):
 	             manual_name: str,
 	             presence_state_name: str,
 	             day_name: str,
-	             config: habapp_rules.actors.light_config.LightConfigExtended, sleeping_state_name: str | None = None,
+	             config: habapp_rules.actors.light_config.LightConfigExtended,
+	             sleeping_state_name: str | None = None,
 	             name_motion: str | None = None,
 	             door_names: list[str] | None = None,
 	             state_label: str | None = None,

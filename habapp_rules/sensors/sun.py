@@ -165,7 +165,7 @@ class SensorTemperatureDifference(_SensorBase):
 		self._item_temperature_1.listen_event(self._cb_temperature, HABApp.openhab.events.ItemStateChangedEventFilter())
 		self._item_temperature_2.listen_event(self._cb_temperature, HABApp.openhab.events.ItemStateChangedEventFilter())
 
-		# calc temperature difference
+		# calculate temperature difference
 		self._cb_temperature(None)
 
 	def _cb_temperature(self, _: HABApp.openhab.events.ItemStateChangedEvent | None):

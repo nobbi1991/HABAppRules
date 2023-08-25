@@ -65,7 +65,7 @@ class TestLightBase(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Day", True)
 
 		with unittest.mock.patch("habapp_rules.actors.light._LightBase.__abstractmethods__", set()), \
-				unittest.mock.patch.object(habapp_rules.core.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")), \
+				unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")), \
 				unittest.mock.patch("habapp_rules.actors.light._LightBase._get_initial_state", return_value="auto_off"):
 			self.light_base = habapp_rules.actors.light._LightBase("Unittest_Light", "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", LIGHT_CONFIG, "Unittest_Sleep_state")
 			self.light_base_without_sleep = habapp_rules.actors.light._LightBase("Unittest_Light_2", "Unittest_Manual_2", "Unittest_Presence_state", "Unittest_Day", LIGHT_CONFIG)
@@ -86,7 +86,9 @@ class TestLightBase(tests.helper.test_case_base.TestCaseBase):
 				 {"name": "preoff", "timeout": 4, "on_timeout": "preoff_timeout"},
 				 {"name": "off"},
 				 {"name": "leaving", "timeout": 5, "on_timeout": "leaving_timeout"},
-				 {"name": "presleep", "timeout": 5, "on_timeout": "presleep_timeout"}]}]
+				 {"name": "presleep", "timeout": 5, "on_timeout": "presleep_timeout"},
+				 {"name": "restoreState"}
+			 ]}]
 		self.assertEqual(expected_states, self.light_base.states)
 
 		expected_trans = [
@@ -99,12 +101,10 @@ class TestLightBase(tests.helper.test_case_base.TestCaseBase):
 			{"trigger": "auto_on_timeout", "source": "auto_on", "dest": "auto_off", "unless": "_pre_off_configured"},
 			{"trigger": "preoff_timeout", "source": "auto_preoff", "dest": "auto_off"},
 			{"trigger": "leaving_started", "source": ["auto_on", "auto_off", "auto_preoff"], "dest": "auto_leaving", "conditions": "_leaving_configured"},
-			{"trigger": "leaving_aborted", "source": "auto_leaving", "dest": "auto_on", "conditions": "_was_on_before"},
-			{"trigger": "leaving_aborted", "source": "auto_leaving", "dest": "auto_off", "unless": "_was_on_before"},
+			{"trigger": "leaving_aborted", "source": "auto_leaving", "dest": "auto_restoreState"},
 			{"trigger": "leaving_timeout", "source": "auto_leaving", "dest": "auto_off"},
 			{"trigger": "sleep_started", "source": ["auto_on", "auto_off", "auto_preoff"], "dest": "auto_presleep", "conditions": "_pre_sleep_configured"},
-			{"trigger": "sleep_aborted", "source": "auto_presleep", "dest": "auto_on", "conditions": "_was_on_before"},
-			{"trigger": "sleep_aborted", "source": "auto_presleep", "dest": "auto_off", "unless": "_was_on_before"},
+			{"trigger": "sleep_aborted", "source": "auto_presleep", "dest": "auto_restoreState"},
 			{"trigger": "presleep_timeout", "source": "auto_presleep", "dest": "auto_off"}
 		]
 		self.assertEqual(expected_trans, self.light_base.trans)
@@ -704,15 +704,15 @@ class TestLightBase(tests.helper.test_case_base.TestCaseBase):
 		self.assertEqual("auto_off", self.light_base.state)
 
 		# to auto_off by sleep_aborted | was_on_before = False
-		self.light_base.to_auto_presleep()
-		with unittest.mock.patch.object(self.light_base, "_was_on_before", return_value=False):
-			tests.helper.oh_item.send_command("Unittest_Sleep_state", habapp_rules.system.SleepState.AWAKE.value, habapp_rules.system.SleepState.POST_SLEEPING.value)
+		self.light_base.to_auto_off()
+		tests.helper.oh_item.send_command("Unittest_Sleep_state", habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.AWAKE.value)
+		tests.helper.oh_item.send_command("Unittest_Sleep_state", habapp_rules.system.SleepState.AWAKE.value, habapp_rules.system.SleepState.POST_SLEEPING.value)
 		self.assertEqual("auto_off", self.light_base.state)
 
 		# to auto_on by sleep_aborted | was_on_before = True
-		self.light_base.to_auto_presleep()
-		with unittest.mock.patch.object(self.light_base, "_was_on_before", return_value=True):
-			tests.helper.oh_item.send_command("Unittest_Sleep_state", habapp_rules.system.SleepState.AWAKE.value, habapp_rules.system.SleepState.POST_SLEEPING.value)
+		self.light_base.to_auto_on()
+		tests.helper.oh_item.send_command("Unittest_Sleep_state", habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.AWAKE.value)
+		tests.helper.oh_item.send_command("Unittest_Sleep_state", habapp_rules.system.SleepState.AWAKE.value, habapp_rules.system.SleepState.POST_SLEEPING.value)
 		self.assertEqual("auto_on", self.light_base.state)
 
 	def test_auto_leaving(self):
@@ -729,16 +729,23 @@ class TestLightBase(tests.helper.test_case_base.TestCaseBase):
 		self.assertEqual("auto_off", self.light_base.state)
 
 		# to auto_off by sleep_aborted | was_on_before = False
-		self.light_base.to_auto_leaving()
-		with unittest.mock.patch.object(self.light_base, "_was_on_before", return_value=False):
-			tests.helper.oh_item.send_command("Unittest_Presence_state", habapp_rules.system.PresenceState.PRESENCE.value, habapp_rules.system.PresenceState.LEAVING.value)
+		self.light_base.to_auto_off()
+		tests.helper.oh_item.send_command("Unittest_Presence_state", habapp_rules.system.PresenceState.LEAVING.value, habapp_rules.system.PresenceState.PRESENCE.value, )
+		tests.helper.oh_item.send_command("Unittest_Presence_state", habapp_rules.system.PresenceState.PRESENCE.value, habapp_rules.system.PresenceState.LEAVING.value)
 		self.assertEqual("auto_off", self.light_base.state)
 
 		# to auto_on by sleep_aborted | was_on_before = True
-		self.light_base.to_auto_leaving()
-		with unittest.mock.patch.object(self.light_base, "_was_on_before", return_value=True):
-			tests.helper.oh_item.send_command("Unittest_Presence_state", habapp_rules.system.PresenceState.PRESENCE.value, habapp_rules.system.PresenceState.LEAVING.value)
+		self.light_base.to_auto_on()
+		tests.helper.oh_item.send_command("Unittest_Presence_state", habapp_rules.system.PresenceState.LEAVING.value, habapp_rules.system.PresenceState.PRESENCE.value, )
+		tests.helper.oh_item.send_command("Unittest_Presence_state", habapp_rules.system.PresenceState.PRESENCE.value, habapp_rules.system.PresenceState.LEAVING.value)
 		self.assertEqual("auto_on", self.light_base.state)
+
+	def test_auto_restoreState(self): # pylint: disable=invalid-name
+		"""Test transitions of auto_restoreState"""
+		self.light_base.to_auto_preoff()
+		tests.helper.oh_item.send_command("Unittest_Presence_state", habapp_rules.system.PresenceState.LEAVING.value, habapp_rules.system.PresenceState.PRESENCE.value, )
+		tests.helper.oh_item.send_command("Unittest_Presence_state", habapp_rules.system.PresenceState.PRESENCE.value, habapp_rules.system.PresenceState.LEAVING.value)
+		self.assertEqual("auto_off", self.light_base.state)
 
 	def test_manual(self):
 		"""Test manual switch."""
@@ -824,14 +831,13 @@ class TestLightSwitch(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Sleep_state", habapp_rules.system.SleepState.AWAKE.value)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Day", True)
 
-		with unittest.mock.patch.object(habapp_rules.core.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")):
+		with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")):
 			self.light_switch = habapp_rules.actors.light.LightSwitch("Unittest_Light", "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", LIGHT_CONFIG, "Unittest_Sleep_state")
 			self.light_switch_without_sleep = habapp_rules.actors.light.LightSwitch("Unittest_Light_2", "Unittest_Manual_2", "Unittest_Presence_state", "Unittest_Day", LIGHT_CONFIG)
 
 	def test_init_with_dimmer(self):
 		"""Test init with switch_item"""
-		with self.assertRaises(TypeError), \
-				unittest.mock.patch.object(habapp_rules.core.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")):
+		with self.assertRaises(TypeError), unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")):
 			habapp_rules.actors.light.LightSwitch("Unittest_Light_Dimmer", "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", LIGHT_CONFIG, "Unittest_Sleep_state")
 
 	def test__init__(self):
@@ -845,7 +851,9 @@ class TestLightSwitch(tests.helper.test_case_base.TestCaseBase):
 				 {"name": "preoff", "timeout": 4, "on_timeout": "preoff_timeout"},
 				 {"name": "off"},
 				 {"name": "leaving", "timeout": 5, "on_timeout": "leaving_timeout"},
-				 {"name": "presleep", "timeout": 5, "on_timeout": "presleep_timeout"}]}]
+				 {"name": "presleep", "timeout": 5, "on_timeout": "presleep_timeout"},
+				 {"name": "restoreState"}
+			 ]}]
 		self.assertEqual(expected_states, self.light_switch.states)
 
 		expected_trans = [
@@ -858,12 +866,10 @@ class TestLightSwitch(tests.helper.test_case_base.TestCaseBase):
 			{"trigger": "auto_on_timeout", "source": "auto_on", "dest": "auto_off", "unless": "_pre_off_configured"},
 			{"trigger": "preoff_timeout", "source": "auto_preoff", "dest": "auto_off"},
 			{"trigger": "leaving_started", "source": ["auto_on", "auto_off", "auto_preoff"], "dest": "auto_leaving", "conditions": "_leaving_configured"},
-			{"trigger": "leaving_aborted", "source": "auto_leaving", "dest": "auto_on", "conditions": "_was_on_before"},
-			{"trigger": "leaving_aborted", "source": "auto_leaving", "dest": "auto_off", "unless": "_was_on_before"},
+			{"trigger": "leaving_aborted", "source": "auto_leaving", "dest": "auto_restoreState"},
 			{"trigger": "leaving_timeout", "source": "auto_leaving", "dest": "auto_off"},
 			{"trigger": "sleep_started", "source": ["auto_on", "auto_off", "auto_preoff"], "dest": "auto_presleep", "conditions": "_pre_sleep_configured"},
-			{"trigger": "sleep_aborted", "source": "auto_presleep", "dest": "auto_on", "conditions": "_was_on_before"},
-			{"trigger": "sleep_aborted", "source": "auto_presleep", "dest": "auto_off", "unless": "_was_on_before"},
+			{"trigger": "sleep_aborted", "source": "auto_presleep", "dest": "auto_restoreState"},
 			{"trigger": "presleep_timeout", "source": "auto_presleep", "dest": "auto_off"}
 		]
 		self.assertEqual(expected_trans, self.light_switch.trans)
@@ -1015,14 +1021,14 @@ class TestLightDimmer(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Sleep_state", habapp_rules.system.SleepState.AWAKE.value)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Day", True)
 
-		with unittest.mock.patch.object(habapp_rules.core.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")):
+		with                unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")):
 			self.light_dimmer = habapp_rules.actors.light.LightDimmer("Unittest_Light", ["Unittest_Light_ctr"], "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", LIGHT_CONFIG, "Unittest_Sleep_state")
 			self.light_dimmer_without_sleep = habapp_rules.actors.light.LightDimmer("Unittest_Light_2", ["Unittest_Light_2_ctr"], "Unittest_Manual_2", "Unittest_Presence_state", "Unittest_Day", LIGHT_CONFIG)
 
 	def test_init_with_switch(self):
 		"""Test init with switch_item"""
 		with self.assertRaises(TypeError), \
-				unittest.mock.patch.object(habapp_rules.core.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")):
+				unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")):
 			habapp_rules.actors.light.LightDimmer("Unittest_Light_Switch", ["Unittest_Light_ctr"], "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", LIGHT_CONFIG, "Unittest_Sleep_state")
 
 	def test__init__(self):
@@ -1036,7 +1042,9 @@ class TestLightDimmer(tests.helper.test_case_base.TestCaseBase):
 				 {"name": "preoff", "timeout": 4, "on_timeout": "preoff_timeout"},
 				 {"name": "off"},
 				 {"name": "leaving", "timeout": 5, "on_timeout": "leaving_timeout"},
-				 {"name": "presleep", "timeout": 5, "on_timeout": "presleep_timeout"}]}]
+				 {"name": "presleep", "timeout": 5, "on_timeout": "presleep_timeout"},
+				 {"name": "restoreState"}
+			 ]}]
 		self.assertEqual(expected_states, self.light_dimmer.states)
 
 		expected_trans = [
@@ -1049,12 +1057,10 @@ class TestLightDimmer(tests.helper.test_case_base.TestCaseBase):
 			{"trigger": "auto_on_timeout", "source": "auto_on", "dest": "auto_off", "unless": "_pre_off_configured"},
 			{"trigger": "preoff_timeout", "source": "auto_preoff", "dest": "auto_off"},
 			{"trigger": "leaving_started", "source": ["auto_on", "auto_off", "auto_preoff"], "dest": "auto_leaving", "conditions": "_leaving_configured"},
-			{"trigger": "leaving_aborted", "source": "auto_leaving", "dest": "auto_on", "conditions": "_was_on_before"},
-			{"trigger": "leaving_aborted", "source": "auto_leaving", "dest": "auto_off", "unless": "_was_on_before"},
+			{"trigger": "leaving_aborted", "source": "auto_leaving", "dest": "auto_restoreState"},
 			{"trigger": "leaving_timeout", "source": "auto_leaving", "dest": "auto_off"},
 			{"trigger": "sleep_started", "source": ["auto_on", "auto_off", "auto_preoff"], "dest": "auto_presleep", "conditions": "_pre_sleep_configured"},
-			{"trigger": "sleep_aborted", "source": "auto_presleep", "dest": "auto_on", "conditions": "_was_on_before"},
-			{"trigger": "sleep_aborted", "source": "auto_presleep", "dest": "auto_off", "unless": "_was_on_before"},
+			{"trigger": "sleep_aborted", "source": "auto_presleep", "dest": "auto_restoreState"},
 			{"trigger": "presleep_timeout", "source": "auto_presleep", "dest": "auto_off"},
 			{"trigger": "hand_changed", "source": "auto_on", "dest": "auto_on"}
 		]
@@ -1151,7 +1157,7 @@ class TestLightExtended(tests.helper.test_case_base.TestCaseBase):
 			door=FunctionConfig(day=BrightnessTimeout(True, 10), night=BrightnessTimeout(80, 8), sleeping=None)
 		)
 
-		with unittest.mock.patch.object(habapp_rules.core.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")):
+		with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")):
 			self.light_extended = habapp_rules.actors.light.LightDimmerExtended("Unittest_Light", ["Unittest_Light_ctr"], "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", self.light_config, "Unittest_Sleep_state", "Unittest_Motion",
 			                                                                    ["Unittest_Door_1", "Unittest_Door_2"])
 			self.light_extended_2 = habapp_rules.actors.light.LightDimmerExtended("Unittest_Light_2", ["Unittest_Light_2_ctr"], "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", self.light_config, "Unittest_Sleep_state")
@@ -1168,8 +1174,10 @@ class TestLightExtended(tests.helper.test_case_base.TestCaseBase):
 				 {"name": "off"},
 				 {"name": "leaving", "timeout": 5, "on_timeout": "leaving_timeout"},
 				 {"name": "presleep", "timeout": 5, "on_timeout": "presleep_timeout"},
+				 {"name": "restoreState"},
 				 {"name": "door", "timeout": 999, "on_timeout": "door_timeout"},
-				 {"name": "motion", "timeout": 999, "on_timeout": "motion_timeout"}]}]
+				 {"name": "motion", "timeout": 999, "on_timeout": "motion_timeout"}
+			 ]}]
 		self.assertEqual(expected_states, self.light_extended.states)
 
 		expected_trans = [
@@ -1182,11 +1190,10 @@ class TestLightExtended(tests.helper.test_case_base.TestCaseBase):
 			{"trigger": "auto_on_timeout", "source": "auto_on", "dest": "auto_off", "unless": "_pre_off_configured"},
 			{"trigger": "preoff_timeout", "source": "auto_preoff", "dest": "auto_off"},
 			{"trigger": "leaving_started", "source": ["auto_on", "auto_off", "auto_preoff"], "dest": "auto_leaving", "conditions": "_leaving_configured"},
-			{"trigger": "leaving_aborted", "source": "auto_leaving", "dest": "auto_on", "conditions": "_was_on_before"},
-			{"trigger": "leaving_aborted", "source": "auto_leaving", "dest": "auto_off", "unless": "_was_on_before"},
+			{"trigger": "leaving_aborted", "source": "auto_leaving", "dest": "auto_restoreState"},
 			{"trigger": "leaving_timeout", "source": "auto_leaving", "dest": "auto_off"},
 			{"trigger": "sleep_started", "source": ["auto_on", "auto_off", "auto_preoff"], "dest": "auto_presleep", "conditions": "_pre_sleep_configured"},
-			{"trigger": "sleep_aborted", "source": "auto_presleep", "dest": "auto_on", "conditions": "_was_on_before"}, {"trigger": "sleep_aborted", "source": "auto_presleep", "dest": "auto_off", "unless": "_was_on_before"},
+			{"trigger": "sleep_aborted", "source": "auto_presleep", "dest": "auto_restoreState"},
 			{"trigger": "presleep_timeout", "source": "auto_presleep", "dest": "auto_off"},
 			{"trigger": "hand_changed", "source": "auto_on", "dest": "auto_on"},
 			{"trigger": "motion_on", "source": "auto_door", "dest": "auto_motion", "conditions": "_motion_configured"},
@@ -1194,8 +1201,8 @@ class TestLightExtended(tests.helper.test_case_base.TestCaseBase):
 			{"trigger": "motion_on", "source": "auto_preoff", "dest": "auto_motion", "conditions": "_motion_configured"},
 			{"trigger": "motion_off", "source": "auto_motion", "dest": "auto_preoff", "conditions": "_pre_off_configured"},
 			{"trigger": "motion_off", "source": "auto_motion", "dest": "auto_off", "unless": "_pre_off_configured"},
-			{"trigger": "motion_timeout", "source": "auto_motion", "dest": "auto_preoff", "conditions": "_pre_off_configured"},
-			{"trigger": "motion_timeout", "source": "auto_motion", "dest": "auto_off", "unless": "_pre_off_configured"},
+			{"trigger": "motion_timeout", "source": "auto_motion", "dest": "auto_preoff", "conditions": "_pre_off_configured", "before": "_log_motion_timeout_warning"},
+			{"trigger": "motion_timeout", "source": "auto_motion", "dest": "auto_off", "unless": "_pre_off_configured", "before": "_log_motion_timeout_warning"},
 			{"trigger": "hand_off", "source": "auto_motion", "dest": "auto_off"},
 			{"trigger": "door_opened", "source": "auto_off", "dest": "auto_door", "conditions": ["_door_configured", "_motion_door_allowed"]},
 			{"trigger": "door_timeout", "source": "auto_door", "dest": "auto_preoff", "conditions": "_pre_off_configured"},
@@ -1211,7 +1218,7 @@ class TestLightExtended(tests.helper.test_case_base.TestCaseBase):
 
 	def test__init_switch(self):
 		"""Test init of switch"""
-		with unittest.mock.patch.object(habapp_rules.core.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")):
+		with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")):
 			light_extended_switch = habapp_rules.actors.light.LightSwitchExtended("Unittest_Light_Switch", "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", self.light_config, "Unittest_Sleep_state", "Unittest_Motion",
 			                                                                      ["Unittest_Door_1", "Unittest_Door_2"])
 
@@ -1514,6 +1521,8 @@ class TestLightExtended(tests.helper.test_case_base.TestCaseBase):
 		self.light_extended.to_auto_motion()
 		tests.helper.oh_item.send_command("Unittest_Presence_state", habapp_rules.system.PresenceState.LEAVING.value, habapp_rules.system.PresenceState.PRESENCE.value)
 		self.assertEqual("auto_leaving", self.light_extended.state)
+		tests.helper.oh_item.send_command("Unittest_Presence_state", habapp_rules.system.PresenceState.PRESENCE.value, habapp_rules.system.PresenceState.LEAVING.value)
+		self.assertEqual("auto_motion", self.light_extended.state)
 
 		# auto_motion no change at leaving (leaving NOT configured)
 		self.light_extended.to_auto_motion()

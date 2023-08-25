@@ -66,8 +66,14 @@ class StateMachineRule(HABApp.Rule):
 		"""Set initial state.
 		if the ``initial_state`` parameter of the state machine constructor is used the timeouts will not be started for the initial state.
 		"""
-		initial_state = self._get_initial_state()
-		eval(f"self.to_{initial_state}()")  # pylint: disable=eval-used
+		self._set_state(self._get_initial_state())
+
+	def _set_state(self, state_name: str) -> None:
+		"""Set given state
+
+		:param state_name: name of state
+		"""
+		eval(f"self.to_{state_name}()")  # pylint: disable=eval-used
 
 	def _update_openhab_state(self) -> None:
 		"""Update OpenHAB state item. This should method should be set to "after_state_change" of the state machine."""
