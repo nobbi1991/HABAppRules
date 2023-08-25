@@ -4,7 +4,6 @@ import os
 import pathlib
 
 import HABApp
-import HABApp.openhab.connection_handler.func_sync
 import transitions.extensions.states
 
 import habapp_rules

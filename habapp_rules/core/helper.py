@@ -18,12 +18,12 @@ def create_additional_item(name: str, item_type: str, label: str | None = None) 
 	"""
 	name = f"H_{name.removeprefix('H_')}"
 
-	if not HABApp.openhab.interface.item_exists(name):
+	if not HABApp.openhab.interface_sync.item_exists(name):
 		if not label:
 			label = f"{name.removeprefix('H_').replace('_', ' ')}"
 		if item_type == "String" and not label.endswith("[%s]"):
 			label = f"{label} [%s]"
-		if not HABApp.openhab.interface.create_item(item_type=item_type, name=name, label=label):
+		if not HABApp.openhab.interface_sync.create_item(item_type=item_type, name=name, label=label):
 			raise habapp_rules.core.exceptions.HabAppRulesException(f"Could not create item '{name}'")
 		time.sleep(0.05)
 	return HABApp.openhab.items.OpenhabItem.get_item(name)

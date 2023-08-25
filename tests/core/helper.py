@@ -9,7 +9,6 @@ import habapp_rules.core.exceptions
 import habapp_rules.core.helper
 import habapp_rules.core.logger
 
-
 class TestHelperFunctions(unittest.TestCase):
 	"""Tests for all helper functions"""
 
@@ -26,8 +25,8 @@ class TestHelperFunctions(unittest.TestCase):
 			TestCase("String", "Item_name", None, "Item name [%s]")
 		]
 
-		with unittest.mock.patch("HABApp.openhab.interface.item_exists", spec=HABApp.openhab.interface.item_exists, return_value=False), \
-				unittest.mock.patch("HABApp.openhab.interface.create_item", spec=HABApp.openhab.interface.create_item) as create_mock, \
+		with unittest.mock.patch("HABApp.openhab.interface_sync.item_exists", spec=HABApp.openhab.interface_sync.item_exists, return_value=False), \
+				unittest.mock.patch("HABApp.openhab.interface_sync.create_item", spec=HABApp.openhab.interface_sync.create_item) as create_mock, \
 				unittest.mock.patch("HABApp.openhab.items.OpenhabItem.get_item"):
 			for test_case in test_cases:
 				create_mock.reset_mock()
@@ -35,15 +34,15 @@ class TestHelperFunctions(unittest.TestCase):
 				create_mock.assert_called_once_with(item_type=test_case.item_type, name=f"H_{test_case.name}", label=test_case.label_call)
 
 		# check if item is NOT created if existing
-		with unittest.mock.patch("HABApp.openhab.interface.item_exists", spec=HABApp.openhab.interface.item_exists, return_value=True), \
-				unittest.mock.patch("HABApp.openhab.interface.create_item", spec=HABApp.openhab.interface.create_item) as create_mock, \
+		with unittest.mock.patch("HABApp.openhab.interface_sync.item_exists", spec=HABApp.openhab.interface_sync.item_exists, return_value=True), \
+				unittest.mock.patch("HABApp.openhab.interface_sync.create_item", spec=HABApp.openhab.interface_sync.create_item) as create_mock, \
 				unittest.mock.patch("HABApp.openhab.items.OpenhabItem.get_item"):
 			habapp_rules.core.helper.create_additional_item("Name_of_Item", "Switch")
 			create_mock.assert_not_called()
 
 	def test_test_create_additional_item_exception(self):
 		"""Test exceptions of _create_additional_item."""
-		with unittest.mock.patch("HABApp.openhab.interface.item_exists", spec=HABApp.openhab.interface.item_exists, return_value=False), \
-				unittest.mock.patch("HABApp.openhab.interface.create_item", spec=HABApp.openhab.interface.create_item, return_value=False), \
+		with unittest.mock.patch("HABApp.openhab.interface_sync.item_exists", spec=HABApp.openhab.interface_sync.item_exists, return_value=False), \
+				unittest.mock.patch("HABApp.openhab.interface_sync.create_item", spec=HABApp.openhab.interface_sync.create_item, return_value=False), \
 				self.assertRaises(habapp_rules.core.exceptions.HabAppRulesException):
 			habapp_rules.core.helper.create_additional_item("Name_of_Item", "Switch")

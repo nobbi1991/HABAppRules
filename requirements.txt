@@ -1,3 +1,3 @@
-HABApp~=1.1.0
+HABApp@git+https://github.com/spacemanspiff2007/HABApp.git@Develop
 multi-notifier~=0.2.1
 transitions~=0.8

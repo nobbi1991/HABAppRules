@@ -26,7 +26,7 @@ class TestSensorTemperatureDifference(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "H_Unittest_Temperature_1_Unittest_Temperature_2_diff", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "H_Unittest_Temperature_1_Unittest_Temperature_2_diff_filtered", None)
 
-		with unittest.mock.patch("HABApp.openhab.interface.item_exists", return_value=True), unittest.mock.patch("habapp_rules.common.filter.ExponentialFilter"):
+		with unittest.mock.patch("HABApp.openhab.interface_sync.item_exists", return_value=True), unittest.mock.patch("habapp_rules.common.filter.ExponentialFilter"):
 			self._sensor = habapp_rules.sensors.sun.SensorTemperatureDifference("Unittest_Temperature_1", "Unittest_Temperature_2", "Unittest_Output_Temperature", "Unittest_Threshold_Temperature")
 
 	def test_init(self):
@@ -37,7 +37,7 @@ class TestSensorTemperatureDifference(tests.helper.test_case_base.TestCaseBase):
 
 	def test_init_with_fixed_threshold(self):
 		"""Test __init__ with fixed threshold value."""
-		with unittest.mock.patch("HABApp.openhab.interface.item_exists", return_value=True), unittest.mock.patch("habapp_rules.common.filter.ExponentialFilter"):
+		with unittest.mock.patch("HABApp.openhab.interface_sync.item_exists", return_value=True), unittest.mock.patch("habapp_rules.common.filter.ExponentialFilter"):
 			sensor = habapp_rules.sensors.sun.SensorTemperatureDifference("Unittest_Temperature_1", "Unittest_Temperature_2", "Unittest_Output_Temperature", 42)
 		self.assertEqual(42, sensor._threshold)
 
@@ -108,7 +108,7 @@ class TestSensorBrightness(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Threshold_Brightness", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "H_Unittest_Brightness_filtered", None)
 
-		with unittest.mock.patch("HABApp.openhab.interface.item_exists", return_value=True), unittest.mock.patch("habapp_rules.common.filter.ExponentialFilter"):
+		with unittest.mock.patch("HABApp.openhab.interface_sync.item_exists", return_value=True), unittest.mock.patch("habapp_rules.common.filter.ExponentialFilter"):
 			self._sensor = habapp_rules.sensors.sun.SensorBrightness("Unittest_Brightness", "Unittest_Output_Brightness", "Unittest_Threshold_Brightness")
 
 	def test_init(self):
@@ -118,7 +118,7 @@ class TestSensorBrightness(tests.helper.test_case_base.TestCaseBase):
 
 	def test_init_with_fixed_threshold(self):
 		"""Test __init__ with fixed threshold value."""
-		with unittest.mock.patch("HABApp.openhab.interface.item_exists", return_value=True), unittest.mock.patch("habapp_rules.common.filter.ExponentialFilter"):
+		with unittest.mock.patch("HABApp.openhab.interface_sync.item_exists", return_value=True), unittest.mock.patch("habapp_rules.common.filter.ExponentialFilter"):
 			sensor = habapp_rules.sensors.sun.SensorBrightness("Unittest_Brightness", "Unittest_Output_Brightness", 42)
 		self.assertEqual(42, sensor._threshold)
 

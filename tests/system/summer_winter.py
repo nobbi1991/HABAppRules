@@ -49,10 +49,10 @@ class TestSummerWinter(tests.helper.test_case_base.TestCaseBase):
 				# get historical temperatures as HABApp type and set the return to the mock item
 				history_temperatures = []
 				for temp_list in test_case.temperatures:
-					temp_dict = {"data": []}
+					temp_history = HABApp.openhab.definitions.rest.persistence.ItemHistoryResp(name = "some_name", data=[])
 					for idx, temp in enumerate(temp_list):
-						temp_dict["data"].append({"time": idx * 123456, "state": str(temp)})
-					history_temperatures.append(HABApp.openhab.definitions.helpers.persistence_data.OpenhabPersistenceData.from_dict(temp_dict))
+						temp_history.data.append(HABApp.openhab.definitions.rest.persistence.DataPoint(time= idx * 123456, state= str(temp)))
+					history_temperatures.append(HABApp.openhab.definitions.helpers.persistence_data.OpenhabPersistenceData.from_resp(temp_history))
 				outside_temp_mock.get_persistence_data.side_effect = history_temperatures
 
 				# call weighted mean and check if result is the expected mean temperature
@@ -77,7 +77,7 @@ class TestSummerWinter(tests.helper.test_case_base.TestCaseBase):
 	def test__get_weighted_mean_exception(self):
 		"""Test normal function of wighted_mean"""
 		with unittest.mock.patch.object(self._summer_winter, "_outside_temp_item", spec=HABApp.openhab.items.NumberItem) as outside_temp_mock, self.assertRaises(habapp_rules.system.summer_winter.SummerWinterException) as context:
-			outside_temp_mock.get_persistence_data.return_value = HABApp.openhab.definitions.helpers.persistence_data.OpenhabPersistenceData.from_dict({"data": []})
+			outside_temp_mock.get_persistence_data.return_value = HABApp.openhab.definitions.helpers.persistence_data.OpenhabPersistenceData.from_resp(HABApp.openhab.definitions.rest.persistence.ItemHistoryResp(name = "some_name", data=[]))
 			self._summer_winter._SummerWinter__get_weighted_mean(0)
 		self.assertIn("No data for", str(context.exception))
 

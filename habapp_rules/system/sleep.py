@@ -3,7 +3,6 @@ import logging
 
 import HABApp.openhab.definitions
 import HABApp.openhab.events
-import HABApp.openhab.interface
 import HABApp.openhab.items
 import HABApp.util
 
