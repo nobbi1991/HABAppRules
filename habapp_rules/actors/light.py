@@ -14,7 +14,7 @@ import HABApp.openhab.events
 import HABApp.openhab.items
 import HABApp.util
 
-import habapp_rules.actors.light_config
+import habapp_rules.actors.config.light
 import habapp_rules.actors.state_observer
 import habapp_rules.core.exceptions
 import habapp_rules.core.helper
@@ -67,7 +67,7 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 	             manual_name: str,
 	             presence_state_name: str,
 	             day_name: str,
-	             config: habapp_rules.actors.light_config.LightConfig,
+	             config: habapp_rules.actors.config.light.LightConfig,
 	             sleeping_state_name: str | None = None,
 	             state_label: str | None = None) -> None:
 		"""Init of basic light object.
@@ -83,7 +83,7 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 		"""
 		self._config = config
 
-		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, f"H{name_light}_state", state_label)
+		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, f"H_{name_light}_state", state_label)
 		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, name_light)
 
 		# init items
@@ -396,7 +396,7 @@ class LightSwitch(_LightBase):
 	             manual_name: str,
 	             presence_state_name: str,
 	             day_name: str,
-	             config: habapp_rules.actors.light_config.LightConfig,
+	             config: habapp_rules.actors.config.light.LightConfig,
 	             sleeping_state_name: str | None = None,
 	             state_label: str | None = None):
 		"""Init of basic light object.
@@ -505,7 +505,7 @@ class LightDimmer(_LightBase):
 	             manual_name: str,
 	             presence_state_name: str,
 	             day_name: str,
-	             config: habapp_rules.actors.light_config.LightConfig,
+	             config: habapp_rules.actors.config.light.LightConfig,
 	             sleeping_state_name: str | None = None,
 	             state_label: str | None = None,
 	             group_names: list[str] | None = None) -> None:
@@ -562,11 +562,11 @@ class _LightExtendedMixin:
 	trans: list
 	state: str
 	state_machine: habapp_rules.core.state_machine_rule.HierarchicalStateMachineWithTimeout
-	_config: habapp_rules.actors.light_config.LightConfigExtended
+	_config: habapp_rules.actors.config.light.LightConfigExtended
 	_get_sleeping_activ: typing.Callable[[bool | None], bool]
 	_item_day: HABApp.openhab.items.SwitchItem
 
-	def __init__(self, config: habapp_rules.actors.light_config.LightConfigExtended, name_motion: str | None = None, door_names: list[str] | None = None):
+	def __init__(self, config: habapp_rules.actors.config.light.LightConfigExtended, name_motion: str | None = None, door_names: list[str] | None = None):
 		"""Init mixin class.
 
 		:param config: config of light object
@@ -768,7 +768,7 @@ class LightSwitchExtended(_LightExtendedMixin, LightSwitch):
 	             manual_name: str,
 	             presence_state_name: str,
 	             day_name: str,
-	             config: habapp_rules.actors.light_config.LightConfigExtended, sleeping_state_name: str | None = None,
+	             config: habapp_rules.actors.config.light.LightConfigExtended, sleeping_state_name: str | None = None,
 	             name_motion: str | None = None,
 	             door_names: list[str] | None = None,
 	             state_label: str | None = None):
@@ -805,7 +805,7 @@ class LightDimmerExtended(_LightExtendedMixin, LightDimmer):
 	             manual_name: str,
 	             presence_state_name: str,
 	             day_name: str,
-	             config: habapp_rules.actors.light_config.LightConfigExtended,
+	             config: habapp_rules.actors.config.light.LightConfigExtended,
 	             sleeping_state_name: str | None = None,
 	             name_motion: str | None = None,
 	             door_names: list[str] | None = None,

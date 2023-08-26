@@ -22,7 +22,7 @@ import tests.helper.oh_item
 import tests.helper.rule_runner
 import tests.helper.test_case_base
 import tests.helper.timer
-from habapp_rules.actors.light_config import LightConfig, LightConfigExtended, FunctionConfig, BrightnessTimeout
+from habapp_rules.actors.config.light import LightConfig, LightConfigExtended, FunctionConfig, BrightnessTimeout
 
 LIGHT_CONFIG = LightConfig(
 	on=FunctionConfig(day=BrightnessTimeout(True, 5), night=BrightnessTimeout(80, 5), sleeping=BrightnessTimeout(40, 5)),
@@ -603,7 +603,7 @@ class TestLightBase(tests.helper.test_case_base.TestCaseBase):
 
 		# to pre sleep (configured)
 		self.light_base.to_auto_off()
-		with unittest.mock.patch.object(self.light_base, "_pre_sleep_configured", return_value=True), unittest.mock.patch.object(self.light_base._config.pre_sleep, "day", habapp_rules.actors.light_config.BrightnessTimeout(67, 20)):
+		with unittest.mock.patch.object(self.light_base, "_pre_sleep_configured", return_value=True), unittest.mock.patch.object(self.light_base._config.pre_sleep, "day", habapp_rules.actors.config.light.BrightnessTimeout(67, 20)):
 			tests.helper.oh_item.send_command("Unittest_Sleep_state", habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.AWAKE.value)
 		self.assertEqual("auto_presleep", self.light_base.state)
 
