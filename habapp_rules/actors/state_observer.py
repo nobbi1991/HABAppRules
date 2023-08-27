@@ -7,7 +7,6 @@ import time
 import typing
 
 import HABApp
-import HABApp.openhab.interface
 import HABApp.openhab.items
 
 import habapp_rules.core.exceptions
@@ -105,7 +104,7 @@ class _StateObserverBase(HABApp.Rule, abc.ABC):
 		"""
 
 	@abc.abstractmethod
-	def _check_manual(self, event: HABApp.openhab.events.base_event.OpenhabEvent) -> None:
+	def _check_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
 		"""Check if light was triggered by a manual action
 
 		:param event: event which triggered this method. This will be forwarded to the callback
@@ -297,21 +296,61 @@ class StateObserverDimmer(_StateObserverBase):
 		self._item.oh_send_command(value)
 
 
-class StateObserverJal(_StateObserverBase):
+class StateObserverRollerShutter(_StateObserverBase):
+	"""Class to observe manual controls of a roller shutter item.
 
-	def __init__(self, item_name: str, cb_up: CallbackType, cb_down: CallbackType, cb_brightness_stop: CallbackType | None = None, control_names: list[str] | None = None, group_names: list[str] | None = None) -> None:
+		This class is normally not used standalone. Anyway, here is an example config:
+
+		# KNX-things:
+		Thing device T00_99_OpenHab_RollershutterObserver "KNX OpenHAB rollershutter observer"{
+	        Type rollershutter             : shading             "Shading"             [ upDown="1/1/10", position="1/1/13+<1/1/15" ]
+	        Type rollershutter-control     : shading_ctr         "Shading control"     [ upDown="1/1/10", position="1/1/13+<1/1/15" ]
+	        Type rollershutter             : shading_group       "Shading Group"       [ upDown="1/1/110", position="1/1/113+<1/1/115" ]
+	    }
+
+	    # Items:
+	    Rollershutter    I_Rollershutter              "Rollershutter [%s]"        {channel="knx:device:bridge:T00_99_OpenHab_RollershutterObserver:Rollershutter"}
+		Rollershutter    I_Rollershutter_ctr          "Rollershutter ctr"         {channel="knx:device:bridge:T00_99_OpenHab_RollershutterObserver:Rollershutter_ctr"}
+		Rollershutter    I_Rollershutter_group        "Rollershutter Group"       {channel="knx:device:bridge:T00_99_OpenHab_RollershutterObserver:Rollershutter_group"}
+
+		# Rule init:
+		habapp_rules.actors.state_observer.StateObserverRollerShutter(
+				"I_Rollershutter",
+				control_names=["I_Rollershutter_ctr"],
+				group_names=["I_Rollershutter_group"],
+				cb_manual=callback_on
+				)
+		"""
+
+	def __init__(self, item_name: str, cb_manual: CallbackType, control_names: list[str] | None = None, group_names: list[str] | None = None) -> None:
 		"""Init state observer for dimmer item.
 
 		:param item_name: Name of dimmer item
-		:param cb_on: callback which is called if manual_on was detected
-		:param cb_off: callback which is called if manual_off was detected
-		:param cb_brightness_change: callback which is called if dimmer is on and brightness changed
+		:param cb_manual: callback which is called if a manual interaction was detected
 		:param control_names: list of control items. They are used to also respond to switch on/off via INCREASE/DECREASE
 		:param group_names: list of group items where the item is a part of. Group item type must match with type of item_name
 		"""
-
 		_StateObserverBase.__init__(self, item_name, control_names, group_names)
 
-		self._cb_on = cb_on
-		self._cb_off = cb_off
-		self._cb_brightness_change = cb_brightness_change
+		self._cb_manual = cb_manual
+
+	def _check_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
+		if isinstance(event.value, (int, float)) and event.value != self._value:
+			self._value = event.value
+			self._trigger_callback("_cb_manual", event)
+
+	def _cb_control_item(self, event: HABApp.openhab.events.ItemCommandEvent):
+		if event.value == "DOWN":
+			self._value = 100
+			self._trigger_callback("_cb_manual", event)
+
+		elif event.value == "UP":
+			self._value = 0
+			self._trigger_callback("_cb_manual", event)
+
+	def send_command(self, value: float) -> None:
+		if not isinstance(value, (int, float)):
+			raise ValueError(f"The given value is not supported for StateObserverDimmer: {value}")
+
+		self._value = value
+		self._item.oh_send_command(value)

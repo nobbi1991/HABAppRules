@@ -292,3 +292,107 @@ class TestStateObserverDimmer(tests.helper.test_case_base.TestCaseBase):
 
 		with self.assertRaises(ValueError):
 			self._observer_dimmer.send_command("dimmer")
+
+
+# pylint: disable=protected-access
+class TestStateObserverRollerShutter(tests.helper.test_case_base.TestCaseBase):
+	"""Tests cases for testing StateObserver for switch item."""
+
+	def setUp(self) -> None:
+		"""Setup test case."""
+		tests.helper.test_case_base.TestCaseBase.setUp(self)
+
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.RollershutterItem, "Unittest_RollerShutter", 0)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.RollershutterItem, "Unittest_RollerShutter_ctr", 0)
+
+		self._cb_manual = unittest.mock.MagicMock()
+		self._observer_jalousie = habapp_rules.actors.state_observer.StateObserverRollerShutter("Unittest_RollerShutter", cb_manual=self._cb_manual, control_names=["Unittest_RollerShutter_ctr"])
+
+	def test_init(self):
+		"""Test init of StateObserverDimmer."""
+		self.assertEqual([], self._observer_jalousie._StateObserverBase__group_items)
+		self.assertEqual(1, len(self._observer_jalousie._StateObserverBase__control_items))
+		self.assertEqual("Unittest_RollerShutter_ctr", self._observer_jalousie._StateObserverBase__control_items[0].name)
+
+		observer_jalousie = habapp_rules.actors.state_observer.StateObserverRollerShutter("Unittest_RollerShutter", cb_manual=self._cb_manual, group_names=["Unittest_RollerShutter_ctr"])
+		self.assertEqual(1, len(observer_jalousie._StateObserverBase__group_items))
+		self.assertEqual("Unittest_RollerShutter_ctr", observer_jalousie._StateObserverBase__group_items[0].name)
+		self.assertEqual([], observer_jalousie._StateObserverBase__control_items)
+
+	def test_command_from_habapp(self):
+		"""Test HABApp rule triggers a command -> no manual should be detected."""
+		for value in [100, 0, 30, 100.0, 0.0]:
+			self._observer_jalousie.send_command(value)
+			tests.helper.oh_item.item_command_event("Unittest_RollerShutter", value)
+			tests.helper.oh_item.item_state_change_event("Unittest_RollerShutter", value)
+			self._cb_manual.assert_not_called()
+
+	def test_command_from_habapp_exception(self):
+		"""Test HABApp rule triggers a command with wrong type"""
+		with self.assertRaises(ValueError):
+			self._observer_jalousie.send_command("UP")
+		self._cb_manual.assert_not_called()
+
+	def test_manu_from_ctr(self):
+		"""Test manual detection from control item."""
+		TestCase = collections.namedtuple("TestCase", "command, cb_manual_called")
+
+		test_cases = [
+			TestCase("DOWN", True),
+			TestCase("DOWN", True),
+			TestCase("UP", True),
+			TestCase("UP", True),
+			TestCase(0, False),
+			TestCase(100, False),
+		]
+
+		for test_case in test_cases:
+			self._cb_manual.reset_mock()
+
+			tests.helper.oh_item.item_command_event("Unittest_RollerShutter_ctr", test_case.command)
+
+			self.assertEqual(test_case.cb_manual_called, self._cb_manual.called)
+			if test_case.cb_manual_called:
+				self._cb_manual.assert_called_once_with(unittest.mock.ANY)
+
+	def test_basic_behavior_on_knx(self):
+		"""Test basic behavior. Switch ON via KNX"""
+		# === Switch ON via KNX button ===
+		# set initial state
+		self._cb_manual.reset_mock()
+		self._observer_jalousie._value = 0
+		self._observer_jalousie._StateObserverDimmer__last_received_value = 0
+		# In real system, this command is triggered about 2 sec later
+		tests.helper.oh_item.item_state_change_event("Unittest_RollerShutter", 100)
+		self.assertEqual(100, self._observer_jalousie.value)
+		self._cb_manual.assert_called_once_with(unittest.mock.ANY)
+
+		# === Switch ON via KNX value ===
+		# set initial state
+		self._cb_manual.reset_mock()
+		self._observer_jalousie._value = 0
+		self._observer_jalousie._StateObserverDimmer__last_received_value = 0
+		# In real system, this command is triggered about 2 sec later
+		tests.helper.oh_item.item_state_change_event("Unittest_RollerShutter", 42)
+		self.assertEqual(42, self._observer_jalousie.value)
+		self._cb_manual.assert_called_once_with(unittest.mock.ANY)
+
+		# === Switch ON via KNX from group ===
+		# set initial state
+		self._cb_manual.reset_mock()
+		self._observer_jalousie._value = 0
+		self._observer_jalousie._StateObserverDimmer__last_received_value = 0
+		# In real system, this command is triggered about 2 sec later
+		tests.helper.oh_item.item_state_change_event("Unittest_RollerShutter", 80)
+		self.assertEqual(80, self._observer_jalousie.value)
+		self._cb_manual.assert_called_once_with(unittest.mock.ANY)
+
+		# === Value via KNX from group ===
+		# set initial state
+		self._cb_manual.reset_mock()
+		self._observer_jalousie._value = 0
+		self._observer_jalousie._StateObserverDimmer__last_received_value = 0
+		# In real system, this command is triggered about 2 sec later
+		tests.helper.oh_item.item_state_change_event("Unittest_RollerShutter", 60)
+		self.assertEqual(60, self._observer_jalousie.value)
+		self._cb_manual.assert_called_once_with(unittest.mock.ANY)
