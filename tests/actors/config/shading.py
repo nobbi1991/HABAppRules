@@ -7,6 +7,7 @@ import habapp_rules.core.exceptions
 
 
 class ShadingConfig(unittest.TestCase):
+	"""Tests for shading config."""
 
 	def test_post_init(self):
 		"""Test __post_init"""

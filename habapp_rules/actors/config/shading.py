@@ -46,3 +46,6 @@ CONFIG_DEFAULT = ShadingConfig(
 	manual_timeout=24 * 3600,
 	door_post_time=5,
 )
+
+CONFIG_DEFAULT_ELEVATION_SLAT_WINTER = [(0, 100), (4, 100), (8, 90), (18, 80), (26, 70), (34, 60), (41, 50), (42, 50), (90, 50), ]
+CONFIG_DEFAULT_ELEVATION_SLAT_SUMMER = [(0, 100), (4, 100), (8, 100), (18, 100), (26, 100), (34, 90), (41, 80), (42, 80), (90, 80), ]

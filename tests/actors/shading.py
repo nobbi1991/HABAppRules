@@ -62,6 +62,8 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
 				"Unittest_Shading_max",
 				"Unittest_Manual_max",
 				habapp_rules.actors.config.shading.CONFIG_DEFAULT,
+				[],
+				[],
 				"Unittest_WindAlarm",
 				"Unittest_SunProtection",
 				"Unittest_Sleep_state",
@@ -600,6 +602,8 @@ class TestShadingRaffstore(tests.helper.test_case_base.TestCaseBase):
 				"Unittest_Slat",
 				"Unittest_Manual",
 				habapp_rules.actors.config.shading.CONFIG_DEFAULT,
+				[],
+				[],
 				"Unittest_WindAlarm",
 				"Unittest_SunProtection",
 				"Unittest_SunProtection_Slat",
@@ -616,6 +620,7 @@ class TestShadingRaffstore(tests.helper.test_case_base.TestCaseBase):
 		self.assertEqual("Unittest_SunProtection_Slat", self.raffstore._item_sun_protection_slat.name)
 
 	def test_init_min(self):
+		"""Test init of raffstore with minimal attributes."""
 		with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_shading_state", "")):
 			habapp_rules.actors.shading.Raffstore(
 				"Unittest_Shading",

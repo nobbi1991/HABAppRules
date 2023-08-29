@@ -80,6 +80,8 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 	             name_shading_position: str,
 	             name_manual: str,
 	             config: habapp_rules.actors.config.shading.ShadingConfig,
+	             shading_position_control_names: list[str] | None = None,
+	             shading_position_group_names: list[str] | None = None,
 	             name_wind_alarm: str | None = None,
 	             name_sun_protection: str | None = None,
 	             name_sleeping_state: str | None = None,
@@ -92,6 +94,8 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		:param name_shading_position:  name of OpenHAB shading item (RollershutterItem | DimmerItem)
 		:param name_manual: name of OpenHAB switch item to disable all automatic functions
 		:param config: configuration of the shading object
+		:param shading_position_control_names: [optional] list of control items.
+		:param shading_position_group_names: [optional]  list of group items where the item is a part of. Group item type must match with type of item_name
 		:param name_wind_alarm: [optional] name of OpenHAB switch item which is 'ON' when wind-alarm is active
 		:param name_sun_protection: [optional] name of OpenHAB switch item which is 'ON' when sun protection is active
 		:param name_sleeping_state: [optional] name of OpenHAB sleeping state item (StringItem)
@@ -131,9 +135,9 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		self._position_before: habapp_rules.actors.config.shading.ShadingPosition = habapp_rules.actors.config.shading.ShadingPosition(self._item_shading_position.value)
 
 		if isinstance(self._item_shading_position, HABApp.openhab.items.rollershutter_item.RollershutterItem):
-			self._state_observer_pos = habapp_rules.actors.state_observer.StateObserverRollerShutter(name_shading_position, self._cb_hand)  # todo: add control / group items
+			self._state_observer_pos = habapp_rules.actors.state_observer.StateObserverRollerShutter(name_shading_position, self._cb_hand, shading_position_control_names, shading_position_group_names)
 		elif isinstance(self._item_shading_position, HABApp.openhab.items.dimmer_item.DimmerItem):
-			self._state_observer_pos = habapp_rules.actors.state_observer.StateObserverDimmer(name_shading_position, self._cb_hand, self._cb_hand, self._cb_hand)  # todo: add control / group items
+			self._state_observer_pos = habapp_rules.actors.state_observer.StateObserverDimmer(name_shading_position, self._cb_hand, self._cb_hand, self._cb_hand, shading_position_control_names, shading_position_group_names)
 		else:
 			raise habapp_rules.core.exceptions.HabAppRulesConfigurationException(f"shading position item must be a dimmer or roller-shutter item. Given type: {type(self._item_shading_position)}")
 
@@ -342,12 +346,49 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 # pylint: disable=too-many-arguments
 class Raffstore(_ShadingBase):
-	# todo add example
+	"""Rules class to manage a raffstore.
+
+		# KNX-things:
+		Thing device KNX_Shading "KNX OpenHAB dimmer observer"{
+			Type rollershutter          : shading_position          "Shading position"          [ upDown="4/1/10", stopMove="4/1/11", position="5.001:4/1/12+<4/1/15" ]
+            Type rollershutter-control  : shading_position_ctr      "Shading position ctr"      [ upDown="4/1/10", stopMove="4/1/11" ]
+            Type dimmer                 : shading_slat              "Shading slat"              [ position="5.001:4/1/13+<4/1/16" ]
+			Type rollershutter-control  : shading_group_all_ctr     "Shading all ctr"           [ upDown="4/1/110", stopMove="4/1/111"]
+		}
+
+		# Items:
+		Rollershutter    shading_position       "Shading position [%s %%]"          <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position"}
+		Rollershutter    shading_position_ctr   "Shading position ctr [%s %%]"      <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position_ctr"}
+		Dimmer           shading_slat           "Shading slat [%s %%]"              <slat>              {channel="knx:device:bridge:KNX_Shading:shading_slat"}
+		Switch           shading_manual         "Shading manual"
+		Rollershutter    shading_all_ctr        "Shading all ctr [%s %%]"           <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_group_all_ctr"}
+
+
+		# Rule init:
+		habapp_rules.actors.shading.Raffstore(
+			"shading_position",
+			"shading_slat",
+			"shading_manual",
+			habapp_rules.actors.config.shading.CONFIG_DEFAULT,
+			["shading_position_ctr", "shading_all_ctr"],
+			[],
+			"I99_99_WindAlarm",
+			"I99_99_SunProtection",
+			"I99_99_SunProtection_Slat",
+			"I99_99_Sleeping_State",
+			"I99_99_Night",
+			"I99_99_Door",
+			"I99_99_Summer"
+		)
+		"""
+
 	def __init__(self,
 	             name_shading_position: str,
 	             name_slat: str,
 	             name_manual: str,
 	             config: habapp_rules.actors.config.shading.ShadingConfig,
+	             shading_position_control_names: list[str] | None = None,
+	             shading_position_group_names: list[str] | None = None,
 	             name_wind_alarm: str | None = None,
 	             name_sun_protection: str | None = None,
 	             name_sun_protection_slat: str | None = None,
@@ -362,6 +403,8 @@ class Raffstore(_ShadingBase):
 		:param name_slat: name of OpenHAB slat item (DimmerItem)
 		:param name_manual: name of OpenHAB switch item to disable all automatic functions
 		:param config: configuration of the shading object
+		:param shading_position_control_names: [optional] list of control items.
+		:param shading_position_group_names: [optional]  list of group items where the item is a part of. Group item type must match with type of item_name
 		:param name_wind_alarm: [optional] name of OpenHAB switch item which is 'ON' when wind-alarm is active
 		:param name_sun_protection: [optional] name of OpenHAB switch item which is 'ON' when sun protection is active
 		:param name_sun_protection_slat:
@@ -371,7 +414,19 @@ class Raffstore(_ShadingBase):
 		:param name_summer: [optional] name of OpenHAB switch item which is 'ON' during summer and 'OFF' during winter
 		:param state_label: [optional] label of OpenHAB item for storing the current state (StringItem)
 		"""
-		_ShadingBase.__init__(self, name_shading_position, name_manual, config, name_wind_alarm, name_sun_protection, name_sleeping_state, name_night, name_door, name_summer, state_label)
+		_ShadingBase.__init__(
+			self,
+			name_shading_position,
+			name_manual,
+			config,
+			shading_position_control_names,
+			shading_position_group_names,
+			name_wind_alarm, name_sun_protection,
+			name_sleeping_state,
+			name_night, name_door,
+			name_summer,
+			state_label
+		)
 
 		self._state_observer_slat = habapp_rules.actors.state_observer.StateObserverDimmer(name_slat, self._cb_hand, self._cb_hand, self._cb_hand)
 
@@ -445,7 +500,21 @@ class Raffstore(_ShadingBase):
 
 
 class SlatValueSun(HABApp.Rule):
-	# todo add doc and example
+	"""Rules class to get slat value depending on sun elevation.
+
+		# Items:
+		Number    elevation             "Sun elevation [%s]"    <sun>     {channel="astro...}
+		Number    sun_protection_slat   "Slat value [%s %%]"    <slat>
+
+		# Rule init:
+		habapp_rules.actors.shading.SlatValueSun(
+			"elevation",
+			"sun_protection_slat",
+			habapp_rules.actors.config.shading.CONFIG_DEFAULT_ELEVATION_SLAT_WINTER,
+			"I99_99_Summer",
+			habapp_rules.actors.config.shading.CONFIG_DEFAULT_ELEVATION_SLAT_SUMMER,
+		)
+		"""
 
 	_item_slat_value: HABApp.openhab.items.dimmer_item.DimmerItem | HABApp.openhab.items.number_item.NumberItem
 
@@ -468,6 +537,7 @@ class SlatValueSun(HABApp.Rule):
 			raise habapp_rules.core.exceptions.HabAppRulesConfigurationException("Ether both 'name_summer' and 'elevation_slat_characteristic_summer' must be None or a value.")
 
 		HABApp.Rule.__init__(self)
+		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, name_slat_value)
 
 		# init items
 		self._item_sun_elevation = HABApp.openhab.items.number_item.NumberItem.get_item(name_sun_elevation)
@@ -486,6 +556,8 @@ class SlatValueSun(HABApp.Rule):
 		self._item_sun_elevation.listen_event(self._cb_elevation, HABApp.openhab.events.ItemStateChangedEventFilter())
 		if self._item_summer:
 			self._item_summer.listen_event(self._cb_summer_winter, HABApp.openhab.events.ItemStateChangedEventFilter())
+
+		self._instance_logger.debug(f"Init of rule '{self.__class__.__name__}' with name '{self.rule_name}' was successful.")
 
 	@staticmethod
 	def __check_and_sort_characteristic(characteristic: list[(float | int, float | int)]) -> list[(float, float)]:
