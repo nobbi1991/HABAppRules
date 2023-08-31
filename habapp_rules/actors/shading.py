@@ -88,6 +88,7 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 	             name_night: str | None = None,
 	             name_door: str | None = None,
 	             name_summer: str | None = None,
+	             name_hand_manual_is_active_feedback: str | None = None,
 	             state_label: str | None = None) -> None:
 		"""Init of _ShadingBase.
 
@@ -102,6 +103,7 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		:param name_night: [optional] name of OpenHAB switch item which is 'ON' when it is dark and 'OFF' when it is bright
 		:param name_door: [optional] name of OpenHAB door item (ContactItem)
 		:param name_summer: [optional] name of OpenHAB switch item which is 'ON' during summer and 'OFF' during winter
+		:param name_hand_manual_is_active_feedback: [optional] name of OpenHAB switch item which is 'ON' if state is manual or hand
 		:param state_label: [optional] label of OpenHAB item for storing the current state (StringItem)
 		:raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: if given config / items are not valid
 		"""
@@ -119,6 +121,7 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		self._item_night = HABApp.openhab.items.switch_item.SwitchItem.get_item(name_night) if name_night else None
 		self._item_door = HABApp.openhab.items.contact_item.ContactItem.get_item(name_door) if name_door else None
 		self._item_summer = HABApp.openhab.items.switch_item.SwitchItem.get_item(name_summer) if name_summer else None
+		self._item_hand_manual_is_active_feedback = HABApp.openhab.items.switch_item.SwitchItem.get_item(name_hand_manual_is_active_feedback) if name_hand_manual_is_active_feedback else None
 
 		# init state machine
 		self._previous_state = None
@@ -193,13 +196,17 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 	def _update_openhab_state(self) -> None:
 		"""Update OpenHAB state item and other states.
 
-		This should method should be set to "after_state_change" of the state machine.
+		This method should be set to "after_state_change" of the state machine.
 		"""
 		if self.state != self._previous_state:
 			super()._update_openhab_state()
 			self._instance_logger.debug(f"State change: {self._previous_state} -> {self.state}")
 
 			self._set_shading_state()
+
+			if self._item_hand_manual_is_active_feedback is not None:
+				self._item_hand_manual_is_active_feedback.oh_post_update("ON" if self.state in {"Manual", "Hand"} else "OFF")
+
 			self._previous_state = self.state
 
 	@abc.abstractmethod
@@ -344,6 +351,106 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 			self._door_closed()
 
 
+class Shutter(_ShadingBase):
+	"""Rules class to manage a normal shutters (or curtains).
+
+			# KNX-things:
+			Thing device KNX_Shading "KNX OpenHAB dimmer observer"{
+				Type dimmer                 : shading_position          "Shading position"          [ position="5.001:4/1/12+<4/1/15" ]
+	            Type dimmer-control         : shading_position_ctr      "Shading position ctr"      [ position="5.001:4/1/12+<4/1/15" ]
+				Type dimmer-control         : shading_group_all_ctr     "Shading all ctr"           [ position="5.001:4/1/112+<4/1/115""]
+				Type switch-control         : shading_hand_manual_ctr   "Shading hand / manual"     [ ga="4/1/20" ]
+			}
+
+			# Items:
+			Rollershutter    shading_position       "Shading position [%s %%]"          <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position"}
+			Rollershutter    shading_position_ctr   "Shading position ctr [%s %%]"      <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position_ctr"}
+			Switch           shading_manual         "Shading manual"
+			Rollershutter    shading_all_ctr        "Shading all ctr [%s %%]"           <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_group_all_ctr"}
+			Switch           shading_hand_manual    "Shading in Hand / Manual state"                        {channel="knx:device:bridge:KNX_Shading:shading_hand_manual_ctr"}
+
+
+			# Rule init:
+			habapp_rules.actors.shading.Shutter(
+				"shading_position",
+				"shading_manual",
+				habapp_rules.actors.config.shading.CONFIG_DEFAULT,
+				["shading_position_ctr", "shading_all_ctr"],
+				[],
+				"I99_99_WindAlarm",
+				"I99_99_SunProtection",
+				"I99_99_Sleeping_State",
+				"I99_99_Night",
+				"I99_99_Door",
+				"I99_99_Summer"
+				"shading_hand_manual"
+			)
+			"""
+
+	# pylint: disable=too-many-arguments,too-many-locals
+	def __init__(self,
+	             name_shading_position: str,
+	             name_manual: str,
+	             config: habapp_rules.actors.config.shading.ShadingConfig,
+	             shading_position_control_names: list[str] | None = None,
+	             shading_position_group_names: list[str] | None = None,
+	             name_wind_alarm: str | None = None,
+	             name_sun_protection: str | None = None,
+	             name_sleeping_state: str | None = None,
+	             name_night: str | None = None,
+	             name_door: str | None = None,
+	             name_summer: str | None = None,
+	             name_hand_manual_is_active_feedback: str | None = None,
+	             state_label: str | None = None) -> None:
+		"""Init of Raffstore object.
+
+		:param name_shading_position: name of OpenHAB shading item (RollershutterItem)
+		:param name_manual: name of OpenHAB switch item to disable all automatic functions
+		:param config: configuration of the shading object
+		:param shading_position_control_names: [optional] list of control items.
+		:param shading_position_group_names: [optional]  list of group items where the item is a part of. Group item type must match with type of item_name
+		:param name_wind_alarm: [optional] name of OpenHAB switch item which is 'ON' when wind-alarm is active
+		:param name_sun_protection: [optional] name of OpenHAB switch item which is 'ON' when sun protection is active
+		:param name_sleeping_state: [optional] name of OpenHAB sleeping state item (StringItem)
+		:param name_night: [optional] name of OpenHAB switch item which is 'ON' when it is dark and 'OFF' when it is bright
+		:param name_door: [optional] name of OpenHAB door item (ContactItem)
+		:param name_summer: [optional] name of OpenHAB switch item which is 'ON' during summer and 'OFF' during winter
+		:param name_hand_manual_is_active_feedback: [optional] name of OpenHAB switch item which is 'ON' if state is manual or hand
+		:param state_label: [optional] label of OpenHAB item for storing the current state (StringItem)
+		"""
+		_ShadingBase.__init__(
+			self,
+			name_shading_position,
+			name_manual,
+			config,
+			shading_position_control_names,
+			shading_position_group_names,
+			name_wind_alarm, name_sun_protection,
+			name_sleeping_state,
+			name_night, name_door,
+			name_summer,
+			name_hand_manual_is_active_feedback,
+			state_label
+		)
+
+		self._instance_logger.debug(self.get_initial_log_message())
+
+	def _set_shading_state(self) -> None:
+		"""Set shading state"""
+		if self._previous_state is None:
+			# don't change value if called during init (_previous_state == None)
+			return
+
+		target_position = self._get_target_position()
+
+		if target_position is None:
+			return
+
+		if (position := target_position.position) is not None:
+			self._state_observer_pos.send_command(position)
+			self._instance_logger.debug(f"set position {target_position.position}")
+
+
 # pylint: disable=too-many-arguments
 class Raffstore(_ShadingBase):
 	"""Rules class to manage a raffstore.
@@ -354,6 +461,7 @@ class Raffstore(_ShadingBase):
             Type rollershutter-control  : shading_position_ctr      "Shading position ctr"      [ upDown="4/1/10", stopMove="4/1/11" ]
             Type dimmer                 : shading_slat              "Shading slat"              [ position="5.001:4/1/13+<4/1/16" ]
 			Type rollershutter-control  : shading_group_all_ctr     "Shading all ctr"           [ upDown="4/1/110", stopMove="4/1/111"]
+			Type switch-control         : shading_hand_manual_ctr   "Shading hand / manual"     [ ga="4/1/20" ]
 		}
 
 		# Items:
@@ -362,6 +470,7 @@ class Raffstore(_ShadingBase):
 		Dimmer           shading_slat           "Shading slat [%s %%]"              <slat>              {channel="knx:device:bridge:KNX_Shading:shading_slat"}
 		Switch           shading_manual         "Shading manual"
 		Rollershutter    shading_all_ctr        "Shading all ctr [%s %%]"           <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_group_all_ctr"}
+		Switch           shading_hand_manual    "Shading in Hand / Manual state"                        {channel="knx:device:bridge:KNX_Shading:shading_hand_manual_ctr"}
 
 
 		# Rule init:
@@ -379,9 +488,11 @@ class Raffstore(_ShadingBase):
 			"I99_99_Night",
 			"I99_99_Door",
 			"I99_99_Summer"
+			"shading_hand_manual"
 		)
 		"""
 
+	# pylint: disable=too-many-locals
 	def __init__(self,
 	             name_shading_position: str,
 	             name_slat: str,
@@ -396,6 +507,7 @@ class Raffstore(_ShadingBase):
 	             name_night: str | None = None,
 	             name_door: str | None = None,
 	             name_summer: str | None = None,
+	             name_hand_manual_is_active_feedback: str | None = None,
 	             state_label: str | None = None) -> None:
 		"""Init of Raffstore object.
 
@@ -412,6 +524,7 @@ class Raffstore(_ShadingBase):
 		:param name_night: [optional] name of OpenHAB switch item which is 'ON' when it is dark and 'OFF' when it is bright
 		:param name_door: [optional] name of OpenHAB door item (ContactItem)
 		:param name_summer: [optional] name of OpenHAB switch item which is 'ON' during summer and 'OFF' during winter
+		:param name_hand_manual_is_active_feedback: [optional] name of OpenHAB switch item which is 'ON' if state is manual or hand
 		:param state_label: [optional] label of OpenHAB item for storing the current state (StringItem)
 		"""
 		_ShadingBase.__init__(
@@ -425,6 +538,7 @@ class Raffstore(_ShadingBase):
 			name_sleeping_state,
 			name_night, name_door,
 			name_summer,
+			name_hand_manual_is_active_feedback,
 			state_label
 		)
 
