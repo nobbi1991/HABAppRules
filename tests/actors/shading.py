@@ -644,8 +644,6 @@ class TestShadingShutter(tests.helper.test_case_base.TestCaseBase):
 					send_pos_mock.assert_called_once_with(test_case.sent_pos)
 
 
-
-
 class TestShadingRaffstore(tests.helper.test_case_base.TestCaseBase):
 	"""Tests cases for testing Raffstore class."""
 
@@ -829,6 +827,62 @@ class TestShadingRaffstore(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.send_command("Unittest_WindAlarm", "OFF", "ON")
 		tests.helper.oh_item.assert_value("Unittest_Shading", 12)
 		tests.helper.oh_item.assert_value("Unittest_Slat", 34)
+
+
+class TestResetAllManualHand(tests.helper.test_case_base.TestCaseBase):
+	"""Tests for ResetAllManualHand"""
+
+	def setUp(self) -> None:
+		"""Setup test case."""
+		tests.helper.test_case_base.TestCaseBase.setUp(self)
+
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Reset", None)
+
+		self.reset_shading_rule = habapp_rules.actors.shading.ResetAllManualHand("Unittest_Reset")
+
+	def test_init(self):
+		"""Test __init__"""
+		with unittest.mock.patch("HABApp.rule.scheduler.habappschedulerview.HABAppSchedulerView.soon") as run_soon_mock:
+			reset_shading_rule = habapp_rules.actors.shading.ResetAllManualHand("Unittest_Reset")
+		run_soon_mock.assert_called_once_with(reset_shading_rule._ResetAllManualHand__get_shading_objects)
+
+	def test__get_shading_objects(self):
+		"""Test __get_shading_objects."""
+		self.assertEqual([], self.reset_shading_rule._ResetAllManualHand__shading_objects)
+
+		with unittest.mock.patch.object(self.reset_shading_rule, "get_rule") as get_rule_mock:
+			self.reset_shading_rule._ResetAllManualHand__get_shading_objects()
+
+		get_rule_mock.assert_called_once_with(None)
+
+	def test_cb_reset_all(self):
+		"""Test _cb_reset_all."""
+		TestCase = collections.namedtuple("TestCase", "event, state, manual_commands")
+
+		test_cases = [
+			TestCase("OFF", "Auto", []),
+			TestCase("OFF", "Hand", []),
+			TestCase("OFF", "Manual", []),
+
+			TestCase("ON", "Auto", []),
+			TestCase("ON", "Hand", [unittest.mock.call("ON"), unittest.mock.call("OFF")]),
+			TestCase("ON", "Manual", [unittest.mock.call("OFF")])
+		]
+
+		shading_rule_mock = unittest.mock.MagicMock(spec=habapp_rules.actors.shading.Raffstore)
+		shading_rule_mock._item_manual = unittest.mock.MagicMock(spec=HABApp.openhab.items.SwitchItem)
+
+		self.reset_shading_rule._ResetAllManualHand__shading_objects = [shading_rule_mock]
+
+		for test_case in test_cases:
+			shading_rule_mock.state = test_case.state
+			shading_rule_mock._item_manual.oh_send_command.reset_mock()
+
+			self.reset_shading_rule._cb_reset_all(HABApp.openhab.events.ItemCommandEvent("name", test_case.event))
+
+			self.assertEqual(len(test_case.manual_commands), shading_rule_mock._item_manual.oh_send_command.call_count)
+			shading_rule_mock._item_manual.oh_send_command.assert_has_calls(test_case.manual_commands)
+
 
 
 class TestSlatValueSun(tests.helper.test_case_base.TestCaseBase):
