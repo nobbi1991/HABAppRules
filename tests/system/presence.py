@@ -38,11 +38,11 @@ class TestPresence(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Leaving", "OFF")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Phone1", "ON")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Phone2", "OFF")
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "rules_system_presence_Presence_state", "")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "CustomState", "")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Presence_Unittest_Presence_state", "")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Presence", "ON")
 
-		with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_presence_Presence_state", "")):
-			self._presence = habapp_rules.system.presence.Presence("Unittest_Presence", outside_door_names=["Unittest_Door1", "Unittest_Door2"], leaving_name="Unittest_Leaving", phone_names=["Unittest_Phone1", "Unittest_Phone2"])
+		self._presence = habapp_rules.system.presence.Presence("Unittest_Presence", outside_door_names=["Unittest_Door1", "Unittest_Door2"], leaving_name="Unittest_Leaving", phone_names=["Unittest_Phone1", "Unittest_Phone2"], name_state="CustomState")
 
 	@unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
 	def test_create_graph(self):  # pragma: no cover
@@ -58,8 +58,7 @@ class TestPresence(tests.helper.test_case_base.TestCaseBase):
 
 	def test_minimal_init(self):
 		"""Test init with minimal set of arguments."""
-		with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_system_presence_Presence_state", "")):
-			presence_min = habapp_rules.system.presence.Presence("Unittest_Presence", "Unittest_Leaving")
+		presence_min = habapp_rules.system.presence.Presence("Unittest_Presence", "Unittest_Leaving")
 
 		self.assertEqual([], presence_min._Presence__outside_door_items)
 		self.assertEqual([], presence_min._Presence__phone_items)
@@ -73,7 +72,7 @@ class TestPresence(tests.helper.test_case_base.TestCaseBase):
 
 	def test__init__(self):
 		"""Test init."""
-		tests.helper.oh_item.assert_value("rules_system_presence_Presence_state", "presence")
+		tests.helper.oh_item.assert_value("CustomState", "presence")
 		self.assertEqual(self._presence.state, "presence")
 
 	def test_get_initial_state(self):

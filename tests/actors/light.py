@@ -53,20 +53,18 @@ class TestLightBase(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light", 0)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light_ctr", 0)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual", True)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "rules_actors_light_Light_state", "")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Unittest_Light_state", "")
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light_2", 0)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light_2_ctr", 0)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual_2", True)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "rules_actors_light_Light_2_state", "")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Unittest_Light_2_state", "")
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Presence_state", habapp_rules.system.PresenceState.PRESENCE.value)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Sleep_state", habapp_rules.system.SleepState.AWAKE.value)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Day", True)
 
-		with unittest.mock.patch("habapp_rules.actors.light._LightBase.__abstractmethods__", set()), \
-				unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")), \
-				unittest.mock.patch("habapp_rules.actors.light._LightBase._get_initial_state", return_value="auto_off"):
+		with unittest.mock.patch("habapp_rules.actors.light._LightBase.__abstractmethods__", set()), unittest.mock.patch("habapp_rules.actors.light._LightBase._get_initial_state", return_value="auto_off"):
 			self.light_base = habapp_rules.actors.light._LightBase("Unittest_Light", "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", LIGHT_CONFIG, "Unittest_Sleep_state")
 			self.light_base_without_sleep = habapp_rules.actors.light._LightBase("Unittest_Light_2", "Unittest_Manual_2", "Unittest_Presence_state", "Unittest_Day", LIGHT_CONFIG)
 
@@ -740,7 +738,7 @@ class TestLightBase(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.send_command("Unittest_Presence_state", habapp_rules.system.PresenceState.PRESENCE.value, habapp_rules.system.PresenceState.LEAVING.value)
 		self.assertEqual("auto_on", self.light_base.state)
 
-	def test_auto_restoreState(self): # pylint: disable=invalid-name
+	def test_auto_restoreState(self):  # pylint: disable=invalid-name
 		"""Test transitions of auto_restoreState"""
 		self.light_base.to_auto_preoff()
 		tests.helper.oh_item.send_command("Unittest_Presence_state", habapp_rules.system.PresenceState.LEAVING.value, habapp_rules.system.PresenceState.PRESENCE.value, )
@@ -821,23 +819,22 @@ class TestLightSwitch(tests.helper.test_case_base.TestCaseBase):
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Light", "OFF")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual", True)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "rules_actors_light_Light_state", "")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Unittest_Light_state", "")
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Light_2", 0)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual_2", True)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "rules_actors_light_Light_2_state", "")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Unittest_Light_2_state", "")
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Presence_state", habapp_rules.system.PresenceState.PRESENCE.value)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Sleep_state", habapp_rules.system.SleepState.AWAKE.value)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Day", True)
 
-		with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")):
-			self.light_switch = habapp_rules.actors.light.LightSwitch("Unittest_Light", "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", LIGHT_CONFIG, "Unittest_Sleep_state")
-			self.light_switch_without_sleep = habapp_rules.actors.light.LightSwitch("Unittest_Light_2", "Unittest_Manual_2", "Unittest_Presence_state", "Unittest_Day", LIGHT_CONFIG)
+		self.light_switch = habapp_rules.actors.light.LightSwitch("Unittest_Light", "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", LIGHT_CONFIG, "Unittest_Sleep_state")
+		self.light_switch_without_sleep = habapp_rules.actors.light.LightSwitch("Unittest_Light_2", "Unittest_Manual_2", "Unittest_Presence_state", "Unittest_Day", LIGHT_CONFIG)
 
 	def test_init_with_dimmer(self):
 		"""Test init with switch_item"""
-		with self.assertRaises(TypeError), unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")):
+		with self.assertRaises(TypeError):
 			habapp_rules.actors.light.LightSwitch("Unittest_Light_Dimmer", "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", LIGHT_CONFIG, "Unittest_Sleep_state")
 
 	def test__init__(self):
@@ -1010,25 +1007,23 @@ class TestLightDimmer(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light", 0)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light_ctr", 0)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual", True)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "rules_actors_light_Light_state", "")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Unittest_Light_state", "")
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light_2", 0)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light_2_ctr", 0)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual_2", True)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "rules_actors_light_Light_2_state", "")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Unittest_Light_2_state", "")
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Presence_state", habapp_rules.system.PresenceState.PRESENCE.value)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Sleep_state", habapp_rules.system.SleepState.AWAKE.value)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Day", True)
 
-		with                unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")):
-			self.light_dimmer = habapp_rules.actors.light.LightDimmer("Unittest_Light", ["Unittest_Light_ctr"], "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", LIGHT_CONFIG, "Unittest_Sleep_state")
-			self.light_dimmer_without_sleep = habapp_rules.actors.light.LightDimmer("Unittest_Light_2", ["Unittest_Light_2_ctr"], "Unittest_Manual_2", "Unittest_Presence_state", "Unittest_Day", LIGHT_CONFIG)
+		self.light_dimmer = habapp_rules.actors.light.LightDimmer("Unittest_Light", ["Unittest_Light_ctr"], "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", LIGHT_CONFIG, "Unittest_Sleep_state")
+		self.light_dimmer_without_sleep = habapp_rules.actors.light.LightDimmer("Unittest_Light_2", ["Unittest_Light_2_ctr"], "Unittest_Manual_2", "Unittest_Presence_state", "Unittest_Day", LIGHT_CONFIG)
 
 	def test_init_with_switch(self):
 		"""Test init with switch_item"""
-		with self.assertRaises(TypeError), \
-				unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")):
+		with self.assertRaises(TypeError):
 			habapp_rules.actors.light.LightDimmer("Unittest_Light_Switch", ["Unittest_Light_ctr"], "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", LIGHT_CONFIG, "Unittest_Sleep_state")
 
 	def test__init__(self):
@@ -1133,12 +1128,12 @@ class TestLightExtended(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light", 0)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light_ctr", 0)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual", True)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "rules_actors_light_Light_state", "")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "CustomState", "")
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light_2", 0)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light_2_ctr", 0)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual_2", True)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "rules_actors_light_Light_2_state", "")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Unittest_Light_2_state", "")
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Presence_state", habapp_rules.system.PresenceState.PRESENCE.value)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Sleep_state", habapp_rules.system.SleepState.AWAKE.value)
@@ -1157,10 +1152,9 @@ class TestLightExtended(tests.helper.test_case_base.TestCaseBase):
 			door=FunctionConfig(day=BrightnessTimeout(True, 10), night=BrightnessTimeout(80, 8), sleeping=None)
 		)
 
-		with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")):
-			self.light_extended = habapp_rules.actors.light.LightDimmerExtended("Unittest_Light", ["Unittest_Light_ctr"], "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", self.light_config, "Unittest_Sleep_state", "Unittest_Motion",
-			                                                                    ["Unittest_Door_1", "Unittest_Door_2"])
-			self.light_extended_2 = habapp_rules.actors.light.LightDimmerExtended("Unittest_Light_2", ["Unittest_Light_2_ctr"], "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", self.light_config, "Unittest_Sleep_state")
+		self.light_extended = habapp_rules.actors.light.LightDimmerExtended("Unittest_Light", ["Unittest_Light_ctr"], "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", self.light_config, "Unittest_Sleep_state", "Unittest_Motion",
+		                                                                    ["Unittest_Door_1", "Unittest_Door_2"], name_state="CustomState")
+		self.light_extended_2 = habapp_rules.actors.light.LightDimmerExtended("Unittest_Light_2", ["Unittest_Light_2_ctr"], "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", self.light_config, "Unittest_Sleep_state")
 
 	def test__init__(self):
 		"""Test __init__."""
@@ -1218,18 +1212,18 @@ class TestLightExtended(tests.helper.test_case_base.TestCaseBase):
 
 	def test__init_switch(self):
 		"""Test init of switch"""
-		with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_light_Light_state", "")):
-			light_extended_switch = habapp_rules.actors.light.LightSwitchExtended("Unittest_Light_Switch", "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", self.light_config, "Unittest_Sleep_state", "Unittest_Motion",
-			                                                                      ["Unittest_Door_1", "Unittest_Door_2"])
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Unittest_Light_Switch_state", "")
+		light_extended_switch = habapp_rules.actors.light.LightSwitchExtended("Unittest_Light_Switch", "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", self.light_config, "Unittest_Sleep_state", "Unittest_Motion",
+		                                                                      ["Unittest_Door_1", "Unittest_Door_2"])
 
-			self.assertEqual("Unittest_Light_Switch", light_extended_switch._item_light.name)
-			self.assertEqual("Unittest_Manual", light_extended_switch._item_manual.name)
-			self.assertEqual("Unittest_Presence_state", light_extended_switch._item_presence_state.name)
-			self.assertEqual("Unittest_Day", light_extended_switch._item_day.name)
-			self.assertEqual("Unittest_Sleep_state", light_extended_switch._item_sleeping_state.name)
-			self.assertEqual("Unittest_Motion", light_extended_switch._item_motion.name)
-			self.assertEqual(["Unittest_Door_1", "Unittest_Door_2"], [item.name for item in light_extended_switch._items_door])
-			self.assertEqual(self.light_config, light_extended_switch._config)
+		self.assertEqual("Unittest_Light_Switch", light_extended_switch._item_light.name)
+		self.assertEqual("Unittest_Manual", light_extended_switch._item_manual.name)
+		self.assertEqual("Unittest_Presence_state", light_extended_switch._item_presence_state.name)
+		self.assertEqual("Unittest_Day", light_extended_switch._item_day.name)
+		self.assertEqual("Unittest_Sleep_state", light_extended_switch._item_sleeping_state.name)
+		self.assertEqual("Unittest_Motion", light_extended_switch._item_motion.name)
+		self.assertEqual(["Unittest_Door_1", "Unittest_Door_2"], [item.name for item in light_extended_switch._items_door])
+		self.assertEqual(self.light_config, light_extended_switch._config)
 
 	@unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
 	def test_create_graph(self):  # pragma: no cover

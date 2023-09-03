@@ -41,9 +41,10 @@ class StateMachineRule(HABApp.Rule):
 		parent_class_path_relative_str = str(parent_class_path_relative).removesuffix(".py").replace(os.path.sep, "_")
 		self._item_prefix = f"{parent_class_path_relative_str}.{self.rule_name}".replace(".", "_")
 
-		state_item_name = f"H_{state_item_name.removeprefix('H_')}" if state_item_name else f"H_{self._item_prefix}_state"
-
-		self._item_state = habapp_rules.core.helper.create_additional_item(state_item_name, "String", state_item_label)
+		if state_item_name:
+			self._item_state = HABApp.openhab.items.StringItem.get_item(state_item_name)
+		else:
+			self._item_state = habapp_rules.core.helper.create_additional_item(f"H_{self._item_prefix}_state", "String", state_item_label)
 
 	def get_initial_log_message(self) -> str:
 		"""Get log message which can be logged at the init of a rule with a state machine.

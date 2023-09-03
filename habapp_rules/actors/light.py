@@ -69,6 +69,7 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 	             day_name: str,
 	             config: habapp_rules.actors.config.light.LightConfig,
 	             sleeping_state_name: str | None = None,
+	             name_state: str | None = None,
 	             state_label: str | None = None) -> None:
 		"""Init of basic light object.
 
@@ -78,12 +79,15 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 		:param day_name: name of OpenHAB switch item which is 'ON' during day and 'OFF' during night
 		:param config: configuration of the light object
 		:param sleeping_state_name: [optional] name of OpenHAB sleeping state item
+		:param name_state: name of OpenHAB item for storing the current state (StringItem)
 		:param state_label: label of OpenHAB item for storing the current state (StringItem)
 		:raises TypeError: if type of light_item is not supported
 		"""
 		self._config = config
 
-		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, f"H_{name_light}_state", state_label)
+		if not name_state:
+			name_state = f"H_{name_light}_state"
+		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, name_state, state_label)
 		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, name_light)
 
 		# init items
@@ -398,6 +402,7 @@ class LightSwitch(_LightBase):
 	             day_name: str,
 	             config: habapp_rules.actors.config.light.LightConfig,
 	             sleeping_state_name: str | None = None,
+	             name_state: str | None = None,
 	             state_label: str | None = None):
 		"""Init of basic light object.
 
@@ -407,6 +412,7 @@ class LightSwitch(_LightBase):
 		:param day_name: name of OpenHAB switch item which is 'ON' during day and 'OFF' during night
 		:param config: configuration of the light object
 		:param sleeping_state_name: [optional] name of OpenHAB sleeping state item
+		:param name_state: name of OpenHAB item for storing the current state (StringItem)
 		:param state_label: label of OpenHAB item for storing the current state (StringItem)
 		:raises TypeError: if type of light_item is not supported
 		"""
@@ -417,7 +423,7 @@ class LightSwitch(_LightBase):
 		self._item_light = HABApp.openhab.items.SwitchItem.get_item(name_light)
 		self._state_observer = habapp_rules.actors.state_observer.StateObserverSwitch(name_light, self._cb_hand_on, self._cb_hand_off)
 
-		_LightBase.__init__(self, name_light, manual_name, presence_state_name, day_name, config, sleeping_state_name, state_label)
+		_LightBase.__init__(self, name_light, manual_name, presence_state_name, day_name, config, sleeping_state_name, name_state, state_label)
 
 	def _update_openhab_state(self) -> None:
 		_LightBase._update_openhab_state(self)
@@ -499,6 +505,7 @@ class LightDimmer(_LightBase):
 	trans = copy.deepcopy(_LightBase.trans)
 	trans.append({"trigger": "hand_changed", "source": "auto_on", "dest": "auto_on"})
 
+	# pylint: disable=too-many-arguments
 	def __init__(self,
 	             name_light: str,
 	             control_names: list[str],
@@ -507,6 +514,7 @@ class LightDimmer(_LightBase):
 	             day_name: str,
 	             config: habapp_rules.actors.config.light.LightConfig,
 	             sleeping_state_name: str | None = None,
+	             name_state: str | None = None,
 	             state_label: str | None = None,
 	             group_names: list[str] | None = None) -> None:
 		"""Init of basic light object.
@@ -518,6 +526,7 @@ class LightDimmer(_LightBase):
 		:param day_name: name of OpenHAB switch item which is 'ON' during day and 'OFF' during night
 		:param config: configuration of the light object
 		:param sleeping_state_name: [optional] name of OpenHAB sleeping state item
+		:param name_state: name of OpenHAB item for storing the current state (StringItem)
 		:param state_label: label of OpenHAB item for storing the current state (StringItem)
 		:param group_names: list of group items where the light is a part of. Group item type must match with type of the light item
 		:raises TypeError: if type of light_item is not supported
@@ -529,7 +538,7 @@ class LightDimmer(_LightBase):
 		self._item_light = HABApp.openhab.items.DimmerItem.get_item(name_light)
 		self._state_observer = habapp_rules.actors.state_observer.StateObserverDimmer(name_light, self._cb_hand_on, self._cb_hand_off, self._cb_hand_changed, control_names=control_names, group_names=group_names)
 
-		_LightBase.__init__(self, name_light, manual_name, presence_state_name, day_name, config, sleeping_state_name, state_label)
+		_LightBase.__init__(self, name_light, manual_name, presence_state_name, day_name, config, sleeping_state_name,name_state, state_label)
 
 	def _set_light_state(self) -> None:
 		"""Set brightness to light."""
@@ -764,6 +773,7 @@ class LightSwitchExtended(_LightExtendedMixin, LightSwitch):
 	With this class additionally motion or door items can be given.
 	"""
 
+	# pylint: disable=too-many-arguments
 	def __init__(self, name_light: str,
 	             manual_name: str,
 	             presence_state_name: str,
@@ -771,6 +781,7 @@ class LightSwitchExtended(_LightExtendedMixin, LightSwitch):
 	             config: habapp_rules.actors.config.light.LightConfigExtended, sleeping_state_name: str | None = None,
 	             name_motion: str | None = None,
 	             door_names: list[str] | None = None,
+	            name_state: str | None = None,
 	             state_label: str | None = None):
 		"""Init of extended light object.
 
@@ -782,11 +793,12 @@ class LightSwitchExtended(_LightExtendedMixin, LightSwitch):
 		:param sleeping_state_name: [optional] name of OpenHAB sleeping state item
 		:param name_motion: [optional] name of OpenHAB motion item (SwitchItem)
 		:param door_names: [optional] list of OpenHAB door items (ContactItem)
+		:param name_state: name of OpenHAB item for storing the current state (StringItem)
 		:param state_label: label of OpenHAB item for storing the current state (StringItem)
 		:raises TypeError: if type of light_item is not supported
 		"""
 		_LightExtendedMixin.__init__(self, config, name_motion, door_names)
-		LightSwitch.__init__(self, name_light, manual_name, presence_state_name, day_name, config, sleeping_state_name, state_label)
+		LightSwitch.__init__(self, name_light, manual_name, presence_state_name, day_name, config, sleeping_state_name,name_state, state_label)
 
 		_LightExtendedMixin.add_additional_callbacks(self)
 
@@ -809,6 +821,7 @@ class LightDimmerExtended(_LightExtendedMixin, LightDimmer):
 	             sleeping_state_name: str | None = None,
 	             name_motion: str | None = None,
 	             door_names: list[str] | None = None,
+	            name_state: str | None = None,
 	             state_label: str | None = None,
 	             group_names: list[str] | None = None) -> None:
 		"""Init of extended light object.
@@ -822,11 +835,12 @@ class LightDimmerExtended(_LightExtendedMixin, LightDimmer):
 		:param sleeping_state_name: [optional] name of OpenHAB sleeping state item
 		:param name_motion: [optional] name of OpenHAB motion item (SwitchItem)
 		:param door_names: [optional] list of OpenHAB door items (ContactItem)
+		:param name_state: name of OpenHAB item for storing the current state (StringItem)
 		:param state_label: label of OpenHAB item for storing the current state (StringItem)
 		:param group_names: list of group items where the light is a part of. Group item type must match with type of the light item
 		:raises TypeError: if type of light_item is not supported
 		"""
 		_LightExtendedMixin.__init__(self, config, name_motion, door_names)
-		LightDimmer.__init__(self, name_light, control_names, manual_name, presence_state_name, day_name, config, sleeping_state_name, state_label, group_names)
+		LightDimmer.__init__(self, name_light, control_names, manual_name, presence_state_name, day_name, config, sleeping_state_name, name_state, state_label, group_names)
 
 		_LightExtendedMixin.add_additional_callbacks(self)

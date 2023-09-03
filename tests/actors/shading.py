@@ -47,7 +47,8 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Shading_max", 0)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual_max", "OFF")
 
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "rules_actors_shading_state", "")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Unittest_Shading_min_state", "")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "CustomState", "")
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_WindAlarm", "OFF")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_SunProtection", "OFF")
@@ -57,23 +58,22 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Summer", "OFF")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Hand_Manual_active", "OFF")
 
-		with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_shading_state", "")):
-			self.shading_min = habapp_rules.actors.shading._ShadingBase("Unittest_Shading_min", "Unittest_Manual_min", habapp_rules.actors.config.shading.CONFIG_DEFAULT)
-			self.shading_max = habapp_rules.actors.shading._ShadingBase(
-				"Unittest_Shading_max",
-				"Unittest_Manual_max",
-				habapp_rules.actors.config.shading.CONFIG_DEFAULT,
-				[],
-				[],
-				"Unittest_WindAlarm",
-				"Unittest_SunProtection",
-				"Unittest_Sleep_state",
-				"Unittest_Night",
-				"Unittest_Door",
-				"Unittest_Summer",
-				"Unittest_Hand_Manual_active",
-				"Shading XY state [%s]"
-			)
+		self.shading_min = habapp_rules.actors.shading._ShadingBase("Unittest_Shading_min", "Unittest_Manual_min", habapp_rules.actors.config.shading.CONFIG_DEFAULT)
+		self.shading_max = habapp_rules.actors.shading._ShadingBase(
+			"Unittest_Shading_max",
+			"Unittest_Manual_max",
+			habapp_rules.actors.config.shading.CONFIG_DEFAULT,
+			[],
+			[],
+			"Unittest_WindAlarm",
+			"Unittest_SunProtection",
+			"Unittest_Sleep_state",
+			"Unittest_Night",
+			"Unittest_Door",
+			"Unittest_Summer",
+			"Unittest_Hand_Manual_active",
+			name_state="CustomState"
+		)
 
 	def test__init__(self):
 		"""Test __init__."""
@@ -148,15 +148,16 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
 			TestCase(HABApp.openhab.items.NumberItem, True)
 		]
 
-		with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_shading_state", "")):
-			for test_case in test_cases:
-				tests.helper.oh_item.add_mock_item(test_case.item_type, "Unittest_Temp", None)  # NumberItem
-				if test_case.raises_exc:
-					with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
-						habapp_rules.actors.shading._ShadingBase("Unittest_Temp", "Unittest_Manual_min", habapp_rules.actors.config.shading.CONFIG_DEFAULT)
-				else:
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Unittest_Temp_state", "")
+
+		for test_case in test_cases:
+			tests.helper.oh_item.add_mock_item(test_case.item_type, "Unittest_Temp", None)  # NumberItem
+			if test_case.raises_exc:
+				with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
 					habapp_rules.actors.shading._ShadingBase("Unittest_Temp", "Unittest_Manual_min", habapp_rules.actors.config.shading.CONFIG_DEFAULT)
-				tests.helper.oh_item.remove_mocked_item_by_name("Unittest_Temp")
+			else:
+				habapp_rules.actors.shading._ShadingBase("Unittest_Temp", "Unittest_Manual_min", habapp_rules.actors.config.shading.CONFIG_DEFAULT)
+			tests.helper.oh_item.remove_mocked_item_by_name("Unittest_Temp")
 
 	@unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
 	def test_create_graph(self):  # pragma: no cover
@@ -587,7 +588,7 @@ class TestShadingShutter(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Shading", 0)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual", "OFF")
 
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "rules_actors_shading_state", "")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Unittest_Shading_state", "")
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_WindAlarm", "OFF")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_SunProtection", "OFF")
@@ -597,22 +598,20 @@ class TestShadingShutter(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Summer", "OFF")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Hand_Manual_active", "OFF")
 
-		with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_shading_state", "")):
-			self.shutter = habapp_rules.actors.shading.Shutter(
-				"Unittest_Shading",
-				"Unittest_Manual",
-				habapp_rules.actors.config.shading.CONFIG_DEFAULT,
-				[],
-				[],
-				"Unittest_WindAlarm",
-				"Unittest_SunProtection",
-				"Unittest_Sleep_state",
-				"Unittest_Night",
-				"Unittest_Door",
-				"Unittest_Summer",
-				"Unittest_Hand_Manual_active",
-				"Shading XY state [%s]"
-			)
+		self.shutter = habapp_rules.actors.shading.Shutter(
+			"Unittest_Shading",
+			"Unittest_Manual",
+			habapp_rules.actors.config.shading.CONFIG_DEFAULT,
+			[],
+			[],
+			"Unittest_WindAlarm",
+			"Unittest_SunProtection",
+			"Unittest_Sleep_state",
+			"Unittest_Night",
+			"Unittest_Door",
+			"Unittest_Summer",
+			"Unittest_Hand_Manual_active"
+		)
 
 	def test_set_shading_state(self):
 		"""Test _set_shading_state."""
@@ -663,7 +662,7 @@ class TestShadingRaffstore(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Slat", 0)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual", "OFF")
 
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "rules_actors_shading_state", "")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Unittest_Shading_state", "")
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_WindAlarm", "OFF")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_SunProtection", "OFF")
@@ -674,24 +673,22 @@ class TestShadingRaffstore(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Summer", "OFF")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Hand_Manual_active", "OFF")
 
-		with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_shading_state", "")):
-			self.raffstore = habapp_rules.actors.shading.Raffstore(
-				"Unittest_Shading",
-				"Unittest_Slat",
-				"Unittest_Manual",
-				habapp_rules.actors.config.shading.CONFIG_DEFAULT,
-				[],
-				[],
-				"Unittest_WindAlarm",
-				"Unittest_SunProtection",
-				"Unittest_SunProtection_Slat",
-				"Unittest_Sleep_state",
-				"Unittest_Night",
-				"Unittest_Door",
-				"Unittest_Summer",
-				"Unittest_Hand_Manual_active",
-				"Shading XY state [%s]"
-			)
+		self.raffstore = habapp_rules.actors.shading.Raffstore(
+			"Unittest_Shading",
+			"Unittest_Slat",
+			"Unittest_Manual",
+			habapp_rules.actors.config.shading.CONFIG_DEFAULT,
+			[],
+			[],
+			"Unittest_WindAlarm",
+			"Unittest_SunProtection",
+			"Unittest_SunProtection_Slat",
+			"Unittest_Sleep_state",
+			"Unittest_Night",
+			"Unittest_Door",
+			"Unittest_Summer",
+			"Unittest_Hand_Manual_active"
+		)
 
 	def test_init(self):
 		"""Test __init__"""
@@ -700,13 +697,12 @@ class TestShadingRaffstore(tests.helper.test_case_base.TestCaseBase):
 
 	def test_init_min(self):
 		"""Test init of raffstore with minimal attributes."""
-		with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_actors_shading_state", "")):
-			habapp_rules.actors.shading.Raffstore(
-				"Unittest_Shading",
-				"Unittest_Slat",
-				"Unittest_Manual",
-				habapp_rules.actors.config.shading.CONFIG_DEFAULT,
-			)
+		habapp_rules.actors.shading.Raffstore(
+			"Unittest_Shading",
+			"Unittest_Slat",
+			"Unittest_Manual",
+			habapp_rules.actors.config.shading.CONFIG_DEFAULT,
+		)
 
 	def test_verify_items(self):
 		"""Test __verify_items"""
@@ -882,7 +878,6 @@ class TestResetAllManualHand(tests.helper.test_case_base.TestCaseBase):
 
 			self.assertEqual(len(test_case.manual_commands), shading_rule_mock._item_manual.oh_send_command.call_count)
 			shading_rule_mock._item_manual.oh_send_command.assert_has_calls(test_case.manual_commands)
-
 
 
 class TestSlatValueSun(tests.helper.test_case_base.TestCaseBase):

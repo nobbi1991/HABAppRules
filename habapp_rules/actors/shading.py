@@ -89,6 +89,7 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 	             name_door: str | None = None,
 	             name_summer: str | None = None,
 	             name_hand_manual_is_active_feedback: str | None = None,
+	             name_state: str | None = None,
 	             state_label: str | None = None) -> None:
 		"""Init of _ShadingBase.
 
@@ -104,12 +105,15 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		:param name_door: [optional] name of OpenHAB door item (ContactItem)
 		:param name_summer: [optional] name of OpenHAB switch item which is 'ON' during summer and 'OFF' during winter
 		:param name_hand_manual_is_active_feedback: [optional] name of OpenHAB switch item which is 'ON' if state is manual or hand
+		:param name_state: name of OpenHAB item for storing the current state (StringItem)
 		:param state_label: [optional] label of OpenHAB item for storing the current state (StringItem)
 		:raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: if given config / items are not valid
 		"""
 		self._config = config
 
-		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, f"H_{name_shading_position}_state", state_label)
+		if not name_state:
+			name_state = f"H_{name_shading_position}_state"
+		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, name_state, state_label)
 		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, name_shading_position)
 
 		# init items
@@ -401,6 +405,7 @@ class Shutter(_ShadingBase):
 	             name_door: str | None = None,
 	             name_summer: str | None = None,
 	             name_hand_manual_is_active_feedback: str | None = None,
+	             name_state: str | None = None,
 	             state_label: str | None = None) -> None:
 		"""Init of Raffstore object.
 
@@ -416,6 +421,7 @@ class Shutter(_ShadingBase):
 		:param name_door: [optional] name of OpenHAB door item (ContactItem)
 		:param name_summer: [optional] name of OpenHAB switch item which is 'ON' during summer and 'OFF' during winter
 		:param name_hand_manual_is_active_feedback: [optional] name of OpenHAB switch item which is 'ON' if state is manual or hand
+		:param name_state: name of OpenHAB item for storing the current state (StringItem)
 		:param state_label: [optional] label of OpenHAB item for storing the current state (StringItem)
 		"""
 		_ShadingBase.__init__(
@@ -430,6 +436,7 @@ class Shutter(_ShadingBase):
 			name_night, name_door,
 			name_summer,
 			name_hand_manual_is_active_feedback,
+			name_state,
 			state_label
 		)
 
@@ -508,6 +515,7 @@ class Raffstore(_ShadingBase):
 	             name_door: str | None = None,
 	             name_summer: str | None = None,
 	             name_hand_manual_is_active_feedback: str | None = None,
+	             name_state: str | None = None,
 	             state_label: str | None = None) -> None:
 		"""Init of Raffstore object.
 
@@ -525,6 +533,7 @@ class Raffstore(_ShadingBase):
 		:param name_door: [optional] name of OpenHAB door item (ContactItem)
 		:param name_summer: [optional] name of OpenHAB switch item which is 'ON' during summer and 'OFF' during winter
 		:param name_hand_manual_is_active_feedback: [optional] name of OpenHAB switch item which is 'ON' if state is manual or hand
+		:param name_state: name of OpenHAB item for storing the current state (StringItem)
 		:param state_label: [optional] label of OpenHAB item for storing the current state (StringItem)
 		"""
 		_ShadingBase.__init__(
@@ -539,6 +548,7 @@ class Raffstore(_ShadingBase):
 			name_night, name_door,
 			name_summer,
 			name_hand_manual_is_active_feedback,
+			name_state,
 			state_label
 		)
 

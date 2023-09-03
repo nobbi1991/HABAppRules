@@ -9,7 +9,7 @@ import habapp_rules.core.exceptions
 import habapp_rules.core.state_machine_rule
 import tests.helper.rule_runner
 import tests.helper.test_case_base
-
+import tests.helper.oh_item
 
 # pylint: disable=protected-access
 class TestStateMachineRule(tests.helper.test_case_base.TestCaseBase):
@@ -24,15 +24,19 @@ class TestStateMachineRule(tests.helper.test_case_base.TestCaseBase):
 
 	def test__init(self):
 		"""tests init of StateMachineRule."""
-		with unittest.mock.patch("habapp_rules.core.helper.create_additional_item") as create_mock:
+		with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("some_name", "")) as create_mock:
 			state_machine = habapp_rules.core.state_machine_rule.StateMachineRule()
 			self.assertEqual("habapp_rules_core_state_machine_rule_TestRule_StateMachineRule", state_machine._item_prefix)
 			create_mock.assert_called_once_with("H_habapp_rules_core_state_machine_rule_TestRule_StateMachineRule_state", "String", None)
+			self.assertEqual("some_name", state_machine._item_state.name)
 
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "state_name", "")
 		with unittest.mock.patch("habapp_rules.core.helper.create_additional_item") as create_mock:
 			state_machine = habapp_rules.core.state_machine_rule.StateMachineRule("state_name")
 			self.assertEqual("habapp_rules_core_state_machine_rule_TestRule_StateMachineRule", state_machine._item_prefix)
-			create_mock.assert_called_once_with("H_state_name", "String", None)
+			create_mock.assert_not_called()
+			self.assertEqual("state_name", state_machine._item_state.name)
+
 
 	def test_get_initial_state(self):
 		"""Test getting of initial state."""
