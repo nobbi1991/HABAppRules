@@ -729,6 +729,7 @@ class SlatValueSun(HABApp.Rule):
 		self._item_sun_elevation.listen_event(self._cb_elevation, HABApp.openhab.events.ItemStateChangedEventFilter())
 		if self._item_summer:
 			self._item_summer.listen_event(self._cb_summer_winter, HABApp.openhab.events.ItemStateChangedEventFilter())
+		self.run.soon(self.__send_slat_value)
 
 		self._instance_logger.debug(f"Init of rule '{self.__class__.__name__}' with name '{self.rule_name}' was successful.")
 
