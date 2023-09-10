@@ -26,7 +26,7 @@ def setup_logger() -> None:
 	if not LOG_PATH.is_dir():
 		os.makedirs(LOG_PATH)
 
-	file_handler = HABApp.config.logging.MidnightRotatingFileHandler(LOG_PATH / "habapp_rules.log", encoding="utf-8")
+	file_handler = HABApp.config.logging.MidnightRotatingFileHandler(LOG_PATH / "habapp_rules.log", encoding="utf-8", maxBytes=1_048_576, backupCount=5)
 	file_handler.setFormatter(log_formatter)
 	file_handler.setLevel(logging.DEBUG)
 	habapp_rules_logger.addHandler(file_handler)

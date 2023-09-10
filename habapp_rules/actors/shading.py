@@ -727,7 +727,7 @@ class SlatValueSun(HABApp.Rule):
 
 		# callbacks
 		self._item_sun_elevation.listen_event(self._cb_elevation, HABApp.openhab.events.ItemStateChangedEventFilter())
-		if self._item_summer:
+		if self._item_summer is not None:
 			self._item_summer.listen_event(self._cb_summer_winter, HABApp.openhab.events.ItemStateChangedEventFilter())
 		self.run.soon(self.__send_slat_value)
 
