@@ -1,8 +1,6 @@
 # pylint: skip-file
 from typing import List
 
-from pytest import MonkeyPatch
-
 import HABApp
 import HABApp.core.lib.exceptions.format
 import HABApp.rule.rule as rule_module
@@ -15,6 +13,7 @@ from HABApp.core.internals.wrapped_function.wrapped_thread import WrappedThreadF
 from HABApp.core.lib.exceptions.format import fallback_format
 from HABApp.rule.rule_hook import HABAppRuleHook
 from HABApp.runtime import Runtime
+from pytest import MonkeyPatch
 
 
 def suggest_rule_name(obj: object) -> str:
@@ -78,7 +77,7 @@ class SimpleRuleRunner:
 		self.monkeypatch.setattr(rule_module, '_get_rule_hook', lambda: hook)
 
 		# patch worker with a synchronous worker
-		self.monkeypatch.setattr(wrapped_thread, 'WORKERS', self)
+		self.monkeypatch.setattr(wrapped_thread, 'POOL', self)
 		self.monkeypatch.setattr(wrapper, 'SYNC_CLS', WrappedThreadFunction, raising=False)
 
 		# raise exceptions during error formatting

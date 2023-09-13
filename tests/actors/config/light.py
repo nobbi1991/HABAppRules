@@ -1,12 +1,11 @@
-"""Test Light rule."""
+"""Test config for light rules."""
 import collections
 import unittest.mock
 
-import habapp_rules.actors.light_config
 import habapp_rules.core.exceptions
 import habapp_rules.core.state_machine_rule
 import habapp_rules.system
-from habapp_rules.actors.light_config import BrightnessTimeout, FunctionConfig, LightConfig
+from habapp_rules.actors.config.light import BrightnessTimeout, FunctionConfig, LightConfig
 
 
 class TestBrightnessTimeout(unittest.TestCase):

@@ -10,21 +10,16 @@ import habapp_rules.actors.irrigation
 import habapp_rules.core.exceptions
 import tests.helper.oh_item
 import tests.helper.rule_runner
+import tests.helper.test_case_base
 
 
 # pylint: disable=protected-access, no-member
-class TestIrrigation(unittest.TestCase):
+class TestIrrigation(tests.helper.test_case_base.TestCaseBase):
 	"""Tests for Irrigation."""
 
 	def setUp(self):
 		"""Set up test cases"""
-
-		self.send_command_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.send_command", new=tests.helper.oh_item.send_command)
-		self.addCleanup(self.send_command_mock_patcher.stop)
-		self.send_command_mock = self.send_command_mock_patcher.start()
-
-		self.__runner = tests.helper.rule_runner.SimpleRuleRunner()
-		self.__runner.set_up()
+		tests.helper.test_case_base.TestCaseBase.setUp(self)
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_valve", "OFF")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_active", "OFF")
@@ -88,8 +83,8 @@ class TestIrrigation(unittest.TestCase):
 			self.assertFalse(irrigation_max._get_target_valve_state())
 			self.assertEqual(3, irrigation_max._is_in_time_range.call_count)
 			irrigation_max._is_in_time_range.assert_has_calls([
-				unittest.mock.call(datetime.time(12, 30), datetime.time(12, 35),  unittest.mock.ANY),
-				unittest.mock.call(datetime.time(12, 45), datetime.time(12, 50),  unittest.mock.ANY),
+				unittest.mock.call(datetime.time(12, 30), datetime.time(12, 35), unittest.mock.ANY),
+				unittest.mock.call(datetime.time(12, 45), datetime.time(12, 50), unittest.mock.ANY),
 				unittest.mock.call(datetime.time(13, 0), datetime.time(13, 5), unittest.mock.ANY)
 			])
 
@@ -145,7 +140,7 @@ class TestIrrigation(unittest.TestCase):
 
 		# called by event
 		with unittest.mock.patch.object(self._irrigation_min, "_get_target_valve_state", return_value=False):
-			self._irrigation_min._cb_set_valve_state(HABApp.openhab.events.ItemStateChangedEvent("Unittest_active", "ON"))
+			self._irrigation_min._cb_set_valve_state(HABApp.openhab.events.ItemStateChangedEvent("Unittest_active", "ON", "OFF"))
 		self.assertEqual("OFF", self._irrigation_min._item_valve.value)
 
 		# same state -> no oh command
@@ -159,8 +154,3 @@ class TestIrrigation(unittest.TestCase):
 		with unittest.mock.patch.object(self._irrigation_min, "_get_target_valve_state", side_effect=habapp_rules.core.exceptions.HabAppRulesException("Could not get target state")):
 			self._irrigation_min._cb_set_valve_state()
 		self.assertEqual("OFF", self._irrigation_min._item_valve.value)
-
-	def tearDown(self) -> None:
-		"""Tear down test case."""
-		tests.helper.oh_item.remove_all_mocked_items()
-		self.__runner.tear_down()

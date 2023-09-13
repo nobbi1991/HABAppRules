@@ -1,8 +1,10 @@
+astro
 autoupdate
 bool
 config
 dataclass
 enums
+ga
 init
 KNX
 kwargs
@@ -12,6 +14,10 @@ msg
 png
 pre
 pragma
+raffstore
+Raffstore
+rollershutter
+Rollershutter
 repr
 smtp
 unittest

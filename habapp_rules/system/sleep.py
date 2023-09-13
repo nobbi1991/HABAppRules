@@ -3,7 +3,6 @@ import logging
 
 import HABApp.openhab.definitions
 import HABApp.openhab.events
-import HABApp.openhab.interface
 import HABApp.openhab.items
 import HABApp.util
 
@@ -62,7 +61,7 @@ class Sleep(habapp_rules.core.state_machine_rule.StateMachineRule):
 		{"trigger": "release_lock", "source": "locked", "dest": "awake"}
 	]
 
-	def __init__(self, name_sleep: str, name_sleep_request: str, name_lock: str = None, name_lock_request: str = None, name_display_text: str = None, state_name: str = None, state_label: str = "Sleep state") -> None:
+	def __init__(self, name_sleep: str, name_sleep_request: str, name_lock: str = None, name_lock_request: str = None, name_display_text: str = None, name_state: str = None, state_label: str = "Sleep state") -> None:
 		"""Init of Sleep object.
 
 		:param name_sleep: name of OpenHAB sleep item (SwitchItem)
@@ -70,10 +69,12 @@ class Sleep(habapp_rules.core.state_machine_rule.StateMachineRule):
 		:param name_lock: name of OpenHAB lock item (SwitchItem)
 		:param name_lock_request: name of OpenHAB lock request item (SwitchItem)
 		:param name_display_text: name of OpenHAB display text item (StringItem)
-		:param state_name: name of OpenHAB item for storing the current state (StringItem)
+		:param name_state: name of OpenHAB item for storing the current state (StringItem)
 		:param state_label: label of OpenHAB item for storing the current state (StringItem)
 		"""
-		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, state_name, state_label)
+		if not name_state:
+			name_state = f"H_Sleep_{name_sleep}_state"
+		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, name_state, state_label)
 		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, name_sleep)
 
 		# init items

@@ -1,5 +1,9 @@
 """Module for hysteresis switch"""
 
+import logging
+
+LOGGER = logging.getLogger(__name__)
+
 
 class HysteresisSwitch:
 	"""Hysteresis switch"""
@@ -28,17 +32,21 @@ class HysteresisSwitch:
 		:param value: value which should be checked
 		:return: on / off state
 		"""
-		# get threshold depending on the current state
-		threshold = self._threshold - 0.5 * self._hysteresis if self._on_off_state else self._threshold + 0.5 * self._hysteresis
+		if self._threshold:
+			# get threshold depending on the current state
+			threshold = self._threshold - 0.5 * self._hysteresis if self._on_off_state else self._threshold + 0.5 * self._hysteresis
 
-		# use new value if given, otherwise last value
-		value = value if value else self._value_last
+			# use new value if given, otherwise last value
+			value = value if value else self._value_last
+
+			# get on / off state
+			self._on_off_state = value >= threshold
+		else:
+			LOGGER.warning(f"Can not get output value for value = '{value}'. Threshold is not set correctly. self._threshold = {self._threshold}")
+			self._on_off_state = False
 
 		# save value for next check
 		self._value_last = value
-
-		# get on / off state
-		self._on_off_state = value >= threshold
 
 		# if on/off result is requested convert result
 		if self._return_bool:

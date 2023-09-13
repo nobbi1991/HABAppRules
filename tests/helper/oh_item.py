@@ -70,7 +70,7 @@ def send_command(item_name: str, new_value: StateTypes, old_value: StateTypes = 
 	set_state(item_name, new_value)
 	if old_value and old_value != new_value:
 		HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateChangedEvent(item_name, new_value, old_value))
-	HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateEvent(item_name, new_value))
+	HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateUpdatedEvent(item_name, new_value))
 
 
 def item_command_event(item_name: str, value: StateTypes) -> None:
@@ -90,7 +90,7 @@ def item_state_event(item_name: str, value: StateTypes) -> None:
 	:param value: value of the event
 	"""
 	set_state(item_name, value)
-	HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateEvent(item_name, value))
+	HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateUpdatedEvent(item_name, value))
 
 
 def item_state_change_event(item_name: str, value: StateTypes, old_value: StateTypes = None) -> None:
@@ -105,7 +105,7 @@ def item_state_change_event(item_name: str, value: StateTypes, old_value: StateT
 	HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateChangedEvent(item_name, value, prev_value))
 
 
-def assert_value(item_name: str, value: StateTypes, message: StateTypes = None) -> None:
+def assert_value(item_name: str, value: StateTypes, message: str = None) -> None:
 	"""Helper to assert if item has correct state
 
 	:param item_name: name of item

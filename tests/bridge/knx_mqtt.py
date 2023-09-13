@@ -6,88 +6,123 @@ import unittest.mock
 import HABApp.rule.rule
 
 import habapp_rules.bridge.knx_mqtt
+import habapp_rules.core.exceptions
 import tests.helper.oh_item
 import tests.helper.rule_runner
+import tests.helper.test_case_base
 
 
 # pylint: disable=protected-access
-class TestLight(unittest.TestCase):
+class TestLight(tests.helper.test_case_base.TestCaseBase):
 	"""Tests cases for testing Light rule."""
 
 	def setUp(self) -> None:
 		"""Setup test case."""
-		self.send_command_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.send_command", new=tests.helper.oh_item.send_command)
-		self.addCleanup(self.send_command_mock_patcher.stop)
-		self.send_command_mock = self.send_command_mock_patcher.start()
+		tests.helper.test_case_base.TestCaseBase.setUp(self)
 
-		self.__runner = tests.helper.rule_runner.SimpleRuleRunner()
-		self.__runner.set_up()
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_full_KNX_Dimmer_ctr", 0)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_full_KNX_Switch_ctr", "OFF")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_full_MQTT_dimmer", 0)
 
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_KNX_Dimmer_ctr", 0)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_MQTT_dimmer", 0)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_switch_KNX_Switch_ctr", "OFF")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_switch_MQTT_dimmer", 0)
 
-		self._knx_bridge = habapp_rules.bridge.knx_mqtt.KnxMqttDimmerBridge("Unittest_KNX_Dimmer_ctr", "Unittest_MQTT_dimmer")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_dimmer_KNX_Dimmer_ctr", 0)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_dimmer_MQTT_dimmer", 0)
+
+		self._knx_bridge_full = habapp_rules.bridge.knx_mqtt.KnxMqttDimmerBridge("Unittest_full_MQTT_dimmer", "Unittest_full_KNX_Switch_ctr", "Unittest_full_KNX_Dimmer_ctr")
+		self._knx_bridge_switch = habapp_rules.bridge.knx_mqtt.KnxMqttDimmerBridge("Unittest_switch_MQTT_dimmer", "Unittest_switch_KNX_Switch_ctr")
+		self._knx_bridge_dimmer = habapp_rules.bridge.knx_mqtt.KnxMqttDimmerBridge("Unittest_dimmer_MQTT_dimmer", knx_dimmer_ctr="Unittest_dimmer_KNX_Dimmer_ctr")
+
+	def test__init__(self):
+		"""Test __init__"""
+		self.assertIsNotNone(self._knx_bridge_full._knx_switch_item)
+		self.assertIsNotNone(self._knx_bridge_full._knx_dimmer_item)
+
+		self.assertIsNotNone(self._knx_bridge_switch._knx_switch_item)
+		self.assertIsNone(self._knx_bridge_switch._knx_dimmer_item)
+
+		self.assertIsNone(self._knx_bridge_dimmer._knx_switch_item)
+		self.assertIsNotNone(self._knx_bridge_dimmer._knx_dimmer_item)
+
+	def test__init_exceptions(self):
+		"""Test exceptions of __init__."""
+		with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
+			habapp_rules.bridge.knx_mqtt.KnxMqttDimmerBridge("Unittest_full_MQTT_dimmer")
 
 	def test_knx_on_off(self):
 		"""Test ON/OFF from KNX"""
-		self.assertEqual(0, self._knx_bridge._mqtt_item.value)
+		self.assertEqual(0, self._knx_bridge_full._mqtt_item.value)
 
 		# ON via KNX
-		tests.helper.oh_item.item_command_event("Unittest_KNX_Dimmer_ctr", "ON")
-		self.assertEqual(100, self._knx_bridge._mqtt_item.value)
+		tests.helper.oh_item.item_command_event("Unittest_full_KNX_Switch_ctr", "ON")
+		self.assertEqual(100, self._knx_bridge_full._mqtt_item.value)
 
 		# OFF via KNX
-		tests.helper.oh_item.item_command_event("Unittest_KNX_Dimmer_ctr", "OFF")
-		self.assertEqual(0, self._knx_bridge._mqtt_item.value)
+		tests.helper.oh_item.item_command_event("Unittest_full_KNX_Switch_ctr", "OFF")
+		self.assertEqual(0, self._knx_bridge_full._mqtt_item.value)
 
-	def test_knx_value(self):
-		"""Test value from KNX"""
-		self.assertEqual(0, self._knx_bridge._mqtt_item.value)
-		tests.helper.oh_item.item_command_event("Unittest_KNX_Dimmer_ctr", 42)
-		self.assertEqual(42, self._knx_bridge._mqtt_item.value)
+		# 50 via KNX
+		tests.helper.oh_item.item_command_event("Unittest_full_KNX_Dimmer_ctr", 50)
+		self.assertEqual(50, self._knx_bridge_full._mqtt_item.value)
+
+		# 0 via KNX
+		tests.helper.oh_item.item_command_event("Unittest_full_KNX_Dimmer_ctr", 0)
+		self.assertEqual(0, self._knx_bridge_full._mqtt_item.value)
 
 	def test_knx_increase(self):
 		"""Test increase from KNX."""
-		self.assertEqual(0, self._knx_bridge._mqtt_item.value)
-		tests.helper.oh_item.item_command_event("Unittest_KNX_Dimmer_ctr", "INCREASE")
-		self.assertEqual(60, self._knx_bridge._mqtt_item.value)
-		tests.helper.oh_item.item_command_event("Unittest_KNX_Dimmer_ctr", "INCREASE")
-		self.assertEqual(100, self._knx_bridge._mqtt_item.value)
+		self.assertEqual(0, self._knx_bridge_full._mqtt_item.value)
+		tests.helper.oh_item.item_command_event("Unittest_full_KNX_Dimmer_ctr", "INCREASE")
+		self.assertEqual(60, self._knx_bridge_full._mqtt_item.value)
+		tests.helper.oh_item.item_command_event("Unittest_full_KNX_Dimmer_ctr", "INCREASE")
+		self.assertEqual(100, self._knx_bridge_full._mqtt_item.value)
 
 	def test_knx_decrease(self):
 		"""Test decrease from KNX."""
-		self._knx_bridge._mqtt_item.oh_send_command(100)
-		self.assertEqual(100, self._knx_bridge._mqtt_item.value)
-		tests.helper.oh_item.item_command_event("Unittest_KNX_Dimmer_ctr", "DECREASE")
-		self.assertEqual(30, self._knx_bridge._mqtt_item.value)
-		tests.helper.oh_item.item_command_event("Unittest_KNX_Dimmer_ctr", "DECREASE")
-		self.assertEqual(0, self._knx_bridge._mqtt_item.value)
+		self._knx_bridge_full._mqtt_item.oh_send_command(100)
+		self.assertEqual(100, self._knx_bridge_full._mqtt_item.value)
+		tests.helper.oh_item.item_command_event("Unittest_full_KNX_Dimmer_ctr", "DECREASE")
+		self.assertEqual(30, self._knx_bridge_full._mqtt_item.value)
+		tests.helper.oh_item.item_command_event("Unittest_full_KNX_Dimmer_ctr", "DECREASE")
+		self.assertEqual(0, self._knx_bridge_full._mqtt_item.value)
 
 	def test_knx_not_supported(self):
 		"""Test not supported command coming from KNX."""
-		with unittest.mock.patch.object(self._knx_bridge, "_instance_logger") as logger_mock:
-			tests.helper.oh_item.item_command_event("Unittest_KNX_Dimmer_ctr", "NotSupported")
+		with unittest.mock.patch.object(self._knx_bridge_full, "_instance_logger") as logger_mock:
+			tests.helper.oh_item.item_command_event("Unittest_full_KNX_Dimmer_ctr", "NotSupported")
 			logger_mock.error.assert_called_once_with("command 'NotSupported' ist not supported!")
 
 	def test_mqtt_events(self):
 		"""Test if KNX item is updated correctly if MQTT item changed."""
-		self.assertEqual(0, self._knx_bridge._mqtt_item.value)
-		TestCase = collections.namedtuple("TestCase", "send_value, expected_calls")
+		self.assertEqual(0, self._knx_bridge_full._mqtt_item.value)
+		TestCase = collections.namedtuple("TestCase", "send_value, expected_call_dimmer, expected_call_switch")
 
 		test_cases = [
-			TestCase(70, [unittest.mock.call(70), unittest.mock.call("ON")]),
-			TestCase(100, [unittest.mock.call(100)]),
-			TestCase(1, [unittest.mock.call(1)]),
-			TestCase(0, [unittest.mock.call(0), unittest.mock.call("OFF")])
+			TestCase(70, 70, "ON"),
+			TestCase(100, 100, "ON"),
+			TestCase(1, 1, "ON"),
+			TestCase(0, 0, "OFF")
 		]
 
-		with unittest.mock.patch.object(self._knx_bridge, "_knx_item") as knx_item_mock:
+		with unittest.mock.patch.object(self._knx_bridge_full, "_knx_dimmer_item") as full_knx_dimmer_item_mock, \
+				unittest.mock.patch.object(self._knx_bridge_full, "_knx_switch_item") as full_knx_switch_item_mock, \
+				unittest.mock.patch.object(self._knx_bridge_switch, "_knx_switch_item") as switch_knx_switch_item_mock, \
+				unittest.mock.patch.object(self._knx_bridge_dimmer, "_knx_dimmer_item") as dimmer_knx_dimmer_item_mock:
 			for test_case in test_cases:
-				knx_item_mock.oh_post_update.reset_mock()
-				tests.helper.oh_item.item_state_change_event("Unittest_MQTT_dimmer", test_case.send_value)
-				knx_item_mock.oh_post_update.assert_has_calls(test_case.expected_calls)
+				full_knx_dimmer_item_mock.oh_post_update.reset_mock()
+				full_knx_switch_item_mock.oh_post_update.reset_mock()
+				switch_knx_switch_item_mock.oh_post_update.reset_mock()
+				dimmer_knx_dimmer_item_mock.oh_post_update.reset_mock()
 
-	def tearDown(self) -> None:
-		"""Tear down test case."""
-		tests.helper.oh_item.remove_all_mocked_items()
-		self.__runner.tear_down()
+				tests.helper.oh_item.item_state_change_event("Unittest_full_MQTT_dimmer", test_case.send_value)
+				tests.helper.oh_item.item_state_change_event("Unittest_switch_MQTT_dimmer", test_case.send_value)
+				tests.helper.oh_item.item_state_change_event("Unittest_dimmer_MQTT_dimmer", test_case.send_value)
+
+				# full bridge (switch and dimmer item for KNX)
+				full_knx_dimmer_item_mock.oh_post_update.assert_called_once_with(test_case.expected_call_dimmer)
+				full_knx_switch_item_mock.oh_post_update.assert_called_once_with(test_case.expected_call_switch)
+
+				# partial bridges
+				switch_knx_switch_item_mock.oh_post_update.assert_called_once_with(test_case.expected_call_switch)
+				dimmer_knx_dimmer_item_mock.oh_post_update.assert_called_once_with(test_case.expected_call_dimmer)

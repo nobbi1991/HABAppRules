@@ -1,4 +1,4 @@
-"""Tests for motion."""
+"""Tests for motion sensors."""
 import collections
 import os
 import pathlib
@@ -16,11 +16,12 @@ import habapp_rules.system
 import tests.helper.graph_machines
 import tests.helper.oh_item
 import tests.helper.rule_runner
+import tests.helper.test_case_base
 
 
 # pylint: disable=no-member, protected-access, too-many-public-methods
-class TestLight(unittest.TestCase):
-	"""Tests cases for testing Light rule."""
+class TestMotion(tests.helper.test_case_base.TestCaseBase):
+	"""Tests cases for testing motion sensors rule."""
 
 	def setUp(self) -> None:
 		"""Setup test case."""
@@ -32,12 +33,7 @@ class TestLight(unittest.TestCase):
 		self.addCleanup(self.threading_timer_mock_patcher.stop)
 		self.threading_timer_mock = self.threading_timer_mock_patcher.start()
 
-		self.send_command_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.send_command", new=tests.helper.oh_item.send_command)
-		self.addCleanup(self.send_command_mock_patcher.stop)
-		self.send_command_mock = self.send_command_mock_patcher.start()
-
-		self.__runner = tests.helper.rule_runner.SimpleRuleRunner()
-		self.__runner.set_up()
+		tests.helper.test_case_base.TestCaseBase.setUp(self)
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Motion_min_raw", "OFF")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Motion_min_filtered", "OFF")
@@ -50,10 +46,11 @@ class TestLight(unittest.TestCase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Brightness_Threshold", 1000)
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Motion_Unittest_Motion_min_raw_state", "")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "CustomState", "")
 
-		with unittest.mock.patch.object(habapp_rules.core.state_machine_rule.StateMachineRule, "_create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("H_Motion_Unittest_Motion_min_raw_state", "")):
-			self.motion_min = habapp_rules.sensors.motion.Motion("Unittest_Motion_min_raw", "Unittest_Motion_min_filtered")
-			self.motion_max = habapp_rules.sensors.motion.Motion("Unittest_Motion_max_raw", "Unittest_Motion_max_filtered", 5, "Unittest_Brightness", "Unittest_Brightness_Threshold", "Unittest_Motion_max_lock", "Unittest_Sleep_state")
+
+		self.motion_min = habapp_rules.sensors.motion.Motion("Unittest_Motion_min_raw", "Unittest_Motion_min_filtered")
+		self.motion_max = habapp_rules.sensors.motion.Motion("Unittest_Motion_max_raw", "Unittest_Motion_max_filtered", 5, "Unittest_Brightness", "Unittest_Brightness_Threshold", "Unittest_Motion_max_lock", "Unittest_Sleep_state", name_state="CustomState")
 
 	def test__init__(self):
 		"""Test __init__."""
@@ -98,14 +95,14 @@ class TestLight(unittest.TestCase):
 		if not picture_dir.is_dir():
 			os.makedirs(picture_dir)
 
-		light_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
+		motion_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
 			model=tests.helper.graph_machines.FakeModel(),
 			states=self.motion_min.states,
 			transitions=self.motion_min.trans,
 			initial=self.motion_min.state,
 			show_conditions=True)
 
-		light_graph.get_graph().draw(picture_dir / "Motion.png", format="png", prog="dot")
+		motion_graph.get_graph().draw(picture_dir / "Motion.png", format="png", prog="dot")
 
 	def test_init_exceptions(self):
 		"""Test exceptions of __init__."""
@@ -408,27 +405,3 @@ class TestLight(unittest.TestCase):
 				else:
 					self.motion_max.sleep_started.assert_not_called()
 					self.motion_max.sleep_end.assert_not_called()
-
-	def _get_state_names(self, states: dict, parent_state: str | None = None) -> list[str]:  # pragma: no cover
-		"""Helper function to get all state names (also nested states)
-
-		:param states: dict of all states or children states
-		:param parent_state: name of parent state, only if it is a nested state machine
-		:return: list of all state names
-		"""
-		state_names = []
-		prefix = f"{parent_state}_" if parent_state else ""
-		if parent_state:
-			states = states["children"]
-
-		for state in states:
-			if "children" in state:
-				state_names += self._get_state_names(state, state["name"])
-			else:
-				state_names.append(f"{prefix}{state['name']}")
-		return state_names
-
-	def tearDown(self) -> None:
-		"""Tear down test case."""
-		tests.helper.oh_item.remove_all_mocked_items()
-		self.__runner.tear_down()

@@ -77,18 +77,18 @@ class LightConfigExtended(LightConfig):
 
 
 CONFIG_DEFAULT = LightConfig(
-	on=FunctionConfig(day=BrightnessTimeout(True, 600), night=BrightnessTimeout(80, 180), sleeping=BrightnessTimeout(20, 60)),
+	on=FunctionConfig(day=BrightnessTimeout(True, 14 * 3600), night=BrightnessTimeout(80, 10 * 3600), sleeping=BrightnessTimeout(20, 3 * 3600)),
 	pre_off=FunctionConfig(day=BrightnessTimeout(50, 10), night=BrightnessTimeout(40, 7), sleeping=BrightnessTimeout(10, 7)),
 	leaving=FunctionConfig(day=BrightnessTimeout(False, 0), night=BrightnessTimeout(False, 0), sleeping=BrightnessTimeout(False, 0)),
 	pre_sleep=FunctionConfig(day=BrightnessTimeout(False, 10), night=BrightnessTimeout(False, 10), sleeping=None),
 )
 
 CONFIG_DEFAULT_EXTENDED = LightConfigExtended(
-	on=FunctionConfig(day=BrightnessTimeout(True, 600), night=BrightnessTimeout(80, 180), sleeping=BrightnessTimeout(20, 60)),
+	on=FunctionConfig(day=BrightnessTimeout(True, 14 * 3600), night=BrightnessTimeout(80, 10 * 3600), sleeping=BrightnessTimeout(20, 3 * 3600)),
 	pre_off=FunctionConfig(day=BrightnessTimeout(50, 10), night=BrightnessTimeout(40, 7), sleeping=BrightnessTimeout(10, 7)),
 	leaving=FunctionConfig(day=BrightnessTimeout(False, 0), night=BrightnessTimeout(False, 0), sleeping=BrightnessTimeout(False, 0)),
 	pre_sleep=FunctionConfig(day=BrightnessTimeout(False, 10), night=BrightnessTimeout(False, 10), sleeping=None),
-	motion=FunctionConfig(day=BrightnessTimeout(True, 600), night=BrightnessTimeout(80, 180), sleeping=BrightnessTimeout(20, 60)),
-	door=FunctionConfig(day=BrightnessTimeout(True, 60), night=BrightnessTimeout(80, 30), sleeping=None),
+	motion=FunctionConfig(day=BrightnessTimeout(True, 14 * 3600), night=BrightnessTimeout(80, 10 * 3600), sleeping=BrightnessTimeout(20, 3 * 3600)),
+	door=FunctionConfig(day=BrightnessTimeout(True, 3 * 60), night=BrightnessTimeout(80, 30), sleeping=None),
 	off_at_door_closed_during_leaving=False
 )

@@ -2,14 +2,14 @@
 import inspect
 import os
 import pathlib
-import time
 
 import HABApp
-import HABApp.openhab.connection_handler.func_sync
+import HABApp.openhab.connection.handler.func_sync
 import transitions.extensions.states
 
 import habapp_rules
 import habapp_rules.core.exceptions
+import habapp_rules.core.helper
 
 
 @transitions.extensions.states.add_state_features(transitions.extensions.states.Timeout)
@@ -43,28 +43,12 @@ class StateMachineRule(HABApp.Rule):
 		self._item_prefix = f"{parent_class_path_relative_str}.{self.rule_name}".replace(".", "_")
 
 		if not state_item_name:
-			state_item_name = f"{self._item_prefix}_state"
-		self._item_state = self._create_additional_item(state_item_name, "String", state_item_label)
+			state_item_name = f"H_{self._item_prefix}_state"
 
-	@staticmethod
-	def _create_additional_item(name: str, item_type: str, label: str | None = None) -> HABApp.openhab.items.OpenhabItem:
-		"""Create additional item if it does not already exist
-
-		:param name: Name of item
-		:param item_type: Type of item (e.g. String)
-		:param label: Label of the item
-		:return: returns the created item
-		:raises habapp_rules.core.exceptions.HabAppRulesException: if item could not be created
-		"""
-		if not HABApp.openhab.interface.item_exists(name):
-			if not label:
-				label = f"{name.replace('_', ' ')}"
-			if item_type == "String" and not label.endswith("[%s]"):
-				label = f"{label} [%s]"
-			if not HABApp.openhab.interface.create_item(item_type=item_type, name=name, label=label):
-				raise habapp_rules.core.exceptions.HabAppRulesException(f"Could not create item '{name}'")
-			time.sleep(0.05)
-		return HABApp.openhab.items.OpenhabItem.get_item(name)
+		if HABApp.openhab.interface_sync.item_exists(state_item_name):
+			self._item_state = HABApp.openhab.items.StringItem.get_item(state_item_name)
+		else:
+			self._item_state = habapp_rules.core.helper.create_additional_item(state_item_name, "String", state_item_label)
 
 	def get_initial_log_message(self) -> str:
 		"""Get log message which can be logged at the init of a rule with a state machine.
@@ -87,8 +71,14 @@ class StateMachineRule(HABApp.Rule):
 		"""Set initial state.
 		if the ``initial_state`` parameter of the state machine constructor is used the timeouts will not be started for the initial state.
 		"""
-		initial_state = self._get_initial_state()
-		eval(f"self.to_{initial_state}()")  # pylint: disable=eval-used
+		self._set_state(self._get_initial_state())
+
+	def _set_state(self, state_name: str) -> None:
+		"""Set given state
+
+		:param state_name: name of state
+		"""
+		eval(f"self.to_{state_name}()")  # pylint: disable=eval-used
 
 	def _update_openhab_state(self) -> None:
 		"""Update OpenHAB state item. This should method should be set to "after_state_change" of the state machine."""
