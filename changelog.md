@@ -13,6 +13,7 @@
 - added ``habapp_rules.actors.light.LightSwitch`` and ``habapp_rules.actors.light.LightSwitchExtended`` which add the support for ``switch`` lights
 - added ``habapp_rules.sensors.sun`` to handle and filter different kind of sun sensors
 - added ``habapp_rules.common.filter.ExponentialFilter`` to apply a exponential filter to a number item. This can be used to smoothen signals.
+- added ``habapp_rules.actors.shading`` to handle shading objects
 - increased startup speed by upgrading to HABApp==23.09.0
 
 # Version 3.1.1 - 08.05.2023
