@@ -14,7 +14,7 @@ except ImportError:
 
 import nox
 
-PYTHON_VERSION = "3.10"
+PYTHON_VERSION = ["3.10", "3.11"]
 nox.options.sessions = ["version_check", "coverage", "pylint"]
 
 

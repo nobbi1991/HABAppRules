@@ -1,3 +1,9 @@
+# Version 4.1.0 - 27.09.2023
+
+## Features
+
+- Updated docker container to use python 3.11 
+
 # Version 4.0.0 - 13.09.2023
 
 ## Breaking changes
