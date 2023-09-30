@@ -3,6 +3,7 @@ import collections
 import unittest.mock
 
 import HABApp.openhab.items.switch_item
+import pendulum.datetime
 
 import habapp_rules.common.logic
 import habapp_rules.core.state_machine_rule
@@ -175,3 +176,141 @@ class TestAndOR(tests.helper.test_case_base.TestCaseBase):
 		for step in test_steps:
 			tests.helper.oh_item.send_command(step.event_item_name, step.event_item_value)
 			self.assertEqual(step.expected_output, output_item.value)
+
+
+class TestMinMax(tests.helper.test_case_base.TestCaseBase):
+	"""Tests for AND / OR."""
+
+	def setUp(self) -> None:
+		"""Setup unit-tests."""
+		tests.helper.test_case_base.TestCaseBase.setUp(self)
+
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Number_out_min", 0)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Number_out_max", 0)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Number_in1", 0)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Number_in2", 0)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Number_in3", 0)
+
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Dimmer_out_min", 0)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Dimmer_out_max", 0)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Dimmer_in1", 0)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Dimmer_in2", 0)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Dimmer_in3", 0)
+
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch", 0)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.ContactItem, "Unittest_Contact", 0)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_String", "")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.RollershutterItem, "Unittest_RollerShutter", 0)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DatetimeItem, "Unittest_DateTime", 0)
+
+	def test_base_init_exceptions(self):
+		"""Test exceptions during init."""
+		# unsupported item output type
+		for item_name in ["Unittest_Switch", "Unittest_Contact", "Unittest_String", "Unittest_RollerShutter", "Unittest_DateTime"]:
+			with self.assertRaises(TypeError) as context:
+				habapp_rules.common.logic.Min([item_name], item_name)
+			self.assertIn("is not supported. Type must be NumberItem or DimmerItem", str(context.exception))
+
+		# wrong input type
+		for item_name in ["Unittest_Switch", "Unittest_Contact", "Unittest_String", "Unittest_RollerShutter", "Unittest_DateTime"]:
+			and_rule = habapp_rules.common.logic.Max(["Unittest_Number_in1", item_name], "Unittest_Number_out_max")
+			self.assertEqual(["Unittest_Number_in1"], [itm.name for itm in and_rule._input_items])
+
+	def test_number_min_max_without_filter(self):
+		"""Test min / max for number items."""
+		TestStep = collections.namedtuple("TestStep", "event_item_index, event_item_value, expected_min, expected_max")
+
+		test_steps = [
+			# test change single value
+			TestStep(1, 100, 0, 100),
+			TestStep(1, 0, 0, 0),
+			TestStep(1, -100, -100, 0),
+
+			# change all values to 5000
+			TestStep(1, 5000, 0, 5000),
+			TestStep(2, 5000, 0, 5000),
+			TestStep(3, 5000, 5000, 5000),
+
+			# some random values
+			TestStep(3, -1000, -1000, 5000),
+			TestStep(3, -500, -500, 5000),
+			TestStep(1, 200, -500, 5000)
+		]
+
+		habapp_rules.common.logic.Min(["Unittest_Number_in1", "Unittest_Number_in2", "Unittest_Number_in3"], "Unittest_Number_out_min")
+		habapp_rules.common.logic.Max(["Unittest_Number_in1", "Unittest_Number_in2", "Unittest_Number_in3"], "Unittest_Number_out_max")
+		output_item_number_min = HABApp.openhab.items.NumberItem.get_item("Unittest_Number_out_min")
+		output_item_number_max = HABApp.openhab.items.NumberItem.get_item("Unittest_Number_out_max")
+
+		for step in test_steps:
+			tests.helper.oh_item.item_state_change_event(f"Unittest_Number_in{step.event_item_index}", step.event_item_value)
+
+			self.assertEqual(step.expected_min, output_item_number_min.value)
+			self.assertEqual(step.expected_max, output_item_number_max.value)
+
+	def test_dimmer_min_max_without_filter(self):
+		"""Test min / max for dimmer items."""
+		TestStep = collections.namedtuple("TestStep", "event_item_index, event_item_value, expected_min, expected_max")
+
+		test_steps = [
+			# test change single value
+			TestStep(1, 100, 0, 100),
+			TestStep(1, 0, 0, 0),
+			TestStep(1, 50, 0, 50),
+
+			# change all values to 80
+			TestStep(1, 80, 0, 80),
+			TestStep(2, 80, 0, 80),
+			TestStep(3, 80, 80, 80),
+
+			# some random values
+			TestStep(3, 1, 1, 80),
+			TestStep(3, 20, 20, 80),
+			TestStep(1, 50, 20, 80)
+		]
+
+		habapp_rules.common.logic.Min(["Unittest_Dimmer_in1", "Unittest_Dimmer_in2", "Unittest_Dimmer_in3"], "Unittest_Dimmer_out_min")
+		habapp_rules.common.logic.Max(["Unittest_Dimmer_in1", "Unittest_Dimmer_in2", "Unittest_Dimmer_in3"], "Unittest_Dimmer_out_max")
+		output_item_dimmer_min = HABApp.openhab.items.DimmerItem.get_item("Unittest_Dimmer_out_min")
+		output_item_dimmer_max = HABApp.openhab.items.DimmerItem.get_item("Unittest_Dimmer_out_max")
+
+		for step in test_steps:
+			tests.helper.oh_item.item_state_change_event(f"Unittest_Dimmer_in{step.event_item_index}", step.event_item_value)
+
+			self.assertEqual(step.expected_min, output_item_dimmer_min.value)
+			self.assertEqual(step.expected_max, output_item_dimmer_max.value)
+
+	def test_get_input_items(self):
+		"""Test _get_input_items."""
+		# without filter
+		rule_min = habapp_rules.common.logic.Min(["Unittest_Dimmer_in1", "Unittest_Dimmer_in2", "Unittest_Dimmer_in3"], "Unittest_Dimmer_out_min")
+
+		self.assertIsNone(rule_min._ignore_old_values_time)
+		input_items = rule_min._get_input_items()
+		self.assertListEqual(["Unittest_Dimmer_in1", "Unittest_Dimmer_in2", "Unittest_Dimmer_in3"], [itm.name for itm in input_items])
+
+		# with filter
+		rule_min = habapp_rules.common.logic.Min(["Unittest_Dimmer_in1", "Unittest_Dimmer_in2", "Unittest_Dimmer_in3"], "Unittest_Dimmer_out_min", 60)
+		input_items = rule_min._get_input_items()
+		self.assertEqual(60, rule_min._ignore_old_values_time)
+		self.assertListEqual(["Unittest_Dimmer_in1", "Unittest_Dimmer_in2", "Unittest_Dimmer_in3"], [itm.name for itm in input_items])
+
+		# manipulate item 2
+		itm2 = HABApp.openhab.items.DimmerItem.get_item("Unittest_Dimmer_in2")
+		itm2._last_update = HABApp.core.items.base_item.UpdatedTime("Unittest_Dimmer_in2", pendulum.DateTime.now().subtract(seconds=61))
+
+		input_items = rule_min._get_input_items()
+		self.assertListEqual(["Unittest_Dimmer_in1", "Unittest_Dimmer_in3"], [itm.name for itm in input_items])
+
+	def test_cb_input_event(self):
+		"""Test _cb_input_event."""
+		rule_min = habapp_rules.common.logic.Min(["Unittest_Dimmer_in1", "Unittest_Dimmer_in2", "Unittest_Dimmer_in3"], "Unittest_Dimmer_out_min")
+		rule_max = habapp_rules.common.logic.Max(["Unittest_Dimmer_in1", "Unittest_Dimmer_in2", "Unittest_Dimmer_in3"], "Unittest_Dimmer_out_max")
+
+		with unittest.mock.patch.object(rule_min, "_get_input_items", return_value=[None]), unittest.mock.patch.object(rule_min, "_set_output_state") as set_output_mock:
+			rule_min._cb_input_event(None)
+		set_output_mock.assert_not_called()
+
+		with unittest.mock.patch.object(rule_max, "_get_input_items", return_value=[None]), unittest.mock.patch.object(rule_max, "_set_output_state") as set_output_mock:
+			rule_max._cb_input_event(None)
+		set_output_mock.assert_not_called()

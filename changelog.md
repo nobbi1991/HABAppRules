@@ -1,3 +1,10 @@
+# Version 4.2.0 - dd.mm.2023
+
+## Features
+
+- added logic functions ``habapp_rules.common.logic.Min`` and ``habapp_rules.common.logic.Max``
+
+
 # Version 4.1.0 - 27.09.2023
 
 ## Features
