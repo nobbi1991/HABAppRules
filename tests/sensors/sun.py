@@ -23,22 +23,22 @@ class TestSensorTemperatureDifference(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Temperature_2", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Output_Temperature", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Threshold_Temperature", None)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "H_Unittest_Temperature_1_Unittest_Temperature_2_diff", None)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "H_Unittest_Temperature_1_Unittest_Temperature_2_diff_filtered", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "H_Temperature_diff_for_Unittest_Output_Temperature", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "H_Temperature_diff_for_Unittest_Output_Temperature_filtered", None)
 
 		with unittest.mock.patch("HABApp.openhab.interface_sync.item_exists", return_value=True), unittest.mock.patch("habapp_rules.common.filter.ExponentialFilter"):
-			self._sensor = habapp_rules.sensors.sun.SensorTemperatureDifference("Unittest_Temperature_1", "Unittest_Temperature_2", "Unittest_Output_Temperature", "Unittest_Threshold_Temperature")
+			self._sensor = habapp_rules.sensors.sun.SensorTemperatureDifference(["Unittest_Temperature_1", "Unittest_Temperature_2"], "Unittest_Output_Temperature", "Unittest_Threshold_Temperature")
 
 	def test_init(self):
 		"""Test __init__."""
 		self.assertEqual(None, self._sensor._threshold)
-		self.assertEqual("H_Unittest_Temperature_1_Unittest_Temperature_2_diff", self._sensor._item_temp_diff.name)
-		self.assertEqual("H_Unittest_Temperature_1_Unittest_Temperature_2_diff_filtered", self._sensor._item_input_filtered.name)
+		self.assertEqual("H_Temperature_diff_for_Unittest_Output_Temperature", self._sensor._item_temp_diff.name)
+		self.assertEqual("H_Temperature_diff_for_Unittest_Output_Temperature_filtered", self._sensor._item_input_filtered.name)
 
 	def test_init_with_fixed_threshold(self):
 		"""Test __init__ with fixed threshold value."""
 		with unittest.mock.patch("HABApp.openhab.interface_sync.item_exists", return_value=True), unittest.mock.patch("habapp_rules.common.filter.ExponentialFilter"):
-			sensor = habapp_rules.sensors.sun.SensorTemperatureDifference("Unittest_Temperature_1", "Unittest_Temperature_2", "Unittest_Output_Temperature", 42)
+			sensor = habapp_rules.sensors.sun.SensorTemperatureDifference(["Unittest_Temperature_1", "Unittest_Temperature_2"], "Unittest_Output_Temperature", 42)
 		self.assertEqual(42, sensor._threshold)
 
 	def test_cb_threshold(self):
@@ -48,7 +48,7 @@ class TestSensorTemperatureDifference(tests.helper.test_case_base.TestCaseBase):
 
 	def test_temp_diff(self):
 		"""Test if temperature difference is calculated correctly."""
-		temp_diff_item = HABApp.openhab.items.OpenhabItem.get_item("H_Unittest_Temperature_1_Unittest_Temperature_2_diff")
+		temp_diff_item = HABApp.openhab.items.OpenhabItem.get_item("H_Temperature_diff_for_Unittest_Output_Temperature")
 		self.assertEqual(None, temp_diff_item.value)
 
 		# update temperature 1
@@ -77,22 +77,22 @@ class TestSensorTemperatureDifference(tests.helper.test_case_base.TestCaseBase):
 		self.assertEqual(None, output_item.value)
 
 		# update temp_diff to 10 | threshold == None!
-		tests.helper.oh_item.item_state_change_event("H_Unittest_Temperature_1_Unittest_Temperature_2_diff_filtered", 10)
+		tests.helper.oh_item.item_state_change_event("H_Temperature_diff_for_Unittest_Output_Temperature_filtered", 10)
 		self.assertEqual(None, output_item.value)
 
 		# set threshold to 10
 		self._sensor._threshold = 10
 
 		# update temp_diff to 10
-		tests.helper.oh_item.item_state_change_event("H_Unittest_Temperature_1_Unittest_Temperature_2_diff_filtered", 10)
+		tests.helper.oh_item.item_state_change_event("H_Temperature_diff_for_Unittest_Output_Temperature_filtered", 10)
 		self.assertEqual("ON", output_item.value)
 
 		# update temp_diff to 9.9
-		tests.helper.oh_item.item_state_change_event("H_Unittest_Temperature_1_Unittest_Temperature_2_diff_filtered", 9.9)
+		tests.helper.oh_item.item_state_change_event("H_Temperature_diff_for_Unittest_Output_Temperature_filtered", 9.9)
 		self.assertEqual("OFF", output_item.value)
 
 		# update temp_diff to 8
-		tests.helper.oh_item.item_state_change_event("H_Unittest_Temperature_1_Unittest_Temperature_2_diff_filtered", 8)
+		tests.helper.oh_item.item_state_change_event("H_Temperature_diff_for_Unittest_Output_Temperature_filtered", 8)
 		self.assertEqual("OFF", output_item.value)
 
 

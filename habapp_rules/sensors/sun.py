@@ -140,38 +140,50 @@ class SensorTemperatureDifference(_SensorBase):
 	habapp_rules.sensors.sun.SensorTempDiff("temperature_sun", "temperature_shadow", "sun_protection_temperature", "temperature_threshold")
 	"""
 
-	def __init__(self, name_temperature_1: str, name_temperature_2: str, name_output: str, threshold: str | float, filter_tau: int = 30 * 60, filter_instant_increase: bool = True, filter_instant_decrease: bool = False) -> None:
+	def __init__(self,
+	             temperature_item_names: list[str],
+	             name_output: str,
+	             threshold: str | float,
+	             filter_tau: int = 30 * 60,
+	             filter_instant_increase: bool = True,
+	             filter_instant_decrease: bool = False,
+	             ignore_old_values_time: int | None = None) -> None:
 		"""Init of sun sensor which takes a two temperature values (one in the sun and one in the shadow)
 
-		:param name_temperature_1: name of OpenHAB first temperature item (NumberItem)
-		:param name_temperature_2: name of OpenHAB second temperature item (NumberItem)
+		:param temperature_item_names: name of all OpenHAB temperature items (NumberItem)
 		:param name_output: name of OpenHAB output item (SwitchItem)
 		:param threshold: threshold for the temperature difference which is supposed that sun is shining. Can be given as float value or name of OpenHAB NumberItem
 		:param filter_tau: filter constant for the exponential filter. Default is set to 30 minutes
 		:param filter_instant_increase: if set to True, increase of input values will not be filtered
 		:param filter_instant_decrease: if set to True, decrease of input values will not be filtered
+		:param ignore_old_values_time: ignores values which are older than the given time in seconds. If None, all values will be taken
 		"""
-		name_temperature_diff = f"H_{name_temperature_1}_{name_temperature_2}_diff"
+		self._ignore_old_values_time = ignore_old_values_time
+		name_temperature_diff = f"H_Temperature_diff_for_{name_output}"
 		habapp_rules.core.helper.create_additional_item(name_temperature_diff, "Number", name_temperature_diff.replace("_", " "))
 
 		_SensorBase.__init__(self, name_temperature_diff, name_output, threshold, filter_tau, filter_instant_increase, filter_instant_decrease)
 
 		# init items
-		self._item_temperature_1 = HABApp.openhab.items.NumberItem.get_item(name_temperature_1)
-		self._item_temperature_2 = HABApp.openhab.items.NumberItem.get_item(name_temperature_2)
+		self._temperature_items = [HABApp.openhab.items.NumberItem.get_item(name) for name in temperature_item_names]
 		self._item_temp_diff = HABApp.openhab.items.NumberItem.get_item(name_temperature_diff)
 
 		# callbacks
-		self._item_temperature_1.listen_event(self._cb_temperature, HABApp.openhab.events.ItemStateChangedEventFilter())
-		self._item_temperature_2.listen_event(self._cb_temperature, HABApp.openhab.events.ItemStateChangedEventFilter())
+		for temperature_item in self._temperature_items:
+			temperature_item.listen_event(self._cb_temperature, HABApp.openhab.events.ItemStateChangedEventFilter())
 
 		# calculate temperature difference
 		self._cb_temperature(None)
 
 	def _cb_temperature(self, _: HABApp.openhab.events.ItemStateChangedEvent | None):
 		"""Callback, which is triggered if a temperature value changed."""
-		if all(isinstance(temperature.value, (int, float)) for temperature in (self._item_temperature_1, self._item_temperature_2)):
-			self._item_temp_diff.oh_send_command(abs(self._item_temperature_1.value - self._item_temperature_2.value))
+		filtered_items = [itm for itm in habapp_rules.core.helper.filter_updated_items(self._temperature_items, self._ignore_old_values_time) if itm.value is not None]
+		if len(filtered_items) < 2:
+			return
+		value_min = min(item.value for item in filtered_items)
+		value_max = max(item.value for item in filtered_items)
+
+		self._item_temp_diff.oh_send_command(value_max - value_min)
 
 
 class SunPositionFilter(HABApp.Rule):
