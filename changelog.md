@@ -1,8 +1,7 @@
-# Version 5.0.0 - dd.mm.2023
+# Version 5.0.0 - 01.10.2023
 
 ## Breaking changes
-- added support for more than two sensor values to ``habapp_rules.sensors.sun.SensorTemperatureDifference``. Braking change: Item names must be given as list of names.
-
+- added support for more than two sensor values to ``habapp_rules.sensors.sun.SensorTemperatureDifference``. Breaking change: Item names must be given as list of names.
 
 ## Features
 
