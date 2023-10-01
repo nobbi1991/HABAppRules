@@ -3,7 +3,6 @@ import collections
 import unittest.mock
 
 import HABApp.openhab.items.switch_item
-import pendulum.datetime
 
 import habapp_rules.common.logic
 import habapp_rules.core.state_machine_rule
@@ -280,37 +279,15 @@ class TestMinMax(tests.helper.test_case_base.TestCaseBase):
 			self.assertEqual(step.expected_min, output_item_dimmer_min.value)
 			self.assertEqual(step.expected_max, output_item_dimmer_max.value)
 
-	def test_get_input_items(self):
-		"""Test _get_input_items."""
-		# without filter
-		rule_min = habapp_rules.common.logic.Min(["Unittest_Dimmer_in1", "Unittest_Dimmer_in2", "Unittest_Dimmer_in3"], "Unittest_Dimmer_out_min")
-
-		self.assertIsNone(rule_min._ignore_old_values_time)
-		input_items = rule_min._get_input_items()
-		self.assertListEqual(["Unittest_Dimmer_in1", "Unittest_Dimmer_in2", "Unittest_Dimmer_in3"], [itm.name for itm in input_items])
-
-		# with filter
-		rule_min = habapp_rules.common.logic.Min(["Unittest_Dimmer_in1", "Unittest_Dimmer_in2", "Unittest_Dimmer_in3"], "Unittest_Dimmer_out_min", 60)
-		input_items = rule_min._get_input_items()
-		self.assertEqual(60, rule_min._ignore_old_values_time)
-		self.assertListEqual(["Unittest_Dimmer_in1", "Unittest_Dimmer_in2", "Unittest_Dimmer_in3"], [itm.name for itm in input_items])
-
-		# manipulate item 2
-		itm2 = HABApp.openhab.items.DimmerItem.get_item("Unittest_Dimmer_in2")
-		itm2._last_update = HABApp.core.items.base_item.UpdatedTime("Unittest_Dimmer_in2", pendulum.DateTime.now().subtract(seconds=61))
-
-		input_items = rule_min._get_input_items()
-		self.assertListEqual(["Unittest_Dimmer_in1", "Unittest_Dimmer_in3"], [itm.name for itm in input_items])
-
 	def test_cb_input_event(self):
 		"""Test _cb_input_event."""
 		rule_min = habapp_rules.common.logic.Min(["Unittest_Dimmer_in1", "Unittest_Dimmer_in2", "Unittest_Dimmer_in3"], "Unittest_Dimmer_out_min")
 		rule_max = habapp_rules.common.logic.Max(["Unittest_Dimmer_in1", "Unittest_Dimmer_in2", "Unittest_Dimmer_in3"], "Unittest_Dimmer_out_max")
 
-		with unittest.mock.patch.object(rule_min, "_get_input_items", return_value=[None]), unittest.mock.patch.object(rule_min, "_set_output_state") as set_output_mock:
+		with unittest.mock.patch("habapp_rules.core.helper.filter_updated_items", return_value=[None]), unittest.mock.patch.object(rule_min, "_set_output_state") as set_output_mock:
 			rule_min._cb_input_event(None)
 		set_output_mock.assert_not_called()
 
-		with unittest.mock.patch.object(rule_max, "_get_input_items", return_value=[None]), unittest.mock.patch.object(rule_max, "_set_output_state") as set_output_mock:
+		with unittest.mock.patch("habapp_rules.core.helper.filter_updated_items", return_value=[None]), unittest.mock.patch.object(rule_max, "_set_output_state") as set_output_mock:
 			rule_max._cb_input_event(None)
 		set_output_mock.assert_not_called()

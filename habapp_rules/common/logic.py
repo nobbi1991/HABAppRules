@@ -1,7 +1,6 @@
 """Implementations of logical functions."""
 import abc
 import logging
-import time
 
 import HABApp
 
@@ -128,29 +127,26 @@ class _NumericLogicBase(HABApp.Rule):
 		self._cb_input_event(None)
 		self._instance_logger.debug(f"Init of rule '{self.__class__.__name__}' with was successful. Output item = '{output_name}' | Input items = '{input_names}'")
 
-	@abc.abstractmethod
 	def _cb_input_event(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | None) -> None:
 		"""Callback, which is called if one of the input items had a state event.
 
 		:param event: item event of the updated item
 		"""
+		filtered_items = habapp_rules.core.helper.filter_updated_items(self._input_items, self._ignore_old_values_time)
+		value = self._apply_numeric_logic([item.value for item in filtered_items if item is not None])
 
-	def _get_input_items(self) -> list[HABApp.openhab.items.DimmerItem | HABApp.openhab.items.NumberItem]:
-		"""Get input items depending on their last update time and _ignore_old_values_time
+		if value is None:
+			return
 
-		:return: full list if _ignore_old_values is not set, otherwise all items where updated in time.
+		self._set_output_state(value)
+
+	@abc.abstractmethod
+	def _apply_numeric_logic(self, input_values: list[float]) -> float:
+		"""Apply numeric logic
+
+		:param input_values: input values
+		:return: value which fulfills the filter type
 		"""
-		if self._ignore_old_values_time is None:
-			return self._input_items
-
-		current_time = time.time()
-		filtered_items = [item for item in self._input_items if current_time - item.last_update.timestamp() <= self._ignore_old_values_time]
-
-		if len(self._input_items) != len(filtered_items):
-			ignored_item_names = [item.name for item in self._input_items if current_time - item.last_update.timestamp() > self._ignore_old_values_time]
-			self._instance_logger.warning(f"The following items where not updated during the last {self._ignore_old_values_time}s and will be ignored: {ignored_item_names}")
-
-		return filtered_items
 
 	def _set_output_state(self, output_state: str) -> None:
 		"""Set state to the output element
@@ -167,14 +163,14 @@ class Min(_NumericLogicBase):
 	habapp_rules.common.logic.Min(["Item_1", "Item_2"], "Item_result", 600)
 	"""
 
-	def _cb_input_event(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | None) -> None:
-		"""Callback, which is called if one of the input items had a state event.
+	def _apply_numeric_logic(self, input_values: list[float]) -> float:
+		"""Apply numeric logic
 
-		:param event: item event of the updated item
+		:param input_values: input values
+		:return: min value of the given values
 		"""
-		min_item = HABApp.util.functions.min(self._get_input_items())
-		if isinstance(min_item, HABApp.openhab.items.OpenhabItem):
-			self._set_output_state(min_item.value)
+		return HABApp.util.functions.min(input_values)
+
 
 
 class Max(_NumericLogicBase):
@@ -184,11 +180,10 @@ class Max(_NumericLogicBase):
 	habapp_rules.common.logic.Max(["Item_1", "Item_2"], "Item_result", 600)
 	"""
 
-	def _cb_input_event(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | None) -> None:
-		"""Callback, which is called if one of the input items had a state event.
+	def _apply_numeric_logic(self, input_values: list[float]) -> float:
+		"""Apply numeric logic
 
-		:param event: item event of the updated item
+		:param input_values: input values
+		:return: max value of the given values
 		"""
-		max_item = HABApp.util.functions.max(self._get_input_items())
-		if isinstance(max_item, HABApp.openhab.items.OpenhabItem):
-			self._set_output_state(max_item.value)
+		return HABApp.util.functions.max(input_values)

@@ -1,9 +1,13 @@
-# Version 4.2.0 - dd.mm.2023
+# Version 5.0.0 - dd.mm.2023
+
+## Breaking changes
+- added support for more than two sensor values to ``habapp_rules.sensors.sun.SensorTemperatureDifference``. Braking change: Item names must be given as list of names.
+
 
 ## Features
 
 - added logic functions ``habapp_rules.common.logic.Min`` and ``habapp_rules.common.logic.Max``
-
+- updated HABApp to 23.09.02
 
 # Version 4.1.0 - 27.09.2023
 

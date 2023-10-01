@@ -1,11 +1,14 @@
 """Common helper functions for all rules."""
-
+import logging
 import time
 
+import HABApp
 import HABApp.openhab.connection.handler.func_sync
 import HABApp.openhab.items
 
 import habapp_rules.core.exceptions
+
+LOGGER = logging.getLogger(__name__)
 
 
 def create_additional_item(name: str, item_type: str, label: str | None = None) -> HABApp.openhab.items.OpenhabItem:
@@ -38,3 +41,23 @@ def send_if_different(item_name: str, value: str) -> None:
 	"""
 	if str(HABApp.openhab.items.OpenhabItem.get_item(item_name).value) != value:
 		HABApp.openhab.items.OpenhabItem.get_item(item_name).oh_send_command(value)
+
+
+def filter_updated_items(input_items: list[HABApp.openhab.items.OpenhabItem], filter_time: int | None = None) -> list[HABApp.openhab.items.OpenhabItem]:
+	"""Get input items depending on their last update time and _ignore_old_values_time
+
+	:param input_items: all items which should be checked for last update time
+	:param filter_time: threshold for last update time
+	:return: full list if _ignore_old_values is not set, otherwise all items where updated in time.
+	"""
+	if filter_time is None:
+		return input_items
+
+	current_time = time.time()
+	filtered_items = [item for item in input_items if current_time - item.last_update.timestamp() <= filter_time]
+
+	if len(input_items) != len(filtered_items):
+		ignored_item_names = [item.name for item in input_items if current_time - item.last_update.timestamp() > filter_time]
+		LOGGER.warning(f"The following items where not updated during the last {filter_time}s and will be ignored: {ignored_item_names}")
+
+	return filtered_items
