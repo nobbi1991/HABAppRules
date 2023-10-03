@@ -785,3 +785,43 @@ class SlatValueSun(HABApp.Rule):
 		"""
 		self._slat_characteristic_active = self.__slat_characteristic_summer if event.value == "ON" else self.__slat_characteristic_default
 		self.__send_slat_value()
+
+
+class SetNight(HABApp.Rule):
+	"""Rule to set / unset night item at dusk / dawn for shading rules.
+
+		# Items:
+		Switch    night_for_shading     "Night for shading"
+		Number    elevation             "Sun elevation [%s]"    <sun>     {channel="astro...}
+
+		# Rule init:
+		habapp_rules.actors.shading.SetNight("night_for_shading", "elevation")
+	"""
+
+	def __init__(self, name_night: str, name_elevation: str | None = None):
+		"""Init Rule.
+
+		:param name_night: name of OpenHAB switch item which should be set to "ON" after dusk and "OFF after dawn
+		:param name_elevation: [optional] name of OpenHAB elevation (NumberItem), is used to set the correct value at init
+		"""
+		HABApp.Rule.__init__(self)
+
+		self._item_night = HABApp.openhab.items.SwitchItem.get_item(name_night)
+
+		if name_elevation:
+			self._item_elevation = HABApp.openhab.items.NumberItem.get_item(name_elevation)
+			if self._item_elevation.value is None:
+				LOGGER.warning("Can not set night state. Elevation value is None.")
+			else:
+				target_value = "OFF" if self._item_elevation.value > -6 else "ON"
+				self.run.soon(self._set_night, target_value=target_value)
+
+		self.run.on_sun_dusk(self._set_night, target_value="ON")  # evening
+		self.run.on_sun_dawn(self._set_night, target_value="OFF")  # morning
+
+	def _set_night(self, target_value: str) -> None:
+		"""Callback which sets the state to the night item.
+
+		:param target_value: value which should be set (ON / OFF)
+		"""
+		self._item_night.oh_send_command(target_value)

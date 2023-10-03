@@ -1,3 +1,9 @@
+# Version 5.1.0 - dd.10.2023
+
+## Features
+
+- added rule ``habapp_rules.actors.shading.SetNight`` to to set / unset night item at dusk / dawn
+
 # Version 5.0.0 - 01.10.2023
 
 ## Breaking changes

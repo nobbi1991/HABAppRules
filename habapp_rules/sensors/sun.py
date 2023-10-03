@@ -148,7 +148,7 @@ class SensorTemperatureDifference(_SensorBase):
 	             filter_instant_increase: bool = True,
 	             filter_instant_decrease: bool = False,
 	             ignore_old_values_time: int | None = None) -> None:
-		"""Init of sun sensor which takes a two temperature values (one in the sun and one in the shadow)
+		"""Init of sun sensor which takes a two or more temperature values (one in the sun and one in the shadow)
 
 		:param temperature_item_names: name of all OpenHAB temperature items (NumberItem)
 		:param name_output: name of OpenHAB output item (SwitchItem)
