@@ -2,7 +2,7 @@
 
 ## Features
 
-- added rule ``habapp_rules.actors.shading.SetNight`` to to set / unset night item at dusk / dawn
+- added rule ``habapp_rules.sensors.astro.SetNight`` and ``habapp_rules.sensors.astro.SetNight`` to set / unset night and day state depending on sun elevation
 
 # Version 5.0.0 - 01.10.2023
 
