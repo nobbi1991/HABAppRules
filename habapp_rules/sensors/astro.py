@@ -29,7 +29,7 @@ class _SetNightDayBase(HABApp.Rule):
 
 		self.run.soon(self._set_night)
 
-	def _set_night(self, _: HABApp.openhab.events.ItemStateChangedEvent | None) -> None:
+	def _set_night(self, _: HABApp.openhab.events.ItemStateChangedEvent | None = None) -> None:
 		"""Callback which sets the state to the night item."""
 		if self._item_elevation.value is None:
 			return
