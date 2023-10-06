@@ -1,8 +1,8 @@
-# Version 5.1.0 - dd.10.2023
+# Version 5.1.0 - 06.10.2023
 
 ## Features
 
-- added rule ``habapp_rules.sensors.astro.SetNight`` and ``habapp_rules.sensors.astro.SetNight`` to set / unset night and day state depending on sun elevation
+- added rule ``habapp_rules.sensors.astro.SetNight`` and ``habapp_rules.sensors.astro.SetDay`` to set / unset night and day state depending on sun elevation
 
 ## Bugfix
 
