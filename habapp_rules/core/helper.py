@@ -33,14 +33,17 @@ def create_additional_item(name: str, item_type: str, label: str | None = None) 
 	return HABApp.openhab.items.OpenhabItem.get_item(name)
 
 
-def send_if_different(item_name: str, value: str) -> None:
+def send_if_different(item: str | HABApp.openhab.items.OpenhabItem, value: str) -> None:
 	"""Send command if the target value is different to the current value.
 
-	:param item_name: name of OpenHab item
+	:param item: name of OpenHab item
 	:param value: value to write to OpenHAB item
 	"""
-	if str(HABApp.openhab.items.OpenhabItem.get_item(item_name).value) != value:
-		HABApp.openhab.items.OpenhabItem.get_item(item_name).oh_send_command(value)
+	if isinstance(item, str):
+		item = HABApp.openhab.items.OpenhabItem.get_item(item)
+
+	if item.value != value:
+		item.oh_send_command(value)
 
 
 def filter_updated_items(input_items: list[HABApp.openhab.items.OpenhabItem], filter_time: int | None = None) -> list[HABApp.openhab.items.OpenhabItem]:

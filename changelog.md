@@ -1,6 +1,17 @@
+# Version 5.1.0 - 06.10.2023
+
+## Features
+
+- added rule ``habapp_rules.sensors.astro.SetNight`` and ``habapp_rules.sensors.astro.SetDay`` to set / unset night and day state depending on sun elevation
+
+## Bugfix
+
+- fixed bug in ``habapp_rules.actors.schading._ShadingBase`` which caused a switch to night close if it was not configured.
+
 # Version 5.0.0 - 01.10.2023
 
 ## Breaking changes
+
 - added support for more than two sensor values to ``habapp_rules.sensors.sun.SensorTemperatureDifference``. Breaking change: Item names must be given as list of names.
 
 ## Features
@@ -12,7 +23,7 @@
 
 ## Features
 
-- Updated docker container to use python 3.11 
+- Updated docker container to use python 3.11
 
 # Version 4.0.0 - 13.09.2023
 
@@ -21,8 +32,8 @@
 - renamed ``habapp_rules.actors.light.Light`` to ``habapp_rules.actors.light.LightDimmer`` and ``habapp_rules.actors.light.LightExtended`` to ``habapp_rules.actors.light.LightDimmerExtended``
 - moved / renamed ``habapp_rules.actors.light_config`` to ``habapp_rules.actors.config.light``
 - changed parameter names and order of ``habapp_rules.bridge.knx_mqtt.KnxMqttDimmerBridge`` and added support for KNX switch items
-- all items which are created from habapp_rules start with prefix ``H_`` 
-- removed ``_create_additional_item`` from ``habapp_rules.core.state_machine_rule.StateMachineRule`` and added it as standalone function: ``habapp_rules.core.helper.create_additional_item`` 
+- all items which are created from habapp_rules start with prefix ``H_``
+- removed ``_create_additional_item`` from ``habapp_rules.core.state_machine_rule.StateMachineRule`` and added it as standalone function: ``habapp_rules.core.helper.create_additional_item``
 
 ## Features
 
