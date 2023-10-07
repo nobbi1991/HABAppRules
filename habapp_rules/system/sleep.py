@@ -1,4 +1,5 @@
 """Rule to set/unset sleep state."""
+import datetime
 import logging
 
 import HABApp.openhab.definitions
@@ -212,3 +213,49 @@ class Sleep(habapp_rules.core.state_machine_rule.StateMachineRule):
 			self.release_lock()
 		else:
 			self.__update_lock_state()
+
+
+class LinkSleep(HABApp.Rule):
+	"""Link sleep items depending on current time"""
+
+	def __init__(self, sleep_master_name: str, sleep_req_slave_names: list[str], link_active_time_start: datetime.time = datetime.time(0), link_active_time_end: datetime.time = datetime.time(23, 59)) -> None:
+		"""Init rule.
+
+		:param sleep_master_name: Name of OpenHAB switch item for master sleep item
+		:param sleep_req_slave_names: Names of OpenHAB switch items for request sleep for slaves
+		:param link_active_time_start: Start time when the linking is active
+		:param link_active_time_end: End time when the linking is not active anymore
+		"""
+
+		HABApp.Rule.__init__(self)
+
+		self._item_master = HABApp.openhab.items.SwitchItem.get_item(sleep_master_name)
+		self._items_slaves = [HABApp.openhab.items.SwitchItem.get_item(item_name) for item_name in sleep_req_slave_names]
+
+		self._start_time = link_active_time_start
+		self._end_time = link_active_time_end
+
+		self._item_master.listen_event(self._cb_master, HABApp.openhab.events.ItemStateChangedEventFilter())
+
+	def _check_time_in_window(self) -> bool:
+		"""Check if current time is in the active time window
+
+		:return: True if current time is in time the active time window
+		"""
+		now = datetime.datetime.now().time()
+
+		if self._start_time <= self._end_time:
+			return self._start_time <= now <= self._end_time
+		# cross midnight
+		return self._start_time <= now or now <= self._end_time
+
+	def _cb_master(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+		"""Callback which is triggered if the state of the master item changes
+
+		:param event: state change event
+		"""
+		if not self._check_time_in_window():
+			return
+
+		for itm in self._items_slaves:
+			itm.oh_send_command(event.value)

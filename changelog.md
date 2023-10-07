@@ -1,3 +1,9 @@
+# Version 5.2.0 - dd.10.2023
+
+## Features
+
+- added rule ``habapp_rules.system.sleep.LinkSleep`` to link multiple sleep rules
+
 # Version 5.1.0 - 06.10.2023
 
 ## Features
