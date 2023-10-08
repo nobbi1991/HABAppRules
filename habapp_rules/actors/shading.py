@@ -648,26 +648,25 @@ class ResetAllManualHand(HABApp.Rule):
 		:param name_reset_manual_hand: name of OpenHAB reset item (SwitchItem)
 		"""
 		HABApp.Rule.__init__(self)
-
-		self.__shading_objects: list[type(_ShadingBase)] = []
 		self._item_reset = HABApp.openhab.items.SwitchItem.get_item(name_reset_manual_hand)
-
 		self._item_reset.listen_event(self._cb_reset_all, HABApp.openhab.events.ItemCommandEventFilter())
-		self.run.soon(self.__get_shading_objects)
 
-	def __get_shading_objects(self) -> None:
-		"""Get all shading objects"""
-		self.__shading_objects = [rule for rule in self.get_rule(None) if issubclass(rule.__class__, _ShadingBase)]
+	def __get_shading_objects(self) -> list[type(_ShadingBase)]:
+		"""Get all shading objects.
+
+		:return: list of shading objects
+		"""
+		return [rule for rule in self.get_rule(None) if issubclass(rule.__class__, _ShadingBase)]
 
 	def _cb_reset_all(self, event: HABApp.openhab.events.ItemCommandEvent) -> None:
 		"""Callback which is called if reset is requested
 
 		:param event: trigger event
 		"""
-		if not event.value == "ON":
+		if event.value == "OFF":
 			return
 
-		for shading_object in self.__shading_objects:
+		for shading_object in self.__get_shading_objects():
 			state = shading_object.state
 			manual_item: HABApp.openhab.items.SwitchItem = shading_object._item_manual  # pylint: disable=protected-access
 
