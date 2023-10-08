@@ -281,13 +281,19 @@ class TestLinkSleep(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Sleep2_req", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Sleep3_req", None)
 
-
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Sleep4", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Sleep5_req", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Sleep6_req", None)
 
 		self._link_full_day = habapp_rules.system.sleep.LinkSleep("Unittest_Sleep1", ["Unittest_Sleep2_req", "Unittest_Sleep3_req"])
 		self._link_night = habapp_rules.system.sleep.LinkSleep("Unittest_Sleep4", ["Unittest_Sleep5_req", "Unittest_Sleep6_req"], datetime.time(22), datetime.time(10))
+
+	def test_init_with_feedback(self):
+		"""Test init with feedback item"""
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Link_Active", None)
+		rule = habapp_rules.system.sleep.LinkSleep("Unittest_Sleep1", ["Unittest_Sleep2_req", "Unittest_Sleep3_req"], link_active_name="Unittest_Link_Active")
+
+		self.assertEqual("Unittest_Link_Active", rule._item_link_active.name)
 
 	def test_check_time_in_window(self):
 		"""test check_time_in_window."""
@@ -350,3 +356,13 @@ class TestLinkSleep(tests.helper.test_case_base.TestCaseBase):
 			tests.helper.oh_item.item_state_change_event("Unittest_Sleep4", "ON")
 			tests.helper.oh_item.assert_value("Unittest_Sleep5_req", None)
 			tests.helper.oh_item.assert_value("Unittest_Sleep6_req", None)
+
+	def test_set_link_active_feedback(self):
+		"""Test _set_link_active_feedback."""
+		with unittest.mock.patch.object(self._link_full_day, "_item_link_active") as item_link_active_mock:
+			self._link_full_day._set_link_active_feedback("ON")
+		item_link_active_mock.oh_send_command.assert_called_once_with("ON")
+
+		with unittest.mock.patch.object(self._link_full_day, "_item_link_active") as item_link_active_mock:
+			self._link_full_day._set_link_active_feedback("OFF")
+		item_link_active_mock.oh_send_command.assert_called_once_with("OFF")
