@@ -270,6 +270,7 @@ class TestSleep(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.assert_value("Unittest_Sleep", "OFF")
 
 
+# pylint: disable=no-member
 class TestLinkSleep(tests.helper.test_case_base.TestCaseBase):
 	"""Test LinkSleep."""
 
