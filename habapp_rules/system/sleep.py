@@ -264,7 +264,7 @@ class LinkSleep(HABApp.Rule):
 			return
 
 		for itm in self._items_slaves:
-			itm.oh_send_command(event.value)
+			habapp_rules.core.helper.send_if_different(itm, event.value)
 
 	def _set_link_active_feedback(self, target_state: str) -> None:
 		"""Set feedback for link is active.
