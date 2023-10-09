@@ -228,6 +228,7 @@ class LinkSleep(HABApp.Rule):
 		:param link_active_name: Name of OpenHAB switch item for feedback if link is active
 		"""
 		HABApp.Rule.__init__(self)
+		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, self.rule_name)
 
 		self._item_master = HABApp.openhab.items.SwitchItem.get_item(sleep_master_name)
 		self._items_slaves = [HABApp.openhab.items.SwitchItem.get_item(item_name) for item_name in sleep_req_slave_names]
@@ -263,6 +264,7 @@ class LinkSleep(HABApp.Rule):
 		if not self._check_time_in_window():
 			return
 
+		self._instance_logger.debug(f"Set request of all linked sleep states of {self._item_master.name}")
 		for itm in self._items_slaves:
 			habapp_rules.core.helper.send_if_different(itm, event.value)
 
