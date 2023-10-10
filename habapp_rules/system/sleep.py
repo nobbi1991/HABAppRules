@@ -1,4 +1,5 @@
 """Rule to set/unset sleep state."""
+import datetime
 import logging
 
 import HABApp.openhab.definitions
@@ -212,3 +213,64 @@ class Sleep(habapp_rules.core.state_machine_rule.StateMachineRule):
 			self.release_lock()
 		else:
 			self.__update_lock_state()
+
+
+class LinkSleep(HABApp.Rule):
+	"""Link sleep items depending on current time"""
+
+	def __init__(self, sleep_master_name: str, sleep_req_slave_names: list[str], link_active_time_start: datetime.time = datetime.time(0), link_active_time_end: datetime.time = datetime.time(23, 59), link_active_name: str | None = None) -> None:
+		"""Init rule.
+
+		:param sleep_master_name: Name of OpenHAB switch item for master sleep item
+		:param sleep_req_slave_names: Names of OpenHAB switch items for request sleep for slaves
+		:param link_active_time_start: Start time when the linking is active
+		:param link_active_time_end: End time when the linking is not active anymore
+		:param link_active_name: Name of OpenHAB switch item for feedback if link is active
+		"""
+		HABApp.Rule.__init__(self)
+		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, self.rule_name)
+
+		self._item_master = HABApp.openhab.items.SwitchItem.get_item(sleep_master_name)
+		self._items_slaves = [HABApp.openhab.items.SwitchItem.get_item(item_name) for item_name in sleep_req_slave_names]
+		self._item_link_active = HABApp.openhab.items.SwitchItem.get_item(link_active_name) if link_active_name else None
+
+		self._start_time = link_active_time_start
+		self._end_time = link_active_time_end
+
+		self._item_master.listen_event(self._cb_master, HABApp.openhab.events.ItemStateChangedEventFilter())
+
+		if self._item_link_active is not None:
+			self.run.at(self._start_time, self._set_link_active_feedback, target_state="ON")
+			self.run.at(self._end_time, self._set_link_active_feedback, target_state="OFF")
+			self.run.soon(self._set_link_active_feedback, target_state=self._check_time_in_window())
+
+	def _check_time_in_window(self) -> bool:
+		"""Check if current time is in the active time window
+
+		:return: True if current time is in time the active time window
+		"""
+		now = datetime.datetime.now().time()
+
+		if self._start_time <= self._end_time:
+			return self._start_time <= now <= self._end_time
+		# cross midnight
+		return self._start_time <= now or now <= self._end_time
+
+	def _cb_master(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+		"""Callback which is triggered if the state of the master item changes
+
+		:param event: state change event
+		"""
+		if not self._check_time_in_window():
+			return
+
+		self._instance_logger.debug(f"Set request of all linked sleep states of {self._item_master.name}")
+		for itm in self._items_slaves:
+			habapp_rules.core.helper.send_if_different(itm, event.value)
+
+	def _set_link_active_feedback(self, target_state: str) -> None:
+		"""Set feedback for link is active.
+
+		:param target_state: Target state which should be set ["ON" / "OFF"]
+		"""
+		self._item_link_active.oh_send_command(target_state)

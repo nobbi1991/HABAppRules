@@ -1,3 +1,14 @@
+# Version 5.2.0 - 10.10.2023
+
+## Features
+
+- added rule ``habapp_rules.system.sleep.LinkSleep`` to link multiple sleep rules
+
+## Bugfix
+
+- fixed bug in ``habapp_rules.actors.shading.ResetAllManualHand`` which did not always reset all shading instances.
+- fixed bug in ``habapp_rules.actors.shading._ShadingBase`` which caused wrong shading states after sleeping or night
+
 # Version 5.1.0 - 06.10.2023
 
 ## Features
@@ -6,7 +17,7 @@
 
 ## Bugfix
 
-- fixed bug in ``habapp_rules.actors.schading._ShadingBase`` which caused a switch to night close if it was not configured.
+- fixed bug in ``habapp_rules.actors.shading._ShadingBase`` which caused a switch to night close if it was not configured.
 
 # Version 5.0.0 - 01.10.2023
 

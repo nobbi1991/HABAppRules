@@ -115,9 +115,9 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
 			# sleep
 			{"trigger": "_sleep_started", "source": ["Auto_Open", "Auto_NightClose", "Auto_SunProtection"], "dest": "Auto_SleepingClose"},
 			{"trigger": "_sleep_started", "source": "Hand", "dest": "Auto"},
-			{"trigger": "_sleep_stopped", "source": "Auto_SleepingClose", "dest": "Auto_SunProtection", "conditions": "_sun_protection_active"},
-			{"trigger": "_sleep_stopped", "source": "Auto_SleepingClose", "dest": "Auto_NightClose", "conditions": ["_night_active", "_night_configured"]},
-			{"trigger": "_sleep_stopped", "source": "Auto_SleepingClose", "dest": "Auto_Open", "unless": ["_night_active", "_sun_protection_active"]},
+			{"trigger": "_sleep_stopped", "source": "Auto_SleepingClose", "dest": "Auto_SunProtection", "conditions": "_sun_protection_active_and_configured"},
+			{"trigger": "_sleep_stopped", "source": "Auto_SleepingClose", "dest": "Auto_NightClose", "conditions": ["_night_active_and_configured"]},
+			{"trigger": "_sleep_stopped", "source": "Auto_SleepingClose", "dest": "Auto_Open", "unless": ["_night_active_and_configured", "_sun_protection_active_and_configured"]},
 
 			# door
 			{"trigger": "_door_open", "source": ["Auto_NightClose", "Auto_SunProtection", "Auto_SleepingClose", "Auto_Open"], "dest": "Auto_DoorOpen"},
@@ -126,9 +126,9 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
 			{"trigger": "_timeout_post_door_open", "source": "Auto_DoorOpen_PostOpen", "dest": "Auto_Init"},
 
 			# night close
-			{"trigger": "_night_started", "source": ["Auto_Open", "Auto_SunProtection"], "dest": "Auto_NightClose", "conditions": "_night_configured"},
-			{"trigger": "_night_stopped", "source": "Auto_NightClose", "dest": "Auto_SunProtection", "conditions": "_sun_protection_active"},
-			{"trigger": "_night_stopped", "source": "Auto_NightClose", "dest": "Auto_Open", "unless": ["_sun_protection_active"]}
+			{"trigger": "_night_started", "source": ["Auto_Open", "Auto_SunProtection"], "dest": "Auto_NightClose", "conditions": "_night_active_and_configured"},
+			{"trigger": "_night_stopped", "source": "Auto_NightClose", "dest": "Auto_SunProtection", "conditions": "_sun_protection_active_and_configured"},
+			{"trigger": "_night_stopped", "source": "Auto_NightClose", "dest": "Auto_Open", "unless": ["_sun_protection_active_and_configured"]}
 		]
 
 		self.assertEqual(expected_trans, self.shading_max.trans)
@@ -339,10 +339,10 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
 		TestCase = collections.namedtuple("TestCase", "sleep_state, started_triggered, stopped_triggered")
 
 		test_cases = [
-			TestCase(habapp_rules.system.SleepState.AWAKE, False, True),
+			TestCase(habapp_rules.system.SleepState.AWAKE, False, False),
 			TestCase(habapp_rules.system.SleepState.PRE_SLEEPING, True, False),
 			TestCase(habapp_rules.system.SleepState.SLEEPING, False, False),
-			TestCase(habapp_rules.system.SleepState.POST_SLEEPING, False, False),
+			TestCase(habapp_rules.system.SleepState.POST_SLEEPING, False, True),
 			TestCase(habapp_rules.system.SleepState.LOCKED, False, False),
 		]
 
@@ -374,34 +374,52 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
 		self.assertEqual("Hand", self.shading_min.state)
 		self.assertEqual("Hand", self.shading_max.state)
 
-	def test_night_configured(self):
-		"""Test night_configured."""
-		TestCase = collections.namedtuple("TestCase", "summer, config_summer, config_winter, expected_result")
+	def test_night_active_and_configured(self):
+		"""Test _night_active_and_configured."""
+		TestCase = collections.namedtuple("TestCase", "night, summer, config_summer, config_winter, expected_result")
 
 		shading_pos = habapp_rules.actors.config.shading.ShadingPosition(42, 0)
 
 		test_cases = [
-			TestCase(None, None, None, False),
-			TestCase(None, None, shading_pos, True),
-			TestCase(None, shading_pos, None, False),
-			TestCase(None, shading_pos, shading_pos, True),
+			# night off
+			TestCase("OFF", None, None, None, False),
+			TestCase("OFF", None, None, shading_pos, False),
+			TestCase("OFF", None, shading_pos, None, False),
+			TestCase("OFF", None, shading_pos, shading_pos, False),
 
-			TestCase("OFF", None, None, False),
-			TestCase("OFF", None, shading_pos, True),
-			TestCase("OFF", shading_pos, None, False),
-			TestCase("OFF", shading_pos, shading_pos, True),
+			TestCase("OFF", "OFF", None, None, False),
+			TestCase("OFF", "OFF", None, shading_pos, False),
+			TestCase("OFF", "OFF", shading_pos, None, False),
+			TestCase("OFF", "OFF", shading_pos, shading_pos, False),
 
-			TestCase("ON", None, None, False),
-			TestCase("ON", None, shading_pos, False),
-			TestCase("ON", shading_pos, None, True),
-			TestCase("ON", shading_pos, shading_pos, True),
+			TestCase("OFF", "ON", None, None, False),
+			TestCase("OFF", "ON", None, shading_pos, False),
+			TestCase("OFF", "ON", shading_pos, None, False),
+			TestCase("OFF", "ON", shading_pos, shading_pos, False),
+
+			# night on
+			TestCase("ON", None, None, None, False),
+			TestCase("ON", None, None, shading_pos, True),
+			TestCase("ON", None, shading_pos, None, False),
+			TestCase("ON", None, shading_pos, shading_pos, True),
+
+			TestCase("ON", "OFF", None, None, False),
+			TestCase("ON", "OFF", None, shading_pos, True),
+			TestCase("ON", "OFF", shading_pos, None, False),
+			TestCase("ON", "OFF", shading_pos, shading_pos, True),
+
+			TestCase("ON", "ON", None, None, False),
+			TestCase("ON", "ON", None, shading_pos, False),
+			TestCase("ON", "ON", shading_pos, None, True),
+			TestCase("ON", "ON", shading_pos, shading_pos, True),
 		]
 
 		for test_case in test_cases:
 			with unittest.mock.patch.object(self.shading_max._config, "pos_night_close_summer", test_case.config_summer), unittest.mock.patch.object(self.shading_max._config, "pos_night_close_winter", test_case.config_winter):
 				tests.helper.oh_item.set_state("Unittest_Summer", test_case.summer)
+				tests.helper.oh_item.set_state("Unittest_Night", test_case.night)
 
-				self.assertEqual(test_case.expected_result, self.shading_max._night_configured())
+				self.assertEqual(test_case.expected_result, self.shading_max._night_active_and_configured())
 
 	def test_manual_transitions(self):
 		"""Test transitions of state manual"""
@@ -548,21 +566,21 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
 		self.shading_max.to_Auto_SleepingClose()
 		tests.helper.oh_item.send_command("Unittest_Night", "OFF", "ON")
 		tests.helper.oh_item.send_command("Unittest_SunProtection", "OFF", "OFF")
-		tests.helper.oh_item.send_command("Unittest_Sleep_state", habapp_rules.system.SleepState.AWAKE.value, habapp_rules.system.SleepState.PRE_SLEEPING.value)
+		tests.helper.oh_item.send_command("Unittest_Sleep_state", habapp_rules.system.SleepState.POST_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value)
 		self.assertEqual("Auto_Open", self.shading_max.state)
 
 		# to night_close | configured
 		self.shading_max.to_Auto_SleepingClose()
 		tests.helper.oh_item.send_command("Unittest_Night", "ON", "OFF")
-		tests.helper.oh_item.send_command("Unittest_Sleep_state", habapp_rules.system.SleepState.AWAKE.value, habapp_rules.system.SleepState.PRE_SLEEPING.value)
+		tests.helper.oh_item.send_command("Unittest_Sleep_state", habapp_rules.system.SleepState.POST_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value)
 		self.assertEqual("Auto_NightClose", self.shading_max.state)
 
 		# to night_close | NOT configured
 		self.shading_max.to_Auto_SleepingClose()
 		tests.helper.oh_item.send_command("Unittest_Summer", "ON", "OFF")
 		tests.helper.oh_item.send_command("Unittest_Night", "ON", "OFF")
-		tests.helper.oh_item.send_command("Unittest_Sleep_state", habapp_rules.system.SleepState.AWAKE.value, habapp_rules.system.SleepState.PRE_SLEEPING.value)
-		self.assertEqual("Auto_SleepingClose", self.shading_max.state)
+		tests.helper.oh_item.send_command("Unittest_Sleep_state", habapp_rules.system.SleepState.POST_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value)
+		self.assertEqual("Auto_Open", self.shading_max.state)
 
 		# to door_open
 		self.shading_max.to_Auto_SleepingClose()
@@ -572,7 +590,7 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
 		# to sun_protection
 		self.shading_max.to_Auto_SleepingClose()
 		tests.helper.oh_item.send_command("Unittest_SunProtection", "ON", "OFF")
-		tests.helper.oh_item.send_command("Unittest_Sleep_state", habapp_rules.system.SleepState.AWAKE.value, habapp_rules.system.SleepState.PRE_SLEEPING.value)
+		tests.helper.oh_item.send_command("Unittest_Sleep_state", habapp_rules.system.SleepState.POST_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value)
 		self.assertEqual("Auto_SunProtection", self.shading_max.state)
 
 	def test_auto_sun_protection_transitions(self):
@@ -886,16 +904,8 @@ class TestResetAllManualHand(tests.helper.test_case_base.TestCaseBase):
 
 		self.reset_shading_rule = habapp_rules.actors.shading.ResetAllManualHand("Unittest_Reset")
 
-	def test_init(self):
-		"""Test __init__"""
-		with unittest.mock.patch("HABApp.rule.scheduler.habappschedulerview.HABAppSchedulerView.soon") as run_soon_mock:
-			reset_shading_rule = habapp_rules.actors.shading.ResetAllManualHand("Unittest_Reset")
-		run_soon_mock.assert_called_once_with(reset_shading_rule._ResetAllManualHand__get_shading_objects)
-
 	def test__get_shading_objects(self):
 		"""Test __get_shading_objects."""
-		self.assertEqual([], self.reset_shading_rule._ResetAllManualHand__shading_objects)
-
 		with unittest.mock.patch.object(self.reset_shading_rule, "get_rule") as get_rule_mock:
 			self.reset_shading_rule._ResetAllManualHand__get_shading_objects()
 
@@ -918,16 +928,15 @@ class TestResetAllManualHand(tests.helper.test_case_base.TestCaseBase):
 		shading_rule_mock = unittest.mock.MagicMock(spec=habapp_rules.actors.shading.Raffstore)
 		shading_rule_mock._item_manual = unittest.mock.MagicMock(spec=HABApp.openhab.items.SwitchItem)
 
-		self.reset_shading_rule._ResetAllManualHand__shading_objects = [shading_rule_mock]
+		with unittest.mock.patch.object(self.reset_shading_rule, "_ResetAllManualHand__get_shading_objects", return_value=[shading_rule_mock]):
+			for test_case in test_cases:
+				shading_rule_mock.state = test_case.state
+				shading_rule_mock._item_manual.oh_send_command.reset_mock()
 
-		for test_case in test_cases:
-			shading_rule_mock.state = test_case.state
-			shading_rule_mock._item_manual.oh_send_command.reset_mock()
+				self.reset_shading_rule._cb_reset_all(HABApp.openhab.events.ItemCommandEvent("name", test_case.event))
 
-			self.reset_shading_rule._cb_reset_all(HABApp.openhab.events.ItemCommandEvent("name", test_case.event))
-
-			self.assertEqual(len(test_case.manual_commands), shading_rule_mock._item_manual.oh_send_command.call_count)
-			shading_rule_mock._item_manual.oh_send_command.assert_has_calls(test_case.manual_commands)
+				self.assertEqual(len(test_case.manual_commands), shading_rule_mock._item_manual.oh_send_command.call_count)
+				shading_rule_mock._item_manual.oh_send_command.assert_has_calls(test_case.manual_commands)
 
 
 class TestSlatValueSun(tests.helper.test_case_base.TestCaseBase):

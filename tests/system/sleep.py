@@ -1,5 +1,6 @@
 """Test sleep rule."""
 import collections
+import datetime
 import pathlib
 import sys
 import threading
@@ -267,3 +268,102 @@ class TestSleep(tests.helper.test_case_base.TestCaseBase):
 		self.assertEqual(sleep.state, "awake")
 		tests.helper.oh_item.assert_value("H_Sleep_Unittest_Sleep_state", "awake")
 		tests.helper.oh_item.assert_value("Unittest_Sleep", "OFF")
+
+
+# pylint: disable=no-member
+class TestLinkSleep(tests.helper.test_case_base.TestCaseBase):
+	"""Test LinkSleep."""
+
+	def setUp(self) -> None:
+		"""Setup test case."""
+		tests.helper.test_case_base.TestCaseBase.setUp(self)
+
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Sleep1", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Sleep2_req", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Sleep3_req", None)
+
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Sleep4", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Sleep5_req", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Sleep6_req", None)
+
+		self._link_full_day = habapp_rules.system.sleep.LinkSleep("Unittest_Sleep1", ["Unittest_Sleep2_req", "Unittest_Sleep3_req"])
+		self._link_night = habapp_rules.system.sleep.LinkSleep("Unittest_Sleep4", ["Unittest_Sleep5_req", "Unittest_Sleep6_req"], datetime.time(22), datetime.time(10))
+
+	def test_init_with_feedback(self):
+		"""Test init with feedback item"""
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Link_Active", None)
+		rule = habapp_rules.system.sleep.LinkSleep("Unittest_Sleep1", ["Unittest_Sleep2_req", "Unittest_Sleep3_req"], link_active_name="Unittest_Link_Active")
+
+		self.assertEqual("Unittest_Link_Active", rule._item_link_active.name)
+
+	def test_check_time_in_window(self):
+		"""test check_time_in_window."""
+		TestCase = collections.namedtuple("TestCase", "start, end, now, expected_result")
+
+		test_cases = [
+			# full day
+			TestCase(datetime.time(0), datetime.time(23, 59), datetime.time(0, 0), True),
+			TestCase(datetime.time(0), datetime.time(23, 59), datetime.time(12), True),
+			TestCase(datetime.time(0), datetime.time(23, 59), datetime.time(23, 59), True),
+
+			# range during day
+			TestCase(datetime.time(10), datetime.time(16), datetime.time(0, 0), False),
+			TestCase(datetime.time(10), datetime.time(16), datetime.time(9, 59), False),
+			TestCase(datetime.time(10), datetime.time(16), datetime.time(10), True),
+			TestCase(datetime.time(10), datetime.time(16), datetime.time(10, 1), True),
+			TestCase(datetime.time(10), datetime.time(16), datetime.time(15, 59), True),
+			TestCase(datetime.time(10), datetime.time(16), datetime.time(16), True),
+			TestCase(datetime.time(10), datetime.time(16), datetime.time(16, 1), False),
+			TestCase(datetime.time(10), datetime.time(16), datetime.time(23, 59), False),
+
+			# range over midnight day
+			TestCase(datetime.time(22), datetime.time(5), datetime.time(12), False),
+			TestCase(datetime.time(22), datetime.time(5), datetime.time(21, 59), False),
+			TestCase(datetime.time(22), datetime.time(5), datetime.time(22), True),
+			TestCase(datetime.time(22), datetime.time(5), datetime.time(22, 1), True),
+			TestCase(datetime.time(22), datetime.time(5), datetime.time(0), True),
+			TestCase(datetime.time(22), datetime.time(5), datetime.time(4, 59), True),
+			TestCase(datetime.time(22), datetime.time(5), datetime.time(5), True),
+			TestCase(datetime.time(22), datetime.time(5), datetime.time(5, 1), False),
+		]
+
+		with unittest.mock.patch("datetime.datetime") as datetime_mock:
+			now_mock = unittest.mock.MagicMock()
+			datetime_mock.now.return_value = now_mock
+			for test_case in test_cases:
+				now_mock.time.return_value = test_case.now
+
+				self._link_full_day._start_time = test_case.start
+				self._link_full_day._end_time = test_case.end
+
+				self.assertEqual(test_case.expected_result, self._link_full_day._check_time_in_window())
+
+	def test_cb_master(self):
+		"""Test _cb_master"""
+		# during active time
+		with unittest.mock.patch.object(self._link_full_day, "_check_time_in_window", return_value=True):
+			tests.helper.oh_item.assert_value("Unittest_Sleep2_req", None)
+			tests.helper.oh_item.assert_value("Unittest_Sleep3_req", None)
+
+			tests.helper.oh_item.item_state_change_event("Unittest_Sleep1", "ON")
+			tests.helper.oh_item.assert_value("Unittest_Sleep2_req", "ON")
+			tests.helper.oh_item.assert_value("Unittest_Sleep3_req", "ON")
+
+		# during inactive time
+		with unittest.mock.patch.object(self._link_night, "_check_time_in_window", return_value=False):
+			tests.helper.oh_item.assert_value("Unittest_Sleep5_req", None)
+			tests.helper.oh_item.assert_value("Unittest_Sleep6_req", None)
+
+			tests.helper.oh_item.item_state_change_event("Unittest_Sleep4", "ON")
+			tests.helper.oh_item.assert_value("Unittest_Sleep5_req", None)
+			tests.helper.oh_item.assert_value("Unittest_Sleep6_req", None)
+
+	def test_set_link_active_feedback(self):
+		"""Test _set_link_active_feedback."""
+		with unittest.mock.patch.object(self._link_full_day, "_item_link_active") as item_link_active_mock:
+			self._link_full_day._set_link_active_feedback("ON")
+		item_link_active_mock.oh_send_command.assert_called_once_with("ON")
+
+		with unittest.mock.patch.object(self._link_full_day, "_item_link_active") as item_link_active_mock:
+			self._link_full_day._set_link_active_feedback("OFF")
+		item_link_active_mock.oh_send_command.assert_called_once_with("OFF")

@@ -56,9 +56,9 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		# sleep
 		{"trigger": "_sleep_started", "source": ["Auto_Open", "Auto_NightClose", "Auto_SunProtection"], "dest": "Auto_SleepingClose"},
 		{"trigger": "_sleep_started", "source": "Hand", "dest": "Auto"},
-		{"trigger": "_sleep_stopped", "source": "Auto_SleepingClose", "dest": "Auto_SunProtection", "conditions": "_sun_protection_active"},
-		{"trigger": "_sleep_stopped", "source": "Auto_SleepingClose", "dest": "Auto_NightClose", "conditions": ["_night_active", "_night_configured"]},
-		{"trigger": "_sleep_stopped", "source": "Auto_SleepingClose", "dest": "Auto_Open", "unless": ["_night_active", "_sun_protection_active"]},
+		{"trigger": "_sleep_stopped", "source": "Auto_SleepingClose", "dest": "Auto_SunProtection", "conditions": "_sun_protection_active_and_configured"},
+		{"trigger": "_sleep_stopped", "source": "Auto_SleepingClose", "dest": "Auto_NightClose", "conditions": ["_night_active_and_configured"]},
+		{"trigger": "_sleep_stopped", "source": "Auto_SleepingClose", "dest": "Auto_Open", "unless": ["_night_active_and_configured", "_sun_protection_active_and_configured"]},
 
 		# door
 		{"trigger": "_door_open", "source": ["Auto_NightClose", "Auto_SunProtection", "Auto_SleepingClose", "Auto_Open"], "dest": "Auto_DoorOpen"},
@@ -67,9 +67,9 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		{"trigger": "_timeout_post_door_open", "source": "Auto_DoorOpen_PostOpen", "dest": "Auto_Init"},
 
 		# night close
-		{"trigger": "_night_started", "source": ["Auto_Open", "Auto_SunProtection"], "dest": "Auto_NightClose", "conditions": "_night_configured"},
-		{"trigger": "_night_stopped", "source": "Auto_NightClose", "dest": "Auto_SunProtection", "conditions": "_sun_protection_active"},
-		{"trigger": "_night_stopped", "source": "Auto_NightClose", "dest": "Auto_Open", "unless": ["_sun_protection_active"]}
+		{"trigger": "_night_started", "source": ["Auto_Open", "Auto_SunProtection"], "dest": "Auto_NightClose", "conditions": "_night_active_and_configured"},
+		{"trigger": "_night_stopped", "source": "Auto_NightClose", "dest": "Auto_SunProtection", "conditions": "_sun_protection_active_and_configured"},
+		{"trigger": "_night_stopped", "source": "Auto_NightClose", "dest": "Auto_Open", "unless": ["_sun_protection_active_and_configured"]}
 
 	]
 	_item_shading_position: HABApp.openhab.items.rollershutter_item.RollershutterItem | HABApp.openhab.items.dimmer_item.DimmerItem
@@ -191,9 +191,9 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 			return "Auto_DoorOpen_Open"
 		if self._item_sleeping_state in (habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value):
 			return "Auto_SleepingClose"
-		if self._item_night and self._night_configured():
+		if self._item_night and self._night_active_and_configured():
 			return "Auto_NightClose"
-		if self._sun_protection_active():
+		if self._sun_protection_active_and_configured():
 			return "Auto_SunProtection"
 		return "Auto_Open"
 
@@ -266,22 +266,6 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		"""Set / save position before manual state is entered. This is used to restore the previous position"""
 		self._position_before = habapp_rules.actors.config.shading.ShadingPosition(self._item_shading_position.value)
 
-	def _night_configured(self) -> bool:
-		"""Check if night is configured.
-
-		:return: True if night close is configured
-		"""
-		night_config = self._config.pos_night_close_summer if bool(self._item_summer) else self._config.pos_night_close_winter
-
-		return night_config is not None
-
-	def _sun_protection_active(self) -> bool:
-		"""Check if sun protection is active.
-
-		:return: True if night is active
-		"""
-		return bool(self._item_sun_protection)
-
 	def _manual_active(self) -> bool:
 		"""Check if manual is active.
 
@@ -289,12 +273,20 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		"""
 		return bool(self._item_manual)
 
-	def _night_active(self) -> bool:
-		"""Check if night is active.
+	def _sun_protection_active_and_configured(self) -> bool:
+		"""Check if sun protection is active.
 
 		:return: True if night is active
 		"""
-		return bool(self._item_night)
+		return bool(self._item_sun_protection) and self._config.pos_sun_protection is not None
+
+	def _night_active_and_configured(self) -> bool:
+		"""Check if night is active and configured.
+
+		:return: True if night is active
+		"""
+		night_config = self._config.pos_night_close_summer if bool(self._item_summer) else self._config.pos_night_close_winter
+		return bool(self._item_night) and night_config is not None
 
 	def _cb_hand(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
 		"""Callback which is triggered if a external control was detected.
@@ -340,7 +332,7 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		"""
 		if event.value == habapp_rules.system.SleepState.PRE_SLEEPING.value:
 			self._sleep_started()
-		elif event.value == habapp_rules.system.SleepState.AWAKE.value:
+		elif event.value == habapp_rules.system.SleepState.POST_SLEEPING.value:
 			self._sleep_stopped()
 
 	def _cb_night(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
@@ -648,26 +640,25 @@ class ResetAllManualHand(HABApp.Rule):
 		:param name_reset_manual_hand: name of OpenHAB reset item (SwitchItem)
 		"""
 		HABApp.Rule.__init__(self)
-
-		self.__shading_objects: list[type(_ShadingBase)] = []
 		self._item_reset = HABApp.openhab.items.SwitchItem.get_item(name_reset_manual_hand)
-
 		self._item_reset.listen_event(self._cb_reset_all, HABApp.openhab.events.ItemCommandEventFilter())
-		self.run.soon(self.__get_shading_objects)
 
-	def __get_shading_objects(self) -> None:
-		"""Get all shading objects"""
-		self.__shading_objects = [rule for rule in self.get_rule(None) if issubclass(rule.__class__, _ShadingBase)]
+	def __get_shading_objects(self) -> list[type(_ShadingBase)]:
+		"""Get all shading objects.
+
+		:return: list of shading objects
+		"""
+		return [rule for rule in self.get_rule(None) if issubclass(rule.__class__, _ShadingBase)]
 
 	def _cb_reset_all(self, event: HABApp.openhab.events.ItemCommandEvent) -> None:
 		"""Callback which is called if reset is requested
 
 		:param event: trigger event
 		"""
-		if not event.value == "ON":
+		if event.value == "OFF":
 			return
 
-		for shading_object in self.__shading_objects:
+		for shading_object in self.__get_shading_objects():
 			state = shading_object.state
 			manual_item: HABApp.openhab.items.SwitchItem = shading_object._item_manual  # pylint: disable=protected-access
 
