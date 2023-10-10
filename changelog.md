@@ -1,4 +1,4 @@
-# Version 5.2.0 - dd.10.2023
+# Version 5.2.0 - 10.10.2023
 
 ## Features
 
