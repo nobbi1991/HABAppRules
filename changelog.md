@@ -7,6 +7,7 @@
 ## Bugfix
 
 - fixed bug in ``habapp_rules.actors.shading.ResetAllManualHand`` which did not always reset all shading instances.
+- fixed bug in ``habapp_rules.actors.shading._ShadingBase`` which caused wrong shading states after sleeping or night
 
 # Version 5.1.0 - 06.10.2023
 
