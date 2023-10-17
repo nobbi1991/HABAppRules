@@ -1,3 +1,9 @@
+# Version 5.2.1 - 17.10.2023
+
+## Bugfix
+
+- fixed bug in ``habapp_rules.actors.shading.ResetAllManualHand`` which did not reset all shading objects if triggered via KNX
+
 # Version 5.2.0 - 10.10.2023
 
 ## Features

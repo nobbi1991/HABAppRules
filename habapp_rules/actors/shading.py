@@ -641,7 +641,7 @@ class ResetAllManualHand(HABApp.Rule):
 		"""
 		HABApp.Rule.__init__(self)
 		self._item_reset = HABApp.openhab.items.SwitchItem.get_item(name_reset_manual_hand)
-		self._item_reset.listen_event(self._cb_reset_all, HABApp.openhab.events.ItemCommandEventFilter())
+		self._item_reset.listen_event(self._cb_reset_all, HABApp.openhab.events.ItemStateUpdatedEventFilter())
 
 	def __get_shading_objects(self) -> list[type(_ShadingBase)]:
 		"""Get all shading objects.
