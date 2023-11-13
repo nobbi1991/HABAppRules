@@ -1,3 +1,10 @@
+# Version 5.2.2 - dd.mm.2023
+
+## Bugfix
+
+- only use items (instead item names) for ``habapp_rules.core.helper.send_if_different``
+
+
 # Version 5.2.1 - 17.10.2023
 
 ## Bugfix

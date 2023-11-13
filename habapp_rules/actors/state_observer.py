@@ -44,8 +44,10 @@ class _StateObserverBase(HABApp.Rule, abc.ABC):
 		self._group_last_event = 0
 
 		self._item.listen_event(self._cb_item, HABApp.openhab.events.ItemStateChangedEventFilter())
-		HABApp.util.EventListenerGroup().add_listener(self.__control_items, self._cb_control_item, HABApp.openhab.events.ItemCommandEventFilter()).listen()
-		HABApp.util.EventListenerGroup().add_listener(self.__group_items, self._cb_group_item, HABApp.openhab.events.ItemStateUpdatedEventFilter()).listen()
+		for control_item in self.__control_items:
+			control_item.listen_event(self._cb_control_item, HABApp.openhab.events.ItemCommandEventFilter())
+		for group_item in self.__group_items:
+			group_item.listen_event(self._cb_group_item, HABApp.openhab.events.ItemStateUpdatedEventFilter())
 
 	@property
 	def value(self) -> float | bool:

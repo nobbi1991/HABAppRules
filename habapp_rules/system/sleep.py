@@ -147,9 +147,9 @@ class Sleep(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 		# update sleep state
 		if self.state in {"pre_sleeping", "sleeping"}:
-			habapp_rules.core.helper.send_if_different(self.__item_sleep.name, "ON")
+			habapp_rules.core.helper.send_if_different(self.__item_sleep, "ON")
 		else:
-			habapp_rules.core.helper.send_if_different(self.__item_sleep.name, "OFF")
+			habapp_rules.core.helper.send_if_different(self.__item_sleep, "OFF")
 
 		# update lock state
 		self.__update_lock_state()
@@ -179,9 +179,9 @@ class Sleep(habapp_rules.core.state_machine_rule.StateMachineRule):
 		"""Update the return lock state value of OpenHAB item."""
 		if self.__item_lock is not None:
 			if self.state in {"pre_sleeping", "post_sleeping", "locked"}:
-				habapp_rules.core.helper.send_if_different(self.__item_lock.name, "ON")
+				habapp_rules.core.helper.send_if_different(self.__item_lock, "ON")
 			else:
-				habapp_rules.core.helper.send_if_different(self.__item_lock.name, "OFF")
+				habapp_rules.core.helper.send_if_different(self.__item_lock, "OFF")
 
 	def _cb_sleep_request(self, event: HABApp.openhab.events.ItemStateChangedEvent):
 		"""Callback, which is called if sleep request item changed state.

@@ -88,8 +88,10 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
 		# add callbacks
 		self.__leaving_item.listen_event(self._cb_leaving, HABApp.openhab.events.ItemStateChangedEventFilter())
 		self.__presence_item.listen_event(self._cb_presence, HABApp.openhab.events.ItemStateChangedEventFilter())
-		HABApp.util.EventListenerGroup().add_listener(self.__outside_door_items, self._cb_outside_door, HABApp.core.events.ValueChangeEventFilter()).listen()
-		HABApp.util.EventListenerGroup().add_listener(self.__phone_items, self._cb_phone, HABApp.core.events.ValueChangeEventFilter()).listen()
+		for door_item in self.__outside_door_items:
+			door_item.listen_event(self._cb_outside_door, HABApp.core.events.ValueChangeEventFilter())
+		for phone_item in self.__phone_items:
+			phone_item.listen_event(self._cb_phone, HABApp.core.events.ValueChangeEventFilter())
 
 		self.__phone_absence_timer: threading.Timer | None = None
 		self._instance_logger.debug(super().get_initial_log_message())
@@ -127,9 +129,8 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 		# update presence item
 		target_value = "ON" if self.state in {"presence", "leaving"} else "OFF"
-		habapp_rules.core.helper.send_if_different(self.__presence_item.name, target_value)
-
-		habapp_rules.core.helper.send_if_different(self.__leaving_item.name, "ON" if self.state == "leaving" else "OFF")
+		habapp_rules.core.helper.send_if_different(self.__presence_item, target_value)
+		habapp_rules.core.helper.send_if_different(self.__leaving_item, "ON" if self.state == "leaving" else "OFF")
 
 	def _cb_outside_door(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
 		"""Callback, which is called if any outside door changed state.

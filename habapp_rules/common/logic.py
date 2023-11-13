@@ -60,7 +60,7 @@ class _BinaryLogicBase(HABApp.Rule):
 		if isinstance(self._output_item, HABApp.openhab.items.ContactItem):
 			self._output_item.oh_post_update(output_state)
 		else:
-			habapp_rules.core.helper.send_if_different(self._output_item.name, output_state)
+			habapp_rules.core.helper.send_if_different(self._output_item, output_state)
 
 
 class And(_BinaryLogicBase):
@@ -153,7 +153,7 @@ class _NumericLogicBase(HABApp.Rule):
 
 		:param output_state: state which will be set
 		"""
-		habapp_rules.core.helper.send_if_different(self._output_item.name, output_state)
+		habapp_rules.core.helper.send_if_different(self._output_item, output_state)
 
 
 class Min(_NumericLogicBase):
