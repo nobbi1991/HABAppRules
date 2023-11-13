@@ -172,7 +172,6 @@ class Min(_NumericLogicBase):
 		return HABApp.util.functions.min(input_values)
 
 
-
 class Max(_NumericLogicBase):
 	"""Logical Max function with filter for old / not updated items.
 
@@ -187,3 +186,31 @@ class Max(_NumericLogicBase):
 		:return: max value of the given values
 		"""
 		return HABApp.util.functions.max(input_values)
+
+
+class Sum(_NumericLogicBase):
+	"""Logical Sum function with filter for old / not updated items.
+
+	Example:
+	habapp_rules.common.logic.Sum(["Item_1", "Item_2"], "Item_result", 600)
+	"""
+
+	def __init__(self, input_names: list[str], output_name: str, ignore_old_values_time: int | None = None) -> None:
+		"""Init a logical function.
+
+		:param input_names: list of input items (must be either Dimmer or Number and all have to match to output_item)
+		:param output_name: name of output item
+		:param ignore_old_values_time: ignores values which are older than the given time in seconds. If None, all values will be taken
+		:raises TypeError: if unsupported item-type is given for output_name
+		"""
+		_NumericLogicBase.__init__(self, input_names, output_name, ignore_old_values_time)
+		if isinstance(self._output_item, HABApp.openhab.items.DimmerItem):
+			raise TypeError(f"Dimmer items can not be used for Sum function! Given input_names: {input_names} | output_name: {output_name}")
+
+	def _apply_numeric_logic(self, input_values: list[float]) -> float:
+		"""Apply numeric logic
+
+		:param input_values: input values
+		:return: min value of the given values
+		"""
+		return sum(input_values)
