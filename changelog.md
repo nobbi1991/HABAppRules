@@ -7,6 +7,7 @@
 ## Bugfix
 
 - only use items (instead item names) for ``habapp_rules.core.helper.send_if_different``
+- cancel timer / timeouts of replaced rules
 
 # Version 5.2.1 - 17.10.2023
 

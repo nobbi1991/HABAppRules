@@ -193,3 +193,11 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
 			self._instance_logger.debug("Leaving was set, because last phone left some time ago.")
 			self.leaving_detected()
 		self.__phone_absence_timer = None
+
+	def on_rule_removed(self) -> None:
+		habapp_rules.core.state_machine_rule.StateMachineRule.on_rule_removed(self)
+
+		# stop phone absence timer
+		if self.__phone_absence_timer:
+			self.__phone_absence_timer.cancel()
+			self.__phone_absence_timer = None
