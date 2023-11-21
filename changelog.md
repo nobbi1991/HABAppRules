@@ -1,4 +1,4 @@
-# Version 5.3.0 - dd.mm.2023
+# Version 5.3.0 - 21.11.2023
 
 ## Features
 
@@ -6,7 +6,7 @@
 
 ## Bugfix
 
-- only use items (instead item names) for ``habapp_rules.core.helper.send_if_different``
+- only use items (instead item names) for all habapp_rules implementations which are using ``habapp_rules.core.helper.send_if_different``
 - cancel timer / timeouts of replaced rules
 
 # Version 5.2.1 - 17.10.2023
