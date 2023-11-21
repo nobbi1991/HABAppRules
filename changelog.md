@@ -1,3 +1,14 @@
+# Version 5.3.0 - 21.11.2023
+
+## Features
+
+- added ``habapp_rules.common.logic.Sum`` for calculation the sum of number items
+
+## Bugfix
+
+- only use items (instead item names) for all habapp_rules implementations which are using ``habapp_rules.core.helper.send_if_different``
+- cancel timer / timeouts of replaced rules
+
 # Version 5.2.1 - 17.10.2023
 
 ## Bugfix

@@ -10,6 +10,7 @@ import HABApp.util
 import habapp_rules.core.helper
 import habapp_rules.core.logger
 import habapp_rules.core.state_machine_rule
+from habapp_rules.system import PresenceState
 
 LOGGER = logging.getLogger(__name__)
 
@@ -88,13 +89,15 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
 		# add callbacks
 		self.__leaving_item.listen_event(self._cb_leaving, HABApp.openhab.events.ItemStateChangedEventFilter())
 		self.__presence_item.listen_event(self._cb_presence, HABApp.openhab.events.ItemStateChangedEventFilter())
-		HABApp.util.EventListenerGroup().add_listener(self.__outside_door_items, self._cb_outside_door, HABApp.core.events.ValueChangeEventFilter()).listen()
-		HABApp.util.EventListenerGroup().add_listener(self.__phone_items, self._cb_phone, HABApp.core.events.ValueChangeEventFilter()).listen()
+		for door_item in self.__outside_door_items:
+			door_item.listen_event(self._cb_outside_door, HABApp.core.events.ValueChangeEventFilter())
+		for phone_item in self.__phone_items:
+			phone_item.listen_event(self._cb_phone, HABApp.core.events.ValueChangeEventFilter())
 
 		self.__phone_absence_timer: threading.Timer | None = None
 		self._instance_logger.debug(super().get_initial_log_message())
 
-	def _get_initial_state(self, default_value: str = "presence") -> str:
+	def _get_initial_state(self, default_value: str = PresenceState.PRESENCE.value) -> str:
 		"""Get initial state of state machine.
 
 		:param default_value: default / initial state
@@ -103,20 +106,20 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
 		phone_items = [phone for phone in self.__phone_items if phone.value is not None]
 		if phone_items:
 			if any((item.value == "ON" for item in phone_items)):
-				return "presence"
+				return PresenceState.PRESENCE.value
 
 			if self.__presence_item.value == "ON":
-				return "leaving"
-			return "long_absence" if self._item_state.value == "long_absence" else "absence"
+				return PresenceState.LEAVING.value
+			return PresenceState.LONG_ABSENCE.value if self._item_state.value == PresenceState.LONG_ABSENCE.value else PresenceState.ABSENCE.value
 
 		if self.__leaving_item.value == "ON":
-			return "leaving"
+			return PresenceState.LEAVING.value
 
 		if self.__presence_item.value == "ON":
-			return "presence"
+			return PresenceState.PRESENCE.value
 
 		if self.__presence_item.value == "OFF":
-			return "long_absence" if self._item_state.value == "long_absence" else "absence"
+			return PresenceState.LONG_ABSENCE.value if self._item_state.value == PresenceState.LONG_ABSENCE.value else PresenceState.ABSENCE.value
 
 		return default_value
 
@@ -126,17 +129,16 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
 		self._instance_logger.info(f"Presence state changed to {self.state}")
 
 		# update presence item
-		target_value = "ON" if self.state in {"presence", "leaving"} else "OFF"
-		habapp_rules.core.helper.send_if_different(self.__presence_item.name, target_value)
-
-		habapp_rules.core.helper.send_if_different(self.__leaving_item.name, "ON" if self.state == "leaving" else "OFF")
+		target_value = "ON" if self.state in {PresenceState.PRESENCE.value, PresenceState.LEAVING.value} else "OFF"
+		habapp_rules.core.helper.send_if_different(self.__presence_item, target_value)
+		habapp_rules.core.helper.send_if_different(self.__leaving_item, "ON" if self.state == PresenceState.LEAVING.value else "OFF")
 
 	def _cb_outside_door(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
 		"""Callback, which is called if any outside door changed state.
 
 		:param event: state change event of door item
 		"""
-		if event.value == "OPEN" and self.state != "presence":
+		if event.value == "OPEN" and self.state not in {PresenceState.PRESENCE.value, PresenceState.LEAVING.value}:
 			self._instance_logger.debug(f"Presence detected by door ({event.name})")
 			self.presence_detected()
 
@@ -145,10 +147,10 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 		:param event: Item state change event of leaving item
 		"""
-		if event.value == "ON" and self.state in {"presence", "absence", "long_absence"}:
+		if event.value == "ON" and self.state in {PresenceState.PRESENCE.value, PresenceState.ABSENCE.value, PresenceState.LONG_ABSENCE.value}:
 			self._instance_logger.debug("Start leaving through leaving switch")
 			self.leaving_detected()
-		if event.value == "OFF" and self.state == "leaving":
+		if event.value == "OFF" and self.state == PresenceState.LEAVING.value:
 			self._instance_logger.debug("Abort leaving through leaving switch")
 			self.abort_leaving()
 
@@ -157,10 +159,10 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 		:param event: Item state change event of presence item
 		"""
-		if event.value == "ON" and self.state in {"absence", "long_absence"}:
+		if event.value == "ON" and self.state in {PresenceState.ABSENCE.value, PresenceState.LONG_ABSENCE.value}:
 			self._instance_logger.debug("Presence was set manually by presence switch")
 			self.presence_detected()
-		elif event.value == "OFF" and self.state in {"presence", "leaving"}:
+		elif event.value == "OFF" and self.state in {PresenceState.PRESENCE.value, PresenceState.LEAVING.value}:
 			self._instance_logger.debug("Absence was set manually by presence switch")
 			self.absence_detected()
 
@@ -176,7 +178,7 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
 				self.__phone_absence_timer.cancel()
 				self.__phone_absence_timer = None
 
-			if self.state in {"absence", "long_absence"}:
+			if self.state in {PresenceState.ABSENCE.value, PresenceState.LONG_ABSENCE.value}:
 				self._instance_logger.debug("Presence was set through first phone joined network")
 				self.presence_detected()
 
@@ -187,7 +189,15 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 	def __set_leaving_through_phone(self) -> None:
 		"""Set leaving detected if timeout expired."""
-		if self.state == "presence":
+		if self.state == PresenceState.PRESENCE.value:
 			self._instance_logger.debug("Leaving was set, because last phone left some time ago.")
 			self.leaving_detected()
 		self.__phone_absence_timer = None
+
+	def on_rule_removed(self) -> None:
+		habapp_rules.core.state_machine_rule.StateMachineRule.on_rule_removed(self)
+
+		# stop phone absence timer
+		if self.__phone_absence_timer:
+			self.__phone_absence_timer.cancel()
+			self.__phone_absence_timer = None

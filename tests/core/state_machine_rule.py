@@ -1,5 +1,6 @@
 """Unit-test for state_machine."""
 import collections
+import time
 import unittest
 import unittest.mock
 
@@ -62,3 +63,34 @@ class TestStateMachineRule(tests.helper.test_case_base.TestCaseBase):
 		with unittest.mock.patch.object(self._state_machine, "_item_state") as state_item:
 			self._state_machine._update_openhab_state()
 			state_item.oh_send_command.assert_called_once_with("some_state")
+
+	def test_on_rule_removed(self):
+		"""Test on_rule_removed."""
+		# check if 'on_rule_removed' is still available in HABApp
+		getattr(HABApp.rule.Rule, "on_rule_removed")
+
+		# check if timer is stopped correctly
+		states = [
+			{"name": "stopped"},
+			{"name": "running", "timeout": 99, "on_timeout": "trigger_stop"}
+		]
+
+		with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_common_state_machine_rule_StateMachineRule_state", "")):
+			for initial_state in ["stopped", "running"]:
+				state_machine_rule = habapp_rules.core.state_machine_rule.StateMachineRule()
+
+				state_machine_rule.state_machine = habapp_rules.core.state_machine_rule.StateMachineWithTimeout(
+					model=state_machine_rule,
+					states=states,
+					ignore_invalid_triggers=True)
+
+				state_machine_rule._set_state(initial_state)
+
+				if initial_state == "running":
+					self.assertTrue(list(state_machine_rule.state_machine.states["running"].runner.values())[0].is_alive())
+
+				state_machine_rule.on_rule_removed()
+
+				if initial_state == "running":
+					time.sleep(0.001)
+					self.assertFalse(list(state_machine_rule.state_machine.states["running"].runner.values())[0].is_alive())

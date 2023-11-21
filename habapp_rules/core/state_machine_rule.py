@@ -2,6 +2,7 @@
 import inspect
 import os
 import pathlib
+import threading
 
 import HABApp
 import HABApp.openhab.connection.handler.func_sync
@@ -34,6 +35,7 @@ class StateMachineRule(HABApp.Rule):
 		:param state_item_name: name of the item to hold the state
 		:param state_item_label: OpenHAB label of the state_item; This will be used if the state_item will be created by HABApp
 		"""
+		self.state_machine: transitions.Machine | None = None
 		HABApp.Rule.__init__(self)
 
 		# get prefix for items
@@ -83,3 +85,11 @@ class StateMachineRule(HABApp.Rule):
 	def _update_openhab_state(self) -> None:
 		"""Update OpenHAB state item. This should method should be set to "after_state_change" of the state machine."""
 		self._item_state.oh_send_command(self.state)
+
+	def on_rule_removed(self) -> None:
+		"""Override this to implement logic that will be called when the rule has been unloaded."""
+		# stop timeout timer of current state
+		if self.state_machine:
+			for itm in self.state_machine.states[self.state].runner.values():
+				if isinstance(itm, threading.Timer) and itm.is_alive():
+					itm.cancel()

@@ -42,7 +42,8 @@ class TestPresence(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Presence_Unittest_Presence_state", "")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Presence", "ON")
 
-		self._presence = habapp_rules.system.presence.Presence("Unittest_Presence", outside_door_names=["Unittest_Door1", "Unittest_Door2"], leaving_name="Unittest_Leaving", phone_names=["Unittest_Phone1", "Unittest_Phone2"], name_state="CustomState")
+		self._presence = habapp_rules.system.presence.Presence("Unittest_Presence", outside_door_names=["Unittest_Door1", "Unittest_Door2"], leaving_name="Unittest_Leaving", phone_names=["Unittest_Phone1", "Unittest_Phone2"],
+		                                                       name_state="CustomState")
 
 	@unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
 	def test_create_graph(self):  # pragma: no cover
@@ -392,3 +393,20 @@ class TestPresence(tests.helper.test_case_base.TestCaseBase):
 		# timeout is over -> absence expected
 		tests.helper.timer.call_timeout(self.transitions_timer_mock)
 		self.assertEqual(self._presence.state, "absence")
+
+	def test_on_rule_removed(self):
+		"""Test on_rule_removed."""
+		# timer NOT running
+		with unittest.mock.patch("habapp_rules.core.state_machine_rule.StateMachineRule.on_rule_removed") as parent_on_remove:
+			self._presence.on_rule_removed()
+
+		parent_on_remove.assert_called_once()
+
+		# timer running
+		self._presence._Presence__phone_absence_timer = threading.Timer(42, unittest.mock.MagicMock())
+		self._presence._Presence__phone_absence_timer.start()
+		with unittest.mock.patch("habapp_rules.core.state_machine_rule.StateMachineRule.on_rule_removed") as parent_on_remove:
+			self._presence.on_rule_removed()
+
+		parent_on_remove.assert_called_once()
+		self.assertIsNone(self._presence._Presence__phone_absence_timer)
