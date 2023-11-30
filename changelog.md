@@ -1,3 +1,9 @@
+# Version 5.3.1 - 30.11.2023
+
+## Bugfix
+
+- fixed bug in ``habapp_rules.core.state_machine_rule.on_rule_removed`` which did not remove rules which have a hierarchical state machine
+
 # Version 5.3.0 - 21.11.2023
 
 ## Features

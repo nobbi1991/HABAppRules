@@ -90,6 +90,6 @@ class StateMachineRule(HABApp.Rule):
 		"""Override this to implement logic that will be called when the rule has been unloaded."""
 		# stop timeout timer of current state
 		if self.state_machine:
-			for itm in self.state_machine.states[self.state].runner.values():
+			for itm in self.state_machine.get_state(self.state).runner.values():
 				if isinstance(itm, threading.Timer) and itm.is_alive():
 					itm.cancel()
