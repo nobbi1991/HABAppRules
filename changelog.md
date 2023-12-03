@@ -1,3 +1,9 @@
+# Version 5.4.0 - mm.12.2023
+
+## Features
+
+- added ``habapp_rules.light_hcl`` for setting light temperature depending on time or sun elevation
+
 # Version 5.3.1 - 30.11.2023
 
 ## Bugfix

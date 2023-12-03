@@ -5,6 +5,7 @@ config
 dataclass
 enums
 ga
+HCL
 init
 KNX
 kwargs
