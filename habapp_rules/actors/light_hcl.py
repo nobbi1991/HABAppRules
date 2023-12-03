@@ -35,7 +35,7 @@ class _HclBase(HABApp.Rule):
 		:param config: config for HCL rule
 		"""
 		HABApp.Rule.__init__(self)
-		self.rule_name += name_color
+		self.rule_name += f"_{name_color}"
 
 		self._config = self._get_sorted_config(config)
 		self._item_color = HABApp.openhab.items.NumberItem.get_item(name_color)
