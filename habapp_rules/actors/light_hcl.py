@@ -133,13 +133,13 @@ class HclTime(_HclBase):
 			start_config = (self._config[-1][0] - 24, self._config[-1][1])
 			end_config = self._config[0]
 
-		elif current_time.hour > self._config[-1][0]:
+		elif current_time.hour >= self._config[-1][0]:
 			start_config = self._config[-1]
 			end_config = (self._config[0][0] + 24, self._config[0][1])
 
 		else:
 			for idx, config_itm in enumerate(self._config):  # pragma: no cover
-				if config_itm[0] <= current_time.hour <= self._config[idx + 1][0]:
+				if config_itm[0] <= current_time.hour < self._config[idx + 1][0]:
 					start_config = config_itm
 					end_config = self._config[idx + 1]
 					break

@@ -101,6 +101,8 @@ class TestHclTime(tests.helper.test_case_base.TestCaseBase):
 			TestCase(datetime.datetime(2023, 1, 1, 5, 0), 3500),
 			TestCase(datetime.datetime(2023, 1, 1, 8, 0), 4000),
 			TestCase(datetime.datetime(2023, 1, 1, 9, 0), 5250),
+			TestCase(datetime.datetime(2023, 1, 1, 12, 0), 9000),
+			TestCase(datetime.datetime(2023, 1, 1, 12, 10), 9000),
 			TestCase(datetime.datetime(2023, 1, 1, 20, 0), 4000),
 			TestCase(datetime.datetime(2023, 1, 1, 22, 0), 3667),
 		]
