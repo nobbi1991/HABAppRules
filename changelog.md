@@ -1,3 +1,9 @@
+# Version 5.4.0 - dd.12.2023
+
+## Features
+
+- added dependabot to keep all dependencies up to date
+
 # Version 5.3.1 - 30.11.2023
 
 ## Bugfix
