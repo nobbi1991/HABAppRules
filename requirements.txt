@@ -1,3 +1,3 @@
 HABApp==23.9.2
 multi-notifier~=0.2.2
-transitions~=0.8
+transitions~=0.9
