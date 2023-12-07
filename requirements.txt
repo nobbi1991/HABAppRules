@@ -1,3 +1,3 @@
-HABApp==23.9.2
+HABApp==23.11.0
 multi-notifier~=0.2.2
 transitions~=0.8
