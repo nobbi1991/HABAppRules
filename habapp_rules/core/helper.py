@@ -33,7 +33,7 @@ def create_additional_item(name: str, item_type: str, label: str | None = None) 
 	return HABApp.openhab.items.OpenhabItem.get_item(name)
 
 
-def send_if_different(item: str | HABApp.openhab.items.OpenhabItem, value: str) -> None:
+def send_if_different(item: str | HABApp.openhab.items.OpenhabItem, value: str | float | int) -> None:
 	"""Send command if the target value is different to the current value.
 
 	:param item: name of OpenHab item
