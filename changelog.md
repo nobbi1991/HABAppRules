@@ -2,7 +2,11 @@
 
 ## Features
 
-- added ``habapp_rules.light_hcl`` for setting light temperature depending on time or sun elevation
+- added ``habapp_rules.actors.light_hcl`` for setting light temperature depending on time or sun elevation
+
+## Bugfix
+
+- fixed too short restore time for all light rules when sleep was aborted in ``habapp_rules.actors.light._LightBase``
 
 # Version 5.3.1 - 30.11.2023
 
