@@ -12,7 +12,6 @@ import habapp_rules.core.state_machine_rule
 import habapp_rules.system.presence
 import tests.helper.graph_machines
 import tests.helper.oh_item
-import tests.helper.rule_runner
 import tests.helper.test_case_base
 import tests.helper.timer
 

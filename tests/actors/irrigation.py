@@ -9,7 +9,6 @@ import HABApp
 import habapp_rules.actors.irrigation
 import habapp_rules.core.exceptions
 import tests.helper.oh_item
-import tests.helper.rule_runner
 import tests.helper.test_case_base
 
 

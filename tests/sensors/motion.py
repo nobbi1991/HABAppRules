@@ -15,7 +15,6 @@ import habapp_rules.sensors.motion
 import habapp_rules.system
 import tests.helper.graph_machines
 import tests.helper.oh_item
-import tests.helper.rule_runner
 import tests.helper.test_case_base
 
 
