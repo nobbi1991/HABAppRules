@@ -28,7 +28,7 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBase):
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Color_min", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual_min", None)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_HCL_Unittest_Color_min_state", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Unittest_Color_min_state", None)
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Color_max", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual_max", None)
@@ -279,7 +279,7 @@ class TestHclTime(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.test_case_base.TestCaseBase.setUp(self)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Color_min", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual_min", None)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_HCL_Unittest_Color_min_state", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Unittest_Color_min_state", None)
 
 		self._config = habapp_rules.actors.config.light_hcl.LightHclConfig(
 			[(2, 3000),

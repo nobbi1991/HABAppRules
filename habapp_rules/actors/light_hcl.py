@@ -228,7 +228,21 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 
 class HclElevation(_HclBase):
-	"""Sun elevation based HCL."""  # todo add example
+	"""Sun elevation based HCL.
+
+		# Items:
+		Number    Elevation                     "Elevation [%s]"                {channel="astro:sun:home:position#elevation"}
+		Number    HCL_Color_Elevation           "HCL Color Elevation"
+		Switch    HCL_Color_Elevation_manual    "HCL Color Elevation manual"
+
+		# Rule init:
+		habapp_rules.actors.light_hcl.HclElevation(
+			"Elevation",
+			"HCL_Color_Elevation",
+			"HCL_Color_Elevation_manual",
+			config=habapp_rules.actors.config.light_hcl.EXAMPLE_CONFIG_ELEVATION,
+		)
+	"""
 
 	def __init__(self,
 	             name_elevation: str,
@@ -290,7 +304,18 @@ class HclElevation(_HclBase):
 
 
 class HclTime(_HclBase):
-	"""Time based HCL."""  # todo add example
+	"""Time based HCL.
+		# Items:
+		Number    HCL_Color_Time           "HCL Color Time"
+		Switch    HCL_Color_Time_manual    "HCL Color Time manual"
+
+		# Rule init:
+		habapp_rules.actors.light_hcl.HclTime(
+			"HCL_Color_Time",
+			"HCL_Color_Time_manual",
+			config=habapp_rules.actors.config.light_hcl.EXAMPLE_CONFIG_ELEVATION,
+		)
+	"""
 
 	def __init__(self,
 	             name_color: str,
