@@ -3,6 +3,7 @@
 ## Features
 
 - added ``habapp_rules.actors.light_hcl`` for setting light temperature depending on time or sun elevation
+- added ``habapp_rules.actors.state_observer.StateObserverNumber`` for observe state changes of a number item
 
 ## Bugfix
 

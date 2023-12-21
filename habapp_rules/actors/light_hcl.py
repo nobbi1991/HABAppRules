@@ -122,7 +122,7 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		if self._item_focus is not None:
 			self._item_focus.listen_event(self._cb_focus, HABApp.openhab.events.ItemStateChangedEventFilter())
 
-		habapp_rules.actors.state_observer.StateObserverNumber(name_color, self._cb_hand)
+		self._state_observer = habapp_rules.actors.state_observer.StateObserverNumber(name_color, self._cb_hand)
 
 	def _validate_config(self) -> None:
 		"""Validate configuration.
@@ -306,7 +306,7 @@ class HclElevation(_HclBase):
 	def _cb_elevation(self, _: HABApp.openhab.events.ItemStateChangedEvent | None) -> None:
 		"""Callback which is called if elevation changed"""
 		if self.state == "Auto_HCL" and self._item_elevation.value is not None:
-			habapp_rules.core.helper.send_if_different(self._item_color, self._get_hcl_color())
+			self._state_observer.send_command(self._get_hcl_color())
 
 
 class HclTime(_HclBase):
@@ -379,4 +379,4 @@ class HclTime(_HclBase):
 	def _update_color(self) -> None:
 		"""Callback which is called every 5 minutes"""
 		if self.state == "Auto_HCL":
-			habapp_rules.core.helper.send_if_different(self._item_color, self._get_hcl_color())
+			self._state_observer.send_command(self._get_hcl_color())

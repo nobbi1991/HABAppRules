@@ -383,6 +383,10 @@ class StateObserverNumber(_StateObserverBase):
 		:param event: event which triggered this method. This will be forwarded to the callback
 		:raises ValueError: if event is not supported
 		"""
+		if self._value is None:
+			self._value = event.value
+			return
+
 		if event.value != self._value:
 			self._value = event.value
 			self._trigger_callback("_cb_manual", event)
@@ -399,4 +403,7 @@ class StateObserverNumber(_StateObserverBase):
 		:param value: Value to send to the light
 		:raises ValueError: if value has wrong format
 		"""
+		if not isinstance(value, (int, float)):
+			raise ValueError(f"The given value is not supported for StateObserverNumber: {value}")
+		self._value = value
 		self._item.oh_send_command(value)

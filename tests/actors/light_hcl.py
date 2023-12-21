@@ -212,6 +212,19 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBase):
 		self.assertEqual("Auto_HCL", self._hcl_elevation_min.state)
 		self.assertEqual("Auto_HCL", self._hcl_elevation_max.state)
 
+	def test_hand(self):
+		"""Test hand detection."""
+		tests.helper.oh_item.item_state_change_event("Unittest_Color_min", 1000 )
+		tests.helper.oh_item.item_state_change_event("Unittest_Color_max", 1000)
+		self.assertEqual("Auto_HCL", self._hcl_elevation_min.state)
+		self.assertEqual("Auto_HCL", self._hcl_elevation_max.state)
+
+		tests.helper.oh_item.item_state_change_event("Unittest_Color_min", 42)
+		tests.helper.oh_item.item_state_change_event("Unittest_Color_max", 42)
+
+		self.assertEqual("Hand", self._hcl_elevation_min.state)
+		self.assertEqual("Hand", self._hcl_elevation_max.state)
+
 	def test_focus(self):
 		"""Test focus."""
 		self.assertEqual("Auto_HCL", self._hcl_elevation_min.state)
