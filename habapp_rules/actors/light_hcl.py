@@ -71,7 +71,7 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		self._config = config
 
 		if not name_state:
-			name_state = f"H_HCL_{name_color}_state"
+			name_state = f"H_{name_color}_state"
 
 		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, name_state, state_label)
 		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, name_color)
@@ -83,6 +83,7 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		self._item_focus = HABApp.openhab.items.SwitchItem.get_item(name_focus) if name_focus else None
 
 		self._validate_config()
+		self._state_observer = habapp_rules.actors.state_observer.StateObserverNumber(name_color, self._cb_hand)
 
 		# init state machine
 		self._previous_state = None
@@ -102,8 +103,6 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 			self._item_sleep.listen_event(self._cb_sleep, HABApp.openhab.events.ItemStateChangedEventFilter())
 		if self._item_focus is not None:
 			self._item_focus.listen_event(self._cb_focus, HABApp.openhab.events.ItemStateChangedEventFilter())
-
-		self._state_observer = habapp_rules.actors.state_observer.StateObserverNumber(name_color, self._cb_hand)
 
 	def _validate_config(self) -> None:
 		"""Validate configuration.
@@ -160,7 +159,7 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 			target_color = self._config.sleep_color
 
 		if target_color is not None:
-			habapp_rules.core.helper.send_if_different(self._item_color, target_color)
+			self._state_observer.send_command(target_color)
 
 	def on_enter_Auto_Init(self) -> None:  # pylint: disable=invalid-name
 		"""Is called on entering of init state"""
