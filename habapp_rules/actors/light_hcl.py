@@ -16,25 +16,6 @@ import habapp_rules.system
 
 LOGGER = logging.getLogger(__name__)
 
-EXAMPLE_CONFIG_ELEVATION = [
-	(-15, 2600),
-	(0, 3500),
-	(15, 6500)
-]
-
-EXAMPLE_CONFIG_TIME = [
-	(0, 2200),
-	(4, 2200),
-	(5, 3200),
-	(6, 3940),
-	(8, 5000),
-	(12, 7000),
-	(19, 7000),
-	(21, 5450),
-	(22, 4000),
-	(23, 2600),
-]
-
 
 # pylint: disable=no-member
 class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
