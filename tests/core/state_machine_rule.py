@@ -9,7 +9,6 @@ import HABApp.openhab.items.switch_item
 import habapp_rules.core.exceptions
 import habapp_rules.core.state_machine_rule
 import tests.helper.oh_item
-import tests.helper.rule_runner
 import tests.helper.test_case_base
 
 

@@ -6,7 +6,6 @@ import HABApp
 
 import habapp_rules.common.filter
 import tests.helper.oh_item
-import tests.helper.rule_runner
 import tests.helper.test_case_base
 
 

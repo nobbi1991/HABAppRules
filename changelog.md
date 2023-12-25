@@ -1,8 +1,14 @@
-# Version 5.4.0 - dd.12.2023
+# Version 5.4.0 - 25.12.2023
 
 ## Features
 
 - added dependabot to keep all dependencies up to date
+- added ``habapp_rules.actors.light_hcl`` for setting light temperature depending on time or sun elevation
+- added ``habapp_rules.actors.state_observer.StateObserverNumber`` for observe state changes of a number item
+
+## Bugfix
+
+- fixed too short restore time for all light rules when sleep was aborted in ``habapp_rules.actors.light._LightBase``
 
 # Version 5.3.1 - 30.11.2023
 

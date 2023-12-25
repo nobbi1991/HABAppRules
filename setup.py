@@ -6,7 +6,7 @@ import habapp_rules.__version__
 
 
 def load_req() -> typing.List[str]:
-	with open('requirements.txt') as f:
+	with open('requirements.txt', encoding="utf-8") as f:
 		return f.readlines()
 
 

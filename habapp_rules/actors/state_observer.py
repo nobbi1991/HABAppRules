@@ -167,13 +167,11 @@ class StateObserverSwitch(_StateObserverBase):
 			self._value = False
 			self._trigger_callback("_cb_off", event)
 
-	def _cb_control_item(self, event: HABApp.openhab.events.ItemCommandEvent):
+	def _cb_control_item(self, event: HABApp.openhab.events.ItemCommandEvent):  # not used by StateObserverSwitch
 		"""Callback, which is called if a command event of one of the control items was detected.
 
 		:param event: event, which triggered this callback
 		"""
-
-	# not used by StateObserverSwitch
 
 	def send_command(self, value: str) -> None:
 		"""Send brightness command to light (this should be used by rules, to not trigger a manual action)
@@ -241,7 +239,6 @@ class StateObserverDimmer(_StateObserverBase):
 		"""Check if light was triggered by a manual action
 
 		:param event: event which triggered this method. This will be forwarded to the callback
-		:raises ValueError: if event is not supported
 		"""
 		if isinstance(event.value, (int, float)):
 			if event.value > 0 and self._value == 0:
@@ -263,10 +260,6 @@ class StateObserverDimmer(_StateObserverBase):
 		elif event.value == "OFF" and self._value > 0:
 			self._value = 0
 			self._trigger_callback("_cb_off", event)
-		else:
-			pass
-
-	# raise ValueError(f"Event {event} is not supported. value must be ether a number or 'ON' / 'OFF'")
 
 	def _cb_control_item(self, event: HABApp.openhab.events.ItemCommandEvent):
 		"""Callback, which is called if a command event of one of the control items was detected.
@@ -354,5 +347,63 @@ class StateObserverRollerShutter(_StateObserverBase):
 		if not isinstance(value, (int, float)):
 			raise ValueError(f"The given value is not supported for StateObserverDimmer: {value}")
 
+		self._value = value
+		self._item.oh_send_command(value)
+
+
+class StateObserverNumber(_StateObserverBase):
+	"""Class to observe the state of a number item.
+
+	This class is normally not used standalone. Anyway here is an example config:
+
+	# KNX-things:
+	Thing device T00_99_OpenHab_DimmerNumber "KNX OpenHAB number observer"{
+        Type number             : number             "Switch"             [ ga="1/1/10" ]
+    }
+
+    # Items:
+	    Number    I01_01_Number    "Switch [%s]" {channel="knx:device:bridge:T00_99_OpenHab_DimmerNumber:number"}
+
+	# Rule init:
+	habapp_rules.actors.state_observer.StateObserverNumber("I01_01_Number", callback_value_changed)
+	"""
+
+	def __init__(self, item_name: str, cb_manual: CallbackType):
+		"""Init state observer for switch item.
+
+		:param item_name: Name of switch item
+		:param cb_manual: callback which should be called if manual change was detected
+		"""
+		self._cb_manual = cb_manual
+		_StateObserverBase.__init__(self, item_name)
+
+	def _check_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
+		"""Check if light was triggered by a manual action
+
+		:param event: event which triggered this method. This will be forwarded to the callback
+		:raises ValueError: if event is not supported
+		"""
+		if self._value is None:
+			self._value = event.value
+			return
+
+		if event.value != self._value:
+			self._value = event.value
+			self._trigger_callback("_cb_manual", event)
+
+	def _cb_control_item(self, event: HABApp.openhab.events.ItemCommandEvent):  # not used by StateObserverNumber
+		"""Callback, which is called if a command event of one of the control items was detected.
+
+		:param event: event, which triggered this callback
+		"""
+
+	def send_command(self, value: int | float) -> None:
+		"""Send brightness command to light (this should be used by rules, to not trigger a manual action)
+
+		:param value: Value to send to the light
+		:raises ValueError: if value has wrong format
+		"""
+		if not isinstance(value, (int, float)):
+			raise ValueError(f"The given value is not supported for StateObserverNumber: {value}")
 		self._value = value
 		self._item.oh_send_command(value)
