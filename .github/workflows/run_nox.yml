@@ -3,8 +3,7 @@
 name: Run Nox
 
 on:
-  pull_request_target:
-    types: [labeled, opened, reopened, synchronize]
+  pull_request:
   workflow_dispatch:
 
 jobs:
