@@ -44,7 +44,7 @@ class StateMachineRule(HABApp.Rule):
 			parent_class_path_relative = parent_class_path.relative_to(habapp_rules.BASE_PATH)
 			parent_class_path_relative_str = str(parent_class_path_relative).removesuffix(".py").replace(os.path.sep, "_")
 		except ValueError:
-			parent_class_path_relative_str = parent_class_path.name
+			parent_class_path_relative_str = parent_class_path.name.removesuffix(".py")
 		self._item_prefix = f"{parent_class_path_relative_str}.{self.rule_name}".replace(".", "_")
 
 		if not state_item_name:
