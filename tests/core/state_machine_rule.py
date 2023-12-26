@@ -40,6 +40,14 @@ class TestStateMachineRule(tests.helper.test_case_base.TestCaseBase):
 			create_mock.assert_not_called()
 			self.assertEqual("state_name", state_machine._item_state.name)
 
+	def test__init_exceptions(self):
+		"""Test exceptions of __init__."""
+		with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_common_state_machine_rule_StateMachineRule_state", "")), \
+				unittest.mock.patch("pathlib.Path.relative_to", side_effect=ValueError("not relative")):
+			state_machine = habapp_rules.core.state_machine_rule.StateMachineRule()
+
+		self.assertEqual("state_machine_rule_TestRule_StateMachineRule", state_machine._item_prefix)
+
 	def test_get_initial_state(self):
 		"""Test getting of initial state."""
 		TestCase = collections.namedtuple("TestCase", "item_value, state_names, default, expected_result")
