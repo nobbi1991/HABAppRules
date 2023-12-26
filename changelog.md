@@ -1,3 +1,9 @@
+# Version 5.4.1 - 26.12.2023
+
+## Bugfix
+
+- fixed bug in ``habapp_rules.core.state_machine.StateMachineRule`` which prevents inheritance of ``habapp_rules``-rules in local rules
+
 # Version 5.4.0 - 25.12.2023
 
 ## Features
