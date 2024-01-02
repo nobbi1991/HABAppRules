@@ -1,3 +1,11 @@
+# Version 5.5.0 - dd.01.2024
+
+## Features
+
+- added ``name_switch_on`` to ``habapp_rules.actors.light_hcl.HclTime`` and ``habapp_rules.actors.light_hcl.HclElevation`` to add the possibility to also update the color if a item switches on
+- bumped holidays
+
+
 # Version 5.4.1 - 26.12.2023
 
 ## Bugfix

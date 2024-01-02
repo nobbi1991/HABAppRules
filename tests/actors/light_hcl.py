@@ -34,6 +34,7 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual_max", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Sleep_state", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Focus_max", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch_on_max", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_State_max", None)
 
 		self._config_min = habapp_rules.actors.config.light_hcl.LightHclConfig(
@@ -68,6 +69,7 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBase):
 			self._config_max,
 			"Unittest_Sleep_state",
 			"Unittest_Focus_max",
+			"Unittest_Switch_on_max",
 			"H_State_max"
 		)
 
@@ -214,7 +216,7 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBase):
 
 	def test_hand(self):
 		"""Test hand detection."""
-		tests.helper.oh_item.item_state_change_event("Unittest_Color_min", 1000 )
+		tests.helper.oh_item.item_state_change_event("Unittest_Color_min", 1000)
 		tests.helper.oh_item.item_state_change_event("Unittest_Color_max", 1000)
 		self.assertEqual("Auto_HCL", self._hcl_elevation_min.state)
 		self.assertEqual("Auto_HCL", self._hcl_elevation_max.state)
@@ -269,6 +271,32 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.item_state_change_event("Unittest_Sleep_state", habapp_rules.system.SleepState.PRE_SLEEPING.value)
 		self.assertEqual("Auto_Sleep_Active", self._hcl_elevation_max.state)
 		tests.helper.oh_item.assert_value("Unittest_Focus_max", "OFF")
+
+	def test_switch_on(self):
+		"""Test switch on."""
+		self._hcl_elevation_max.state = "Manual"
+
+		# event value == OFF
+		with unittest.mock.patch("HABApp.rule.scheduler.habappschedulerview.HABAppSchedulerView.at") as run_at_mock:
+			tests.helper.oh_item.item_state_change_event("Unittest_Switch_on_max", "OFF")
+			run_at_mock.assert_not_called()
+
+		# state is not Auto_HCL
+		with unittest.mock.patch("HABApp.rule.scheduler.habappschedulerview.HABAppSchedulerView.at") as run_at_mock:
+			tests.helper.oh_item.item_state_change_event("Unittest_Switch_on_max", "ON")
+			run_at_mock.assert_not_called()
+
+		# target_color is None
+		self._hcl_elevation_max.state = "Auto_HCL"
+		with unittest.mock.patch("HABApp.rule.scheduler.habappschedulerview.HABAppSchedulerView.at") as run_at_mock, unittest.mock.patch.object(self._hcl_elevation_max, "_get_hcl_color", return_value=None):
+			tests.helper.oh_item.item_state_change_event("Unittest_Switch_on_max", "ON")
+			run_at_mock.assert_not_called()
+
+		# target_color is a valid value
+		self._hcl_elevation_max.state = "Auto_HCL"
+		with unittest.mock.patch("HABApp.rule.scheduler.habappschedulerview.HABAppSchedulerView.at") as run_at_mock, unittest.mock.patch.object(self._hcl_elevation_max, "_get_hcl_color", return_value=42):
+			tests.helper.oh_item.item_state_change_event("Unittest_Switch_on_max", "ON")
+			run_at_mock.assert_called_once_with(1, self._hcl_elevation_max._state_observer.send_command, 42)
 
 
 # pylint: disable=protected-access
