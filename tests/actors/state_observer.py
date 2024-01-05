@@ -407,12 +407,12 @@ class TestStateObserverNumber(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Number", None)
 
 		self._cb_manual = unittest.mock.MagicMock()
-		self._observer_switch = habapp_rules.actors.state_observer.StateObserverNumber("Unittest_Number", self._cb_manual)
+		self._observer_number = habapp_rules.actors.state_observer.StateObserverNumber("Unittest_Number", self._cb_manual)
 
 	def test_command_from_habapp(self):
 		"""Test HABApp rule triggers a command -> no manual should be detected."""
 		for value in [0, 0, 42, 42, 0]:
-			self._observer_switch.send_command(value)
+			self._observer_number.send_command(value)
 			tests.helper.oh_item.item_command_event("Unittest_Number", value)
 			tests.helper.oh_item.item_state_change_event("Unittest_Number", value)
 			self._cb_manual.assert_not_called()
@@ -459,9 +459,47 @@ class TestStateObserverNumber(tests.helper.test_case_base.TestCaseBase):
 			if test_case.cb_manual_called:
 				self._cb_manual.assert_called_with(unittest.mock.ANY)
 			tests.helper.oh_item.item_state_change_event("Unittest_Number", test_case.command)
-			self.assertEqual(test_case.command, self._observer_switch.value)
+			self.assertEqual(test_case.command, self._observer_number.value)
+
+	def test_check_manual(self):
+		"""Test _check_manual."""
+		TestCase = collections.namedtuple("TestCase", "last_value, new_value, manual_expected")
+
+		test_cases = [
+			# same value -> False
+			TestCase(0, 0, False),
+			TestCase(1, 1, False),
+			TestCase(100, 100, False),
+
+			# diff < 0.1 -> False
+			TestCase(1, 0.9, False),
+			TestCase(1, 1.09, False),
+			TestCase(0.9, 1, False),
+			TestCase(1.09, 1, False),
+			TestCase(0, -0.1, False),
+			TestCase(0, 0.1, False),
+			TestCase(-0.1, 0, False),
+			TestCase(0.1, 0, False),
+
+			# diff > 0.1 -> True
+			TestCase(0, 0.2, True),
+			TestCase(0, -0.2, True),
+			TestCase(0.2, 0, True),
+			TestCase(-0.2, 0, True),
+		]
+
+		with unittest.mock.patch.object(self._observer_number, "_trigger_callback") as trigger_cb_mock:
+			for test_case in test_cases:
+				with self.subTest(test_case = test_case):
+					trigger_cb_mock.reset_mock()
+					self._observer_number._value = test_case.last_value
+					self._observer_number._check_manual(HABApp.openhab.events.ItemStateChangedEvent("some_name", test_case.new_value, None))
+					if test_case.manual_expected:
+						trigger_cb_mock.assert_called_once()
+					else:
+						trigger_cb_mock.assert_not_called()
 
 	def test_send_command_exception(self):
 		"""Test if correct exceptions is raised."""
 		with self.assertRaises(ValueError):
-			self._observer_switch.send_command("ON")
+			self._observer_number.send_command("ON")

@@ -368,13 +368,15 @@ class StateObserverNumber(_StateObserverBase):
 	habapp_rules.actors.state_observer.StateObserverNumber("I01_01_Number", callback_value_changed)
 	"""
 
-	def __init__(self, item_name: str, cb_manual: CallbackType):
+	def __init__(self, item_name: str, cb_manual: CallbackType, threshold: float = 0.1):
 		"""Init state observer for switch item.
 
 		:param item_name: Name of switch item
 		:param cb_manual: callback which should be called if manual change was detected
+		:param threshold: difference threshold which will trigger cb_manual (Can be used to ignore errors from rounding)
 		"""
 		self._cb_manual = cb_manual
+		self.__threshold = threshold
 		_StateObserverBase.__init__(self, item_name)
 
 	def _check_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
@@ -387,7 +389,7 @@ class StateObserverNumber(_StateObserverBase):
 			self._value = event.value
 			return
 
-		if event.value != self._value:
+		if abs(event.value - self._value) > self.__threshold:
 			self._value = event.value
 			self._trigger_callback("_cb_manual", event)
 
