@@ -80,14 +80,14 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBase):
 		if not picture_dir.is_dir():
 			os.makedirs(picture_dir)
 
-		motion_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
+		graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
 			model=tests.helper.graph_machines.FakeModel(),
 			states=self._hcl_elevation_min.states,
 			transitions=self._hcl_elevation_min.trans,
 			initial=self._hcl_elevation_min.state,
 			show_conditions=True)
 
-		motion_graph.get_graph().draw(picture_dir / "HCL_Base.png", format="png", prog="dot")
+		graph.get_graph().draw(picture_dir / "HCL_Base.png", format="png", prog="dot")
 
 	def test_validate_config(self):
 		"""test _validate_config."""

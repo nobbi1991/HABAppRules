@@ -3,8 +3,12 @@
 ## Features
 
 - added ``name_switch_on`` to ``habapp_rules.actors.light_hcl.HclTime`` and ``habapp_rules.actors.light_hcl.HclElevation`` to add the possibility to also update the color if a item switches on
+- added ``habapp_rules.sensors.dwd.DwdWindAlarm`` to set wind alarm depending on DWD warnings
 - bumped holidays
 
+# Bugfix
+
+- fixed bug in ``habapp_rules.actors.state_observer.StateObserverNumber`` which triggered the manual-detected-callback if the received number deviates only a little bit because of data types. (e.g.: 1.000001 != 1.0) 
 
 # Version 5.4.1 - 26.12.2023
 

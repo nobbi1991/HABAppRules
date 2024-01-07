@@ -151,7 +151,7 @@ class StateObserverSwitch(_StateObserverBase):
 		self._cb_on = cb_on
 		self._cb_off = cb_off
 		_StateObserverBase.__init__(self, item_name)
-		self._value = self._value == "ON"
+		self._value = self._value
 
 	def _check_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
 		"""Check if light was triggered by a manual action

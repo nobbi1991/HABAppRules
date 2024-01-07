@@ -3,6 +3,8 @@ autoupdate
 bool
 config
 dataclass
+dwd
+DWD
 enums
 ga
 HCL
