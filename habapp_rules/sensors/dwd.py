@@ -109,6 +109,8 @@ class DwdWindAlarm(habapp_rules.core.state_machine_rule.StateMachineRule):
 	             hand_timeout: str | int,
 	             dwd_item_prefix: str = "I26_99_warning_",
 	             number_dwd_objects: int = 3,
+	             threshold_wind_speed: int = 70,
+	             threshold_severity: int = 2,
 	             name_state: str | None = None,
 	             state_label: str | None = None) -> None:
 		"""Init of DWD wind alarm object.
@@ -118,14 +120,19 @@ class DwdWindAlarm(habapp_rules.core.state_machine_rule.StateMachineRule):
 		:param hand_timeout: name of OpenHAB number item or fixed value as integer to set timeout of manual change
 		:param dwd_item_prefix: [optional] prefix of dwd warning names
 		:param number_dwd_objects: [optional] number of dwd objects
-		:param name_state: name of OpenHAB item for storing the current state (StringItem)
-		:param state_label: label of OpenHAB item for storing the current state (StringItem)
+		:param threshold_wind_speed: [optional] threshold for wind speed -> wind alarm will only be active if greater or equal
+		:param threshold_severity: [optional] threshold for severity -> wind alarm will only be active if greater or equal
+		:param name_state: [optional] name of OpenHAB item for storing the current state (StringItem)
+		:param state_label: [optional] label of OpenHAB item for storing the current state (StringItem)
 		:raises TypeError: if type of hand_timeout is not supported
 		"""
 		if not name_state:
 			name_state = f"H_{name_wind_alarm}_state"
 		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, name_state, state_label)
 		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, name_wind_alarm)
+
+		self._threshold_wind_speed = threshold_wind_speed
+		self._threshold_severity = threshold_severity
 
 		# init items
 		self._item_manual = HABApp.openhab.items.switch_item.SwitchItem.get_item(manual_name)
@@ -238,7 +245,7 @@ class DwdWindAlarm(habapp_rules.core.state_machine_rule.StateMachineRule):
 				if not speed_values:
 					continue
 
-				if max(speed_values) > 70 and dwd_items.severity_as_int >= 2:
+				if max(speed_values) >= self._threshold_wind_speed and dwd_items.severity_as_int >= self._threshold_severity:
 					if dwd_items.start_time.value < datetime.datetime.now() < dwd_items.end_time.value:
 						return True
 		return False
