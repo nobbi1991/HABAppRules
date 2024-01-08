@@ -1,4 +1,4 @@
-HABApp==23.11.0
+HABApp==24.1.0
 multi-notifier~=0.2.2
 transitions~=0.9
 holidays==0.39
