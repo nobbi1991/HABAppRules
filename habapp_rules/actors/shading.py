@@ -285,8 +285,8 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 		:return: True if night is active
 		"""
-		night_config = self._config.pos_night_close_summer if bool(self._item_summer) else self._config.pos_night_close_winter
-		return bool(self._item_night) and night_config is not None
+		night_config = self._config.pos_night_close_summer if self._item_summer is not None and self._item_summer.is_on() else self._config.pos_night_close_winter
+		return self._item_night is not None and self._item_night.is_on() and night_config is not None
 
 	def _cb_hand(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
 		"""Callback which is triggered if a external control was detected.

@@ -134,9 +134,9 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		"""
 		if self._item_manual.is_on():
 			return "Manual"
-		if self._item_sleep and self._item_sleep.value in (habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value):
+		if self._item_sleep is not None and self._item_sleep.value in (habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value):
 			return "Auto_Sleep"
-		if self._item_focus and self._item_focus.is_on():
+		if self._item_focus is not None and self._item_focus.is_on():
 			return "Auto_Focus"
 		return "Auto_HCL"
 

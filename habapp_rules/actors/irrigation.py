@@ -69,7 +69,7 @@ class Irrigation(HABApp.Rule):
 		:return: True if valve should be on, otherwise False
 		:raises habapp_rules.core.exceptions.HabAppRulesException: if value for hour / minute / duration is not valid
 		"""
-		if not self._item_active:
+		if not self._item_active.is_on():
 			return False
 
 		if any(item.value is None for item in (self._item_hour, self._item_minute, self._item_duration)):
