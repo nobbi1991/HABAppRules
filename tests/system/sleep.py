@@ -43,7 +43,7 @@ class TestSleep(tests.helper.test_case_base.TestCaseBase):
 
 		self._sleep = habapp_rules.system.sleep.Sleep("Unittest_Sleep", "Unittest_Sleep_Request", name_lock="Unittest_Lock", name_lock_request="Unittest_Lock_Request", name_display_text="Unittest_Display_Text", name_state="CustomState")
 
-	def test__init__with_None(self):
+	def test_init_with_none(self):
 		"""Test __init__ with None values."""
 		tests.helper.oh_item.set_state("Unittest_Sleep", None)
 		tests.helper.oh_item.set_state("Unittest_Sleep_Request", None)

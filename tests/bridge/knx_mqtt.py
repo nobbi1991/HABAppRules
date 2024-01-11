@@ -44,7 +44,7 @@ class TestLight(tests.helper.test_case_base.TestCaseBase):
 		self.assertIsNone(self._knx_bridge_dimmer._knx_switch_item)
 		self.assertIsNotNone(self._knx_bridge_dimmer._knx_dimmer_item)
 
-	def test__init__with_None(self):
+	def test_init_with_none(self):
 		"""Test __init__ with None values."""
 		tests.helper.oh_item.set_state("Unittest_full_MQTT_dimmer", None)
 		tests.helper.oh_item.set_state("Unittest_full_KNX_Switch_ctr", None)

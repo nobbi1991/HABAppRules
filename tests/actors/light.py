@@ -106,7 +106,7 @@ class TestLightBase(tests.helper.test_case_base.TestCaseBase):
 		]
 		self.assertEqual(expected_trans, self.light_base.trans)
 
-	def test__init__with_None(self):
+	def test_init_with_none(self):
 		"""Test __init__ with None values."""
 		tests.helper.oh_item.set_state("Unittest_Light", None)
 		tests.helper.oh_item.set_state("Unittest_Manual", None)
@@ -846,7 +846,7 @@ class TestLightSwitch(tests.helper.test_case_base.TestCaseBase):
 		with self.assertRaises(TypeError):
 			habapp_rules.actors.light.LightSwitch("Unittest_Light_Dimmer", "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", LIGHT_CONFIG, "Unittest_Sleep_state")
 
-	def test__init__with_None(self):
+	def test_init_with_none(self):
 		"""Test __init__ with None values."""
 		tests.helper.oh_item.set_state("Unittest_Light", None)
 		tests.helper.oh_item.set_state("Unittest_Manual", None)
@@ -1080,7 +1080,7 @@ class TestLightDimmer(tests.helper.test_case_base.TestCaseBase):
 		]
 		self.assertEqual(expected_trans, self.light_dimmer.trans)
 
-	def test__init__with_None(self):
+	def test_init_with_none(self):
 		"""Test __init__ with None values."""
 		tests.helper.oh_item.set_state("Unittest_Light", None)
 		tests.helper.oh_item.set_state("Unittest_Light_ctr", None)
@@ -1240,7 +1240,7 @@ class TestLightExtended(tests.helper.test_case_base.TestCaseBase):
 		self.assertEqual(expected_trans, self.light_extended.trans)
 		self.assertEqual(expected_trans, self.light_extended_2.trans)
 
-	def test__init__with_None(self):
+	def test_init_with_none(self):
 		"""Test __init__ with None values."""
 		tests.helper.oh_item.set_state("Unittest_Light", None)
 		tests.helper.oh_item.set_state("Unittest_Light_ctr", None)

@@ -58,8 +58,8 @@ class Irrigation(HABApp.Rule):
 		self._item_minute.listen_event(self._cb_set_valve_state, HABApp.openhab.events.ItemStateChangedEventFilter())
 		self._item_hour.listen_event(self._cb_set_valve_state, HABApp.openhab.events.ItemStateChangedEventFilter())
 		if self._item_repetitions is not None and self._item_brake is not None:
-			self._item_repetitions.listen_event(self._cb_set_valve_state, HABApp.openhab.events.ItemStateChangedEventFilter())
-			self._item_brake.listen_event(self._cb_set_valve_state, HABApp.openhab.events.ItemStateChangedEventFilter())
+			self._item_repetitions.listen_event(self._cb_set_valve_state, HABApp.openhab.events.ItemStateChangedEventFilter())  # pylint: disable=no-member
+			self._item_brake.listen_event(self._cb_set_valve_state, HABApp.openhab.events.ItemStateChangedEventFilter())  # pylint: disable=no-member
 
 		self._instance_logger.debug(f"Init of rule '{self.__class__.__name__}' with name '{self.rule_name}' was successful.")
 

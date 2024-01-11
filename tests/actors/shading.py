@@ -762,7 +762,7 @@ class TestShadingRaffstore(tests.helper.test_case_base.TestCaseBase):
 		self.assertEqual("Unittest_Slat", self.raffstore._item_slat.name)
 		self.assertEqual("Unittest_SunProtection_Slat", self.raffstore._item_sun_protection_slat.name)
 
-	def test__init__with_None(self):
+	def test_init_with_none(self):
 		"""Test __init__ with None values."""
 		tests.helper.oh_item.set_state("Unittest_Shading", None)
 		tests.helper.oh_item.set_state("Unittest_Slat", None)

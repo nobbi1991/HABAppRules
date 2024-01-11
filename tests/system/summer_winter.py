@@ -26,7 +26,7 @@ class TestSummerWinter(tests.helper.test_case_base.TestCaseBase):
 
 		self._summer_winter = habapp_rules.system.summer_winter.SummerWinter("Unittest_Temperature", "Unittest_Summer")
 
-	def test__init__with_None(self):
+	def test_init_with_none(self):
 		"""Test __init__ with None values."""
 		tests.helper.oh_item.set_state("Unittest_Temperature", None)
 		tests.helper.oh_item.set_state("Unittest_Summer", None)

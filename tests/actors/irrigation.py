@@ -40,7 +40,7 @@ class TestIrrigation(tests.helper.test_case_base.TestCaseBase):
 		self.assertEqual(3, irrigation_max._item_repetitions.value)
 		self.assertEqual(10, irrigation_max._item_brake.value)
 
-	def test__init__with_None(self):
+	def test_init_with_none(self):
 		"""Test __init__ with None values."""
 		tests.helper.oh_item.set_state("Unittest_valve", None)
 		tests.helper.oh_item.set_state("Unittest_active", None)
