@@ -20,7 +20,7 @@ class TestStateObserverSwitch(tests.helper.test_case_base.TestCaseBase):
 		"""Setup test case."""
 		tests.helper.test_case_base.TestCaseBase.setUp(self)
 
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch", 0)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch", None)
 
 		self._cb_on = unittest.mock.MagicMock()
 		self._cb_off = unittest.mock.MagicMock()
@@ -103,9 +103,9 @@ class TestStateObserverDimmer(tests.helper.test_case_base.TestCaseBase):
 		"""Setup test case."""
 		tests.helper.test_case_base.TestCaseBase.setUp(self)
 
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Dimmer", 0)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Dimmer_ctr", 0)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch_ctr", "OFF")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Dimmer", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Dimmer_ctr", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch_ctr", None)
 
 		self._cb_on = unittest.mock.MagicMock()
 		self._cb_off = unittest.mock.MagicMock()
@@ -301,8 +301,8 @@ class TestStateObserverRollerShutter(tests.helper.test_case_base.TestCaseBase):
 		"""Setup test case."""
 		tests.helper.test_case_base.TestCaseBase.setUp(self)
 
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.RollershutterItem, "Unittest_RollerShutter", 0)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.RollershutterItem, "Unittest_RollerShutter_ctr", 0)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.RollershutterItem, "Unittest_RollerShutter", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.RollershutterItem, "Unittest_RollerShutter_ctr", None)
 
 		self._cb_manual = unittest.mock.MagicMock()
 		self._observer_jalousie = habapp_rules.actors.state_observer.StateObserverRollerShutter("Unittest_RollerShutter", cb_manual=self._cb_manual, control_names=["Unittest_RollerShutter_ctr"])

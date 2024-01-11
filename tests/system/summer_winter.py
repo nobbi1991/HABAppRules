@@ -23,9 +23,15 @@ class TestSummerWinter(tests.helper.test_case_base.TestCaseBase):
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Temperature", 0)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Summer", "OFF")
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DatetimeItem, "Unittest_last_check")
 
 		self._summer_winter = habapp_rules.system.summer_winter.SummerWinter("Unittest_Temperature", "Unittest_Summer")
+
+	def test__init__with_None(self):
+		"""Test __init__ with None values."""
+		tests.helper.oh_item.set_state("Unittest_Temperature", None)
+		tests.helper.oh_item.set_state("Unittest_Summer", None)
+
+		habapp_rules.system.summer_winter.SummerWinter("Unittest_Temperature", "Unittest_Summer")
 
 	def test__get_weighted_mean(self):
 		"""Test normal function of wighted_mean"""

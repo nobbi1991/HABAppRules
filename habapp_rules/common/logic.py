@@ -213,4 +213,4 @@ class Sum(_NumericLogicBase):
 		:param input_values: input values
 		:return: min value of the given values
 		"""
-		return sum(input_values)
+		return sum([val for val in input_values if val is not None])

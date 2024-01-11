@@ -183,15 +183,15 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		:param default_value: default / initial state
 		:return: if OpenHAB item has a state it will return it, otherwise return the given default value
 		"""
-		if self._item_wind_alarm:
+		if self._item_wind_alarm is not None and self._item_wind_alarm.is_on():
 			return "WindAlarm"
-		if self._item_manual:
+		if self._item_manual.is_on():
 			return "Manual"
 		if self._item_door is not None and self._item_door.is_open():  # self._item_door.is_open():
 			return "Auto_DoorOpen_Open"
 		if self._item_sleeping_state in (habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value):
 			return "Auto_SleepingClose"
-		if self._item_night and self._night_active_and_configured():
+		if self._item_night is not None and self._item_night.is_on() and self._night_active_and_configured():
 			return "Auto_NightClose"
 		if self._sun_protection_active_and_configured():
 			return "Auto_SunProtection"
@@ -241,7 +241,7 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 			return self._config.pos_sleeping
 
 		if self.state == "Auto_NightClose":
-			if bool(self._item_summer):
+			if self._item_summer.is_on():
 				return self._config.pos_night_close_summer
 			return self._config.pos_night_close_winter
 
@@ -271,14 +271,14 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 		:return: True if night is active
 		"""
-		return bool(self._item_manual)
+		return self._item_manual.is_on()
 
 	def _sun_protection_active_and_configured(self) -> bool:
 		"""Check if sun protection is active.
 
 		:return: True if night is active
 		"""
-		return bool(self._item_sun_protection) and self._config.pos_sun_protection is not None
+		return self._item_sun_protection is not None and self._item_sun_protection.is_on() and self._config.pos_sun_protection is not None
 
 	def _night_active_and_configured(self) -> bool:
 		"""Check if night is active and configured.
@@ -723,7 +723,7 @@ class SlatValueSun(HABApp.Rule):
 		# slat characteristics
 		self.__slat_characteristic_default = self.__check_and_sort_characteristic(elevation_slat_characteristic)
 		self.__slat_characteristic_summer = self.__check_and_sort_characteristic(elevation_slat_characteristic_summer) if elevation_slat_characteristic_summer else None
-		self._slat_characteristic_active = self.__slat_characteristic_summer if bool(self._item_summer) else self.__slat_characteristic_default
+		self._slat_characteristic_active = self.__slat_characteristic_summer if self._item_summer is not None and self._item_summer.is_on() else self.__slat_characteristic_default
 
 		# callbacks
 		self._item_sun_elevation.listen_event(self._cb_elevation, HABApp.openhab.events.ItemStateChangedEventFilter())

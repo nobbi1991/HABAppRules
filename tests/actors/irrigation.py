@@ -40,6 +40,18 @@ class TestIrrigation(tests.helper.test_case_base.TestCaseBase):
 		self.assertEqual(3, irrigation_max._item_repetitions.value)
 		self.assertEqual(10, irrigation_max._item_brake.value)
 
+	def test__init__with_None(self):
+		"""Test __init__ with None values."""
+		tests.helper.oh_item.set_state("Unittest_valve", None)
+		tests.helper.oh_item.set_state("Unittest_active", None)
+		tests.helper.oh_item.set_state("Unittest_hour", None)
+		tests.helper.oh_item.set_state("Unittest_minute", None)
+		tests.helper.oh_item.set_state("Unittest_duration", None)
+		tests.helper.oh_item.set_state("Unittest_repetitions", None)
+		tests.helper.oh_item.set_state("Unittest_brake", None)
+
+		habapp_rules.actors.irrigation.Irrigation("Unittest_valve", "Unittest_active", "Unittest_hour", "Unittest_minute", "Unittest_duration", "Unittest_repetitions", "Unittest_brake")
+
 	def test__init__exceptions(self):
 		"""Test exceptions of __init__"""
 		# repetition´item is missing
@@ -78,6 +90,19 @@ class TestIrrigation(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.set_state("Unittest_active", "ON")
 		tests.helper.oh_item.set_state("Unittest_repetitions", 2)
 
+		# value of hour item is None
+		with unittest.mock.patch.object(self._irrigation_min._item_hour, "value", None):
+			self.assertFalse(self._irrigation_min._get_target_valve_state())
+
+		# value of minute item is None
+		with unittest.mock.patch.object(self._irrigation_min._item_minute, "value", None):
+			self.assertFalse(self._irrigation_min._get_target_valve_state())
+
+		# value of duration item is None
+		with unittest.mock.patch.object(self._irrigation_min._item_duration, "value", None):
+			self.assertFalse(self._irrigation_min._get_target_valve_state())
+
+		# hour, minute and duration are valid
 		with unittest.mock.patch.object(irrigation_max, "_is_in_time_range", return_value=False):
 			self.assertFalse(irrigation_max._get_target_valve_state())
 			self.assertEqual(3, irrigation_max._is_in_time_range.call_count)
@@ -94,21 +119,6 @@ class TestIrrigation(tests.helper.test_case_base.TestCaseBase):
 				unittest.mock.call(datetime.time(12, 30), datetime.time(12, 35), unittest.mock.ANY),
 				unittest.mock.call(datetime.time(12, 45), datetime.time(12, 50), unittest.mock.ANY),
 			])
-
-	def test_get_target_valve_state_exceptions(self):
-		"""Test all exceptions of _get_target_valve_state."""
-		tests.helper.oh_item.set_state("Unittest_active", "ON")
-		# value of hour item is None
-		with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesException), unittest.mock.patch.object(self._irrigation_min._item_hour, "value", None):
-			self._irrigation_min._get_target_valve_state()
-
-		# value of minute item is None
-		with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesException), unittest.mock.patch.object(self._irrigation_min._item_minute, "value", None):
-			self._irrigation_min._get_target_valve_state()
-
-		# value of duration item is None
-		with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesException), unittest.mock.patch.object(self._irrigation_min._item_duration, "value", None):
-			self._irrigation_min._get_target_valve_state()
 
 	def test_is_in_time_range(self):
 		"""Test _is_in_time_range."""
@@ -144,7 +154,7 @@ class TestIrrigation(tests.helper.test_case_base.TestCaseBase):
 
 		# same state -> no oh command
 		with unittest.mock.patch.object(self._irrigation_min, "_get_target_valve_state", return_value=False), unittest.mock.patch.object(self._irrigation_min, "_item_valve") as valve_mock:
-			valve_mock.__bool__.return_value = False
+			valve_mock.is_on.return_value = False
 			self._irrigation_min._cb_set_valve_state()
 		valve_mock.oh_send_command.assert_not_called()
 

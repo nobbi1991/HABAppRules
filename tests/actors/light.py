@@ -106,6 +106,16 @@ class TestLightBase(tests.helper.test_case_base.TestCaseBase):
 		]
 		self.assertEqual(expected_trans, self.light_base.trans)
 
+	def test__init__with_None(self):
+		"""Test __init__ with None values."""
+		tests.helper.oh_item.set_state("Unittest_Light", None)
+		tests.helper.oh_item.set_state("Unittest_Manual", None)
+		tests.helper.oh_item.set_state("Unittest_Presence_state", None)
+		tests.helper.oh_item.set_state("Unittest_Day", None)
+		tests.helper.oh_item.set_state("Unittest_Sleep_state", None)
+		with unittest.mock.patch("habapp_rules.actors.light._LightBase.__abstractmethods__", set()), unittest.mock.patch("habapp_rules.actors.light._LightBase._get_initial_state", return_value="auto_off"):
+			habapp_rules.actors.light._LightBase("Unittest_Light", "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", LIGHT_CONFIG, "Unittest_Sleep_state")
+
 	@unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
 	def test_create_graph(self):  # pragma: no cover
 		"""Create state machine graph for documentation."""
@@ -836,6 +846,16 @@ class TestLightSwitch(tests.helper.test_case_base.TestCaseBase):
 		with self.assertRaises(TypeError):
 			habapp_rules.actors.light.LightSwitch("Unittest_Light_Dimmer", "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", LIGHT_CONFIG, "Unittest_Sleep_state")
 
+	def test__init__with_None(self):
+		"""Test __init__ with None values."""
+		tests.helper.oh_item.set_state("Unittest_Light", None)
+		tests.helper.oh_item.set_state("Unittest_Manual", None)
+		tests.helper.oh_item.set_state("Unittest_Presence_state", None)
+		tests.helper.oh_item.set_state("Unittest_Day", None)
+		tests.helper.oh_item.set_state("Unittest_Sleep_state", None)
+
+		habapp_rules.actors.light.LightSwitch("Unittest_Light", "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", LIGHT_CONFIG, "Unittest_Sleep_state")
+
 	def test__init__(self):
 		"""Test __init__."""
 		expected_states = [
@@ -1060,6 +1080,17 @@ class TestLightDimmer(tests.helper.test_case_base.TestCaseBase):
 		]
 		self.assertEqual(expected_trans, self.light_dimmer.trans)
 
+	def test__init__with_None(self):
+		"""Test __init__ with None values."""
+		tests.helper.oh_item.set_state("Unittest_Light", None)
+		tests.helper.oh_item.set_state("Unittest_Light_ctr", None)
+		tests.helper.oh_item.set_state("Unittest_Manual", None)
+		tests.helper.oh_item.set_state("Unittest_Presence_state", None)
+		tests.helper.oh_item.set_state("Unittest_Day", None)
+		tests.helper.oh_item.set_state("Unittest_Sleep_state", None)
+
+		habapp_rules.actors.light.LightDimmer("Unittest_Light", ["Unittest_Light_ctr"], "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", LIGHT_CONFIG, "Unittest_Sleep_state")
+
 	def test_set_light_state(self):
 		"""Test _set_brightness."""
 		TestCase = collections.namedtuple("TestCase", "input_value, output_value")
@@ -1208,6 +1239,21 @@ class TestLightExtended(tests.helper.test_case_base.TestCaseBase):
 
 		self.assertEqual(expected_trans, self.light_extended.trans)
 		self.assertEqual(expected_trans, self.light_extended_2.trans)
+
+	def test__init__with_None(self):
+		"""Test __init__ with None values."""
+		tests.helper.oh_item.set_state("Unittest_Light", None)
+		tests.helper.oh_item.set_state("Unittest_Light_ctr", None)
+		tests.helper.oh_item.set_state("Unittest_Manual", None)
+		tests.helper.oh_item.set_state("Unittest_Presence_state", None)
+		tests.helper.oh_item.set_state("Unittest_Day", None)
+		tests.helper.oh_item.set_state("Unittest_Sleep_state", None)
+		tests.helper.oh_item.set_state("Unittest_Motion", None)
+		tests.helper.oh_item.set_state("Unittest_Door_1", None)
+		tests.helper.oh_item.set_state("Unittest_Door_2", None)
+
+		habapp_rules.actors.light.LightDimmerExtended("Unittest_Light", ["Unittest_Light_ctr"], "Unittest_Manual", "Unittest_Presence_state", "Unittest_Day", self.light_config, "Unittest_Sleep_state", "Unittest_Motion",
+		                                              ["Unittest_Door_1", "Unittest_Door_2"], name_state="CustomState")
 
 	def test__init_switch(self):
 		"""Test init of switch"""

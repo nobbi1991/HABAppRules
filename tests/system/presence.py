@@ -44,6 +44,19 @@ class TestPresence(tests.helper.test_case_base.TestCaseBase):
 		self._presence = habapp_rules.system.presence.Presence("Unittest_Presence", outside_door_names=["Unittest_Door1", "Unittest_Door2"], leaving_name="Unittest_Leaving", phone_names=["Unittest_Phone1", "Unittest_Phone2"],
 		                                                       name_state="CustomState")
 
+	def test__init__with_None(self):
+		"""Test __init__ with None values."""
+		tests.helper.oh_item.set_state("Unittest_Presence", None)
+		tests.helper.oh_item.set_state("Unittest_Door1", None)
+		tests.helper.oh_item.set_state("Unittest_Door2", None)
+		tests.helper.oh_item.set_state("Unittest_Leaving", None)
+		tests.helper.oh_item.set_state("Unittest_Phone1", None)
+		tests.helper.oh_item.set_state("Unittest_Phone2", None)
+		tests.helper.oh_item.set_state("CustomState", None)
+
+		habapp_rules.system.presence.Presence("Unittest_Presence", outside_door_names=["Unittest_Door1", "Unittest_Door2"], leaving_name="Unittest_Leaving", phone_names=["Unittest_Phone1", "Unittest_Phone2"],
+		                                      name_state="CustomState")
+
 	@unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
 	def test_create_graph(self):  # pragma: no cover
 		"""Create state machine graph for documentation."""

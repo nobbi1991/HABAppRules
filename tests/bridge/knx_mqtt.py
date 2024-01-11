@@ -44,6 +44,20 @@ class TestLight(tests.helper.test_case_base.TestCaseBase):
 		self.assertIsNone(self._knx_bridge_dimmer._knx_switch_item)
 		self.assertIsNotNone(self._knx_bridge_dimmer._knx_dimmer_item)
 
+	def test__init__with_None(self):
+		"""Test __init__ with None values."""
+		tests.helper.oh_item.set_state("Unittest_full_MQTT_dimmer", None)
+		tests.helper.oh_item.set_state("Unittest_full_KNX_Switch_ctr", None)
+		tests.helper.oh_item.set_state("Unittest_full_KNX_Dimmer_ctr", None)
+		tests.helper.oh_item.set_state("Unittest_switch_MQTT_dimmer", None)
+		tests.helper.oh_item.set_state("Unittest_switch_KNX_Switch_ctr", None)
+		tests.helper.oh_item.set_state("Unittest_dimmer_MQTT_dimmer", None)
+		tests.helper.oh_item.set_state("Unittest_dimmer_KNX_Dimmer_ctr", None)
+
+		habapp_rules.bridge.knx_mqtt.KnxMqttDimmerBridge("Unittest_full_MQTT_dimmer", "Unittest_full_KNX_Switch_ctr", "Unittest_full_KNX_Dimmer_ctr")
+		habapp_rules.bridge.knx_mqtt.KnxMqttDimmerBridge("Unittest_switch_MQTT_dimmer", "Unittest_switch_KNX_Switch_ctr")
+		habapp_rules.bridge.knx_mqtt.KnxMqttDimmerBridge("Unittest_dimmer_MQTT_dimmer", knx_dimmer_ctr="Unittest_dimmer_KNX_Dimmer_ctr")
+
 	def test__init_exceptions(self):
 		"""Test exceptions of __init__."""
 		with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):

@@ -41,7 +41,7 @@ def remove_all_mocked_items() -> None:
 	_MOCKED_ITEM_NAMES.clear()
 
 
-def set_state(item_name: str, value: StateTypes) -> None:
+def set_state(item_name: str, value: StateTypes | None) -> None:
 	"""Helper to set state of item.
 
 	:param item_name: name of item

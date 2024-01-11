@@ -241,11 +241,11 @@ class StateObserverDimmer(_StateObserverBase):
 		:param event: event which triggered this method. This will be forwarded to the callback
 		"""
 		if isinstance(event.value, (int, float)):
-			if event.value > 0 and self._value == 0:
+			if event.value > 0 and (self._value is None or self._value == 0):
 				self._value = event.value
 				self._trigger_callback("_cb_on", event)
 
-			elif event.value == 0 and self._value > 0:
+			elif event.value == 0 and (self._value is None or self._value > 0):
 				self._value = 0
 				self._trigger_callback("_cb_off", event)
 
@@ -253,11 +253,11 @@ class StateObserverDimmer(_StateObserverBase):
 				self._value = event.value
 				self._trigger_callback("_cb_brightness_change", event)
 
-		elif event.value == "ON" and self._value == 0:
+		elif event.value == "ON" and (self._value is None or self._value == 0):
 			self._value = 100
 			self._trigger_callback("_cb_on", event)
 
-		elif event.value == "OFF" and self._value > 0:
+		elif event.value == "OFF" and (self._value is None or self._value > 0):
 			self._value = 0
 			self._trigger_callback("_cb_off", event)
 
@@ -266,7 +266,7 @@ class StateObserverDimmer(_StateObserverBase):
 
 		:param event: event, which triggered this callback
 		"""
-		if event.value == "INCREASE" and self._value == 0:
+		if event.value == "INCREASE" and (self._value is None or self._value == 0):
 			self._value = 100
 			self._trigger_callback("_cb_on", event)
 

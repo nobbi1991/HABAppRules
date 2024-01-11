@@ -131,9 +131,9 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 		:param default_value: default / initial state
 		:return: if OpenHAB item has a state it will return it, otherwise return the given default value
 		"""
-		if bool(self._item_manual):
+		if self._item_manual.is_on():
 			return "manual"
-		if bool(self._item_light):
+		if self._item_light.is_on():
 			if self._item_presence_state.value == habapp_rules.system.PresenceState.PRESENCE.value and \
 					getattr(self._item_sleeping_state, "value", "awake") in (habapp_rules.system.SleepState.AWAKE.value, habapp_rules.system.SleepState.POST_SLEEPING.value, habapp_rules.system.SleepState.LOCKED.value):
 				return "auto_on"
@@ -211,7 +211,7 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 			self._timeout_leaving = getattr(self._config.leaving.sleeping if self._config.leaving else None, "timeout", None)
 			self._timeout_pre_sleep = None
 
-		elif bool(self._item_day):
+		elif self._item_day.is_on():
 			self._timeout_on = self._config.on.day.timeout
 			self._timeout_pre_off = getattr(self._config.pre_off.day if self._config.pre_off else None, "timeout", None)
 			self._timeout_leaving = getattr(self._config.leaving.day if self._config.leaving else None, "timeout", None)
@@ -253,7 +253,7 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 
 			if sleeping_active:
 				brightness_from_config = self._config.on.sleeping.brightness
-			elif bool(self._item_day):
+			elif self._item_day.is_on():
 				brightness_from_config = self._config.on.day.brightness
 			else:
 				brightness_from_config = self._config.on.night.brightness
@@ -268,7 +268,7 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 
 			if sleeping_active:
 				brightness_from_config = getattr(self._config.pre_off.sleeping if self._config.pre_off else None, "brightness", None)
-			elif bool(self._item_day):
+			elif self._item_day.is_on():
 				brightness_from_config = getattr(self._config.pre_off.day if self._config.pre_off else None, "brightness", None)
 			else:
 				brightness_from_config = getattr(self._config.pre_off.night if self._config.pre_off else None, "brightness", None)
@@ -286,14 +286,14 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 			return False
 
 		if self.state == "auto_presleep":
-			if bool(self._item_day):
+			if self._item_day.is_on():
 				return getattr(self._config.pre_sleep.day if self._config.pre_sleep else None, "brightness", None)
 			return getattr(self._config.pre_sleep.night if self._config.pre_sleep else None, "brightness", None)
 
 		if self.state == "auto_leaving":
 			if sleeping_active:
 				return getattr(self._config.leaving.sleeping if self._config.leaving else None, "brightness", None)
-			if bool(self._item_day):
+			if self._item_day.is_on():
 				return getattr(self._config.leaving.day if self._config.leaving else None, "brightness", None)
 			return getattr(self._config.leaving.night if self._config.leaving else None, "brightness", None)
 
@@ -301,7 +301,7 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 
 	def on_enter_auto_init(self):
 		"""Callback, which is called on enter of init state"""
-		if bool(self._item_light):
+		if self._item_light.is_on():
 			self.to_auto_on()
 		else:
 			self.to_auto_off()
@@ -656,7 +656,7 @@ class _LightExtendedMixin:
 		"""
 		initial_state = _LightBase._get_initial_state(self, default_value)
 
-		if initial_state == "auto_on" and bool(self._item_motion) and self._motion_configured():
+		if initial_state == "auto_on" and self._item_motion is not None and self._item_motion.is_on() and self._motion_configured():
 			initial_state = "auto_motion"
 		return initial_state
 
@@ -669,7 +669,7 @@ class _LightExtendedMixin:
 			self._timeout_motion = getattr(self._config.motion.sleeping if self._config.motion else None, "timeout", None)
 			self._timeout_door = getattr(self._config.door.sleeping if self._config.door else None, "timeout", None)
 
-		elif bool(self._item_day):
+		elif self._item_day.is_on():
 			self._timeout_motion = getattr(self._config.motion.day if self._config.motion else None, "timeout", None)
 			self._timeout_door = getattr(self._config.door.day if self._config.door else None, "timeout", None)
 		else:
@@ -688,14 +688,14 @@ class _LightExtendedMixin:
 		if self.state == "auto_motion":
 			if self._get_sleeping_activ(True):
 				return getattr(self._config.motion.sleeping if self._config.motion else None, "brightness", None)
-			if bool(self._item_day):
+			if self._item_day.is_on():
 				return getattr(self._config.motion.day if self._config.motion else None, "brightness", None)
 			return getattr(self._config.motion.night if self._config.motion else None, "brightness", None)
 
 		if self.state == "auto_door":
 			if self._get_sleeping_activ(True):
 				return getattr(self._config.door.sleeping if self._config.door else None, "brightness", None)
-			if bool(self._item_day):
+			if self._item_day.is_on():
 				return getattr(self._config.door.day if self._config.door else None, "brightness", None)
 			return getattr(self._config.door.night if self._config.door else None, "brightness", None)
 

@@ -126,7 +126,7 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
 		self._item_lock = HABApp.openhab.items.SwitchItem.get_item(name_lock) if name_lock else None
 		self._item_sleep = HABApp.openhab.items.StringItem.get_item(name_sleep_state) if name_sleep_state else None
 
-		self._hysteresis_switch = habapp_rules.common.hysteresis.HysteresisSwitch(threshold_value := self._get_brightness_threshold(), threshold_value * 0.1) if name_brightness else None
+		self._hysteresis_switch = habapp_rules.common.hysteresis.HysteresisSwitch(self._get_brightness_threshold(), 100) if name_brightness else None
 
 		# init state machine
 		self._previous_state = None
@@ -157,13 +157,13 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
 		:param default_value: default / initial state
 		:return: if OpenHAB item has a state it will return it, otherwise return the given default value
 		"""
-		if self._item_lock:
+		if self._item_lock is not None and self._item_lock.is_on():
 			return "Locked"
-		if self._item_sleep and self._item_sleep.value == habapp_rules.system.SleepState.SLEEPING.value:
+		if self._item_sleep is not None and self._item_sleep.value == habapp_rules.system.SleepState.SLEEPING.value:
 			return "SleepLocked"
-		if self._item_brightness and self._brightness_over_threshold():
+		if self._item_brightness is not None and self._brightness_over_threshold():
 			return "Unlocked_TooBright"
-		if self._item_motion_raw:
+		if self._item_motion_raw.is_on():
 			return "Unlocked_Motion"
 		return "Unlocked_Wait"
 
@@ -226,15 +226,15 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
 		if self._brightness_threshold_value:
 			return self._brightness_threshold_value
 		if self._item_brightness_threshold is not None:
-			return self._item_brightness_threshold.value
+			return value if (value := self._item_brightness_threshold.value) else float("inf")
 		raise habapp_rules.core.exceptions.HabAppRulesException(f"Can not get brightness threshold. Brightness value or item is not given. value: {self._brightness_threshold_value} | item: {self._item_brightness}")
 
 	# pylint: disable=invalid-name
 	def on_enter_Unlocked_Init(self):
 		"""Callback, which is called on enter of Unlocked_Init state"""
-		if self._item_brightness and self._brightness_over_threshold():
+		if self._item_brightness is not None and self._brightness_over_threshold():
 			self.to_Unlocked_TooBright()
-		elif self._item_motion_raw:
+		elif self._item_motion_raw.is_on():
 			self.to_Unlocked_Motion()
 		else:
 			self.to_Unlocked_Wait()

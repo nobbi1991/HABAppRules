@@ -22,21 +22,21 @@ class TestAndOR(tests.helper.test_case_base.TestCaseBase):
 		self.addCleanup(self.post_update_mock_patcher.stop)
 		self.post_update_mock_patcher.start()
 
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch_out", "OFF")
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch_in1", "OFF")
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch_in2", "OFF")
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch_in3", "OFF")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch_out", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch_in1", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch_in2", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch_in3", None)
 
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.ContactItem, "Unittest_Contact_out", "OPEN")
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.ContactItem, "Unittest_Contact_in1", "OPEN")
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.ContactItem, "Unittest_Contact_in2", "OPEN")
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.ContactItem, "Unittest_Contact_in3", "OPEN")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.ContactItem, "Unittest_Contact_out", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.ContactItem, "Unittest_Contact_in1", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.ContactItem, "Unittest_Contact_in2", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.ContactItem, "Unittest_Contact_in3", None)
 
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Number", 0)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Dimmer", 0)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_String", "")
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.RollershutterItem, "Unittest_RollerShutter", 0)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DatetimeItem, "Unittest_DateTime", 0)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Number", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Dimmer", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_String", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.RollershutterItem, "Unittest_RollerShutter", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DatetimeItem, "Unittest_DateTime", None)
 
 	def test_base_init_exceptions(self):
 		"""Test exceptions during init."""
@@ -187,22 +187,22 @@ class TestNumericLogic(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Number_out_max", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Number_out_sum", None)
 
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Number_in1", 0)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Number_in2", 0)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Number_in3", 0)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Number_in1", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Number_in2", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Number_in3", None)
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Dimmer_out_min", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Dimmer_out_max", None)
 
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Dimmer_in1", 0)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Dimmer_in2", 0)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Dimmer_in3", 0)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Dimmer_in1", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Dimmer_in2", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Dimmer_in3", None)
 
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch", 0)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.ContactItem, "Unittest_Contact", 0)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_String", "")
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.RollershutterItem, "Unittest_RollerShutter", 0)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DatetimeItem, "Unittest_DateTime", 0)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.ContactItem, "Unittest_Contact", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_String", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.RollershutterItem, "Unittest_RollerShutter", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DatetimeItem, "Unittest_DateTime", None)
 
 	def test_base_init_exceptions(self):
 		"""Test exceptions during init."""
@@ -223,13 +223,13 @@ class TestNumericLogic(tests.helper.test_case_base.TestCaseBase):
 
 		test_steps = [
 			# test change single value
-			TestStep(1, 100, 0, 100, 100),
+			TestStep(1, 100, 100, 100, 100),
 			TestStep(1, 0, 0, 0, 0),
-			TestStep(1, -100, -100, 0, -100),
+			TestStep(1, -100, -100, -100, -100),
 
 			# change all values to 5000
-			TestStep(1, 5000, 0, 5000, 5000),
-			TestStep(2, 5000, 0, 5000, 10_000),
+			TestStep(1, 5000, 5000, 5000, 5000),
+			TestStep(2, 5000, 5000, 5000, 10_000),
 			TestStep(3, 5000, 5000, 5000, 15_000),
 
 			# some random values
@@ -259,13 +259,13 @@ class TestNumericLogic(tests.helper.test_case_base.TestCaseBase):
 
 		test_steps = [
 			# test change single value
-			TestStep(1, 100, 0, 100),
+			TestStep(1, 100, 100, 100),
 			TestStep(1, 0, 0, 0),
-			TestStep(1, 50, 0, 50),
+			TestStep(1, 50, 50, 50),
 
 			# change all values to 80
-			TestStep(1, 80, 0, 80),
-			TestStep(2, 80, 0, 80),
+			TestStep(1, 80, 80, 80),
+			TestStep(2, 80, 80, 80),
 			TestStep(3, 80, 80, 80),
 
 			# some random values
