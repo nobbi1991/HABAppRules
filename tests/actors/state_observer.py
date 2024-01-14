@@ -396,6 +396,40 @@ class TestStateObserverRollerShutter(tests.helper.test_case_base.TestCaseBase):
 		self.assertEqual(60, self._observer_jalousie.value)
 		self._cb_manual.assert_called_once_with(unittest.mock.ANY)
 
+	def test_check_manual(self):
+		"""Test _check_manual."""
+		TestCase = collections.namedtuple("TestCase", "event, value, tolerance, cb_called")
+
+		test_cases = [
+			TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", None, None), 0, 0, False),
+			TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 0, None), None, 0, False),
+
+			TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 0, None), 0, 0, False),
+			TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 10, None), 10, 0, False),
+
+			TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 1, None), 0, 0, True),
+			TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 10, None), 0, 0, True),
+
+			TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 1, None), 0, 2, False),
+			TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 2, None), 0, 2, False),
+			TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 3, None), 0, 2, True),
+
+			TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 9, None), 10, 2, False),
+			TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 8, None), 10, 2, False),
+			TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 7, None), 10, 2, True)
+		]
+
+		with unittest.mock.patch.object(self._observer_jalousie, "_trigger_callback") as trigger_callback_mock:
+			for test_case in test_cases:
+				with self.subTest(test_case=test_case):
+					trigger_callback_mock.reset_mock()
+					self._observer_jalousie._value = test_case.value
+					self._observer_jalousie._value_tolerance = test_case.tolerance
+
+					self._observer_jalousie._check_manual(test_case.event)
+
+					self.assertEqual(test_case.cb_called, trigger_callback_mock.called)
+
 
 class TestStateObserverNumber(tests.helper.test_case_base.TestCaseBase):
 	"""Tests cases for testing StateObserver for number item."""
