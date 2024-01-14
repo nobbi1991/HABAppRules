@@ -1,3 +1,9 @@
+# Version 5.4.3 - 14.01.2024
+
+## Bugfix
+
+- fixed bug in ``habapp_rules.actors.shading.Raffstore`` which triggered a hand detection also if only small slat differences occurred
+
 # Version 5.4.2 - 14.01.2024
 
 ## Bugfix

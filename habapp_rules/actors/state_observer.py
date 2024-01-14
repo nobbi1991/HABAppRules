@@ -427,6 +427,7 @@ class StateObserverNumber(_StateObserverBase):
 
 
 class StateObserverSlat(StateObserverNumber):
+	"""This is only used for the slat value of shading!"""
 
 	def __init__(self, item_name: str, cb_manual: CallbackType, value_tolerance: int = 0) -> None:
 		"""Init state observer for switch item.
@@ -439,18 +440,31 @@ class StateObserverSlat(StateObserverNumber):
 		StateObserverNumber.__init__(self, item_name, cb_manual, value_tolerance)
 
 	def _check_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
-		if event.value in (0, 100):
+		"""Check if light was triggered by a manual action
+
+		:param event: event which triggered this method. This will be forwarded to the callback
+		:raises ValueError: if event is not supported
+		"""
+		self._stop_timer_manual()
+		if event.value in {0, 100}:
 			self.__timer_manual = threading.Timer(3, self.__cb_check_manual_delayed, [event])
+			self.__timer_manual.start()
 		else:
-			if self.__timer_manual:
-				self.__timer_manual.cancel()
-				self.__timer_manual = None
 			StateObserverNumber._check_manual(self, event)
 
-	def __cb_check_manual_delayed(self, event):
+	def __cb_check_manual_delayed(self, event: HABApp.openhab.events.ItemStateChangedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
+		"""Trigger delayed manual check
+
+		:param event: event which should be checked
+		"""
 		StateObserverNumber._check_manual(self, event)
 
-	def on_rule_removed(self):
+	def _stop_timer_manual(self) -> None:
+		"""Stop timer if running."""
 		if self.__timer_manual:
 			self.__timer_manual.cancel()
 			self.__timer_manual = None
+
+	def on_rule_removed(self) -> None:
+		"""Stop timer if rule is removed."""
+		self._stop_timer_manual()
