@@ -562,7 +562,7 @@ class Raffstore(_ShadingBase):
 			value_tolerance
 		)
 
-		self._state_observer_slat = habapp_rules.actors.state_observer.StateObserverDimmer(name_slat, self._cb_hand, self._cb_hand, self._cb_hand)
+		self._state_observer_slat = habapp_rules.actors.state_observer.StateObserverSlat(name_slat, self._cb_hand, value_tolerance)
 
 		# init items
 		self._item_slat = HABApp.openhab.items.dimmer_item.DimmerItem.get_item(name_slat)

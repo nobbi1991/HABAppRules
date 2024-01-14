@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import abc
 import logging
+import threading
 import time
 import typing
 
@@ -423,3 +424,33 @@ class StateObserverNumber(_StateObserverBase):
 			raise ValueError(f"The given value is not supported for StateObserverNumber: {value}")
 		self._value = value
 		self._item.oh_send_command(value)
+
+
+class StateObserverSlat(StateObserverNumber):
+
+	def __init__(self, item_name: str, cb_manual: CallbackType, value_tolerance: int = 0) -> None:
+		"""Init state observer for switch item.
+
+		:param item_name: Name of switch item
+		:param cb_manual: callback which should be called if manual change was detected
+		:param value_tolerance: the tolerance can be used to allow a difference when comparing new and old values.
+		"""
+		self.__timer_manual: threading.Timer | None = None
+		StateObserverNumber.__init__(self, item_name, cb_manual, value_tolerance)
+
+	def _check_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
+		if event.value in (0, 100):
+			self.__timer_manual = threading.Timer(3, self.__cb_check_manual_delayed, [event])
+		else:
+			if self.__timer_manual:
+				self.__timer_manual.cancel()
+				self.__timer_manual = None
+			StateObserverNumber._check_manual(self, event)
+
+	def __cb_check_manual_delayed(self, event):
+		StateObserverNumber._check_manual(self, event)
+
+	def on_rule_removed(self):
+		if self.__timer_manual:
+			self.__timer_manual.cancel()
+			self.__timer_manual = None
