@@ -14,7 +14,7 @@ import habapp_rules.system
 LOGGER = logging.getLogger(__name__)
 
 
-# pylint: disable=no-member, too-many-instance-attributes
+# pylint: disable=no-member, too-many-instance-attributes, too-many-locals
 class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 	"""Base class for shading objects."""
 
@@ -90,7 +90,8 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 	             name_summer: str | None = None,
 	             name_hand_manual_is_active_feedback: str | None = None,
 	             name_state: str | None = None,
-	             state_label: str | None = None) -> None:
+	             state_label: str | None = None,
+	             value_tolerance: int = 0) -> None:
 		"""Init of _ShadingBase.
 
 		:param name_shading_position:  name of OpenHAB shading item (RollershutterItem | DimmerItem)
@@ -107,9 +108,11 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		:param name_hand_manual_is_active_feedback: [optional] name of OpenHAB switch item which is 'ON' if state is manual or hand
 		:param name_state: name of OpenHAB item for storing the current state (StringItem)
 		:param state_label: [optional] label of OpenHAB item for storing the current state (StringItem)
+		:param value_tolerance: the tolerance can be used to allow a difference when comparing new and old values.
 		:raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: if given config / items are not valid
 		"""
 		self._config = config
+		self._value_tolerance = value_tolerance
 
 		if not name_state:
 			name_state = f"H_{name_shading_position}_state"
@@ -142,9 +145,9 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		self._position_before: habapp_rules.actors.config.shading.ShadingPosition = habapp_rules.actors.config.shading.ShadingPosition(self._item_shading_position.value)
 
 		if isinstance(self._item_shading_position, HABApp.openhab.items.rollershutter_item.RollershutterItem):
-			self._state_observer_pos = habapp_rules.actors.state_observer.StateObserverRollerShutter(name_shading_position, self._cb_hand, shading_position_control_names, shading_position_group_names)
+			self._state_observer_pos = habapp_rules.actors.state_observer.StateObserverRollerShutter(name_shading_position, self._cb_hand, shading_position_control_names, shading_position_group_names, value_tolerance)
 		elif isinstance(self._item_shading_position, HABApp.openhab.items.dimmer_item.DimmerItem):
-			self._state_observer_pos = habapp_rules.actors.state_observer.StateObserverDimmer(name_shading_position, self._cb_hand, self._cb_hand, self._cb_hand, shading_position_control_names, shading_position_group_names)
+			self._state_observer_pos = habapp_rules.actors.state_observer.StateObserverDimmer(name_shading_position, self._cb_hand, self._cb_hand, self._cb_hand, shading_position_control_names, shading_position_group_names, value_tolerance)
 		else:
 			raise habapp_rules.core.exceptions.HabAppRulesConfigurationException(f"shading position item must be a dimmer or roller-shutter item. Given type: {type(self._item_shading_position)}")
 
@@ -407,7 +410,8 @@ class Shutter(_ShadingBase):
 	             name_summer: str | None = None,
 	             name_hand_manual_is_active_feedback: str | None = None,
 	             name_state: str | None = None,
-	             state_label: str | None = None) -> None:
+	             state_label: str | None = None,
+	             value_tolerance: int = 0) -> None:
 		"""Init of Raffstore object.
 
 		:param name_shading_position: name of OpenHAB shading item (RollershutterItem)
@@ -424,6 +428,7 @@ class Shutter(_ShadingBase):
 		:param name_hand_manual_is_active_feedback: [optional] name of OpenHAB switch item which is 'ON' if state is manual or hand
 		:param name_state: name of OpenHAB item for storing the current state (StringItem)
 		:param state_label: [optional] label of OpenHAB item for storing the current state (StringItem)
+		:param value_tolerance: the tolerance can be used to allow a difference when comparing new and old values.
 		"""
 		_ShadingBase.__init__(
 			self,
@@ -438,7 +443,8 @@ class Shutter(_ShadingBase):
 			name_summer,
 			name_hand_manual_is_active_feedback,
 			name_state,
-			state_label
+			state_label,
+			value_tolerance
 		)
 
 		self._instance_logger.debug(self.get_initial_log_message())
@@ -517,7 +523,8 @@ class Raffstore(_ShadingBase):
 	             name_summer: str | None = None,
 	             name_hand_manual_is_active_feedback: str | None = None,
 	             name_state: str | None = None,
-	             state_label: str | None = None) -> None:
+	             state_label: str | None = None,
+	             value_tolerance: int = 0) -> None:
 		"""Init of Raffstore object.
 
 		:param name_shading_position: name of OpenHAB shading item (RollershutterItem)
@@ -536,6 +543,7 @@ class Raffstore(_ShadingBase):
 		:param name_hand_manual_is_active_feedback: [optional] name of OpenHAB switch item which is 'ON' if state is manual or hand
 		:param name_state: name of OpenHAB item for storing the current state (StringItem)
 		:param state_label: [optional] label of OpenHAB item for storing the current state (StringItem)
+		:param value_tolerance: the tolerance can be used to allow a difference when comparing new and old values.
 		"""
 		_ShadingBase.__init__(
 			self,
@@ -550,7 +558,8 @@ class Raffstore(_ShadingBase):
 			name_summer,
 			name_hand_manual_is_active_feedback,
 			name_state,
-			state_label
+			state_label,
+			value_tolerance
 		)
 
 		self._state_observer_slat = habapp_rules.actors.state_observer.StateObserverDimmer(name_slat, self._cb_hand, self._cb_hand, self._cb_hand)

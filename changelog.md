@@ -1,3 +1,10 @@
+# Version 5.4.2 - 14.01.2024
+
+## Bugfix
+
+- fixed bug in all observers of ``habapp_rules.actors.state_observer`` which triggered the manual callback also if the value change of numeric values is tiny
+- fixed bug in ``habapp_rules.actors.shading._ShadingBase`` which triggered a hand detection also if only small position differences occurred
+
 # Version 5.4.1 - 26.12.2023
 
 ## Bugfix
