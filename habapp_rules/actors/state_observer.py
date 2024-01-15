@@ -23,7 +23,7 @@ CallbackType = typing.Callable[[EventTypes], None]
 class _StateObserverBase(HABApp.Rule, abc.ABC):
 	"""Base class for observer classes."""
 
-	def __init__(self, item_name: str, control_names: list[str] | None = None, group_names: list[str] | None = None, value_tolerance: int = 0):
+	def __init__(self, item_name: str, control_names: list[str] | None = None, group_names: list[str] | None = None, value_tolerance: float = 0):
 		"""Init state observer for switch item.
 
 		:param item_name: Name of observed item
@@ -164,7 +164,7 @@ class StateObserverSwitch(_StateObserverBase):
 		self._cb_on = cb_on
 		self._cb_off = cb_off
 		_StateObserverBase.__init__(self, item_name)
-		self._value = self._value # todo: this makes no sense!
+		self._value = self._item.value
 
 	def _check_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
 		"""Check if light was triggered by a manual action
@@ -231,7 +231,7 @@ class StateObserverDimmer(_StateObserverBase):
 			cb_brightness_change=callback_change)
 	"""
 
-	def __init__(self, item_name: str, cb_on: CallbackType, cb_off: CallbackType, cb_brightness_change: CallbackType | None = None, control_names: list[str] | None = None, group_names: list[str] | None = None, value_tolerance: int = 0) -> None:
+	def __init__(self, item_name: str, cb_on: CallbackType, cb_off: CallbackType, cb_brightness_change: CallbackType | None = None, control_names: list[str] | None = None, group_names: list[str] | None = None, value_tolerance: float = 0) -> None:
 		"""Init state observer for dimmer item.
 
 		:param item_name: Name of dimmer item
@@ -331,7 +331,7 @@ class StateObserverRollerShutter(_StateObserverBase):
 				)
 		"""
 
-	def __init__(self, item_name: str, cb_manual: CallbackType, control_names: list[str] | None = None, group_names: list[str] | None = None, value_tolerance: int = 0) -> None:
+	def __init__(self, item_name: str, cb_manual: CallbackType, control_names: list[str] | None = None, group_names: list[str] | None = None, value_tolerance: float = 0) -> None:
 		"""Init state observer for dimmer item.
 
 		:param item_name: Name of dimmer item
@@ -384,7 +384,7 @@ class StateObserverNumber(_StateObserverBase):
 	habapp_rules.actors.state_observer.StateObserverNumber("I01_01_Number", callback_value_changed)
 	"""
 
-	def __init__(self, item_name: str, cb_manual: CallbackType, value_tolerance: int = 0) -> None:
+	def __init__(self, item_name: str, cb_manual: CallbackType, value_tolerance: float = 0) -> None:
 		"""Init state observer for switch item.
 
 		:param item_name: Name of switch item
@@ -429,7 +429,7 @@ class StateObserverNumber(_StateObserverBase):
 class StateObserverSlat(StateObserverNumber):
 	"""This is only used for the slat value of shading!"""
 
-	def __init__(self, item_name: str, cb_manual: CallbackType, value_tolerance: int = 0) -> None:
+	def __init__(self, item_name: str, cb_manual: CallbackType, value_tolerance: float = 0) -> None:
 		"""Init state observer for switch item.
 
 		:param item_name: Name of switch item

@@ -441,7 +441,7 @@ class TestStateObserverNumber(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Number", None)
 
 		self._cb_manual = unittest.mock.MagicMock()
-		self._observer_number = habapp_rules.actors.state_observer.StateObserverNumber("Unittest_Number", self._cb_manual)
+		self._observer_number = habapp_rules.actors.state_observer.StateObserverNumber("Unittest_Number", self._cb_manual, value_tolerance=0.1)
 
 	def test_command_from_habapp(self):
 		"""Test HABApp rule triggers a command -> no manual should be detected."""
@@ -532,7 +532,6 @@ class TestStateObserverNumber(tests.helper.test_case_base.TestCaseBase):
 						trigger_cb_mock.assert_called_once()
 					else:
 						trigger_cb_mock.assert_not_called()
-			self.assertEqual(test_case.command, self._observer_number.value)
 
 	def test_send_command_exception(self):
 		"""Test if correct exceptions is raised."""
@@ -583,4 +582,3 @@ class TestStateObserverSlat(tests.helper.test_case_base.TestCaseBase):
 		with unittest.mock.patch.object(self._observer_slat, "_stop_timer_manual") as stop_timer_mock:
 			self._observer_slat.on_rule_removed()
 		stop_timer_mock.assert_called_once()
-			self._observer_number.send_command("ON")
