@@ -86,7 +86,8 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
 	             extended_motion_time: int = 5,
 	             name_brightness: str | None = None,
 	             brightness_threshold: int | str | None = None,
-	             name_lock: str | None = None, name_sleep_state: str | None = None,
+	             name_lock: str | None = None,
+	             name_sleep_state: str | None = None,
 	             post_sleep_lock_time: int = 10,
 	             name_state: str | None = None,
 	             state_label: str | None = None) -> None:
@@ -115,8 +116,6 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
 		self._brightness_threshold_value = brightness_threshold if isinstance(brightness_threshold, int) else None
 		self._timeout_extended_motion = extended_motion_time
 		self._timeout_post_sleep_lock = post_sleep_lock_time
-		self.states[2]["timeout"] = self._timeout_post_sleep_lock
-		self.states[3]["children"][3]["timeout"] = self._timeout_extended_motion
 
 		# get items
 		self._item_motion_raw = HABApp.openhab.items.SwitchItem.get_item(name_raw)
@@ -126,7 +125,7 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
 		self._item_lock = HABApp.openhab.items.SwitchItem.get_item(name_lock) if name_lock else None
 		self._item_sleep = HABApp.openhab.items.StringItem.get_item(name_sleep_state) if name_sleep_state else None
 
-		self._hysteresis_switch = habapp_rules.common.hysteresis.HysteresisSwitch(self._get_brightness_threshold(), 100) if name_brightness else None
+		self._hysteresis_switch = habapp_rules.common.hysteresis.HysteresisSwitch(threshold := self._get_brightness_threshold(), threshold * 0.1 if threshold else 5) if name_brightness else None
 
 		# init state machine
 		self._previous_state = None
@@ -137,6 +136,9 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
 			ignore_invalid_triggers=True,
 			after_state_change="_update_openhab_state")
 		self._set_initial_state()
+
+		self.state_machine.get_state("PostSleepLocked").timeout = self._timeout_post_sleep_lock
+		self.state_machine.get_state("Unlocked_MotionExtended").timeout = self._timeout_extended_motion
 
 		# register callbacks
 		self._item_motion_raw.listen_event(self._cb_motion_raw, HABApp.openhab.events.ItemStateChangedEventFilter())

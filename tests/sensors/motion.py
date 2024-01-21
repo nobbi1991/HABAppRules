@@ -56,12 +56,12 @@ class TestMotion(tests.helper.test_case_base.TestCaseBase):
 		expected_states = [
 			{"name": "Locked"},
 			{"name": "SleepLocked"},
-			{"name": "PostSleepLocked", "timeout": 10, "on_timeout": "timeout_post_sleep_locked"},
+			{"name": "PostSleepLocked", "timeout": 99, "on_timeout": "timeout_post_sleep_locked"},
 			{"name": "Unlocked", "initial": "Init", "children": [
 				{"name": "Init"},
 				{"name": "Wait"},
 				{"name": "Motion"},
-				{"name": "MotionExtended", "timeout": 5, "on_timeout": "timeout_motion_extended"},
+				{"name": "MotionExtended", "timeout": 99, "on_timeout": "timeout_motion_extended"},
 				{"name": "TooBright"}]}]
 		self.assertEqual(expected_states, self.motion_min.states)
 
@@ -151,7 +151,7 @@ class TestMotion(tests.helper.test_case_base.TestCaseBase):
 				tests.helper.oh_item.set_state("Unittest_Motion_min_raw", "ON" if test_case.motion_raw else "OFF")
 
 				self.assertEqual(test_case.expected_state_max, self.motion_max._get_initial_state("test"))
-				# self.assertEqual(test_case.expected_state_min, self.motion_min._get_initial_state("test"))
+			# self.assertEqual(test_case.expected_state_min, self.motion_min._get_initial_state("test"))
 
 	def test_raw_motion_active(self):
 		"""test _raw_motion_active"""
@@ -178,8 +178,10 @@ class TestMotion(tests.helper.test_case_base.TestCaseBase):
 
 	def test_initial_unlock_state(self):
 		"""test initial state of unlock state."""
+		self.assertEqual(float("inf"), self.motion_max._get_brightness_threshold())
 		tests.helper.oh_item.item_state_change_event("Unittest_Brightness", 100)
 		tests.helper.oh_item.item_state_change_event("Unittest_Brightness_Threshold", 1000)
+		self.assertEqual(1000, self.motion_max._get_brightness_threshold())
 
 		TestCase = collections.namedtuple("TestCase", "brightness_value, motion_raw, expected_state_min, expected_state_max")
 
@@ -191,15 +193,16 @@ class TestMotion(tests.helper.test_case_base.TestCaseBase):
 		]
 
 		for test_case in test_cases:
-			tests.helper.oh_item.set_state("Unittest_Brightness", test_case.brightness_value)
-			tests.helper.oh_item.set_state("Unittest_Motion_min_raw", "ON" if test_case.motion_raw else "OFF")
-			tests.helper.oh_item.set_state("Unittest_Motion_max_raw", "ON" if test_case.motion_raw else "OFF")
+			with self.subTest(test_case=test_case):
+				tests.helper.oh_item.set_state("Unittest_Brightness", test_case.brightness_value)
+				tests.helper.oh_item.set_state("Unittest_Motion_min_raw", "ON" if test_case.motion_raw else "OFF")
+				tests.helper.oh_item.set_state("Unittest_Motion_max_raw", "ON" if test_case.motion_raw else "OFF")
 
-			self.motion_min.to_Unlocked()
-			self.motion_max.to_Unlocked()
+				self.motion_min.to_Unlocked()
+				self.motion_max.to_Unlocked()
 
-			self.assertEqual(test_case.expected_state_min, self.motion_min.state)
-			self.assertEqual(test_case.expected_state_max, self.motion_max.state)
+				self.assertEqual(test_case.expected_state_min, self.motion_min.state)
+				self.assertEqual(test_case.expected_state_max, self.motion_max.state)
 
 	def test_lock(self):
 		"""Test if lock is activated from all states."""
