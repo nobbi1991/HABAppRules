@@ -127,12 +127,12 @@ class _StateObserverBase(HABApp.Rule, abc.ABC):
 		callback: CallbackType = getattr(self, cb_name)
 		callback(event)
 
-	def _compare_values_with_tolerance(self, value_1: float, value_2: float) -> bool:
-		"""Compare values with tolerance
+	def _values_different_with_tolerance(self, value_1: float, value_2: float) -> bool:
+		"""Check if values are different, including the difference.
 
 		:param value_1: first value
 		:param value_2: second value
-		:return: true if values are the same (including the offset), false if not
+		:return: true if values are different (including the tolerance), false if not
 		"""
 		return abs((value_1 or 0) - (value_2 or 0)) > self._value_tolerance
 
@@ -263,7 +263,7 @@ class StateObserverDimmer(_StateObserverBase):
 				self._value = 0
 				self._trigger_callback("_cb_off", event)
 
-			elif self._compare_values_with_tolerance(event.value, self._value):
+			elif self._values_different_with_tolerance(event.value, self._value):
 				self._value = event.value
 				self._trigger_callback("_cb_brightness_change", event)
 
@@ -346,7 +346,7 @@ class StateObserverRollerShutter(_StateObserverBase):
 		self._cb_manual = cb_manual
 
 	def _check_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
-		if isinstance(event.value, (int, float)) and self._compare_values_with_tolerance(event.value, self._value):
+		if isinstance(event.value, (int, float)) and self._values_different_with_tolerance(event.value, self._value):
 			self._value = event.value
 			self._trigger_callback("_cb_manual", event)
 
@@ -404,7 +404,7 @@ class StateObserverNumber(_StateObserverBase):
 			self._value = event.value
 			return
 
-		if self._compare_values_with_tolerance(event.value, self._value):
+		if self._values_different_with_tolerance(event.value, self._value):
 			self._value = event.value
 			self._trigger_callback("_cb_manual", event)
 

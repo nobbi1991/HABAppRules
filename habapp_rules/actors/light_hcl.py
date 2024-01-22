@@ -86,7 +86,7 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		self._item_switch_on = HABApp.openhab.items.SwitchItem.get_item(name_switch_on) if name_switch_on else None
 
 		self._validate_config()
-		self._state_observer = habapp_rules.actors.state_observer.StateObserverNumber(name_color, self._cb_hand)
+		self._state_observer = habapp_rules.actors.state_observer.StateObserverNumber(name_color, self._cb_hand, value_tolerance=10)
 
 		# init state machine
 		self._previous_state = None

@@ -151,7 +151,7 @@ class TestMotion(tests.helper.test_case_base.TestCaseBase):
 				tests.helper.oh_item.set_state("Unittest_Motion_min_raw", "ON" if test_case.motion_raw else "OFF")
 
 				self.assertEqual(test_case.expected_state_max, self.motion_max._get_initial_state("test"))
-			# self.assertEqual(test_case.expected_state_min, self.motion_min._get_initial_state("test"))
+				self.assertEqual(test_case.expected_state_min, self.motion_min._get_initial_state("test"))
 
 	def test_raw_motion_active(self):
 		"""test _raw_motion_active"""
