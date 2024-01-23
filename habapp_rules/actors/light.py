@@ -246,7 +246,7 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 				return self._brightness_before
 
 			# starting from here: previous state == auto_off
-			if isinstance(self._state_observer.last_manual_event.value, (int, float)):
+			if isinstance(man_value:=self._state_observer.last_manual_event.value, (int, float)) and 0 < man_value < 100:
 				return None
 			if self._state_observer.last_manual_event.value == "INCREASE":
 				return None

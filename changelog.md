@@ -10,6 +10,7 @@
 # Bugfix
 
 - fixed bug in ``habapp_rules.actors.state_observer.StateObserverNumber`` which triggered the manual-detected-callback if the received number deviates only a little bit because of data types. (e.g.: 1.000001 != 1.0) 
+- fixed bug in dimmer lights of ``habapp_rules.actors.light`` which did not set the correct brightness if light was switched on.
 
 # Version 5.4.3 - 14.01.2024
 
