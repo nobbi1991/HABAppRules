@@ -41,7 +41,7 @@ class HysteresisSwitch:
 			threshold = self._threshold - 0.5 * self._hysteresis if self._on_off_state else self._threshold + 0.5 * self._hysteresis
 
 			# use new value if given, otherwise last value
-			value = value if value else self._value_last
+			value = value if value is not None else self._value_last
 
 			# get on / off state
 			self._on_off_state = value >= threshold
