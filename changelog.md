@@ -4,6 +4,7 @@
 
 - added ``name_switch_on`` to ``habapp_rules.actors.light_hcl.HclTime`` and ``habapp_rules.actors.light_hcl.HclElevation`` to add the possibility to also update the color if a item switches on
 - added ``habapp_rules.sensors.dwd.DwdWindAlarm`` to set wind alarm depending on DWD warnings
+- added ``habapp_rules.core.version.SetVersions`` to set versions of HABApp and habapp_rules to OpenHAB items
 - bumped holidays to 0.41
 - bumped HABApp to 24.01.0
 
