@@ -1,3 +1,4 @@
+"""Test version."""
 import HABApp.openhab.items
 
 import habapp_rules.__version__

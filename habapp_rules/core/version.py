@@ -1,3 +1,4 @@
+"""Set version rules."""
 import logging
 
 import HABApp
