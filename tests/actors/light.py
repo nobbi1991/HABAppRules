@@ -1228,7 +1228,7 @@ class TestLightExtended(tests.helper.test_case_base.TestCaseBase):
 			{"trigger": "motion_timeout", "source": "auto_motion", "dest": "auto_preoff", "conditions": "_pre_off_configured", "before": "_log_motion_timeout_warning"},
 			{"trigger": "motion_timeout", "source": "auto_motion", "dest": "auto_off", "unless": "_pre_off_configured", "before": "_log_motion_timeout_warning"},
 			{"trigger": "hand_off", "source": "auto_motion", "dest": "auto_off"},
-			{"trigger": "door_opened", "source": "auto_off", "dest": "auto_door", "conditions": ["_door_configured", "_motion_door_allowed"]},
+			{"trigger": "door_opened", "source": ["auto_off", "auto_preoff"], "dest": "auto_door", "conditions": ["_door_configured", "_motion_door_allowed"]},
 			{"trigger": "door_timeout", "source": "auto_door", "dest": "auto_preoff", "conditions": "_pre_off_configured"},
 			{"trigger": "door_timeout", "source": "auto_door", "dest": "auto_off", "unless": "_pre_off_configured"},
 			{"trigger": "door_closed", "source": "auto_leaving", "dest": "auto_off", "conditions": "_door_off_leaving_configured"},
@@ -1660,6 +1660,12 @@ class TestLightExtended(tests.helper.test_case_base.TestCaseBase):
 		self.light_extended.to_auto_door()
 		with unittest.mock.patch.object(self.light_extended, "_pre_sleep_configured", return_value=False):
 			tests.helper.oh_item.send_command("Unittest_Sleep_state", habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value)
+		self.assertEqual("auto_door", self.light_extended.state)
+
+		# auto_preoff to auto_door when door opens
+		self.light_extended.to_auto_preoff()
+		with unittest.mock.patch.object(self.light_extended, "_motion_door_allowed", return_value=True):
+			tests.helper.oh_item.send_command("Unittest_Door_1", "OPEN", "CLOSED")
 		self.assertEqual("auto_door", self.light_extended.state)
 
 	def test_leaving(self):

@@ -246,7 +246,7 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 				return self._brightness_before
 
 			# starting from here: previous state == auto_off
-			if isinstance(man_value:=self._state_observer.last_manual_event.value, (int, float)) and 0 < man_value < 100:
+			if isinstance(man_value := self._state_observer.last_manual_event.value, (int, float)) and 0 < man_value < 100:
 				return None
 			if self._state_observer.last_manual_event.value == "INCREASE":
 				return None
@@ -630,7 +630,7 @@ class _LightExtendedMixin:
 		transitions_list.append({"trigger": "motion_timeout", "source": "auto_motion", "dest": "auto_off", "unless": "_pre_off_configured", "before": "_log_motion_timeout_warning"})
 		transitions_list.append({"trigger": "hand_off", "source": "auto_motion", "dest": "auto_off"})
 
-		transitions_list.append({"trigger": "door_opened", "source": "auto_off", "dest": "auto_door", "conditions": ["_door_configured", "_motion_door_allowed"]})
+		transitions_list.append({"trigger": "door_opened", "source": ["auto_off", "auto_preoff"], "dest": "auto_door", "conditions": ["_door_configured", "_motion_door_allowed"]})
 		transitions_list.append({"trigger": "door_timeout", "source": "auto_door", "dest": "auto_preoff", "conditions": "_pre_off_configured"})
 		transitions_list.append({"trigger": "door_timeout", "source": "auto_door", "dest": "auto_off", "unless": "_pre_off_configured"})
 		transitions_list.append({"trigger": "door_closed", "source": "auto_leaving", "dest": "auto_off", "conditions": "_door_off_leaving_configured"})
