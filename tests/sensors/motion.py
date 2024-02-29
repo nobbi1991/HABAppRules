@@ -69,7 +69,7 @@ class TestMotion(tests.helper.test_case_base.TestCaseBase):
 			{"trigger": "lock_on", "source": ["Unlocked", "SleepLocked", "PostSleepLocked"], "dest": "Locked"},
 			{"trigger": "lock_off", "source": "Locked", "dest": "Unlocked", "unless": "_sleep_active"},
 			{"trigger": "lock_off", "source": "Locked", "dest": "SleepLocked", "conditions": "_sleep_active"},
-			{"trigger": "sleep_started", "source": "Unlocked", "dest": "SleepLocked"},
+			{"trigger": "sleep_started", "source": ['Unlocked', 'PostSleepLocked'], "dest": "SleepLocked"},
 			{"trigger": "sleep_end", "source": "SleepLocked", "dest": "Unlocked", "unless": "_post_sleep_lock_configured"},
 			{"trigger": "sleep_end", "source": "SleepLocked", "dest": "PostSleepLocked", "conditions": "_post_sleep_lock_configured"},
 			{"trigger": "timeout_post_sleep_locked", "source": "PostSleepLocked", "dest": "Unlocked", "unless": "_raw_motion_active"},
@@ -297,6 +297,11 @@ class TestMotion(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.item_state_change_event("Unittest_Motion_max_raw", "ON", "OFF")
 		self.assertEqual("PostSleepLocked", self.motion_max.state)
 		self.assertEqual(1, self.transitions_timer_mock.call_count)
+
+		# sleep starts during post sleep
+		self.motion_max.state = "PostSleepLocked"
+		tests.helper.oh_item.item_state_change_event("Unittest_Sleep_state", habapp_rules.system.SleepState.SLEEPING.value)
+		self.assertEqual("SleepLocked", self.motion_max.state)
 
 	def test_unlocked_wait(self):
 		"""Test leaving transitions of Unlocked_Wait state."""

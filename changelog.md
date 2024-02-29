@@ -15,6 +15,7 @@
 - fixed bug in ``habapp_rules.actors.state_observer.StateObserverNumber`` which triggered the manual-detected-callback if the received number deviates only a little bit because of data types. (e.g.: 1.000001 != 1.0) 
 - fixed bug for dimmer lights in ``habapp_rules.actors.light`` which did not set the correct brightness if light was switched on.
 - fixed bug in ``habapp_rules.common.hysteresis.HysteresisSwitch.get_output`` resulted in a wrong switch state if the value was 0. 
+- added missing state transition to ``habapp_rules.sensors.motion.Motion``. When state was ``PostSleepLocked`` and sleep started there was no change to ``SleepLocked``
 
 # Version 5.4.3 - 14.01.2024
 
