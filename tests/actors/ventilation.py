@@ -40,6 +40,10 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBase):
 		self.addCleanup(self.threading_timer_mock_patcher.stop)
 		self.threading_timer_mock = self.threading_timer_mock_patcher.start()
 
+		self.run_at_mock_patcher = unittest.mock.patch("HABApp.rule.scheduler.habappschedulerview.HABAppSchedulerView.at")
+		self.addCleanup(self.run_at_mock_patcher.stop)
+		self.run_at_mock = self.run_at_mock_patcher.start()
+
 		tests.helper.test_case_base.TestCaseBase.setUp(self)
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Ventilation_min_level", None)
@@ -58,15 +62,11 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Presence_state", None)
 
 		config_max = habapp_rules.actors.config.ventilation.VentilationConfig(
-			42,
-			101,
-			102,
-			103,
-			"External Custom",
-			"not used",
-			142,
-			datetime.time(18),
-			105
+			habapp_rules.actors.config.ventilation.StateConfig(101, "Normal Custom"),
+			habapp_rules.actors.config.ventilation.StateConfigWithTimeout(102, "Hand Custom", 42 * 60),
+			habapp_rules.actors.config.ventilation.StateConfig(103, "External Custom"),
+			habapp_rules.actors.config.ventilation.StateConfig(104, "Humidity Custom"),
+			habapp_rules.actors.config.ventilation.StateConfigLongAbsence(105, "Absence Custom", 1800, datetime.time(18))
 		)
 
 		self.ventilation_min = habapp_rules.actors.ventilation.Ventilation("Unittest_Ventilation_min_level", "Unittest_Ventilation_min_manual", habapp_rules.actors.config.ventilation.CONFIG_DEFAULT)
@@ -113,8 +113,8 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBase):
 		self.assertEqual(3600, self.ventilation_min.state_machine.get_state("Auto_PowerHand").timeout)
 		self.assertEqual(3600, self.ventilation_min.state_machine.get_state("Auto_LongAbsence_On").timeout)
 
-		self.assertEqual(42, self.ventilation_max.state_machine.get_state("Auto_PowerHand").timeout)
-		self.assertEqual(142, self.ventilation_max.state_machine.get_state("Auto_LongAbsence_On").timeout)
+		self.assertEqual(42 * 60, self.ventilation_max.state_machine.get_state("Auto_PowerHand").timeout)
+		self.assertEqual(1800, self.ventilation_max.state_machine.get_state("Auto_LongAbsence_On").timeout)
 
 	def test_get_initial_state(self):
 		"""Test getting initial state."""
@@ -187,33 +187,40 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBase):
 		TestCase = collections.namedtuple("TestCase", "ventilation_level, state, expected_on, expected_power, expected_display_text")
 
 		test_cases = [
-			TestCase(0, "Auto_PowerHand", False, False, "Hand"),
-			TestCase(0, "Auto_Normal", False, False, "Normal"),
+			TestCase(None, "Auto_PowerHand", False, False, "Hand Custom 42min"),
+			TestCase(None, "Auto_Normal", False, False, "Normal Custom"),
+			TestCase(None, "Auto_PowerExternal", False, False, "External Custom"),
+			TestCase(None, "Auto_LongAbsence_On", False, False, "Absence Custom ON"),
+			TestCase(None, "Auto_LongAbsence_Off", False, False, "Absence Custom OFF"),
+			TestCase(None, "Auto_Init", False, False, "Absence Custom OFF"),
+
+			TestCase(0, "Auto_PowerHand", False, False, "Hand Custom 42min"),
+			TestCase(0, "Auto_Normal", False, False, "Normal Custom"),
 			TestCase(0, "Auto_PowerExternal", False, False, "External Custom"),
-			TestCase(0, "Auto_LongAbsence_On", False, False, "Absence ON"),
-			TestCase(0, "Auto_LongAbsence_Off", False, False, "Absence OFF"),
-			TestCase(0, "Auto_Init", False, False, "Absence OFF"),
+			TestCase(0, "Auto_LongAbsence_On", False, False, "Absence Custom ON"),
+			TestCase(0, "Auto_LongAbsence_Off", False, False, "Absence Custom OFF"),
+			TestCase(0, "Auto_Init", False, False, "Absence Custom OFF"),
 
-			TestCase(1, "Auto_PowerHand", True, False, "Hand"),
-			TestCase(1, "Auto_Normal", True, False, "Normal"),
+			TestCase(1, "Auto_PowerHand", True, False, "Hand Custom 42min"),
+			TestCase(1, "Auto_Normal", True, False, "Normal Custom"),
 			TestCase(1, "Auto_PowerExternal", True, False, "External Custom"),
-			TestCase(1, "Auto_LongAbsence_On", True, False, "Absence ON"),
-			TestCase(1, "Auto_LongAbsence_Off", True, False, "Absence OFF"),
-			TestCase(1, "Auto_Init", True, False, "Absence OFF"),
+			TestCase(1, "Auto_LongAbsence_On", True, False, "Absence Custom ON"),
+			TestCase(1, "Auto_LongAbsence_Off", True, False, "Absence Custom OFF"),
+			TestCase(1, "Auto_Init", True, False, "Absence Custom OFF"),
 
-			TestCase(2, "Auto_PowerHand", True, True, "Hand"),
-			TestCase(2, "Auto_Normal", True, True, "Normal"),
+			TestCase(2, "Auto_PowerHand", True, True, "Hand Custom 42min"),
+			TestCase(2, "Auto_Normal", True, True, "Normal Custom"),
 			TestCase(2, "Auto_PowerExternal", True, True, "External Custom"),
-			TestCase(2, "Auto_LongAbsence_On", True, True, "Absence ON"),
-			TestCase(2, "Auto_LongAbsence_Off", True, True, "Absence OFF"),
-			TestCase(2, "Auto_Init", True, True, "Absence OFF"),
+			TestCase(2, "Auto_LongAbsence_On", True, True, "Absence Custom ON"),
+			TestCase(2, "Auto_LongAbsence_Off", True, True, "Absence Custom OFF"),
+			TestCase(2, "Auto_Init", True, True, "Absence Custom OFF"),
 
-			TestCase(42, "Auto_PowerHand", True, True, "Hand"),
-			TestCase(42, "Auto_Normal", True, True, "Normal"),
+			TestCase(42, "Auto_PowerHand", True, True, "Hand Custom 42min"),
+			TestCase(42, "Auto_Normal", True, True, "Normal Custom"),
 			TestCase(42, "Auto_PowerExternal", True, True, "External Custom"),
-			TestCase(42, "Auto_LongAbsence_On", True, True, "Absence ON"),
-			TestCase(42, "Auto_LongAbsence_Off", True, True, "Absence OFF"),
-			TestCase(42, "Auto_Init", True, True, "Absence OFF"),
+			TestCase(42, "Auto_LongAbsence_On", True, True, "Absence Custom ON"),
+			TestCase(42, "Auto_LongAbsence_Off", True, True, "Absence Custom OFF"),
+			TestCase(42, "Auto_Init", True, True, "Absence Custom OFF"),
 		]
 
 		for test_case in test_cases:
@@ -232,9 +239,8 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBase):
 
 	def test_on_enter_long_absence_off(self):
 		"""Test on_enter_Auto_LongAbsence_Off."""
-		with unittest.mock.patch("HABApp.rule.scheduler.habappschedulerview.HABAppSchedulerView.at") as run_at_mock:
-			self.ventilation_max.to_Auto_LongAbsence_Off()
-		run_at_mock.assert_called_once_with(datetime.time(18), self.ventilation_max._long_absence_power_on)
+		self.ventilation_max.to_Auto_LongAbsence_Off()
+		self.run_at_mock.assert_called_once_with(datetime.time(18), self.ventilation_max._long_absence_power_on)
 
 	def test__set_hand_display_text(self):
 		"""test __set_hand_display_text."""
@@ -242,33 +248,33 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBase):
 		for state in ["Manual", "Auto_Normal", "Auto_PowerHumidity", "Auto_PowerDryer", "Auto_LongAbsence_On", "Auto_LongAbsence_Off"]:
 			self.ventilation_max.state = state
 
-			with unittest.mock.patch("HABApp.rule.scheduler.habappschedulerview.HABAppSchedulerView.at") as run_at_mock:
-				self.ventilation_max._VentilationBase__set_hand_display_text()
-			run_at_mock.assert_not_called()
+			self.ventilation_max._VentilationBase__set_hand_display_text()
+			self.run_at_mock.assert_not_called()
 
 		# PowerHand state:
 		TestCase = collections.namedtuple("TestCase", "changed_time, now_time, expected_display")
 
 		test_cases = [
-			TestCase(datetime.datetime(2024, 1, 1, 12), datetime.datetime(2024, 1, 1, 12, 0), "Hand 42min"),
-			TestCase(datetime.datetime(2024, 1, 1, 12), datetime.datetime(2024, 1, 1, 12, 0, 30), "Hand 42min"),
-			TestCase(datetime.datetime(2024, 1, 1, 12), datetime.datetime(2024, 1, 1, 12, 0, 31), "Hand 41min"),
-			TestCase(datetime.datetime(2024, 1, 1, 12), datetime.datetime(2024, 1, 1, 12, 2, 0), "Hand 40min"),
-			TestCase(datetime.datetime(2024, 1, 1, 12), datetime.datetime(2024, 1, 1, 12, 2, 31), "Hand 39min"),
-			TestCase(datetime.datetime(2024, 1, 1, 12), datetime.datetime(2024, 1, 1, 12, 42, 0), "Hand 0min"),
-			TestCase(datetime.datetime(2024, 1, 1, 12), datetime.datetime(2024, 1, 1, 12, 45, 0), "Hand 0min"),
+			TestCase(datetime.datetime(2024, 1, 1, 12), datetime.datetime(2024, 1, 1, 12, 0), "Hand Custom 42min"),
+			TestCase(datetime.datetime(2024, 1, 1, 12), datetime.datetime(2024, 1, 1, 12, 0, 30), "Hand Custom 42min"),
+			TestCase(datetime.datetime(2024, 1, 1, 12), datetime.datetime(2024, 1, 1, 12, 0, 31), "Hand Custom 41min"),
+			TestCase(datetime.datetime(2024, 1, 1, 12), datetime.datetime(2024, 1, 1, 12, 2, 0), "Hand Custom 40min"),
+			TestCase(datetime.datetime(2024, 1, 1, 12), datetime.datetime(2024, 1, 1, 12, 2, 31), "Hand Custom 39min"),
+			TestCase(datetime.datetime(2024, 1, 1, 12), datetime.datetime(2024, 1, 1, 12, 42, 0), "Hand Custom 0min"),
+			TestCase(datetime.datetime(2024, 1, 1, 12), datetime.datetime(2024, 1, 1, 12, 45, 0), "Hand Custom 0min"),
 		]
 
-		self.ventilation_max.state = "PowerHand"
+		self.ventilation_max.state = "Auto_PowerHand"
 
 		for test_case in test_cases:
 			with self.subTest(test_case=test_case):
 				self.ventilation_max._state_change_time = test_case.changed_time
 				now_value = test_case.now_time
-				with unittest.mock.patch("HABApp.rule.scheduler.habappschedulerview.HABAppSchedulerView.at") as run_at_mock, unittest.mock.patch("datetime.datetime") as datetime_mock:
+				self.run_at_mock.reset_mock()
+				with unittest.mock.patch("datetime.datetime") as datetime_mock:
 					datetime_mock.now.return_value = now_value
 					self.ventilation_max._VentilationBase__set_hand_display_text()
-				run_at_mock.assert_called_once()
+				self.run_at_mock.assert_called_once()
 				tests.helper.oh_item.assert_value("Unittest_Ventilation_max_display_text", test_case.expected_display)
 
 	def test_external_active_and_configured(self):
@@ -431,15 +437,12 @@ class TestVentilationHeliosTwoStage(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Presence_state", None)
 
 		config_max = habapp_rules.actors.config.ventilation.VentilationConfig(
-			42,
-			1,
-			2,
-			2,
-			"External Custom",
-			"not used",
-			142,
-			datetime.time(18),
-			105
+			habapp_rules.actors.config.ventilation.StateConfig(101, "Normal Custom"),
+			habapp_rules.actors.config.ventilation.StateConfigWithTimeout(102, "Hand Custom", 42 * 60),
+			habapp_rules.actors.config.ventilation.StateConfig(103, "External Custom"),
+			habapp_rules.actors.config.ventilation.StateConfig(104, "Humidity Custom"),
+			habapp_rules.actors.config.ventilation.StateConfigLongAbsence(105, "Absence Custom", 1800, datetime.time(18)),
+			habapp_rules.actors.config.ventilation.StateConfig(99, "AfterRun Custom")
 		)
 
 		self.ventilation_min = habapp_rules.actors.ventilation.VentilationHeliosTwoStage(
@@ -502,6 +505,8 @@ class TestVentilationHeliosTwoStage(tests.helper.test_case_base.TestCaseBase):
 			TestCase("Auto_PowerAfterRun", "ON", "OFF"),
 		]
 
+		self.ventilation_max._config.state_normal.level = 1
+
 		with unittest.mock.patch("habapp_rules.core.helper.send_if_different") as send_mock:
 			for test_case in test_cases:
 				with self.subTest(test_case=test_case):
@@ -515,6 +520,30 @@ class TestVentilationHeliosTwoStage(tests.helper.test_case_base.TestCaseBase):
 
 					if test_case.expected_power is not None:
 						send_mock.assert_any_call(self.ventilation_max._item_ventilation_power, test_case.expected_power)
+
+	def test_set_feedback_states(self):
+		"""test _set_feedback_states."""
+		TestCase = collections.namedtuple("TestCase", "ventilation_level, state, expected_on, expected_power, expected_display_text")
+
+		test_cases = [
+			TestCase(None, "Auto_PowerAfterRun", False, False, "AfterRun Custom"),
+			TestCase(0, "Auto_PowerAfterRun", False, False, "AfterRun Custom"),
+			TestCase(1, "Auto_PowerAfterRun", True, False, "AfterRun Custom")
+		]
+
+		for test_case in test_cases:
+			with self.subTest(test_case=test_case):
+				self.ventilation_min._ventilation_level = test_case.ventilation_level
+				self.ventilation_max._ventilation_level = test_case.ventilation_level
+				self.ventilation_min.state = test_case.state
+				self.ventilation_max.state = test_case.state
+
+				self.ventilation_min._set_feedback_states()
+				self.ventilation_max._set_feedback_states()
+
+				tests.helper.oh_item.assert_value("Unittest_Ventilation_max_feedback_on", "ON" if test_case.expected_on else "OFF")
+				tests.helper.oh_item.assert_value("Unittest_Ventilation_max_feedback_power", "ON" if test_case.expected_power else "OFF")
+				tests.helper.oh_item.assert_value("Unittest_Ventilation_max_display_text", test_case.expected_display_text)
 
 	def test_power_after_run_transitions(self):
 		"""Test transitions of PowerAfterRun."""
@@ -575,15 +604,11 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Presence_state", None)
 
 		config_max = habapp_rules.actors.config.ventilation.VentilationConfig(
-			42,
-			1,
-			2,
-			2,
-			"External Custom",
-			"Shower",
-			142,
-			datetime.time(18),
-			105
+			habapp_rules.actors.config.ventilation.StateConfig(101, "Normal Custom"),
+			habapp_rules.actors.config.ventilation.StateConfigWithTimeout(102, "Hand Custom", 42 * 60),
+			habapp_rules.actors.config.ventilation.StateConfig(103, "External Custom"),
+			habapp_rules.actors.config.ventilation.StateConfig(104, "Humidity Custom"),
+			habapp_rules.actors.config.ventilation.StateConfigLongAbsence(105, "Absence Custom", 1800, datetime.time(18))
 		)
 
 		self.ventilation_min = habapp_rules.actors.ventilation.VentilationHeliosTwoStageHumidity(
@@ -623,6 +648,8 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
 			TestCase("Auto_Init", None, None),
 			TestCase("Auto_PowerAfterRun", "ON", "OFF"),
 		]
+
+		self.ventilation_max._config.state_normal.level = 1
 
 		with unittest.mock.patch("habapp_rules.core.helper.send_if_different") as send_mock:
 			for test_case in test_cases:
@@ -725,6 +752,31 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
 				self.assertEqual(test_case.expected_state_min, self.ventilation_min._get_initial_state())
 				self.assertEqual(test_case.expected_state_max, self.ventilation_max._get_initial_state())
 
+
+	def test_set_feedback_states(self):
+		"""test _set_feedback_states."""
+		TestCase = collections.namedtuple("TestCase", "ventilation_level, state, expected_on, expected_power, expected_display_text")
+
+		test_cases = [
+			TestCase(None, "Auto_PowerHumidity", False, False, "Humidity Custom"),
+			TestCase(0, "Auto_PowerHumidity", False, False, "Humidity Custom"),
+			TestCase(1, "Auto_PowerHumidity", True, False, "Humidity Custom")
+		]
+
+		for test_case in test_cases:
+			with self.subTest(test_case=test_case):
+				self.ventilation_min._ventilation_level = test_case.ventilation_level
+				self.ventilation_max._ventilation_level = test_case.ventilation_level
+				self.ventilation_min.state = test_case.state
+				self.ventilation_max.state = test_case.state
+
+				self.ventilation_min._set_feedback_states()
+				self.ventilation_max._set_feedback_states()
+
+				tests.helper.oh_item.assert_value("Unittest_Ventilation_max_feedback_on", "ON" if test_case.expected_on else "OFF")
+				tests.helper.oh_item.assert_value("Unittest_Ventilation_max_feedback_power", "ON" if test_case.expected_power else "OFF")
+				tests.helper.oh_item.assert_value("Unittest_Ventilation_max_display_text", test_case.expected_display_text)
+
 	def test_current_greater_threshold(self):
 		"""Test __current_greater_threshold."""
 
@@ -749,6 +801,13 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
 				result = self.ventilation_max._current_greater_threshold() if test_case.given_value is None else self.ventilation_max._current_greater_threshold(test_case.given_value)
 
 				self.assertEqual(test_case.expected_result, result)
+
+	def test_power_after_run_transitions(self):
+		"""Test transitions of PowerAfterRun."""
+		# _end_after_run triggered
+		self.ventilation_max.to_Auto_PowerAfterRun()
+		self.ventilation_max._end_after_run()
+		self.assertEqual("Auto_Normal", self.ventilation_max.state)
 
 	def test_power_humidity_transitions(self):
 		"""Test transitions of state Auto_PowerHumidity."""
@@ -809,3 +868,14 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
 
 		self.assertEqual("Auto_PowerHumidity", self.ventilation_min.state)
 		self.assertEqual("Auto_PowerHumidity", self.ventilation_max.state)
+
+		# state == Auto_PowerHumidity | _hand_on triggered
+		self.ventilation_max.to_Auto_PowerHumidity()
+		tests.helper.oh_item.item_state_change_event("Unittest_Ventilation_max_hand_request", "ON")
+		self.assertEqual("Auto_PowerHand", self.ventilation_max.state)
+		tests.helper.oh_item.item_state_change_event("Unittest_Ventilation_max_hand_request", "OFF")
+
+		# state == Auto_PowerHumidity | _external_on triggered
+		self.ventilation_max.to_Auto_PowerHumidity()
+		tests.helper.oh_item.item_state_change_event("Unittest_Ventilation_max_external_request", "ON")
+		self.assertEqual("Auto_PowerExternal", self.ventilation_max.state)
