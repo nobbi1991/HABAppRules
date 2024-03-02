@@ -28,7 +28,7 @@ class VentilationConfig:
 	"""Config for ventilation."""
 	state_normal: StateConfig = dataclasses.field(default_factory=lambda: StateConfig(1, "Normal"))
 	state_hand: StateConfigWithTimeout = dataclasses.field(default_factory=lambda: StateConfigWithTimeout(2, "Hand", 3600))
-	state_external: StateConfig = dataclasses.field(default_factory=lambda: StateConfig(2, "Humidity"))
+	state_external: StateConfig = dataclasses.field(default_factory=lambda: StateConfig(2, "External"))
 	state_humidity: StateConfig = dataclasses.field(default_factory=lambda: StateConfig(2, "Humidity"))
 	state_long_absence: StateConfigLongAbsence = dataclasses.field(default_factory=lambda: StateConfigLongAbsence(2, "LongAbsence", 3600, datetime.time(6)))
 	state_after_run: StateConfig = dataclasses.field(default_factory=lambda: StateConfig(2, "After run"))  # only used for Helios ventilation

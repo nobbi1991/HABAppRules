@@ -235,7 +235,7 @@ class _VentilationBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 	def on_enter_Auto_LongAbsence_Off(self):  # pylint: disable=invalid-name
 		"""Is called on entering of Auto_LongAbsence_Off state."""
-		self.run.at(self._config.state_long_absence.start_time, self._long_absence_power_on)  # todo test in real
+		self.run.at(self._config.state_long_absence.start_time, self._long_absence_power_on)
 
 	def _external_active_and_configured(self) -> bool:
 		"""Check if external request is active and configured.
@@ -286,7 +286,29 @@ class _VentilationBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 
 class Ventilation(_VentilationBase):
-	""""""  # todo add text + example
+	"""Rule for managing ventilation systems which can be controlled with ventilation levels
+
+	# Items:
+	Number  Ventilation_level           "Ventilation level"
+	Switch  Manual                      "Manual"
+	Switch  Hand_Request                "Hand request"
+	Switch  External_Request            "External request"
+	String  presence_state              "Presence state"
+	Switch  Feedback_On                 "Feedback is ON"
+	Switch  Feedback_Power              "Feedback is Power"
+
+	# Rule init:
+	habapp_rules.actors.ventilation.Ventilation(
+		"Ventilation_level",
+		"Manual",
+		habapp_rules.actors.config.ventilation.CONFIG_DEFAULT,
+		"Hand_Request",
+		name_external_request="External_Request",
+		name_presence_state="presence_state",
+		name_feedback_on="Feedback_On",
+		name_feedback_power="Feedback_Power"
+	)
+	"""
 
 	# pylint: disable=too-many-arguments
 	def __init__(self,
@@ -342,7 +364,31 @@ class Ventilation(_VentilationBase):
 
 
 class VentilationHeliosTwoStage(_VentilationBase):
-	""""""  # todo add text + example
+	"""Rule for managing Helios ventilation systems with humidity sensor (E.g. Helios ELS)
+
+	# Items:
+	Switch  Ventilation_Switch_On       "Ventilation relay on"
+	Switch  Ventilation_Switch_Power    "Ventilation relay power"
+	Switch  Manual                      "Manual"
+	Switch  Hand_Request                "Hand request"
+	Switch  External_Request            "External request"
+	String  presence_state              "Presence state"
+	Switch  Feedback_On                 "Feedback is ON"
+	Switch  Feedback_Power              "Feedback is Power"
+
+	# Rule init:
+	habapp_rules.actors.ventilation.VentilationHeliosTwoStage(
+		"Ventilation_Switch_On",
+		"Ventilation_Switch_Power",
+		"Manual",
+		habapp_rules.actors.config.ventilation.CONFIG_DEFAULT,
+		"Hand_Request",
+		name_external_request="External_Request",
+		name_presence_state="presence_state",
+		name_feedback_on="Feedback_On",
+		name_feedback_power="Feedback_Power"
+	)
+	"""
 	states = copy.deepcopy(_VentilationBase.states)
 	__AUTO_STATE = next(state for state in states if state["name"] == "Auto")  # pragma: no cover
 	__AUTO_STATE["children"].append({"name": "PowerAfterRun", "timeout": 390, "on_timeout": "_after_run_timeout"})
@@ -402,8 +448,8 @@ class VentilationHeliosTwoStage(_VentilationBase):
 		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, name_ventilation_output_on)
 
 		# get items
-		self._item_ventilation_on = HABApp.openhab.items.SwitchItem(name_ventilation_output_on)
-		self._item_ventilation_power = HABApp.openhab.items.SwitchItem(name_ventilation_output_power)
+		self._item_ventilation_on = HABApp.openhab.items.SwitchItem.get_item(name_ventilation_output_on)
+		self._item_ventilation_power = HABApp.openhab.items.SwitchItem.get_item(name_ventilation_output_power)
 
 		_VentilationBase.__init__(
 			self,
@@ -436,7 +482,7 @@ class VentilationHeliosTwoStage(_VentilationBase):
 
 	def _set_level(self) -> None:
 		if self.state == "Auto_PowerAfterRun":
-			self._ventilation_level = 2
+			self._ventilation_level = self._config.state_after_run.level
 			self._set_level_to_ventilation_items()
 			return
 
@@ -455,7 +501,33 @@ class VentilationHeliosTwoStage(_VentilationBase):
 
 # pylint: disable=no-member, missing-return-doc
 class VentilationHeliosTwoStageHumidity(VentilationHeliosTwoStage):
-	""""""  # todo add text + example
+	"""Rule for managing Helios ventilation systems with humidity sensor (E.g. Helios ELS)
+
+	# Items:
+	Switch  Ventilation_Switch_On       "Ventilation relay on"
+	Switch  Ventilation_Switch_Power    "Ventilation relay power"
+	Number  Ventilation_Current         "Ventilation current"
+	Switch  Manual                      "Manual"
+	Switch  Hand_Request                "Hand request"
+	Switch  External_Request            "External request"
+	String  presence_state              "Presence state"
+	Switch  Feedback_On                 "Feedback is ON"
+	Switch  Feedback_Power              "Feedback is Power"
+
+	# Rule init:
+	habapp_rules.actors.ventilation.VentilationHeliosTwoStageHumidity(
+		"Ventilation_Switch_On",
+		"Ventilation_Switch_Power",
+		"Ventilation_Current",
+		"Manual",
+		habapp_rules.actors.config.ventilation.CONFIG_DEFAULT,
+		"Hand_Request",
+		name_external_request="External_Request",
+		name_presence_state="presence_state",
+		name_feedback_on="Feedback_On",
+		name_feedback_power="Feedback_Power"
+	)
+	"""
 	states = copy.deepcopy(VentilationHeliosTwoStage.states)
 	__AUTO_STATE = next(state for state in states if state["name"] == "Auto")  # pragma: no cover
 	__AUTO_STATE["children"].append({"name": "PowerHumidity"})
@@ -531,8 +603,6 @@ class VentilationHeliosTwoStageHumidity(VentilationHeliosTwoStage):
 		)
 
 		self._item_current.listen_event(self._cb_current, HABApp.openhab.events.ItemStateChangedEventFilter())
-
-		self._instance_logger.info(habapp_rules.core.state_machine_rule.StateMachineRule.get_initial_log_message(self))
 
 	def _get_initial_state(self, default_value: str = "initial") -> str:
 		"""Get initial state of state machine.
