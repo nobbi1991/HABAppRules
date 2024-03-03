@@ -816,29 +816,29 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
 		self.ventilation_max.to_Auto_Normal()
 
 		# state != Auto_PowerHumidity | current below the threshold
-		tests.helper.oh_item.item_state_change_event("Unittest_Ventilation_min_current", 0.1)
-		tests.helper.oh_item.item_state_change_event("Unittest_Ventilation_max_current", 0.1)
+		tests.helper.oh_item.item_state_event("Unittest_Ventilation_min_current", 0.1)
+		tests.helper.oh_item.item_state_event("Unittest_Ventilation_max_current", 0.1)
 
 		self.assertEqual("Auto_Normal", self.ventilation_min.state)
 		self.assertEqual("Auto_Normal", self.ventilation_max.state)
 
 		# state != Auto_PowerHumidity | current grater then the threshold
-		tests.helper.oh_item.item_state_change_event("Unittest_Ventilation_min_current", 0.2)
-		tests.helper.oh_item.item_state_change_event("Unittest_Ventilation_max_current", 0.6)
+		tests.helper.oh_item.item_state_event("Unittest_Ventilation_min_current", 0.2)
+		tests.helper.oh_item.item_state_event("Unittest_Ventilation_max_current", 0.6)
 
 		self.assertEqual("Auto_PowerHumidity", self.ventilation_min.state)
 		self.assertEqual("Auto_PowerHumidity", self.ventilation_max.state)
 
 		# state == Auto_PowerHumidity | current grater then the threshold
-		tests.helper.oh_item.item_state_change_event("Unittest_Ventilation_min_current", 0.2)
-		tests.helper.oh_item.item_state_change_event("Unittest_Ventilation_max_current", 0.6)
+		tests.helper.oh_item.item_state_event("Unittest_Ventilation_min_current", 0.2)
+		tests.helper.oh_item.item_state_event("Unittest_Ventilation_max_current", 0.6)
 
 		self.assertEqual("Auto_PowerHumidity", self.ventilation_min.state)
 		self.assertEqual("Auto_PowerHumidity", self.ventilation_max.state)
 
 		# state == Auto_PowerHumidity | current below then the threshold
-		tests.helper.oh_item.item_state_change_event("Unittest_Ventilation_min_current", 0.1)
-		tests.helper.oh_item.item_state_change_event("Unittest_Ventilation_max_current", 0.1)
+		tests.helper.oh_item.item_state_event("Unittest_Ventilation_min_current", 0.1)
+		tests.helper.oh_item.item_state_event("Unittest_Ventilation_max_current", 0.1)
 
 		self.assertEqual("Auto_Normal", self.ventilation_min.state)
 		self.assertEqual("Auto_Normal", self.ventilation_max.state)
@@ -847,8 +847,8 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
 		self.ventilation_min.to_Auto_PowerAfterRun()
 		self.ventilation_max.to_Auto_PowerAfterRun()
 
-		tests.helper.oh_item.item_state_change_event("Unittest_Ventilation_min_current", 0.1)
-		tests.helper.oh_item.item_state_change_event("Unittest_Ventilation_max_current", 0.1)
+		tests.helper.oh_item.item_state_event("Unittest_Ventilation_min_current", 0.1)
+		tests.helper.oh_item.item_state_event("Unittest_Ventilation_max_current", 0.1)
 
 		self.ventilation_min._after_run_timeout()
 		self.ventilation_max._after_run_timeout()
@@ -860,8 +860,8 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
 		self.ventilation_min.to_Auto_PowerAfterRun()
 		self.ventilation_max.to_Auto_PowerAfterRun()
 
-		tests.helper.oh_item.item_state_change_event("Unittest_Ventilation_min_current", 0.2)
-		tests.helper.oh_item.item_state_change_event("Unittest_Ventilation_max_current", 0.6)
+		tests.helper.oh_item.item_state_event("Unittest_Ventilation_min_current", 0.2)
+		tests.helper.oh_item.item_state_event("Unittest_Ventilation_max_current", 0.6)
 
 		self.ventilation_min._after_run_timeout()
 		self.ventilation_max._after_run_timeout()

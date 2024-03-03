@@ -602,7 +602,7 @@ class VentilationHeliosTwoStageHumidity(VentilationHeliosTwoStage):
 			state_label
 		)
 
-		self._item_current.listen_event(self._cb_current, HABApp.openhab.events.ItemStateChangedEventFilter())
+		self._item_current.listen_event(self._cb_current, HABApp.openhab.events.ItemStateUpdatedEventFilter())
 
 	def _get_initial_state(self, default_value: str = "initial") -> str:
 		"""Get initial state of state machine.
@@ -648,7 +648,7 @@ class VentilationHeliosTwoStageHumidity(VentilationHeliosTwoStage):
 
 		return current > self._current_threshold_power
 
-	def _cb_current(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+	def _cb_current(self, event: HABApp.openhab.events.ItemStateUpdatedEvent) -> None:
 		"""Callback which is triggered if the current changed.
 
 		:param event: original trigger event
