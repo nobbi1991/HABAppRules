@@ -16,6 +16,7 @@
 - fixed bug for dimmer lights in ``habapp_rules.actors.light`` which did not set the correct brightness if light was switched on.
 - fixed bug in ``habapp_rules.common.hysteresis.HysteresisSwitch.get_output`` resulted in a wrong switch state if the value was 0. 
 - added missing state transition to ``habapp_rules.sensors.motion.Motion``. When state was ``PostSleepLocked`` and sleep started there was no change to ``SleepLocked``
+- fixed strange behavior of ``habapp_rules.system.presence.Presence`` which did not abort leaving when the first phone appeared. This let to absence state if someone returned when leaving was active.
 
 # Version 5.4.3 - 14.01.2024
 

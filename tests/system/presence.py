@@ -279,13 +279,14 @@ class TestPresence(tests.helper.test_case_base.TestCaseBase):
 
 		# leaving on, first phone appears
 		tests.helper.oh_item.send_command("Unittest_Phone1", "ON", "OFF")
-		self.assertEqual(self._presence.state, "leaving")
+		self.assertEqual(self._presence.state, "presence")
 
 		# leaving on, second phone appears
 		tests.helper.oh_item.send_command("Unittest_Phone2", "ON", "OFF")
-		self.assertEqual(self._presence.state, "leaving")
+		self.assertEqual(self._presence.state, "presence")
 
 		# leaving on, both phones leaving
+		self._presence.state_machine.set_state("leaving")
 		tests.helper.oh_item.send_command("Unittest_Phone1", "OFF", "ON")
 		tests.helper.oh_item.send_command("Unittest_Phone2", "OFF", "ON")
 		self.assertEqual(self._presence.state, "leaving")
@@ -399,7 +400,7 @@ class TestPresence(tests.helper.test_case_base.TestCaseBase):
 
 		# phone appears during leaving -> leaving expected
 		tests.helper.oh_item.send_command("Unittest_Phone1", "ON", "OFF")
-		self.assertEqual(self._presence.state, "leaving")
+		self.assertEqual(self._presence.state, "presence")
 		self.assertIsNone(self._presence._Presence__phone_absence_timer)
 
 		# timeout is over -> absence expected
