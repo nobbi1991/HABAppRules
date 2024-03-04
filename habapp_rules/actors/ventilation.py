@@ -627,9 +627,17 @@ class VentilationHeliosTwoStageHumidity(VentilationHeliosTwoStage):
 
 		return VentilationHeliosTwoStage._get_display_text(self)
 
+	def _set_level(self) -> None:
+		if self.state == "Auto_PowerHumidity":
+			self._ventilation_level = self._config.state_humidity.level
+			self._set_level_to_ventilation_items()
+			return
+
+		super()._set_level()
+
 	def _set_level_to_ventilation_items(self) -> None:
 		"""Set ventilation to output item(s)."""
-		if self.state == "Auto_PowerExternal":
+		if self.state == "Auto_PowerHumidity":
 			habapp_rules.core.helper.send_if_different(self._item_ventilation_on, "ON")
 			habapp_rules.core.helper.send_if_different(self._item_ventilation_power, "OFF")
 		else:

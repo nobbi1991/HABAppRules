@@ -647,6 +647,7 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
 			TestCase("Auto_LongAbsence_Off", "OFF", "OFF"),
 			TestCase("Auto_Init", None, None),
 			TestCase("Auto_PowerAfterRun", "ON", "OFF"),
+			TestCase("Auto_PowerHumidity", "ON", "OFF"),
 		]
 
 		self.ventilation_max._config.state_normal.level = 1
@@ -752,7 +753,6 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
 				self.assertEqual(test_case.expected_state_min, self.ventilation_min._get_initial_state())
 				self.assertEqual(test_case.expected_state_max, self.ventilation_max._get_initial_state())
 
-
 	def test_set_feedback_states(self):
 		"""test _set_feedback_states."""
 		TestCase = collections.namedtuple("TestCase", "ventilation_level, state, expected_on, expected_power, expected_display_text")
@@ -760,7 +760,8 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
 		test_cases = [
 			TestCase(None, "Auto_PowerHumidity", False, False, "Humidity Custom"),
 			TestCase(0, "Auto_PowerHumidity", False, False, "Humidity Custom"),
-			TestCase(1, "Auto_PowerHumidity", True, False, "Humidity Custom")
+			TestCase(1, "Auto_PowerHumidity", True, False, "Humidity Custom"),
+			TestCase(2, "Auto_PowerHumidity", True, True, "Humidity Custom")
 		]
 
 		for test_case in test_cases:
