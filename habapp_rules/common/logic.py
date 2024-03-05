@@ -213,4 +213,49 @@ class Sum(_NumericLogicBase):
 		:param input_values: input values
 		:return: min value of the given values
 		"""
-		return sum(input_values)
+		return sum(val for val in input_values if val is not None)
+
+
+class InvertValue(HABApp.Rule):
+	"""Rule to update another item if the value of an item changed.
+
+	Example:
+	habapp_rules.common.logic.InvertValue("Item_1", "Item_2")
+	"""
+
+	def __init__(self, input_name: str, output_name: str, only_positive: bool = False, only_negative: bool = False) -> None:
+		"""Init rule.
+
+		:param input_name: Name of input item (NumberItem)
+		:param output_name: Name of output item (NumberItem)
+		:param only_positive: if true, only positive values will be set to output item
+		:param only_negative: if true, only negative values will be set to output item
+		"""
+		HABApp.Rule.__init__(self)
+		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, f"{self.__class__.__name__}_{output_name}")
+
+		self._item_input = HABApp.openhab.items.NumberItem.get_item(input_name)
+		self._item_output = HABApp.openhab.items.NumberItem.get_item(output_name)
+		self._only_positive = only_positive
+		self._only_negative = only_negative
+
+		self._item_input.listen_event(self._cb_input_value, HABApp.openhab.events.ItemStateChangedEventFilter())
+		self._cb_input_value(HABApp.openhab.events.ItemStateChangedEvent(self._item_input.name, self._item_input.value, None))
+		self._instance_logger.debug(f"Init of rule '{self.__class__.__name__}' with was successful. Output item = '{output_name}' | Input item = '{input_name}'")
+
+	def _cb_input_value(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+		"""Set output, when input value changed
+
+		:param event: event, which triggered this callback
+		"""
+		if event.value is None:
+			return
+
+		output_value = -1 * event.value
+
+		if self._only_negative and output_value > 0:
+			output_value = 0
+		elif self._only_positive and output_value < 0:
+			output_value = 0
+
+		self._item_output.oh_send_command(output_value)

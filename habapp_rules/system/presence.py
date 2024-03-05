@@ -178,6 +178,10 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
 				self.__phone_absence_timer.cancel()
 				self.__phone_absence_timer = None
 
+			if self.state == PresenceState.LEAVING.value:
+				self._instance_logger.debug("Leaving was aborted through first phone which came online")
+				self.abort_leaving()
+
 			if self.state in {PresenceState.ABSENCE.value, PresenceState.LONG_ABSENCE.value}:
 				self._instance_logger.debug("Presence was set through first phone joined network")
 				self.presence_detected()

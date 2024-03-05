@@ -86,8 +86,8 @@ class Sleep(habapp_rules.core.state_machine_rule.StateMachineRule):
 		self.__item_display_text = HABApp.openhab.items.StringItem.get_item(name_display_text) if name_display_text else None
 
 		# init attributes
-		self._sleep_request_active = bool(self.__item_sleep_request)
-		self._lock_request_active = bool(self.__item_lock_request) if self.__item_lock_request is not None else False
+		self._sleep_request_active = self.__item_sleep_request.is_on()
+		self._lock_request_active = self.__item_lock_request.is_on() if self.__item_lock_request is not None else False
 
 		# init state machine
 		self.state_machine = habapp_rules.core.state_machine_rule.StateMachineWithTimeout(
@@ -113,8 +113,8 @@ class Sleep(habapp_rules.core.state_machine_rule.StateMachineRule):
 		:param default_value: default / initial state
 		:return: return correct state if it could be detected, if not return default value
 		"""
-		sleep_req = bool(self.__item_sleep_request) if self.__item_sleep_request.value is not None else None
-		lock_req = bool(self.__item_lock_request) if self.__item_lock_request is not None and self.__item_lock_request.value is not None else None
+		sleep_req = self.__item_sleep_request.is_on() if self.__item_sleep_request.value is not None else None
+		lock_req = self.__item_lock_request.is_on() if self.__item_lock_request is not None and self.__item_lock_request.value is not None else None
 
 		if sleep_req:
 			return "sleeping"

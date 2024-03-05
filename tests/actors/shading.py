@@ -762,6 +762,37 @@ class TestShadingRaffstore(tests.helper.test_case_base.TestCaseBase):
 		self.assertEqual("Unittest_Slat", self.raffstore._item_slat.name)
 		self.assertEqual("Unittest_SunProtection_Slat", self.raffstore._item_sun_protection_slat.name)
 
+	def test_init_with_none(self):
+		"""Test __init__ with None values."""
+		tests.helper.oh_item.set_state("Unittest_Shading", None)
+		tests.helper.oh_item.set_state("Unittest_Slat", None)
+		tests.helper.oh_item.set_state("Unittest_Manual", None)
+		tests.helper.oh_item.set_state("Unittest_WindAlarm", None)
+		tests.helper.oh_item.set_state("Unittest_SunProtection", None)
+		tests.helper.oh_item.set_state("Unittest_SunProtection_Slat", None)
+		tests.helper.oh_item.set_state("Unittest_Sleep_state", None)
+		tests.helper.oh_item.set_state("Unittest_Night", None)
+		tests.helper.oh_item.set_state("Unittest_Door", None)
+		tests.helper.oh_item.set_state("Unittest_Summer", None)
+		tests.helper.oh_item.set_state("Unittest_Hand_Manual_active", None)
+
+		habapp_rules.actors.shading.Raffstore(
+			"Unittest_Shading",
+			"Unittest_Slat",
+			"Unittest_Manual",
+			habapp_rules.actors.config.shading.CONFIG_DEFAULT,
+			[],
+			[],
+			"Unittest_WindAlarm",
+			"Unittest_SunProtection",
+			"Unittest_SunProtection_Slat",
+			"Unittest_Sleep_state",
+			"Unittest_Night",
+			"Unittest_Door",
+			"Unittest_Summer",
+			"Unittest_Hand_Manual_active"
+		)
+
 	def test_init_min(self):
 		"""Test init of raffstore with minimal attributes."""
 		habapp_rules.actors.shading.Raffstore(
@@ -946,11 +977,11 @@ class TestSlatValueSun(tests.helper.test_case_base.TestCaseBase):
 
 		tests.helper.test_case_base.TestCaseBase.setUp(self)
 
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Elevation", 0)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Summer", "ON")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Elevation", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Summer", None)
 
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_SlatValueSingle", 0)  # NumberItem
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_SlatValueDual", 0)  # DimmerItem
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_SlatValueSingle", None)  # NumberItem
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_SlatValueDual", None)  # DimmerItem
 
 		self.characteristic_winter = [(0, 100), (10, 70), (20, 60), (30, 50), (40, 50)]
 		self.characteristic_summer = [(0, 100), (10, 80), (20, 70), (30, 60), (40, 50), (50, 50)]
@@ -974,6 +1005,10 @@ class TestSlatValueSun(tests.helper.test_case_base.TestCaseBase):
 		self.assertEqual(self.characteristic_summer, self.slat_value_sun_dual._SlatValueSun__slat_characteristic_summer)
 		self.assertEqual("Unittest_SlatValueDual", self.slat_value_sun_dual._item_slat_value.name)
 		self.assertEqual("Unittest_Summer", self.slat_value_sun_dual._item_summer.name)
+		self.assertEqual(self.characteristic_winter, self.slat_value_sun_dual._slat_characteristic_active)
+
+		# send summer on
+		tests.helper.oh_item.item_state_change_event("Unittest_Summer", "ON")
 		self.assertEqual(self.characteristic_summer, self.slat_value_sun_dual._slat_characteristic_active)
 
 	def test_init_exception(self):
@@ -1007,6 +1042,7 @@ class TestSlatValueSun(tests.helper.test_case_base.TestCaseBase):
 
 	def test__check_and_sort_characteristic(self):
 		"""Test __check_and_sort_characteristic."""
+		tests.helper.oh_item.item_state_change_event("Unittest_Summer", "ON")
 		TestCase = collections.namedtuple("TestCase", "input, expected_output, raises")
 
 		test_cases = [
@@ -1036,6 +1072,7 @@ class TestSlatValueSun(tests.helper.test_case_base.TestCaseBase):
 
 	def test__get_slat_value(self):
 		"""Test __get_slat_value."""
+		tests.helper.oh_item.item_state_change_event("Unittest_Summer", "ON")
 		TestCase = collections.namedtuple("TestCase", "elevation, expected_result_single, , expected_result_dual")
 
 		test_cases = [
@@ -1066,23 +1103,18 @@ class TestSlatValueSun(tests.helper.test_case_base.TestCaseBase):
 
 	def test_cb_elevation(self):
 		"""Test _cb_elevation."""
-		with unittest.mock.patch.object(self.slat_value_sun_single, "_SlatValueSun__get_slat_value", return_value=42):
-			tests.helper.oh_item.assert_value("Unittest_SlatValueSingle", 0)
+		with unittest.mock.patch.object(self.slat_value_sun_single, "_SlatValueSun__get_slat_value", side_effect=[42, 43]):
+			tests.helper.oh_item.assert_value("Unittest_SlatValueSingle", None)
 			tests.helper.oh_item.item_state_change_event("Unittest_Elevation", 10)
 			tests.helper.oh_item.assert_value("Unittest_SlatValueSingle", 42)
 
 			tests.helper.oh_item.item_state_change_event("Unittest_Elevation", 11)
-			tests.helper.oh_item.assert_value("Unittest_SlatValueSingle", 42)
+			tests.helper.oh_item.assert_value("Unittest_SlatValueSingle", 43)
 
 	def test_cb_summer_winter(self):
 		"""Test _cb_summer_winter."""
-		# initial -> summer
+		# initial -> None == Winter
 		tests.helper.oh_item.item_state_change_event("Unittest_Elevation", 30)
-		self.assertEqual(self.characteristic_summer, self.slat_value_sun_dual._slat_characteristic_active)
-		tests.helper.oh_item.assert_value("Unittest_SlatValueDual", 60)
-
-		# change to winter
-		tests.helper.oh_item.item_state_change_event("Unittest_Summer", "OFF")
 		self.assertEqual(self.characteristic_winter, self.slat_value_sun_dual._slat_characteristic_active)
 		tests.helper.oh_item.assert_value("Unittest_SlatValueDual", 50)
 
@@ -1090,3 +1122,8 @@ class TestSlatValueSun(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.item_state_change_event("Unittest_Summer", "ON")
 		self.assertEqual(self.characteristic_summer, self.slat_value_sun_dual._slat_characteristic_active)
 		tests.helper.oh_item.assert_value("Unittest_SlatValueDual", 60)
+
+		# change to winter
+		tests.helper.oh_item.item_state_change_event("Unittest_Summer", "OFF")
+		self.assertEqual(self.characteristic_winter, self.slat_value_sun_dual._slat_characteristic_active)
+		tests.helper.oh_item.assert_value("Unittest_SlatValueDual", 50)

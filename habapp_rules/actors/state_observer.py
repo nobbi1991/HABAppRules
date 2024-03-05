@@ -23,7 +23,7 @@ CallbackType = typing.Callable[[EventTypes], None]
 class _StateObserverBase(HABApp.Rule, abc.ABC):
 	"""Base class for observer classes."""
 
-	def __init__(self, item_name: str, control_names: list[str] | None = None, group_names: list[str] | None = None, value_tolerance: int = 0):
+	def __init__(self, item_name: str, control_names: list[str] | None = None, group_names: list[str] | None = None, value_tolerance: float = 0):
 		"""Init state observer for switch item.
 
 		:param item_name: Name of observed item
@@ -127,12 +127,12 @@ class _StateObserverBase(HABApp.Rule, abc.ABC):
 		callback: CallbackType = getattr(self, cb_name)
 		callback(event)
 
-	def _compare_values_with_tolerance(self, value_1: float, value_2: float) -> bool:
-		"""Compare values with tolerance
+	def _values_different_with_tolerance(self, value_1: float, value_2: float) -> bool:
+		"""Check if values are different, including the difference.
 
 		:param value_1: first value
 		:param value_2: second value
-		:return: true if values are the same (including the offset), false if not
+		:return: true if values are different (including the tolerance), false if not
 		"""
 		return abs((value_1 or 0) - (value_2 or 0)) > self._value_tolerance
 
@@ -164,7 +164,7 @@ class StateObserverSwitch(_StateObserverBase):
 		self._cb_on = cb_on
 		self._cb_off = cb_off
 		_StateObserverBase.__init__(self, item_name)
-		self._value = self._value == "ON"
+		self._value = self._item.value
 
 	def _check_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
 		"""Check if light was triggered by a manual action
@@ -231,7 +231,7 @@ class StateObserverDimmer(_StateObserverBase):
 			cb_brightness_change=callback_change)
 	"""
 
-	def __init__(self, item_name: str, cb_on: CallbackType, cb_off: CallbackType, cb_brightness_change: CallbackType | None = None, control_names: list[str] | None = None, group_names: list[str] | None = None, value_tolerance: int = 0) -> None:
+	def __init__(self, item_name: str, cb_on: CallbackType, cb_off: CallbackType, cb_brightness_change: CallbackType | None = None, control_names: list[str] | None = None, group_names: list[str] | None = None, value_tolerance: float = 0) -> None:
 		"""Init state observer for dimmer item.
 
 		:param item_name: Name of dimmer item
@@ -255,23 +255,23 @@ class StateObserverDimmer(_StateObserverBase):
 		:param event: event which triggered this method. This will be forwarded to the callback
 		"""
 		if isinstance(event.value, (int, float)):
-			if event.value > 0 and self._value == 0:
+			if event.value > 0 and (self._value is None or self._value == 0):
 				self._value = event.value
 				self._trigger_callback("_cb_on", event)
 
-			elif event.value == 0 and self._value > 0:
+			elif event.value == 0 and (self._value is None or self._value > 0):
 				self._value = 0
 				self._trigger_callback("_cb_off", event)
 
-			elif self._compare_values_with_tolerance(event.value, self._value):
+			elif self._values_different_with_tolerance(event.value, self._value):
 				self._value = event.value
 				self._trigger_callback("_cb_brightness_change", event)
 
-		elif event.value == "ON" and self._value == 0:
+		elif event.value == "ON" and (self._value is None or self._value == 0):
 			self._value = 100
 			self._trigger_callback("_cb_on", event)
 
-		elif event.value == "OFF" and self._value > 0:
+		elif event.value == "OFF" and (self._value is None or self._value > 0):
 			self._value = 0
 			self._trigger_callback("_cb_off", event)
 
@@ -280,7 +280,7 @@ class StateObserverDimmer(_StateObserverBase):
 
 		:param event: event, which triggered this callback
 		"""
-		if event.value == "INCREASE" and self._value == 0:
+		if event.value == "INCREASE" and (self._value is None or self._value == 0):
 			self._value = 100
 			self._trigger_callback("_cb_on", event)
 
@@ -331,7 +331,7 @@ class StateObserverRollerShutter(_StateObserverBase):
 				)
 		"""
 
-	def __init__(self, item_name: str, cb_manual: CallbackType, control_names: list[str] | None = None, group_names: list[str] | None = None, value_tolerance: int = 0) -> None:
+	def __init__(self, item_name: str, cb_manual: CallbackType, control_names: list[str] | None = None, group_names: list[str] | None = None, value_tolerance: float = 0) -> None:
 		"""Init state observer for dimmer item.
 
 		:param item_name: Name of dimmer item
@@ -346,7 +346,7 @@ class StateObserverRollerShutter(_StateObserverBase):
 		self._cb_manual = cb_manual
 
 	def _check_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
-		if isinstance(event.value, (int, float)) and self._compare_values_with_tolerance(event.value, self._value):
+		if isinstance(event.value, (int, float)) and self._values_different_with_tolerance(event.value, self._value):
 			self._value = event.value
 			self._trigger_callback("_cb_manual", event)
 
@@ -384,7 +384,7 @@ class StateObserverNumber(_StateObserverBase):
 	habapp_rules.actors.state_observer.StateObserverNumber("I01_01_Number", callback_value_changed)
 	"""
 
-	def __init__(self, item_name: str, cb_manual: CallbackType, value_tolerance: int = 0) -> None:
+	def __init__(self, item_name: str, cb_manual: CallbackType, value_tolerance: float = 0) -> None:
 		"""Init state observer for switch item.
 
 		:param item_name: Name of switch item
@@ -404,7 +404,7 @@ class StateObserverNumber(_StateObserverBase):
 			self._value = event.value
 			return
 
-		if self._compare_values_with_tolerance(event.value, self._value):
+		if self._values_different_with_tolerance(event.value, self._value):
 			self._value = event.value
 			self._trigger_callback("_cb_manual", event)
 
@@ -429,7 +429,7 @@ class StateObserverNumber(_StateObserverBase):
 class StateObserverSlat(StateObserverNumber):
 	"""This is only used for the slat value of shading!"""
 
-	def __init__(self, item_name: str, cb_manual: CallbackType, value_tolerance: int = 0) -> None:
+	def __init__(self, item_name: str, cb_manual: CallbackType, value_tolerance: float = 0) -> None:
 		"""Init state observer for switch item.
 
 		:param item_name: Name of switch item

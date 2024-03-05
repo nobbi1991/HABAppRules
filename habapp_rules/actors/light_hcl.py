@@ -56,6 +56,7 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 	             config: habapp_rules.actors.config.light_hcl.LightHclConfig,
 	             name_sleep_state: str | None = None,
 	             name_focus: str | None = None,
+	             name_switch_on: str | None = None,
 	             name_state: str | None = None,
 	             state_label: str | None = None) -> None:
 		"""Init base class.
@@ -65,6 +66,7 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		:param config: config for HCL rule
 		:param name_sleep_state: [optional] name of OpenHAB sleeping state item (StringItem)
 		:param name_focus: [optional] name of OpenHAB focus state item (SwitchItem)
+		:param name_switch_on: name of OpenHAB switch item, which additionally triggers a color update if switched on. This can be used to also trigger an update if the power supply or a single light switched on
 		:param name_state: name of OpenHAB item for storing the current state (StringItem)
 		:param state_label: label of OpenHAB item for storing the current state (StringItem)
 		"""
@@ -81,9 +83,10 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		self._item_manual = HABApp.openhab.items.SwitchItem.get_item(name_manual)
 		self._item_sleep = HABApp.openhab.items.StringItem.get_item(name_sleep_state) if name_sleep_state else None
 		self._item_focus = HABApp.openhab.items.SwitchItem.get_item(name_focus) if name_focus else None
+		self._item_switch_on = HABApp.openhab.items.SwitchItem.get_item(name_switch_on) if name_switch_on else None
 
 		self._validate_config()
-		self._state_observer = habapp_rules.actors.state_observer.StateObserverNumber(name_color, self._cb_hand)
+		self._state_observer = habapp_rules.actors.state_observer.StateObserverNumber(name_color, self._cb_hand, value_tolerance=10)
 
 		# init state machine
 		self._previous_state = None
@@ -103,6 +106,8 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 			self._item_sleep.listen_event(self._cb_sleep, HABApp.openhab.events.ItemStateChangedEventFilter())
 		if self._item_focus is not None:
 			self._item_focus.listen_event(self._cb_focus, HABApp.openhab.events.ItemStateChangedEventFilter())
+		if self._item_switch_on is not None:
+			self._item_switch_on.listen_event(self._cb_switch_on, HABApp.openhab.events.ItemStateChangedEventFilter())
 
 	def _validate_config(self) -> None:
 		"""Validate configuration.
@@ -129,9 +134,9 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		"""
 		if self._item_manual.is_on():
 			return "Manual"
-		if self._item_sleep and self._item_sleep.value in (habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value):
+		if self._item_sleep is not None and self._item_sleep.value in (habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value):
 			return "Auto_Sleep"
-		if self._item_focus and self._item_focus.is_on():
+		if self._item_focus is not None and self._item_focus.is_on():
 			return "Auto_Focus"
 		return "Auto_HCL"
 
@@ -226,6 +231,15 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		elif event.value == habapp_rules.system.SleepState.AWAKE.value:
 			self.sleep_end()
 
+	def _cb_switch_on(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+		"""Callback, which is triggered if the switch_on_item has a state change event.
+
+		:param event: trigger event
+		"""
+		if event.value == "ON" and self.state == "Auto_HCL":
+			if (target_color := self._get_hcl_color()) is not None:
+				self.run.at(1, self._state_observer.send_command, target_color)
+
 
 class HclElevation(_HclBase):
 	"""Sun elevation based HCL.
@@ -251,6 +265,7 @@ class HclElevation(_HclBase):
 	             config: habapp_rules.actors.config.light_hcl.LightHclConfig,
 	             name_sleep_state: str | None = None,
 	             name_focus: str | None = None,
+	             name_switch_on: str | None = None,
 	             name_state: str | None = None,
 	             state_label: str | None = None
 	             ):
@@ -262,12 +277,13 @@ class HclElevation(_HclBase):
 		:param config: config for HCL rule
 		:param name_sleep_state: [optional] name of OpenHAB sleeping state item (StringItem)
 		:param name_focus: [optional] name of OpenHAB focus state item (SwitchItem)
+		:param name_switch_on: name of OpenHAB switch item, which additionally triggers a color update if switched on. This can be used to also trigger an update if the power supply or a single light switched on
 		:param name_state: name of OpenHAB item for storing the current state (StringItem)
 		:param state_label: label of OpenHAB item for storing the current state (StringItem)
 		"""
 		self._item_elevation = HABApp.openhab.items.NumberItem.get_item(name_elevation)
 
-		_HclBase.__init__(self, name_color, name_manual, config, name_sleep_state, name_focus, name_state, state_label)
+		_HclBase.__init__(self, name_color, name_manual, config, name_sleep_state, name_focus, name_switch_on, name_state, state_label)
 
 		self._item_elevation.listen_event(self._cb_elevation, HABApp.openhab.events.ItemStateChangedEventFilter())
 		self._cb_elevation(None)
@@ -323,6 +339,7 @@ class HclTime(_HclBase):
 	             config: habapp_rules.actors.config.light_hcl.LightHclConfig,
 	             name_sleep_state: str | None = None,
 	             name_focus: str | None = None,
+	             name_switch_on: str | None = None,
 	             name_state: str | None = None,
 	             state_label: str | None = None
 	             ) -> None:
@@ -333,10 +350,11 @@ class HclTime(_HclBase):
 		:param config: config for HCL rule
 		:param name_sleep_state: [optional] name of OpenHAB sleeping state item (StringItem)
 		:param name_focus: [optional] name of OpenHAB focus state item (SwitchItem)
+		:param name_switch_on: name of OpenHAB switch item, which additionally triggers a color update if switched on. This can be used to also trigger an update if the power supply or a single light switched on
 		:param name_state: name of OpenHAB item for storing the current state (StringItem)
 		:param state_label: label of OpenHAB item for storing the current state (StringItem)
 		"""
-		_HclBase.__init__(self, name_color, name_manual, config, name_sleep_state, name_focus, name_state, state_label)
+		_HclBase.__init__(self, name_color, name_manual, config, name_sleep_state, name_focus, name_switch_on, name_state, state_label)
 		self.run.every(None, 300, self._update_color)  # every 5 minutes
 
 	def _one_hour_later(self, current_time: datetime.datetime) -> bool:

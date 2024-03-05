@@ -41,7 +41,7 @@ def remove_all_mocked_items() -> None:
 	_MOCKED_ITEM_NAMES.clear()
 
 
-def set_state(item_name: str, value: StateTypes) -> None:
+def set_state(item_name: str, value: StateTypes | None) -> None:
 	"""Helper to set state of item.
 
 	:param item_name: name of item
@@ -79,7 +79,10 @@ def item_command_event(item_name: str, value: StateTypes) -> None:
 	:param item_name: name of item
 	:param value: value of the event
 	"""
-	set_state(item_name, value)
+	try:
+		set_state(item_name, value)
+	except HABApp.core.errors.InvalidItemValue:
+		pass  # print(f"Could not set {value} to {item_name}")
 	HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemCommandEvent(item_name, value))
 
 

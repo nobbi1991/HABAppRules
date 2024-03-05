@@ -57,9 +57,9 @@ class Irrigation(HABApp.Rule):
 		self._item_active.listen_event(self._cb_set_valve_state, HABApp.openhab.events.ItemStateChangedEventFilter())
 		self._item_minute.listen_event(self._cb_set_valve_state, HABApp.openhab.events.ItemStateChangedEventFilter())
 		self._item_hour.listen_event(self._cb_set_valve_state, HABApp.openhab.events.ItemStateChangedEventFilter())
-		if self._item_repetitions and self._item_brake:
-			self._item_repetitions.listen_event(self._cb_set_valve_state, HABApp.openhab.events.ItemStateChangedEventFilter())
-			self._item_brake.listen_event(self._cb_set_valve_state, HABApp.openhab.events.ItemStateChangedEventFilter())
+		if self._item_repetitions is not None and self._item_brake is not None:
+			self._item_repetitions.listen_event(self._cb_set_valve_state, HABApp.openhab.events.ItemStateChangedEventFilter())  # pylint: disable=no-member
+			self._item_brake.listen_event(self._cb_set_valve_state, HABApp.openhab.events.ItemStateChangedEventFilter())  # pylint: disable=no-member
 
 		self._instance_logger.debug(f"Init of rule '{self.__class__.__name__}' with name '{self.rule_name}' was successful.")
 
@@ -69,12 +69,13 @@ class Irrigation(HABApp.Rule):
 		:return: True if valve should be on, otherwise False
 		:raises habapp_rules.core.exceptions.HabAppRulesException: if value for hour / minute / duration is not valid
 		"""
-		if not self._item_active:
+		if not self._item_active.is_on():
 			return False
 
 		if any(item.value is None for item in (self._item_hour, self._item_minute, self._item_duration)):
-			raise habapp_rules.core.exceptions.HabAppRulesException(
-				f"OpenHAB item values are not valid for hour / minute / duration. See current values: hour={self._item_hour.value} | minute={self._item_minute.value} | duration={self._item_duration.value}")
+			self._instance_logger.warning(
+				f"OpenHAB item values are not valid for hour / minute / duration. Will return False. See current values: hour={self._item_hour.value} | minute={self._item_minute.value} | duration={self._item_duration.value}")
+			return False
 
 		repetitions = self._item_repetitions.value if self._item_repetitions else 0
 		brake = int(self._item_brake.value) if self._item_brake else 0
@@ -112,6 +113,6 @@ class Irrigation(HABApp.Rule):
 			self._instance_logger.warning(f"Could not get target valve state, set it to false. Error: {exc}")
 			target_value = False
 
-		if bool(self._item_valve) != target_value:
+		if self._item_valve.is_on() != target_value:
 			self._instance_logger.info(f"Valve state changed to {target_value}")
 			self._item_valve.oh_send_command("ON" if target_value else "OFF")

@@ -58,7 +58,7 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
 		{"trigger": "lock_off", "source": "Locked", "dest": "SleepLocked", "conditions": "_sleep_active"},
 
 		# sleep
-		{"trigger": "sleep_started", "source": "Unlocked", "dest": "SleepLocked"},
+		{"trigger": "sleep_started", "source": ["Unlocked", "PostSleepLocked"], "dest": "SleepLocked"},
 		{"trigger": "sleep_end", "source": "SleepLocked", "dest": "Unlocked", "unless": "_post_sleep_lock_configured"},
 		{"trigger": "sleep_end", "source": "SleepLocked", "dest": "PostSleepLocked", "conditions": "_post_sleep_lock_configured"},
 		{"trigger": "timeout_post_sleep_locked", "source": "PostSleepLocked", "dest": "Unlocked", "unless": "_raw_motion_active"},
@@ -86,7 +86,8 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
 	             extended_motion_time: int = 5,
 	             name_brightness: str | None = None,
 	             brightness_threshold: int | str | None = None,
-	             name_lock: str | None = None, name_sleep_state: str | None = None,
+	             name_lock: str | None = None,
+	             name_sleep_state: str | None = None,
 	             post_sleep_lock_time: int = 10,
 	             name_state: str | None = None,
 	             state_label: str | None = None) -> None:
@@ -115,8 +116,6 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
 		self._brightness_threshold_value = brightness_threshold if isinstance(brightness_threshold, int) else None
 		self._timeout_extended_motion = extended_motion_time
 		self._timeout_post_sleep_lock = post_sleep_lock_time
-		self.states[2]["timeout"] = self._timeout_post_sleep_lock
-		self.states[3]["children"][3]["timeout"] = self._timeout_extended_motion
 
 		# get items
 		self._item_motion_raw = HABApp.openhab.items.SwitchItem.get_item(name_raw)
@@ -126,7 +125,7 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
 		self._item_lock = HABApp.openhab.items.SwitchItem.get_item(name_lock) if name_lock else None
 		self._item_sleep = HABApp.openhab.items.StringItem.get_item(name_sleep_state) if name_sleep_state else None
 
-		self._hysteresis_switch = habapp_rules.common.hysteresis.HysteresisSwitch(threshold_value := self._get_brightness_threshold(), threshold_value * 0.1) if name_brightness else None
+		self._hysteresis_switch = habapp_rules.common.hysteresis.HysteresisSwitch(threshold := self._get_brightness_threshold(), threshold * 0.1 if threshold else 5) if name_brightness else None
 
 		# init state machine
 		self._previous_state = None
@@ -137,6 +136,9 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
 			ignore_invalid_triggers=True,
 			after_state_change="_update_openhab_state")
 		self._set_initial_state()
+
+		self.state_machine.get_state("PostSleepLocked").timeout = self._timeout_post_sleep_lock
+		self.state_machine.get_state("Unlocked_MotionExtended").timeout = self._timeout_extended_motion
 
 		# register callbacks
 		self._item_motion_raw.listen_event(self._cb_motion_raw, HABApp.openhab.events.ItemStateChangedEventFilter())
@@ -157,13 +159,13 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
 		:param default_value: default / initial state
 		:return: if OpenHAB item has a state it will return it, otherwise return the given default value
 		"""
-		if self._item_lock:
+		if self._item_lock is not None and self._item_lock.is_on():
 			return "Locked"
-		if self._item_sleep and self._item_sleep.value == habapp_rules.system.SleepState.SLEEPING.value:
+		if self._item_sleep is not None and self._item_sleep.value == habapp_rules.system.SleepState.SLEEPING.value:
 			return "SleepLocked"
-		if self._item_brightness and self._brightness_over_threshold():
+		if self._item_brightness is not None and self._brightness_over_threshold():
 			return "Unlocked_TooBright"
-		if self._item_motion_raw:
+		if self._item_motion_raw.is_on():
 			return "Unlocked_Motion"
 		return "Unlocked_Wait"
 
@@ -226,15 +228,15 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
 		if self._brightness_threshold_value:
 			return self._brightness_threshold_value
 		if self._item_brightness_threshold is not None:
-			return self._item_brightness_threshold.value
+			return value if (value := self._item_brightness_threshold.value) else float("inf")
 		raise habapp_rules.core.exceptions.HabAppRulesException(f"Can not get brightness threshold. Brightness value or item is not given. value: {self._brightness_threshold_value} | item: {self._item_brightness}")
 
 	# pylint: disable=invalid-name
 	def on_enter_Unlocked_Init(self):
 		"""Callback, which is called on enter of Unlocked_Init state"""
-		if self._item_brightness and self._brightness_over_threshold():
+		if self._item_brightness is not None and self._brightness_over_threshold():
 			self.to_Unlocked_TooBright()
-		elif self._item_motion_raw:
+		elif self._item_motion_raw.is_on():
 			self.to_Unlocked_Motion()
 		else:
 			self.to_Unlocked_Wait()

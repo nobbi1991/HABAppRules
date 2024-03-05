@@ -1,3 +1,24 @@
+# Version 5.5.0 - 05.03.2024
+
+## Features
+
+- added rules in ``habapp_rules.actors.ventilation`` to control ventilation objects
+- added ``name_switch_on`` to ``habapp_rules.actors.light_hcl.HclTime`` and ``habapp_rules.actors.light_hcl.HclElevation`` to add the possibility to also update the color if a item switches on
+- added new transition to ``habapp_rules.actors.light._LightExtendedMixin`` to also switch on the light if current state is ``auto_preoff`` and the door opened
+- added ``habapp_rules.sensors.dwd.DwdWindAlarm`` to set wind alarm depending on DWD warnings
+- added ``habapp_rules.core.version.SetVersions`` to set versions of HABApp and habapp_rules to OpenHAB items
+- added ``habapp_rules.common.logic.InvertValue`` which can be used to set the inverted value of one item to another
+- bumped holidays to 0.44
+- bumped HABApp to 24.02.0
+
+# Bugfix
+
+- fixed bug in ``habapp_rules.actors.state_observer.StateObserverNumber`` which triggered the manual-detected-callback if the received number deviates only a little bit because of data types. (e.g.: 1.000001 != 1.0) 
+- fixed bug for dimmer lights in ``habapp_rules.actors.light`` which did not set the correct brightness if light was switched on.
+- fixed bug in ``habapp_rules.common.hysteresis.HysteresisSwitch.get_output`` resulted in a wrong switch state if the value was 0. 
+- added missing state transition to ``habapp_rules.sensors.motion.Motion``. When state was ``PostSleepLocked`` and sleep started there was no change to ``SleepLocked``
+- fixed strange behavior of ``habapp_rules.system.presence.Presence`` which did not abort leaving when the first phone appeared. This let to absence state if someone returned when leaving was active.
+
 # Version 5.4.3 - 14.01.2024
 
 ## Bugfix

@@ -26,6 +26,10 @@ class HysteresisSwitch:
 		:param threshold_on: new threshold value
 		"""
 		self._threshold = threshold_on
+		if self._hysteresis == float("inf"):
+			new_threshold = 0.1 * threshold_on
+			LOGGER.warning(f"Hysteresis was not set and changed to {new_threshold} | threshold = {threshold_on}")
+			self._hysteresis = new_threshold
 
 	def get_output(self, value: float | None = None) -> bool | str:
 		"""Get output of hysteresis switch
@@ -37,7 +41,7 @@ class HysteresisSwitch:
 			threshold = self._threshold - 0.5 * self._hysteresis if self._on_off_state else self._threshold + 0.5 * self._hysteresis
 
 			# use new value if given, otherwise last value
-			value = value if value else self._value_last
+			value = value if value is not None else self._value_last
 
 			# get on / off state
 			self._on_off_state = value >= threshold

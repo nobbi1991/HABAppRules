@@ -44,6 +44,19 @@ class TestPresence(tests.helper.test_case_base.TestCaseBase):
 		self._presence = habapp_rules.system.presence.Presence("Unittest_Presence", outside_door_names=["Unittest_Door1", "Unittest_Door2"], leaving_name="Unittest_Leaving", phone_names=["Unittest_Phone1", "Unittest_Phone2"],
 		                                                       name_state="CustomState")
 
+	def test_init_with_none(self):
+		"""Test __init__ with None values."""
+		tests.helper.oh_item.set_state("Unittest_Presence", None)
+		tests.helper.oh_item.set_state("Unittest_Door1", None)
+		tests.helper.oh_item.set_state("Unittest_Door2", None)
+		tests.helper.oh_item.set_state("Unittest_Leaving", None)
+		tests.helper.oh_item.set_state("Unittest_Phone1", None)
+		tests.helper.oh_item.set_state("Unittest_Phone2", None)
+		tests.helper.oh_item.set_state("CustomState", None)
+
+		habapp_rules.system.presence.Presence("Unittest_Presence", outside_door_names=["Unittest_Door1", "Unittest_Door2"], leaving_name="Unittest_Leaving", phone_names=["Unittest_Phone1", "Unittest_Phone2"],
+		                                      name_state="CustomState")
+
 	@unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
 	def test_create_graph(self):  # pragma: no cover
 		"""Create state machine graph for documentation."""
@@ -266,13 +279,14 @@ class TestPresence(tests.helper.test_case_base.TestCaseBase):
 
 		# leaving on, first phone appears
 		tests.helper.oh_item.send_command("Unittest_Phone1", "ON", "OFF")
-		self.assertEqual(self._presence.state, "leaving")
+		self.assertEqual(self._presence.state, "presence")
 
 		# leaving on, second phone appears
 		tests.helper.oh_item.send_command("Unittest_Phone2", "ON", "OFF")
-		self.assertEqual(self._presence.state, "leaving")
+		self.assertEqual(self._presence.state, "presence")
 
 		# leaving on, both phones leaving
+		self._presence.state_machine.set_state("leaving")
 		tests.helper.oh_item.send_command("Unittest_Phone1", "OFF", "ON")
 		tests.helper.oh_item.send_command("Unittest_Phone2", "OFF", "ON")
 		self.assertEqual(self._presence.state, "leaving")
@@ -386,7 +400,7 @@ class TestPresence(tests.helper.test_case_base.TestCaseBase):
 
 		# phone appears during leaving -> leaving expected
 		tests.helper.oh_item.send_command("Unittest_Phone1", "ON", "OFF")
-		self.assertEqual(self._presence.state, "leaving")
+		self.assertEqual(self._presence.state, "presence")
 		self.assertIsNone(self._presence._Presence__phone_absence_timer)
 
 		# timeout is over -> absence expected
