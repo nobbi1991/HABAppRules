@@ -177,7 +177,7 @@ class TestAndOR(tests.helper.test_case_base.TestCaseBase):
 
 
 class TestNumericLogic(tests.helper.test_case_base.TestCaseBase):
-	"""Tests for And / Or / Sum."""
+	"""Tests Numeric logic rules."""
 
 	def setUp(self) -> None:
 		"""Setup unit-tests."""
@@ -302,3 +302,77 @@ class TestNumericLogic(tests.helper.test_case_base.TestCaseBase):
 		"""Test exception if Sum is instantiated with dimmer items."""
 		with self.assertRaises(TypeError):
 			habapp_rules.common.logic.Sum(["Unittest_Dimmer_in1", "Unittest_Dimmer_in2", "Unittest_Dimmer_in3"], "Unittest_Dimmer_out_max")
+
+
+class TestInvertValue(tests.helper.test_case_base.TestCaseBase):
+	"""Tests InvertValue rule."""
+
+	def setUp(self) -> None:
+		"""Setup unit-tests."""
+		tests.helper.test_case_base.TestCaseBase.setUp(self)
+
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Input", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Output", None)
+
+	def test_invert_value_without_pos_neg(self):
+		"""Test invert value rule without pos / neg set."""
+		TestCase = collections.namedtuple("TestCase", "input, expected_output")
+
+		test_cases = [
+			TestCase(10, -10),
+			TestCase(1, -1),
+			TestCase(0.1, -0.1),
+			TestCase(0, 0),
+			TestCase(-0.1, 0.1),
+			TestCase(-1, 1),
+			TestCase(-10, 10)
+		]
+
+		habapp_rules.common.logic.InvertValue("Unittest_Input", "Unittest_Output")
+
+		for test_case in test_cases:
+			with self.subTest(test_case=test_case):
+				tests.helper.oh_item.item_state_change_event("Unittest_Input", test_case.input)
+				tests.helper.oh_item.assert_value("Unittest_Output", test_case.expected_output)
+
+	def test_invert_value_with_only_pos(self):
+		"""Test invert value rule with only pos is set."""
+		TestCase = collections.namedtuple("TestCase", "input, expected_output")
+
+		test_cases = [
+			TestCase(10, 0),
+			TestCase(1, 0),
+			TestCase(0.1, 0),
+			TestCase(0, 0),
+			TestCase(-0.1, 0.1),
+			TestCase(-1, 1),
+			TestCase(-10, 10)
+		]
+
+		habapp_rules.common.logic.InvertValue("Unittest_Input", "Unittest_Output", only_positive=True)
+
+		for test_case in test_cases:
+			with self.subTest(test_case=test_case):
+				tests.helper.oh_item.item_state_change_event("Unittest_Input", test_case.input)
+				tests.helper.oh_item.assert_value("Unittest_Output", test_case.expected_output)
+
+	def test_invert_value_with_only_neg(self):
+		"""Test invert value rule with only neg is set."""
+		TestCase = collections.namedtuple("TestCase", "input, expected_output")
+
+		test_cases = [
+			TestCase(10, -10),
+			TestCase(1, -1),
+			TestCase(0.1, -0.1),
+			TestCase(0, 0),
+			TestCase(-0.1, 0),
+			TestCase(-1, 0),
+			TestCase(-10, 0)
+		]
+
+		habapp_rules.common.logic.InvertValue("Unittest_Input", "Unittest_Output", only_negative=True)
+
+		for test_case in test_cases:
+			with self.subTest(test_case=test_case):
+				tests.helper.oh_item.item_state_change_event("Unittest_Input", test_case.input)
+				tests.helper.oh_item.assert_value("Unittest_Output", test_case.expected_output)

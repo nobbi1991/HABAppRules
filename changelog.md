@@ -1,4 +1,4 @@
-# Version 5.5.0 - dd.01.2024
+# Version 5.5.0 - 05.03.2024
 
 ## Features
 
@@ -7,7 +7,8 @@
 - added new transition to ``habapp_rules.actors.light._LightExtendedMixin`` to also switch on the light if current state is ``auto_preoff`` and the door opened
 - added ``habapp_rules.sensors.dwd.DwdWindAlarm`` to set wind alarm depending on DWD warnings
 - added ``habapp_rules.core.version.SetVersions`` to set versions of HABApp and habapp_rules to OpenHAB items
-- bumped holidays to 0.43
+- added ``habapp_rules.common.logic.InvertValue`` which can be used to set the inverted value of one item to another
+- bumped holidays to 0.44
 - bumped HABApp to 24.02.0
 
 # Bugfix
