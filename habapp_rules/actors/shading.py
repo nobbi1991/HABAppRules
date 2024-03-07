@@ -244,7 +244,7 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 			return self._config.pos_sleeping
 
 		if self.state == "Auto_NightClose":
-			if self._item_summer.is_on():
+			if self._item_summer is not None and self._item_summer.is_on():
 				return self._config.pos_night_close_summer
 			return self._config.pos_night_close_winter
 
