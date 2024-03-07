@@ -1,3 +1,9 @@
+# Version 5.5.1 - 07.03.2024
+
+# Bugfix
+
+- fixed bug in ``habapp_rules.actors.shading._ShadingBase``, which caused an exception if night state was checked but no day/night item was given
+
 # Version 5.5.0 - 05.03.2024
 
 ## Features
