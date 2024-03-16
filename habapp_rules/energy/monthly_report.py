@@ -4,9 +4,11 @@ import pathlib
 
 import HABApp
 import dateutil.relativedelta
+import jinja2
 import matplotlib.pyplot
 import multi_notifier.connectors.connector_mail
 
+import habapp_rules.__version__
 import habapp_rules.core.exceptions
 
 
@@ -76,13 +78,26 @@ class MonthlyReport(HABApp.Rule):
 		values = [share.monthly_power for share in self._known_energy_share] + [energy_unknown]
 
 		fig, ax = matplotlib.pyplot.subplots()
-		ax.pie(values, labels=labels, autopct='%1.1f kWh', pctdistance=0.7, textprops={'fontsize': 10})
-		matplotlib.pyplot.savefig("chart.svg", bbox_inches="tight", transparent=True)
+		_, texts, _ = ax.pie(values, labels=labels, autopct='%1.1f kWh', pctdistance=0.7, textprops={'fontsize': 10})
+		for text in texts:
+			text.set_backgroundcolor("white")
+		chart_path = pathlib.Path(r"C:\temp\chart.png")  # todo use temp path
+		matplotlib.pyplot.savefig(str(chart_path), bbox_inches="tight", transparent=True)
 
 		# send mail
-		html_template_path = pathlib.Path("montly_report_template.html")
+		html_template_path = pathlib.Path(__file__).parent / "monthly_report_template.html"
 
 		with html_template_path.open() as html_template_file:
-			html = html_template_file.read()
+			html_template = html_template_file.read()
 
-		self._mail.send_message("norbert@seuling.eu", html, "Zählerstand")
+		html = jinja2.Template(html_template).render(
+			month="Februar",
+			energy_now=f"{self._item_energy_sum.value:.1f}",
+			energ_last_month=f"{energy_sum_month:.1f}",
+			habapp_version=habapp_rules.__version__.__version__,
+			chart="{{ chart }}"
+		)
+
+		self._mail.send_message("norbert@seuling.eu", html, "Zählerstand", images={"chart": str(chart_path)})
+
+		print("sent mail")

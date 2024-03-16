@@ -63,7 +63,7 @@
                                                                 </tbody>
                                                             </table>
                                                             <h5 class="text-teal-700" style="color: #13795b; padding-top: 0; padding-bottom: 0; font-weight: 500; vertical-align: baseline; font-size: 20px; line-height: 24px; margin: 0;" align="left">
-                                                                von Februar</h5>
+                                                                von {{ month }}</h5>
                                                             <table class="s-5 w-full" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%;" width="100%">
                                                                 <tbody>
                                                                 <tr>
@@ -91,7 +91,7 @@
                                                                 </tbody>
                                                             </table>
                                                             <div class="space-y-3">
-                                                                <p class="text-gray-700" style="line-height: 24px; font-size: 16px; color: #4a5568; width: 100%; margin: 0;" align="left">Aktueller Z&#228;hlerstand: <b>7000 kWh</b>.<br>Verbrauch dieser Monat: <b>42 kWh</b>.</p>
+                                                                <p class="text-gray-700" style="line-height: 24px; font-size: 16px; color: #4a5568; width: 100%; margin: 0;" align="left">Aktueller Z&#228;hlerstand: <b>{{ energy_now }} kWh</b>.<br>Verbrauch dieser Monat: <b>{{ energ_last_month }} kWh</b>.</p>
                                                                 <table class="s-3 w-full" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%;" width="100%">
                                                                     <tbody>
                                                                     <tr>
@@ -111,10 +111,7 @@
                                                                     </tr>
                                                                     </tbody>
                                                                 </table>
-                                                                <p style="line-height: 24px; font-size: 16px; width: 100%; margin: 0;" align="left"><img
-                                                                        src="chart.svg"
-                                                                        alt="Italian Trulli" align="left" style="height: auto; line-height: 100%; outline: none; text-decoration: none; display: block; border-style: none; border-width: 0;">
-                                                                </p>
+                                                                {{ chart }}
                                                             </div>
                                                             <table class="s-5 w-full" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%;" width="100%">
                                                                 <tbody>
@@ -142,7 +139,7 @@
                                                                 </tr>
                                                                 </tbody>
                                                             </table>
-                                                            <p style="font-size: 0.6em; line-height: 24px; width: 100%; margin: 0;" align="left">Generated with habapp_rules version = 20.0.3</p>
+                                                            <p style="font-size: 0.6em; line-height: 24px; width: 100%; margin: 0;" align="left">Generated with habapp_rules version = {{ habapp_version }}</p>
                                                         </td>
                                                     </tr>
                                                     </tbody>
