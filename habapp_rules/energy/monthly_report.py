@@ -67,9 +67,9 @@ class MonthlyReport(HABApp.Rule):
 		now = datetime.datetime.now()
 		last_month = now - dateutil.relativedelta.relativedelta(months=1)
 
-		energy_sum_month = self._get_historic_value(self._item_energy_sum, last_month)
+		energy_sum_month = self._item_energy_sum.value - self._get_historic_value(self._item_energy_sum, last_month)
 		for share in self._known_energy_share:
-			share.monthly_power = self._get_historic_value(share.openhab_item, last_month)
+			share.monthly_power = share.openhab_item.value - self._get_historic_value(share.openhab_item, last_month)
 
 		energy_unknown = energy_sum_month - sum(share.monthly_power for share in self._known_energy_share)
 
