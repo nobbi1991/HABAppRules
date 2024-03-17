@@ -21,5 +21,6 @@ setuptools.setup(
 	packages=setuptools.find_packages(exclude=["tests*", "rules*"]),
 	install_requires=load_req(),
 	python_requires=">=3.10",
-	license="Apache License 2.0"
+	license="Apache License 2.0",
+	include_package_data=True
 )
