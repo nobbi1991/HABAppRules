@@ -1,5 +1,5 @@
 HABApp==24.02.0
 matplotlib~=3.8.3
-multi-notifier~=0.3.0
+multi-notifier~=0.4.0
 transitions~=0.9
 holidays==0.44
