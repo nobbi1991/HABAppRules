@@ -1,3 +1,10 @@
+# Version 5.6.0 - dd.03.2024
+
+# Features
+
+- added ``habapp_rules.energy.montly_report.MonthlyReport`` for generating a monthly energy report mail
+- bumped holidays to 0.45
+
 # Version 5.5.1 - 07.03.2024
 
 # Bugfix
