@@ -34,8 +34,8 @@ MONTH_MAPPING = {
 }
 
 
-def _get_last_month_name() -> str:
-	"""Get name of the current month
+def _get_previous_month_name() -> str:
+	"""Get name of the previous month
 
 	:return: name of current month
 
@@ -72,7 +72,9 @@ class EnergyShare:
 		try:
 			self._openhab_item = HABApp.openhab.items.NumberItem.get_item(self.openhab_name)
 		except AssertionError:
-			raise habapp_rules.core.exceptions.HabAppRulesConfigurationException(f"Could not find Number item for given name '{self.openhab_name}'")
+			raise habapp_rules.core.exceptions.HabAppRulesConfigurationException(f"The given item name is not a number item. '{self.openhab_name}'")
+		except HABApp.core.errors.ItemNotFoundException:
+			raise habapp_rules.core.exceptions.HabAppRulesConfigurationException(f"Could not find any item for given name '{self.openhab_name}'")
 
 	@property
 	def openhab_item(self) -> HABApp.openhab.items.NumberItem:
@@ -109,8 +111,6 @@ class MonthlyReport(HABApp.Rule):
 
 		self.run.at(next_trigger_time := _get_next_trigger(), self._cb_send_energy)
 		self._instance_logger.info(f"Successfully initiated monthly consumption rule for {name_energy_sum}. Triggered first execution to {next_trigger_time.isoformat()}")
-
-		self._cb_send_energy()  # todo remove
 
 	def _get_historic_value(self, item: HABApp.openhab.items.NumberItem, start_time: datetime.datetime) -> float:
 		"""Get historic value of given Number item
@@ -168,9 +168,9 @@ class MonthlyReport(HABApp.Rule):
 			html_template = html_template_file.read()
 
 		return jinja2.Template(html_template).render(
-			month=_get_last_month_name(),
+			month=_get_previous_month_name(),
 			energy_now=f"{self._item_energy_sum.value:.1f}",
-			energ_last_month=f"{energy_sum_month:.1f}",
+			energy_last_month=f"{energy_sum_month:.1f}",
 			habapp_version=habapp_rules.__version__.__version__,
 			chart="{{ chart }}"  # this is needed to not replace the chart from the mail-template
 		)
@@ -181,7 +181,6 @@ class MonthlyReport(HABApp.Rule):
 		# get values
 		now = datetime.datetime.now()
 		last_month = now - dateutil.relativedelta.relativedelta(months=1)
-		last_month = now - dateutil.relativedelta.relativedelta(days=1)  # todo remove
 
 		energy_sum_month = self._item_energy_sum.value - self._get_historic_value(self._item_energy_sum, last_month)
 		for share in self._known_energy_share:
@@ -200,7 +199,7 @@ class MonthlyReport(HABApp.Rule):
 			html = self._create_html(energy_sum_month)
 
 			# send mail
-			self._mail.send_message(self._recipients, html, f"Stromverbrauch {_get_last_month_name()}", images={"chart": str(chart_path)})
+			self._mail.send_message(self._recipients, html, f"Stromverbrauch {_get_previous_month_name()}", images={"chart": str(chart_path)})
 
 		self.run.at(next_trigger_time := _get_next_trigger(), self._cb_send_energy)
 		self._instance_logger.info(f"Successfully sent energy consumption mail to {self._recipients}. Scheduled the next trigger time to {next_trigger_time.isoformat()}")
