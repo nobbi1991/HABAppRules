@@ -3,11 +3,13 @@ autoupdate
 bool
 config
 dataclass
+donut
 dwd
 DWD
 enums
 ga
 HCL
+html
 init
 KNX
 kwargs

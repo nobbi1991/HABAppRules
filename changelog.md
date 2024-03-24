@@ -1,3 +1,11 @@
+# Version 5.6.0 - 24.03.2024
+
+# Features
+
+- added ``habapp_rules.energy.montly_report.MonthlyReport`` for generating a monthly energy report mail
+- bumped holidays to 0.45
+- bumped multi-notifier to 0.4.0
+
 # Version 5.5.1 - 07.03.2024
 
 # Bugfix
@@ -19,9 +27,9 @@
 
 # Bugfix
 
-- fixed bug in ``habapp_rules.actors.state_observer.StateObserverNumber`` which triggered the manual-detected-callback if the received number deviates only a little bit because of data types. (e.g.: 1.000001 != 1.0) 
+- fixed bug in ``habapp_rules.actors.state_observer.StateObserverNumber`` which triggered the manual-detected-callback if the received number deviates only a little bit because of data types. (e.g.: 1.000001 != 1.0)
 - fixed bug for dimmer lights in ``habapp_rules.actors.light`` which did not set the correct brightness if light was switched on.
-- fixed bug in ``habapp_rules.common.hysteresis.HysteresisSwitch.get_output`` resulted in a wrong switch state if the value was 0. 
+- fixed bug in ``habapp_rules.common.hysteresis.HysteresisSwitch.get_output`` resulted in a wrong switch state if the value was 0.
 - added missing state transition to ``habapp_rules.sensors.motion.Motion``. When state was ``PostSleepLocked`` and sleep started there was no change to ``SleepLocked``
 - fixed strange behavior of ``habapp_rules.system.presence.Presence`` which did not abort leaving when the first phone appeared. This let to absence state if someone returned when leaving was active.
 
