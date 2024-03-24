@@ -86,14 +86,40 @@ class EnergyShare:
 
 
 class MonthlyReport(HABApp.Rule):
+	"""Rule for sending the monthly energy consumption.
+
+	Example:
+	known_energy_share = [
+		habapp_rules.energy.monthly_report.EnergyShare("Dishwasher_Energy", "Dishwasher"),
+		habapp_rules.energy.monthly_report.EnergyShare("Light", "Light")
+	]
+
+	config_mail = multi_notifier.connectors.connector_mail.MailConfig(
+		user="sender@test.de",
+		password="fancy_password",
+		smtp_host="smtp.test.de",
+		smtp_port=587,
+	)
+
+	habapp_rules.energy.monthly_report.MonthlyReport("Total_Energy", known_energy_share, "Group_RRD4J", config_mail, "test@test.de")
+	"""
 
 	def __init__(
 			self,
-			name_energy_sum,
+			name_energy_sum: str,
 			known_energy_share: list[EnergyShare],
 			persistence_group_name: str | None,
 			config_mail: multi_notifier.connectors.connector_mail.MailConfig | None,
 			recipients: str | list[str]) -> None:
+		"""Initialize the rule.
+
+		:param name_energy_sum: name of OpenHAB Number item, which holds the total energy consumption (NumberItem)
+		:param known_energy_share: list of EnergyShare objects
+		:param persistence_group_name: OpenHAB group name which holds all items which are persisted. If the group name is given it will be checked if all energy items are in the group
+		:param config_mail: config for sending mails
+		:param recipients: list of recipients who get the mail
+		:raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: if config is not valid
+		"""
 		HABApp.Rule.__init__(self)
 		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, name_energy_sum)
 		self._recipients = recipients

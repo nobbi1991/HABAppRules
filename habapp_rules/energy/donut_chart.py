@@ -5,7 +5,7 @@ import pathlib
 import matplotlib.pyplot
 
 
-def __auto_percent_format(values: list[float]) -> collections.abc.Callable:
+def _auto_percent_format(values: list[float]) -> collections.abc.Callable:
 	"""Get labels for representing the absolute value.
 
 	:param values: list of all values
@@ -32,7 +32,7 @@ def create_chart(labels: list[str], values: list[float], chart_path: pathlib.Pat
 	:param chart_path: target path for the chart
 	"""
 	_, ax = matplotlib.pyplot.subplots()
-	_, texts, _ = ax.pie(values, labels=labels, autopct=__auto_percent_format(values), pctdistance=0.7, textprops={"fontsize": 10})
+	_, texts, _ = ax.pie(values, labels=labels, autopct=_auto_percent_format(values), pctdistance=0.7, textprops={"fontsize": 10})
 	for text in texts:
 		text.set_backgroundcolor("white")
 
