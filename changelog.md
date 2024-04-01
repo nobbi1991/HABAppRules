@@ -1,3 +1,9 @@
+# Version 5.6.1 - 01.04.2024
+
+# Bugfix
+
+- fixed bug of missing resources of ``habapp_rules.energy.montly_report.MonthlyReport`` if used in docker container
+
 # Version 5.6.0 - 24.03.2024
 
 # Features

@@ -10,6 +10,7 @@ import HABApp.core.internals
 import dateutil.relativedelta
 import jinja2
 import multi_notifier.connectors.connector_mail
+import pkg_resources
 
 import habapp_rules.__version__
 import habapp_rules.core.exceptions
@@ -188,10 +189,7 @@ class MonthlyReport(HABApp.Rule):
 		  </body>
 		</html>
 		"""
-		html_template_path = pathlib.Path(__file__).parent / "monthly_report_template.html"
-
-		with html_template_path.open() as html_template_file:
-			html_template = html_template_file.read()
+		html_template = pkg_resources.resource_string("resources.energy", "monthly_report_template.html").decode("utf-8")
 
 		return jinja2.Template(html_template).render(
 			month=_get_previous_month_name(),
