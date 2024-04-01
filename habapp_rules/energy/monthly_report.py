@@ -194,7 +194,7 @@ class MonthlyReport(HABApp.Rule):
 		  </body>
 		</html>
 		"""
-		html_template = pkg_resources.resource_string("resources.energy", "monthly_report_template.html").decode("utf-8")
+		html_template = pkg_resources.resource_string("habapp_rules.energy", "monthly_report_template.html").decode("utf-8")
 
 		return jinja2.Template(html_template).render(
 			month=_get_previous_month_name(),
