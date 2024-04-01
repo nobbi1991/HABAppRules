@@ -10,6 +10,7 @@ import HABApp.core.internals
 import dateutil.relativedelta
 import jinja2
 import multi_notifier.connectors.connector_mail
+import pkg_resources
 
 import habapp_rules.__version__
 import habapp_rules.core.exceptions
@@ -110,7 +111,8 @@ class MonthlyReport(HABApp.Rule):
 			known_energy_share: list[EnergyShare],
 			persistence_group_name: str | None,
 			config_mail: multi_notifier.connectors.connector_mail.MailConfig | None,
-			recipients: str | list[str]) -> None:
+			recipients: str | list[str],
+			debug: bool = False) -> None:
 		"""Initialize the rule.
 
 		:param name_energy_sum: name of OpenHAB Number item, which holds the total energy consumption (NumberItem)
@@ -118,6 +120,7 @@ class MonthlyReport(HABApp.Rule):
 		:param persistence_group_name: OpenHAB group name which holds all items which are persisted. If the group name is given it will be checked if all energy items are in the group
 		:param config_mail: config for sending mails
 		:param recipients: list of recipients who get the mail
+		:param debug: if debug mode is active
 		:raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: if config is not valid
 		"""
 		HABApp.Rule.__init__(self)
@@ -136,6 +139,9 @@ class MonthlyReport(HABApp.Rule):
 				raise habapp_rules.core.exceptions.HabAppRulesConfigurationException(f"The following OpenHAB items are not in the persistence group '{persistence_group_name}': {not_in_persistence_group}")
 
 		self.run.at(next_trigger_time := _get_next_trigger(), self._cb_send_energy)
+		if debug:
+			self._instance_logger.warning("Debug mode is active!")
+			self.run.soon(self._cb_send_energy)
 		self._instance_logger.info(f"Successfully initiated monthly consumption rule for {name_energy_sum}. Triggered first execution to {next_trigger_time.isoformat()}")
 
 	def _get_historic_value(self, item: HABApp.openhab.items.NumberItem, start_time: datetime.datetime) -> float:
@@ -188,10 +194,7 @@ class MonthlyReport(HABApp.Rule):
 		  </body>
 		</html>
 		"""
-		html_template_path = pathlib.Path(__file__).parent / "monthly_report_template.html"
-
-		with html_template_path.open() as html_template_file:
-			html_template = html_template_file.read()
+		html_template = pkg_resources.resource_string("resources.energy", "monthly_report_template.html").decode("utf-8")
 
 		return jinja2.Template(html_template).render(
 			month=_get_previous_month_name(),

@@ -11,6 +11,7 @@ FROM python:3.11
 
 COPY --from=buildimage /root/wheels /root/wheels
 COPY container/entrypoint.sh /entrypoint.sh
+COPY resources/ /resources
 
 ENV HABAPP_HOME=/habapp \
 	USER_ID=9001 \

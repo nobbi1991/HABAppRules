@@ -13,6 +13,7 @@ import habapp_rules.energy.monthly_report
 import tests.helper.oh_item
 import tests.helper.test_case_base
 
+
 # pylint: disable=protected-access
 class TestFunctions(unittest.TestCase):
 	"""Test all global functions."""
@@ -134,6 +135,10 @@ class TestMonthlyReport(tests.helper.test_case_base.TestCaseBase):
 						habapp_rules.energy.monthly_report.MonthlyReport("Energy_Sum", [self._energy_1, self._energy_2], "PersistenceGroup", self._mail_config, "test@test.de")
 				else:
 					habapp_rules.energy.monthly_report.MonthlyReport("Energy_Sum", [self._energy_1, self._energy_2], "PersistenceGroup", self._mail_config, "test@test.de")
+
+	def test_init_with_debug_mode(self):
+		"""Test init with debug mode."""
+		self._rule = habapp_rules.energy.monthly_report.MonthlyReport("Energy_Sum", [self._energy_1, self._energy_2], None, self._mail_config, "test@test.de", True)
 
 	def test_get_historic_value(self):
 		"""Test _get_historic_value."""
