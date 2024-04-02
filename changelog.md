@@ -1,3 +1,10 @@
+# Version 5.6.2 - 02.04.2024
+
+# Bugfix
+
+- fixed bug of all rules in ``habapp_rules.actors.ventilation`` which raised an exception if presence changed to long absence.
+
+
 # Version 5.6.1 - 01.04.2024
 
 # Bugfix
