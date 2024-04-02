@@ -239,8 +239,15 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBase):
 
 	def test_on_enter_long_absence_off(self):
 		"""Test on_enter_Auto_LongAbsence_Off."""
-		self.ventilation_max.to_Auto_LongAbsence_Off()
-		self.run_at_mock.assert_called_once_with(datetime.time(18), self.ventilation_max._long_absence_power_on)
+		with unittest.mock.patch.object(self.ventilation_max, "_trigger_long_absence_power_on") as trigger_on_mock:
+			self.ventilation_max.to_Auto_LongAbsence_Off()
+		self.run_at_mock.assert_called_once_with(datetime.time(18), trigger_on_mock)
+
+	def test_trigger_long_absence_power_on(self):
+		"""Test _trigger_long_absence_power_on."""
+		with unittest.mock.patch.object(self.ventilation_max, "_long_absence_power_on") as power_on_mock:
+			self.ventilation_max._trigger_long_absence_power_on()
+		power_on_mock.assert_called_once()
 
 	def test__set_hand_display_text(self):
 		"""test __set_hand_display_text."""

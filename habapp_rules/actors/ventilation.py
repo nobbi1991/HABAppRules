@@ -235,9 +235,9 @@ class _VentilationBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 	def on_enter_Auto_LongAbsence_Off(self):  # pylint: disable=invalid-name
 		"""Is called on entering of Auto_LongAbsence_Off state."""
-		self.run.at(self._config.state_long_absence.start_time, self.__trigger_long_absence_power_on)
+		self.run.at(self._config.state_long_absence.start_time, self._trigger_long_absence_power_on)
 
-	def __trigger_long_absence_power_on(self) -> None:
+	def _trigger_long_absence_power_on(self) -> None:
 		"""Trigger long absence power on."""
 		self._long_absence_power_on()
 
