@@ -1,9 +1,21 @@
+# Version 5.7.0 - 09.04.2024
+
+## Features
+
+- added possibility to add groups to ``habapp_rules.core.helper.create_additional_item``
+- added possibility to add groups to ``habapp_rules.sensors.sun.SensorBrightness`` and ``habapp_rules.sensors.sun.SensorTemperatureDifference``
+
+
+
+# Bugfix
+
+- fixed bug in ``habapp_rules.core.helper.create_additional_item`` which added a ``[%s]`` to strin items
+
 # Version 5.6.2 - 02.04.2024
 
 # Bugfix
 
 - fixed bug of all rules in ``habapp_rules.actors.ventilation`` which raised an exception if presence changed to long absence.
-
 
 # Version 5.6.1 - 01.04.2024
 
