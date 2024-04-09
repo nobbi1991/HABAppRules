@@ -41,7 +41,14 @@ class SunPositionWindow:
 class _SensorBase(HABApp.Rule):
 	"""Base class for sun sensors."""
 
-	def __init__(self, name_input: str, name_output: str, threshold: str | float, filter_tau: int, filter_instant_increase: bool = True, filter_instant_decrease: bool = False) -> None:
+	def __init__(self,
+	             name_input: str,
+	             name_output: str,
+	             threshold: str | float,
+	             filter_tau: int,
+	             filter_instant_increase: bool = True,
+	             filter_instant_decrease: bool = False,
+	             filtered_signal_groups: list[str] | None = None) -> None:
 		"""Init of base class for sun sensors.
 
 		:param name_input: name of OpenHAB input item (NumberItem)
@@ -50,6 +57,7 @@ class _SensorBase(HABApp.Rule):
 		:param filter_tau: filter constant for the exponential filter. Default is set to 20 minutes
 		:param filter_instant_increase: if set to True, increase of input values will not be filtered
 		:param filter_instant_decrease: if set to True, decrease of input values will not be filtered
+		:param filtered_signal_groups: group names where the filtered signal will be added
 		"""
 		# init HABApp Rule
 		HABApp.Rule.__init__(self)
@@ -57,7 +65,7 @@ class _SensorBase(HABApp.Rule):
 
 		# init exponential filter
 		name_input_exponential_filtered = f"H_{name_input.removeprefix('H_')}_filtered"
-		habapp_rules.core.helper.create_additional_item(name_input_exponential_filtered, "Number", name_input_exponential_filtered.replace("_", " "))
+		habapp_rules.core.helper.create_additional_item(name_input_exponential_filtered, "Number", name_input_exponential_filtered.replace("_", " "), filtered_signal_groups)
 		habapp_rules.common.filter.ExponentialFilter(name_input, name_input_exponential_filtered, filter_tau, filter_instant_increase, filter_instant_decrease)
 
 		# init items
@@ -114,7 +122,7 @@ class SensorBrightness(_SensorBase):
 	habapp_rules.sensors.sun.SensorBrightness("brightness", "sun_protection_brightness", "brightness_threshold")
 	"""
 
-	def __init__(self, name_brightness: str, name_output: str, threshold: str | float, filter_tau: int = 20 * 60, filter_instant_increase: bool = True, filter_instant_decrease: bool = False) -> None:
+	def __init__(self, name_brightness: str, name_output: str, threshold: str | float, filter_tau: int = 20 * 60, filter_instant_increase: bool = True, filter_instant_decrease: bool = False, filtered_signal_groups: list[str] | None = None) -> None:
 		"""Init of sun sensor which takes a brightness value
 
 		:param name_brightness: name of OpenHAB brightness item (NumberItem)
@@ -123,8 +131,9 @@ class SensorBrightness(_SensorBase):
 		:param filter_tau: filter constant for the exponential filter. Default is set to 20 minutes
 		:param filter_instant_increase: if set to True, increase of input values will not be filtered
 		:param filter_instant_decrease: if set to True, decrease of input values will not be filtered
+		:param filtered_signal_groups: group names where the filtered signal will be added
 		"""
-		_SensorBase.__init__(self, name_brightness, name_output, threshold, filter_tau, filter_instant_increase, filter_instant_decrease)
+		_SensorBase.__init__(self, name_brightness, name_output, threshold, filter_tau, filter_instant_increase, filter_instant_decrease, filtered_signal_groups)
 
 
 class SensorTemperatureDifference(_SensorBase):
@@ -147,7 +156,9 @@ class SensorTemperatureDifference(_SensorBase):
 	             filter_tau: int = 30 * 60,
 	             filter_instant_increase: bool = True,
 	             filter_instant_decrease: bool = False,
-	             ignore_old_values_time: int | None = None) -> None:
+	             ignore_old_values_time: int | None = None,
+	             filtered_signal_groups: list[str] | None = None
+	             ) -> None:
 		"""Init of sun sensor which takes a two or more temperature values (one in the sun and one in the shadow)
 
 		:param temperature_item_names: name of all OpenHAB temperature items (NumberItem)
@@ -157,12 +168,13 @@ class SensorTemperatureDifference(_SensorBase):
 		:param filter_instant_increase: if set to True, increase of input values will not be filtered
 		:param filter_instant_decrease: if set to True, decrease of input values will not be filtered
 		:param ignore_old_values_time: ignores values which are older than the given time in seconds. If None, all values will be taken
+		:param filtered_signal_groups: group names where the filtered signal will be added
 		"""
 		self._ignore_old_values_time = ignore_old_values_time
 		name_temperature_diff = f"H_Temperature_diff_for_{name_output}"
 		habapp_rules.core.helper.create_additional_item(name_temperature_diff, "Number", name_temperature_diff.replace("_", " "))
 
-		_SensorBase.__init__(self, name_temperature_diff, name_output, threshold, filter_tau, filter_instant_increase, filter_instant_decrease)
+		_SensorBase.__init__(self, name_temperature_diff, name_output, threshold, filter_tau, filter_instant_increase, filter_instant_decrease, filtered_signal_groups)
 
 		# init items
 		self._temperature_items = [HABApp.openhab.items.NumberItem.get_item(name) for name in temperature_item_names]

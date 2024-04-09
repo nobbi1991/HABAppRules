@@ -11,12 +11,13 @@ import habapp_rules.core.exceptions
 LOGGER = logging.getLogger(__name__)
 
 
-def create_additional_item(name: str, item_type: str, label: str | None = None) -> HABApp.openhab.items.OpenhabItem:
+def create_additional_item(name: str, item_type: str, label: str | None = None, groups: list[str] | None = None) -> HABApp.openhab.items.OpenhabItem:
 	"""Create additional item if it does not already exist
 
 	:param name: Name of item
 	:param item_type: Type of item (e.g. String)
 	:param label: Label of the item
+	:param groups: in which groups is the item
 	:return: returns the created item
 	:raises habapp_rules.core.exceptions.HabAppRulesException: if item could not be created
 	"""
@@ -25,9 +26,7 @@ def create_additional_item(name: str, item_type: str, label: str | None = None) 
 	if not HABApp.openhab.interface_sync.item_exists(name):
 		if not label:
 			label = f"{name.removeprefix('H_').replace('_', ' ')}"
-		if item_type == "String" and not label.endswith("[%s]"):
-			label = f"{label} [%s]"
-		if not HABApp.openhab.interface_sync.create_item(item_type=item_type, name=name, label=label):
+		if not HABApp.openhab.interface_sync.create_item(item_type=item_type, name=name, label=label, groups=groups):
 			raise habapp_rules.core.exceptions.HabAppRulesException(f"Could not create item '{name}'")
 		time.sleep(0.05)
 	return HABApp.openhab.items.OpenhabItem.get_item(name)

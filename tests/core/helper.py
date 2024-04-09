@@ -20,22 +20,23 @@ class TestHelperFunctions(tests.helper.test_case_base.TestCaseBase):
 		"""Test create additional item."""
 		# check if item is created if NOT existing
 		self.item_exists_mock.return_value = False
-		TestCase = collections.namedtuple("TestCase", "item_type, name, label_input, label_call")
+		TestCase = collections.namedtuple("TestCase", "item_type, name, label_input, label_call, groups")
 
 		test_cases = [
-			TestCase("Switch", "Item_name", "Some label", "Some label"),
-			TestCase("Switch", "Item_name", None, "Item name"),
-			TestCase("String", "Item_name", "Some label [%s]", "Some label [%s]"),
-			TestCase("String", "Item_name", "Some label", "Some label [%s]"),
-			TestCase("String", "Item_name", None, "Item name [%s]")
+			TestCase("Switch", "Item_name", "Some label", "Some label", None),
+			TestCase("Switch", "Item_name", None, "Item name", None),
+			TestCase("String", "Item_name", "Some label", "Some label", None),
+			TestCase("String", "Item_name", "Some label", "Some label", None),
+			TestCase("String", "Item_name", None, "Item name", None),
+			TestCase("String", "Item_name", None, "Item name", ["test_group"]),
 		]
 
 		with unittest.mock.patch("HABApp.openhab.interface_sync.create_item", spec=HABApp.openhab.interface_sync.create_item) as create_mock, \
 				unittest.mock.patch("HABApp.openhab.items.OpenhabItem.get_item"):
 			for test_case in test_cases:
 				create_mock.reset_mock()
-				habapp_rules.core.helper.create_additional_item(test_case.name, test_case.item_type, test_case.label_input)
-				create_mock.assert_called_once_with(item_type=test_case.item_type, name=f"H_{test_case.name}", label=test_case.label_call)
+				habapp_rules.core.helper.create_additional_item(test_case.name, test_case.item_type, test_case.label_input, test_case.groups)
+				create_mock.assert_called_once_with(item_type=test_case.item_type, name=f"H_{test_case.name}", label=test_case.label_call, groups=test_case.groups)
 
 		# check if item is NOT created if existing
 		self.item_exists_mock.return_value = True
