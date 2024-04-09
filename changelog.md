@@ -5,11 +5,9 @@
 - added possibility to add groups to ``habapp_rules.core.helper.create_additional_item``
 - added possibility to add groups to ``habapp_rules.sensors.sun.SensorBrightness`` and ``habapp_rules.sensors.sun.SensorTemperatureDifference``
 
-
-
 # Bugfix
 
-- fixed bug in ``habapp_rules.core.helper.create_additional_item`` which added a ``[%s]`` to strin items
+- fixed bug in ``habapp_rules.core.helper.create_additional_item`` which added a ``[%s]`` to string items
 
 # Version 5.6.2 - 02.04.2024
 
