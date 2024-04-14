@@ -5,3 +5,5 @@
 /tests/system/.coverage
 /tests/.coverage
 /.coverage
+/shelf/
+/workspace.xml
