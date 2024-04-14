@@ -13,6 +13,9 @@ import habapp_rules.system
 
 LOGGER = logging.getLogger(__name__)
 
+# todo add timer to on_enter_hand which checks if target position was hit also if hand is active
+# todo or check if the direction changed and ignore the hand detection
+
 
 # pylint: disable=no-member, too-many-instance-attributes, too-many-locals
 class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
