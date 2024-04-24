@@ -1,3 +1,9 @@
+# Version 6.0.0 - dd.mm.2024
+
+## Breaking changes
+
+- added hysteresis switch to ``habapp_rules.sensors.sun.SensorBrightness`` and ``habapp_rules.sensors.sun.SunPositionFilter``. Breaking change: Parameter order changed!
+
 # Version 5.7.0 - 09.04.2024
 
 ## Features

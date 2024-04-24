@@ -25,6 +25,7 @@ class ShadingConfig:
 	pos_door_open: ShadingPosition | None = None
 	manual_timeout: int = 0
 	door_post_time: int = 5 * 60
+	pos_sleeping_day: ShadingPosition | None = None
 
 	def __post_init__(self) -> None:
 		"""Validate configuration.
@@ -33,6 +34,9 @@ class ShadingConfig:
 		"""
 		if self.door_post_time in {0, None}:
 			self.door_post_time = 1
+
+		if self.pos_sleeping and not self.pos_sleeping_day:
+			self.pos_sleeping_day = self.pos_sleeping
 
 
 CONFIG_DEFAULT = ShadingConfig(
