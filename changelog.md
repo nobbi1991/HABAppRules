@@ -4,6 +4,10 @@
 
 - added hysteresis switch to ``habapp_rules.sensors.sun.SensorBrightness`` and ``habapp_rules.sensors.sun.SunPositionFilter``. Breaking change: Parameter order changed!
 
+## Features
+
+- added additional config to ``habapp_rules.actors.shading.Shutter`` and ``habapp_rules.actors.shading.Raffstore``, which allows to set different positions for day and night if sleeping is active
+
 # Version 5.7.0 - 09.04.2024
 
 ## Features
