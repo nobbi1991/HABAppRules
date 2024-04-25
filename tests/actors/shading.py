@@ -969,6 +969,13 @@ class TestResetAllManualHand(tests.helper.test_case_base.TestCaseBase):
 
 	def test__get_shading_objects(self):
 		"""Test __get_shading_objects."""
+		# shading objects where given
+		shading_object_1 = unittest.mock.MagicMock()
+		shading_object_2 = unittest.mock.MagicMock()
+		reset_shading_rule_2 = habapp_rules.actors.shading.ResetAllManualHand("Unittest_Reset", [shading_object_1, shading_object_2])
+		self.assertEqual([shading_object_1, shading_object_2], reset_shading_rule_2._ResetAllManualHand__get_shading_objects())
+
+		# shading objects are not set via __init__
 		with unittest.mock.patch.object(self.reset_shading_rule, "get_rule") as get_rule_mock:
 			self.reset_shading_rule._ResetAllManualHand__get_shading_objects()
 

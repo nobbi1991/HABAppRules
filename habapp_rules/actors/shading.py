@@ -656,20 +656,26 @@ class ResetAllManualHand(HABApp.Rule):
 	habapp_rules.actors.shading.ResetAllManualHand("clear_hand_manual")
 	"""
 
-	def __init__(self, name_reset_manual_hand: str) -> None:
+	def __init__(self, name_reset_manual_hand: str, shading_objects: list[_ShadingBase] | None = None) -> None:
 		"""Init of reset class.
 
 		:param name_reset_manual_hand: name of OpenHAB reset item (SwitchItem)
+		:param shading_objects: optional list of shading objects which should be reset by this rule
 		"""
+		self._shading_objects = shading_objects
+
 		HABApp.Rule.__init__(self)
+
 		self._item_reset = HABApp.openhab.items.SwitchItem.get_item(name_reset_manual_hand)
 		self._item_reset.listen_event(self._cb_reset_all, HABApp.openhab.events.ItemStateUpdatedEventFilter())
 
-	def __get_shading_objects(self) -> list[type(_ShadingBase)]:
+	def __get_shading_objects(self) -> list[_ShadingBase]:
 		"""Get all shading objects.
 
 		:return: list of shading objects
 		"""
+		if self._shading_objects:
+			return self._shading_objects
 		return [rule for rule in self.get_rule(None) if issubclass(rule.__class__, _ShadingBase)]
 
 	def _cb_reset_all(self, event: HABApp.openhab.events.ItemCommandEvent) -> None:
