@@ -1,5 +1,5 @@
 """Configuration of shading objects."""
-
+import copy
 import dataclasses
 
 
@@ -36,7 +36,7 @@ class ShadingConfig:
 			self.door_post_time = 1
 
 		if self.pos_sleeping and not self.pos_sleeping_day:
-			self.pos_sleeping_day = self.pos_sleeping
+			self.pos_sleeping_day = copy.deepcopy(self.pos_sleeping)
 
 
 CONFIG_DEFAULT = ShadingConfig(

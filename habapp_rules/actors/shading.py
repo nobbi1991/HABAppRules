@@ -13,9 +13,6 @@ import habapp_rules.system
 
 LOGGER = logging.getLogger(__name__)
 
-# todo add timer to on_enter_hand which checks if target position was hit also if hand is active
-# todo or check if the direction changed and ignore the hand detection
-
 
 # pylint: disable=no-member, too-many-instance-attributes, too-many-locals
 class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
@@ -219,9 +216,20 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 			self._previous_state = self.state
 
-	@abc.abstractmethod
 	def _set_shading_state(self) -> None:
 		"""Set shading state"""
+		if self._previous_state is None:
+			# don't change value if called during init (_previous_state == None)
+			return
+
+		self._apply_target_position(self._get_target_position())
+
+	@abc.abstractmethod
+	def _apply_target_position(self, target_position: habapp_rules.actors.config.shading.ShadingPosition) -> None:
+		"""Apply target position by sending it via the observer(s).
+
+		:param target_position: target position of the shading object
+		"""
 
 	def _get_target_position(self) -> habapp_rules.actors.config.shading.ShadingPosition | None:
 		"""Get target position for shading object.
@@ -244,7 +252,7 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 			return self._config.pos_sun_protection
 
 		if self.state == "Auto_SleepingClose":
-			return self._config.pos_sleeping
+			return self._config.pos_sleeping if self._night_active_and_configured() else self._config.pos_sleeping_day
 
 		if self.state == "Auto_NightClose":
 			if self._item_summer is not None and self._item_summer.is_on():
@@ -346,6 +354,10 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 		:param event: original trigger event
 		"""
+		if self.state == "Auto_SleepingClose":
+			target_position = self._config.pos_sleeping if event.value == "ON" else self._config.pos_sleeping_day
+			self._apply_target_position(target_position)
+
 		if event.value == "ON":
 			self._night_started()
 		else:
@@ -454,14 +466,11 @@ class Shutter(_ShadingBase):
 
 		self._instance_logger.debug(self.get_initial_log_message())
 
-	def _set_shading_state(self) -> None:
-		"""Set shading state"""
-		if self._previous_state is None:
-			# don't change value if called during init (_previous_state == None)
-			return
+	def _apply_target_position(self, target_position: habapp_rules.actors.config.shading.ShadingPosition) -> None:
+		"""Apply target position by sending it via the observer(s).
 
-		target_position = self._get_target_position()
-
+		:param target_position: target position of the shading object
+		"""
 		if target_position is None:
 			return
 
@@ -607,14 +616,11 @@ class Raffstore(_ShadingBase):
 
 		return target_position
 
-	def _set_shading_state(self) -> None:
-		"""Set shading state"""
-		if self._previous_state is None:
-			# don't change value if called during init (_previous_state == None)
-			return
+	def _apply_target_position(self, target_position: habapp_rules.actors.config.shading.ShadingPosition) -> None:
+		"""Apply target position by sending it via the observer(s).
 
-		target_position = self._get_target_position()
-
+		:param target_position: target position of the shading object
+		"""
 		if target_position is None:
 			return
 

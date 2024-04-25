@@ -333,6 +333,21 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
 		self.shading_max._set_state("Auto_NightClose")
 		self.assertEqual(None, self.shading_max._get_target_position())
 
+	def test_get_target_position_sleeping(self):
+		"""Test get_target_position if sleeping is active"""
+		config_night = habapp_rules.actors.config.shading.ShadingPosition(20, 30)
+		config_day = habapp_rules.actors.config.shading.ShadingPosition(40, 50)
+
+		self.shading_max._config.pos_sleeping = config_night
+		self.shading_max._config.pos_sleeping_day = config_day
+
+		self.shading_max.state = "Auto_SleepingClose"
+		tests.helper.oh_item.set_state("Unittest_Night", "ON")
+		self.assertEqual(config_night, self.shading_max._get_target_position())
+
+		tests.helper.oh_item.set_state("Unittest_Night", "OFF")
+		self.assertEqual(config_day, self.shading_max._get_target_position())
+
 	def test_cb_sleep_state(self):
 		"""Test _cb_sleep_state"""
 		TestCase = collections.namedtuple("TestCase", "sleep_state, started_triggered, stopped_triggered")
@@ -361,6 +376,29 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
 					stopped_mock.assert_called_once()
 				else:
 					stopped_mock.assert_not_called()
+
+	def test_cb_night(self):
+		"""Test _cb_night"""
+		config_night = habapp_rules.actors.config.shading.ShadingPosition(20, 30)
+		config_day = habapp_rules.actors.config.shading.ShadingPosition(40, 50)
+
+		self.shading_max._config.pos_sleeping = config_night
+		self.shading_max._config.pos_sleeping_day = config_day
+
+		self.shading_max.state = "Auto_SleepingClose"
+
+		with unittest.mock.patch.object(self.shading_max, "_apply_target_position") as apply_pos_mock:
+			tests.helper.oh_item.item_state_change_event("Unittest_Night", "OFF")
+		apply_pos_mock.assert_called_once_with(config_day)
+
+		with unittest.mock.patch.object(self.shading_max, "_apply_target_position") as apply_pos_mock:
+			tests.helper.oh_item.item_state_change_event("Unittest_Night", "ON")
+		apply_pos_mock.assert_called_once_with(config_night)
+
+		self.shading_max.state = "Manual"
+		with unittest.mock.patch.object(self.shading_max, "_apply_target_position") as apply_pos_mock:
+			tests.helper.oh_item.item_state_change_event("Unittest_Night", "OFF")
+		apply_pos_mock.assert_not_called()
 
 	def test_cb_hand(self):
 		"""Test _cb_hand."""
