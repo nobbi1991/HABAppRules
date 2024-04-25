@@ -5,6 +5,7 @@ import os
 import pathlib
 import sys
 import threading
+import time
 import unittest
 import unittest.mock
 
@@ -400,6 +401,20 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
 		self.shading_min.to_Auto()
 		self.shading_max.to_Auto()
 
+		# last rule command was less than a second ago
+		self.shading_min._set_shading_state_timestamp = time.time() - 0.1
+		self.shading_max._set_shading_state_timestamp = time.time() - 0.1
+
+		self.shading_min._cb_hand(unittest.mock.MagicMock())
+		self.shading_max._cb_hand(unittest.mock.MagicMock())
+
+		self.assertEqual("Auto_Open", self.shading_min.state)
+		self.assertEqual("Auto_Open", self.shading_max.state)
+
+		# last rule command was longer ago
+		self.shading_min._set_shading_state_timestamp = time.time() - 1.1
+		self.shading_max._set_shading_state_timestamp = time.time() - 1.1
+
 		self.shading_min._cb_hand(unittest.mock.MagicMock())
 		self.shading_max._cb_hand(unittest.mock.MagicMock())
 
@@ -716,6 +731,7 @@ class TestShadingShutter(tests.helper.test_case_base.TestCaseBase):
 	def test_set_shading_state(self):
 		"""Test _set_shading_state."""
 		TestCase = collections.namedtuple("TestCase", "target_pos, sent_pos")
+		self.shutter._set_shading_state_timestamp = None
 
 		test_cases = [
 			TestCase(None, None),
@@ -741,6 +757,8 @@ class TestShadingShutter(tests.helper.test_case_base.TestCaseBase):
 					send_pos_mock.assert_not_called()
 				else:
 					send_pos_mock.assert_called_once_with(test_case.sent_pos)
+
+		self.assertTrue(self.shutter._set_shading_state_timestamp > 1000)
 
 
 class TestShadingRaffstore(tests.helper.test_case_base.TestCaseBase):

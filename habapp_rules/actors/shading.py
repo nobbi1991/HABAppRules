@@ -1,6 +1,7 @@
 """Rules to manage shading objects."""
 import abc
 import logging
+import time
 
 import HABApp
 
@@ -113,6 +114,7 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		"""
 		self._config = config
 		self._value_tolerance = value_tolerance
+		self._set_shading_state_timestamp = 0
 
 		if not name_state:
 			name_state = f"H_{name_shading_position}_state"
@@ -222,6 +224,7 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 			# don't change value if called during init (_previous_state == None)
 			return
 
+		self._set_shading_state_timestamp = time.time()
 		self._apply_target_position(self._get_target_position())
 
 	@abc.abstractmethod
@@ -307,7 +310,9 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 		:param event: original trigger event
 		"""
-		self._hand_command()
+		if time.time() - self._set_shading_state_timestamp > 1.0:
+			# ignore hand commands one second after this rule triggered a position change
+			self._hand_command()
 
 	def _cb_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
 		"""Callback which is triggered if manual mode changed.

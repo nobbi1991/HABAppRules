@@ -9,6 +9,10 @@
 - added additional config to ``habapp_rules.actors.shading.Shutter`` and ``habapp_rules.actors.shading.Raffstore`` which allows to set different positions for day and night if sleeping is active
 - added possibility to pass shading objects to ``habapp_rules.actors.shading.ResetAllManualHand`` which should be reset by this rule
 
+## Bugfix
+
+- fixed bug in ``habapp_rules.actors.shading.Shutter`` and ``habapp_rules.actors.shading.Raffstore`` which caused the ``Hand`` state if MDT actors are used
+
 # Version 5.7.0 - 09.04.2024
 
 ## Features
