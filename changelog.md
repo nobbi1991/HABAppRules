@@ -8,6 +8,8 @@
 
 - added additional config to ``habapp_rules.actors.shading.Shutter`` and ``habapp_rules.actors.shading.Raffstore`` which allows to set different positions for day and night if sleeping is active
 - added possibility to pass shading objects to ``habapp_rules.actors.shading.ResetAllManualHand`` which should be reset by this rule
+- bumped holidays to 0.47
+- bumped matplotlib to 3.8.4
 
 ## Bugfix
 
