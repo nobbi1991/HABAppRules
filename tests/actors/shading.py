@@ -348,7 +348,7 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
 			tests.helper.oh_item.set_state("Unittest_Night", "OFF")
 			self.assertEqual(config_day, self.shading_max._get_target_position())
 
-		# item night ist None
+		# item night is None
 		with (unittest.mock.patch.object(self.shading_max._config, "pos_sleeping", config_night),
 		      unittest.mock.patch.object(self.shading_max._config, "pos_sleeping_day", config_day),
 		      unittest.mock.patch.object(self.shading_max, "_item_night", None)):
