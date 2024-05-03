@@ -1,6 +1,7 @@
 """Rules to manage shading objects."""
 import abc
 import logging
+import time
 
 import HABApp
 
@@ -113,6 +114,7 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		"""
 		self._config = config
 		self._value_tolerance = value_tolerance
+		self._set_shading_state_timestamp = 0
 
 		if not name_state:
 			name_state = f"H_{name_shading_position}_state"
@@ -216,9 +218,21 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 			self._previous_state = self.state
 
-	@abc.abstractmethod
 	def _set_shading_state(self) -> None:
 		"""Set shading state"""
+		if self._previous_state is None:
+			# don't change value if called during init (_previous_state == None)
+			return
+
+		self._set_shading_state_timestamp = time.time()
+		self._apply_target_position(self._get_target_position())
+
+	@abc.abstractmethod
+	def _apply_target_position(self, target_position: habapp_rules.actors.config.shading.ShadingPosition) -> None:
+		"""Apply target position by sending it via the observer(s).
+
+		:param target_position: target position of the shading object
+		"""
 
 	def _get_target_position(self) -> habapp_rules.actors.config.shading.ShadingPosition | None:
 		"""Get target position for shading object.
@@ -241,7 +255,9 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 			return self._config.pos_sun_protection
 
 		if self.state == "Auto_SleepingClose":
-			return self._config.pos_sleeping
+			if self._item_night is None:
+				return self._config.pos_sleeping
+			return self._config.pos_sleeping if self._item_night.is_on() else self._config.pos_sleeping_day
 
 		if self.state == "Auto_NightClose":
 			if self._item_summer is not None and self._item_summer.is_on():
@@ -296,7 +312,12 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 		:param event: original trigger event
 		"""
-		self._hand_command()
+		if time.time() - self._set_shading_state_timestamp > 1.5:
+			# ignore hand commands one second after this rule triggered a position change
+			self._instance_logger.debug(f"Detected hand command. The event was {event}")
+			self._hand_command()
+		else:
+			self._instance_logger.debug(f"Detected hand command, ignoring it. The event was {event}")
 
 	def _cb_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
 		"""Callback which is triggered if manual mode changed.
@@ -343,6 +364,10 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 		:param event: original trigger event
 		"""
+		if self.state == "Auto_SleepingClose":
+			target_position = self._config.pos_sleeping if event.value == "ON" else self._config.pos_sleeping_day
+			self._apply_target_position(target_position)
+
 		if event.value == "ON":
 			self._night_started()
 		else:
@@ -451,14 +476,11 @@ class Shutter(_ShadingBase):
 
 		self._instance_logger.debug(self.get_initial_log_message())
 
-	def _set_shading_state(self) -> None:
-		"""Set shading state"""
-		if self._previous_state is None:
-			# don't change value if called during init (_previous_state == None)
-			return
+	def _apply_target_position(self, target_position: habapp_rules.actors.config.shading.ShadingPosition) -> None:
+		"""Apply target position by sending it via the observer(s).
 
-		target_position = self._get_target_position()
-
+		:param target_position: target position of the shading object
+		"""
 		if target_position is None:
 			return
 
@@ -604,14 +626,11 @@ class Raffstore(_ShadingBase):
 
 		return target_position
 
-	def _set_shading_state(self) -> None:
-		"""Set shading state"""
-		if self._previous_state is None:
-			# don't change value if called during init (_previous_state == None)
-			return
+	def _apply_target_position(self, target_position: habapp_rules.actors.config.shading.ShadingPosition) -> None:
+		"""Apply target position by sending it via the observer(s).
 
-		target_position = self._get_target_position()
-
+		:param target_position: target position of the shading object
+		"""
 		if target_position is None:
 			return
 
@@ -647,20 +666,26 @@ class ResetAllManualHand(HABApp.Rule):
 	habapp_rules.actors.shading.ResetAllManualHand("clear_hand_manual")
 	"""
 
-	def __init__(self, name_reset_manual_hand: str) -> None:
+	def __init__(self, name_reset_manual_hand: str, shading_objects: list[_ShadingBase] | None = None) -> None:
 		"""Init of reset class.
 
 		:param name_reset_manual_hand: name of OpenHAB reset item (SwitchItem)
+		:param shading_objects: optional list of shading objects which should be reset by this rule
 		"""
+		self._shading_objects = shading_objects
+
 		HABApp.Rule.__init__(self)
+
 		self._item_reset = HABApp.openhab.items.SwitchItem.get_item(name_reset_manual_hand)
 		self._item_reset.listen_event(self._cb_reset_all, HABApp.openhab.events.ItemStateUpdatedEventFilter())
 
-	def __get_shading_objects(self) -> list[type(_ShadingBase)]:
+	def __get_shading_objects(self) -> list[_ShadingBase]:
 		"""Get all shading objects.
 
 		:return: list of shading objects
 		"""
+		if self._shading_objects:
+			return self._shading_objects
 		return [rule for rule in self.get_rule(None) if issubclass(rule.__class__, _ShadingBase)]
 
 	def _cb_reset_all(self, event: HABApp.openhab.events.ItemCommandEvent) -> None:
