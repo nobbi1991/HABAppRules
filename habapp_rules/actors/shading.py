@@ -312,9 +312,12 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 		:param event: original trigger event
 		"""
-		if time.time() - self._set_shading_state_timestamp > 1.0:
+		if time.time() - self._set_shading_state_timestamp > 1.5:
 			# ignore hand commands one second after this rule triggered a position change
+			self._instance_logger.debug(f"Detected hand command. The event was {event}")
 			self._hand_command()
+		else:
+			self._instance_logger.debug(f"Detected hand command, ignoring it. The event was {event}")
 
 	def _cb_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
 		"""Callback which is triggered if manual mode changed.

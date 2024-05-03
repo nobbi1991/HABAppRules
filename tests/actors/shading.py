@@ -425,8 +425,8 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
 		self.assertEqual("Auto_Open", self.shading_max.state)
 
 		# last rule command was longer ago
-		self.shading_min._set_shading_state_timestamp = time.time() - 1.1
-		self.shading_max._set_shading_state_timestamp = time.time() - 1.1
+		self.shading_min._set_shading_state_timestamp = time.time() - 1.6
+		self.shading_max._set_shading_state_timestamp = time.time() - 1.6
 
 		self.shading_min._cb_hand(unittest.mock.MagicMock())
 		self.shading_max._cb_hand(unittest.mock.MagicMock())
