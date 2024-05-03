@@ -1,3 +1,9 @@
+# Version 6.0.0 - dd.mm.2024
+
+## Features
+
+- send update of summer / winter of ``habapp_rules.system.summer_winter.SummerWinter`` after every check. If this rule is used to send the summer / winter state to the KNX bus, this ensures, that the state is sent at least once a day
+
 # Version 5.7.0 - 09.04.2024
 
 ## Features
