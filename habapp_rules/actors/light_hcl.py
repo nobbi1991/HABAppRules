@@ -1,4 +1,5 @@
 """Light HCL rules."""
+
 import abc
 import datetime
 import logging
@@ -23,41 +24,48 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
     states = [
         {"name": "Manual"},
         {"name": "Hand", "timeout": 99, "on_timeout": "hand_timeout"},
-        {"name": "Auto", "initial": "Init", "children": [
-            {"name": "Init"},
-            {"name": "HCL"},
-            {"name": "Sleep", "initial": "Active", "children": [
-                {"name": "Active"},
-                {"name": "Post", "timeout": 1, "on_timeout": "post_sleep_timeout"},
-            ]},
-            {"name": "Focus"},
-        ]},
+        {
+            "name": "Auto",
+            "initial": "Init",
+            "children": [
+                {"name": "Init"},
+                {"name": "HCL"},
+                {
+                    "name": "Sleep",
+                    "initial": "Active",
+                    "children": [
+                        {"name": "Active"},
+                        {"name": "Post", "timeout": 1, "on_timeout": "post_sleep_timeout"},
+                    ],
+                },
+                {"name": "Focus"},
+            ],
+        },
     ]
 
     trans = [
         {"trigger": "manual_on", "source": ["Auto", "Hand"], "dest": "Manual"},
         {"trigger": "manual_off", "source": "Manual", "dest": "Auto"},
-
         {"trigger": "hand_on", "source": "Auto", "dest": "Hand"},
         {"trigger": "hand_timeout", "source": "Hand", "dest": "Auto"},
-
         {"trigger": "sleep_start", "source": ["Auto_HCL", "Auto_Focus"], "dest": "Auto_Sleep"},
         {"trigger": "sleep_end", "source": "Auto_Sleep_Active", "dest": "Auto_Sleep_Post"},
         {"trigger": "post_sleep_timeout", "source": "Auto_Sleep_Post", "dest": "Auto_HCL"},
-
         {"trigger": "focus_start", "source": ["Auto_HCL", "Auto_Sleep"], "dest": "Auto_Focus"},
         {"trigger": "focus_end", "source": "Auto_Focus", "dest": "Auto_HCL"},
     ]
 
-    def __init__(self,
-                 name_color: str,
-                 name_manual: str,
-                 config: habapp_rules.actors.config.light_hcl.LightHclConfig,
-                 name_sleep_state: str | None = None,
-                 name_focus: str | None = None,
-                 name_switch_on: str | None = None,
-                 name_state: str | None = None,
-                 state_label: str | None = None) -> None:
+    def __init__(
+        self,
+        name_color: str,
+        name_manual: str,
+        config: habapp_rules.actors.config.light_hcl.LightHclConfig,
+        name_sleep_state: str | None = None,
+        name_focus: str | None = None,
+        name_switch_on: str | None = None,
+        name_state: str | None = None,
+        state_label: str | None = None,
+    ) -> None:
         """Init base class.
 
         :param name_color: Name of openHAB color item (NumberItem)
@@ -89,12 +97,7 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
         # init state machine
         self._previous_state = None
-        self.state_machine = habapp_rules.core.state_machine_rule.HierarchicalStateMachineWithTimeout(
-            model=self,
-            states=self.states,
-            transitions=self.trans,
-            ignore_invalid_triggers=True,
-            after_state_change="_update_openhab_state")
+        self.state_machine = habapp_rules.core.state_machine_rule.HierarchicalStateMachineWithTimeout(model=self, states=self.states, transitions=self.trans, ignore_invalid_triggers=True, after_state_change="_update_openhab_state")
         self._set_initial_state()
 
         self._set_timeouts()
@@ -255,17 +258,18 @@ class HclElevation(_HclBase):
     )
     """
 
-    def __init__(self,
-                 name_elevation: str,
-                 name_color: str,
-                 name_manual: str,
-                 config: habapp_rules.actors.config.light_hcl.LightHclConfig,
-                 name_sleep_state: str | None = None,
-                 name_focus: str | None = None,
-                 name_switch_on: str | None = None,
-                 name_state: str | None = None,
-                 state_label: str | None = None,
-                 ) -> None:
+    def __init__(
+        self,
+        name_elevation: str,
+        name_color: str,
+        name_manual: str,
+        config: habapp_rules.actors.config.light_hcl.LightHclConfig,
+        name_sleep_state: str | None = None,
+        name_focus: str | None = None,
+        name_switch_on: str | None = None,
+        name_state: str | None = None,
+        state_label: str | None = None,
+    ) -> None:
         """Init sun elevation based HCL rule.
 
         :param name_elevation: Name of sun elevation openHAB item (NumberItem)
@@ -331,16 +335,17 @@ class HclTime(_HclBase):
     )
     """
 
-    def __init__(self,
-                 name_color: str,
-                 name_manual: str,
-                 config: habapp_rules.actors.config.light_hcl.LightHclConfig,
-                 name_sleep_state: str | None = None,
-                 name_focus: str | None = None,
-                 name_switch_on: str | None = None,
-                 name_state: str | None = None,
-                 state_label: str | None = None,
-                 ) -> None:
+    def __init__(
+        self,
+        name_color: str,
+        name_manual: str,
+        config: habapp_rules.actors.config.light_hcl.LightHclConfig,
+        name_sleep_state: str | None = None,
+        name_focus: str | None = None,
+        name_switch_on: str | None = None,
+        name_state: str | None = None,
+        state_label: str | None = None,
+    ) -> None:
         """Init time based HCL rule.
 
         :param name_color: Name of openHAB color item (NumberItem)

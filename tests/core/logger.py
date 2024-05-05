@@ -1,4 +1,5 @@
 """Unit tests for habapp_rules logger."""
+
 import logging
 import unittest
 import unittest.mock
@@ -14,8 +15,7 @@ class TestLoggerFunctions(unittest.TestCase):
         stream_handler_mock = unittest.mock.MagicMock()
         file_handler_mock = unittest.mock.MagicMock()
 
-        with unittest.mock.patch("logging.StreamHandler", return_value=stream_handler_mock), \
-                unittest.mock.patch("HABApp.config.logging.MidnightRotatingFileHandler", return_value=file_handler_mock):
+        with unittest.mock.patch("logging.StreamHandler", return_value=stream_handler_mock), unittest.mock.patch("HABApp.config.logging.MidnightRotatingFileHandler", return_value=file_handler_mock):
             habapp_rules.core.logger.setup_logger()
 
             stream_handler_mock.setFormatter.assert_called_once()

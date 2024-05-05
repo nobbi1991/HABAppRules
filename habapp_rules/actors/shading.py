@@ -1,4 +1,5 @@
 """Rules to manage shading objects."""
+
 import abc
 import logging
 import time
@@ -22,17 +23,25 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
         {"name": "WindAlarm"},
         {"name": "Manual"},
         {"name": "Hand", "timeout": 20 * 3600, "on_timeout": "_auto_hand_timeout"},
-        {"name": "Auto", "initial": "Init", "children": [
-            {"name": "Init"},
-            {"name": "Open"},
-            {"name": "DoorOpen", "initial": "Open", "children": [
+        {
+            "name": "Auto",
+            "initial": "Init",
+            "children": [
+                {"name": "Init"},
                 {"name": "Open"},
-                {"name": "PostOpen", "timeout": 5 * 60, "on_timeout": "_timeout_post_door_open"},
-            ]},
-            {"name": "NightClose"},
-            {"name": "SleepingClose"},
-            {"name": "SunProtection"},
-        ]},
+                {
+                    "name": "DoorOpen",
+                    "initial": "Open",
+                    "children": [
+                        {"name": "Open"},
+                        {"name": "PostOpen", "timeout": 5 * 60, "on_timeout": "_timeout_post_door_open"},
+                    ],
+                },
+                {"name": "NightClose"},
+                {"name": "SleepingClose"},
+                {"name": "SunProtection"},
+            ],
+        },
     ]
 
     trans = [
@@ -40,57 +49,52 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
         {"trigger": "_wind_alarm_on", "source": ["Auto", "Hand", "Manual"], "dest": "WindAlarm"},
         {"trigger": "_wind_alarm_off", "source": "WindAlarm", "dest": "Manual", "conditions": "_manual_active"},
         {"trigger": "_wind_alarm_off", "source": "WindAlarm", "dest": "Auto", "unless": "_manual_active"},
-
         # manual
         {"trigger": "_manual_on", "source": ["Auto", "Hand"], "dest": "Manual"},
         {"trigger": "_manual_off", "source": "Manual", "dest": "Auto"},
-
         # hand
         {"trigger": "_hand_command", "source": ["Auto"], "dest": "Hand"},
         {"trigger": "_auto_hand_timeout", "source": "Hand", "dest": "Auto"},
-
         # sun
         {"trigger": "_sun_on", "source": "Auto_Open", "dest": "Auto_SunProtection"},
         {"trigger": "_sun_off", "source": "Auto_SunProtection", "dest": "Auto_Open"},
-
         # sleep
         {"trigger": "_sleep_started", "source": ["Auto_Open", "Auto_NightClose", "Auto_SunProtection"], "dest": "Auto_SleepingClose"},
         {"trigger": "_sleep_started", "source": "Hand", "dest": "Auto"},
         {"trigger": "_sleep_stopped", "source": "Auto_SleepingClose", "dest": "Auto_SunProtection", "conditions": "_sun_protection_active_and_configured"},
         {"trigger": "_sleep_stopped", "source": "Auto_SleepingClose", "dest": "Auto_NightClose", "conditions": ["_night_active_and_configured"]},
         {"trigger": "_sleep_stopped", "source": "Auto_SleepingClose", "dest": "Auto_Open", "unless": ["_night_active_and_configured", "_sun_protection_active_and_configured"]},
-
         # door
         {"trigger": "_door_open", "source": ["Auto_NightClose", "Auto_SunProtection", "Auto_SleepingClose", "Auto_Open"], "dest": "Auto_DoorOpen"},
         {"trigger": "_door_open", "source": "Auto_DoorOpen_PostOpen", "dest": "Auto_DoorOpen_Open"},
         {"trigger": "_door_closed", "source": "Auto_DoorOpen_Open", "dest": "Auto_DoorOpen_PostOpen"},
         {"trigger": "_timeout_post_door_open", "source": "Auto_DoorOpen_PostOpen", "dest": "Auto_Init"},
-
         # night close
         {"trigger": "_night_started", "source": ["Auto_Open", "Auto_SunProtection"], "dest": "Auto_NightClose", "conditions": "_night_active_and_configured"},
         {"trigger": "_night_stopped", "source": "Auto_NightClose", "dest": "Auto_SunProtection", "conditions": "_sun_protection_active_and_configured"},
         {"trigger": "_night_stopped", "source": "Auto_NightClose", "dest": "Auto_Open", "unless": ["_sun_protection_active_and_configured"]},
-
     ]
     _item_shading_position: HABApp.openhab.items.rollershutter_item.RollershutterItem | HABApp.openhab.items.dimmer_item.DimmerItem
     _state_observer_pos: habapp_rules.actors.state_observer.StateObserverRollerShutter | habapp_rules.actors.state_observer.StateObserverDimmer
 
-    def __init__(self,  # noqa: PLR0913
-                 name_shading_position: str,
-                 name_manual: str,
-                 config: habapp_rules.actors.config.shading.ShadingConfig,
-                 shading_position_control_names: list[str] | None = None,
-                 shading_position_group_names: list[str] | None = None,
-                 name_wind_alarm: str | None = None,
-                 name_sun_protection: str | None = None,
-                 name_sleeping_state: str | None = None,
-                 name_night: str | None = None,
-                 name_door: str | None = None,
-                 name_summer: str | None = None,
-                 name_hand_manual_is_active_feedback: str | None = None,
-                 name_state: str | None = None,
-                 state_label: str | None = None,
-                 value_tolerance: int = 0) -> None:
+    def __init__(  # noqa: PLR0913
+        self,
+        name_shading_position: str,
+        name_manual: str,
+        config: habapp_rules.actors.config.shading.ShadingConfig,
+        shading_position_control_names: list[str] | None = None,
+        shading_position_group_names: list[str] | None = None,
+        name_wind_alarm: str | None = None,
+        name_sun_protection: str | None = None,
+        name_sleeping_state: str | None = None,
+        name_night: str | None = None,
+        name_door: str | None = None,
+        name_summer: str | None = None,
+        name_hand_manual_is_active_feedback: str | None = None,
+        name_state: str | None = None,
+        state_label: str | None = None,
+        value_tolerance: int = 0,
+    ) -> None:
         """Init of _ShadingBase.
 
         :param name_shading_position:  name of OpenHAB shading item (RollershutterItem | DimmerItem)
@@ -132,12 +136,7 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
         # init state machine
         self._previous_state = None
-        self.state_machine = habapp_rules.core.state_machine_rule.HierarchicalStateMachineWithTimeout(
-            model=self,
-            states=self.states,
-            transitions=self.trans,
-            ignore_invalid_triggers=True,
-            after_state_change="_update_openhab_state")
+        self.state_machine = habapp_rules.core.state_machine_rule.HierarchicalStateMachineWithTimeout(model=self, states=self.states, transitions=self.trans, ignore_invalid_triggers=True, after_state_change="_update_openhab_state")
         self._set_initial_state()
         self._check_config()
         self._apply_config()
@@ -417,22 +416,24 @@ class Shutter(_ShadingBase):
     )
     """
 
-    def __init__(self,  # noqa: PLR0913
-                 name_shading_position: str,
-                 name_manual: str,
-                 config: habapp_rules.actors.config.shading.ShadingConfig,
-                 shading_position_control_names: list[str] | None = None,
-                 shading_position_group_names: list[str] | None = None,
-                 name_wind_alarm: str | None = None,
-                 name_sun_protection: str | None = None,
-                 name_sleeping_state: str | None = None,
-                 name_night: str | None = None,
-                 name_door: str | None = None,
-                 name_summer: str | None = None,
-                 name_hand_manual_is_active_feedback: str | None = None,
-                 name_state: str | None = None,
-                 state_label: str | None = None,
-                 value_tolerance: int = 0) -> None:
+    def __init__(  # noqa: PLR0913
+        self,
+        name_shading_position: str,
+        name_manual: str,
+        config: habapp_rules.actors.config.shading.ShadingConfig,
+        shading_position_control_names: list[str] | None = None,
+        shading_position_group_names: list[str] | None = None,
+        name_wind_alarm: str | None = None,
+        name_sun_protection: str | None = None,
+        name_sleeping_state: str | None = None,
+        name_night: str | None = None,
+        name_door: str | None = None,
+        name_summer: str | None = None,
+        name_hand_manual_is_active_feedback: str | None = None,
+        name_state: str | None = None,
+        state_label: str | None = None,
+        value_tolerance: int = 0,
+    ) -> None:
         """Init of Raffstore object.
 
         :param name_shading_position: name of OpenHAB shading item (RollershutterItem)
@@ -525,24 +526,26 @@ class Raffstore(_ShadingBase):
     )
     """
 
-    def __init__(self,  # noqa: PLR0913
-                 name_shading_position: str,
-                 name_slat: str,
-                 name_manual: str,
-                 config: habapp_rules.actors.config.shading.ShadingConfig,
-                 shading_position_control_names: list[str] | None = None,
-                 shading_position_group_names: list[str] | None = None,
-                 name_wind_alarm: str | None = None,
-                 name_sun_protection: str | None = None,
-                 name_sun_protection_slat: str | None = None,
-                 name_sleeping_state: str | None = None,
-                 name_night: str | None = None,
-                 name_door: str | None = None,
-                 name_summer: str | None = None,
-                 name_hand_manual_is_active_feedback: str | None = None,
-                 name_state: str | None = None,
-                 state_label: str | None = None,
-                 value_tolerance: int = 0) -> None:
+    def __init__(  # noqa: PLR0913
+        self,
+        name_shading_position: str,
+        name_slat: str,
+        name_manual: str,
+        config: habapp_rules.actors.config.shading.ShadingConfig,
+        shading_position_control_names: list[str] | None = None,
+        shading_position_group_names: list[str] | None = None,
+        name_wind_alarm: str | None = None,
+        name_sun_protection: str | None = None,
+        name_sun_protection_slat: str | None = None,
+        name_sleeping_state: str | None = None,
+        name_night: str | None = None,
+        name_door: str | None = None,
+        name_summer: str | None = None,
+        name_hand_manual_is_active_feedback: str | None = None,
+        name_state: str | None = None,
+        state_label: str | None = None,
+        value_tolerance: int = 0,
+    ) -> None:
         """Init of Raffstore object.
 
         :param name_shading_position: name of OpenHAB shading item (RollershutterItem)
@@ -723,12 +726,9 @@ class SlatValueSun(HABApp.Rule):
 
     _item_slat_value: HABApp.openhab.items.dimmer_item.DimmerItem | HABApp.openhab.items.number_item.NumberItem
 
-    def __init__(self,
-                 name_sun_elevation: str,
-                 name_slat_value: str,
-                 elevation_slat_characteristic: list[(float | int, float | int)],
-                 name_summer: str | None = None,
-                 elevation_slat_characteristic_summer: list[(float | int, float | int)] | None = None) -> None:
+    def __init__(
+        self, name_sun_elevation: str, name_slat_value: str, elevation_slat_characteristic: list[(float | int, float | int)], name_summer: str | None = None, elevation_slat_characteristic_summer: list[(float | int, float | int)] | None = None
+    ) -> None:
         """Init SlatValueSun.
 
         :param name_sun_elevation: name of OpenHAB sun elevation item (NumberItem)

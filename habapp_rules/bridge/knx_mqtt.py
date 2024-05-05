@@ -1,4 +1,5 @@
 """Rules for bridging KNX controller to MQTT items."""
+
 import logging
 
 import HABApp

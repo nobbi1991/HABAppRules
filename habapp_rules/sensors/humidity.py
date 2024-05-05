@@ -1,4 +1,5 @@
 """Rule for evaluating a humidity sensor."""
+
 import logging
 
 import HABApp
@@ -15,10 +16,14 @@ class HumiditySwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
 
     states = [
         {"name": "off"},
-        {"name": "on", "initial": "HighHumidity", "children": [
-            {"name": "HighHumidity"},
-            {"name": "Extended", "timeout": 99, "on_timeout": "on_extended_timeout"},
-        ]},
+        {
+            "name": "on",
+            "initial": "HighHumidity",
+            "children": [
+                {"name": "HighHumidity"},
+                {"name": "Extended", "timeout": 99, "on_timeout": "on_extended_timeout"},
+            ],
+        },
     ]
 
     trans = [
@@ -28,13 +33,7 @@ class HumiditySwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
         {"trigger": "on_extended_timeout", "source": "on_Extended", "dest": "off"},
     ]
 
-    def __init__(self,
-                 name_humidity: str,
-                 name_switch: str,
-                 absolute_threshold: float = 65,
-                 extended_time: int = 10 * 60,
-                 name_state: str | None = None,
-                 state_label: str | None = None) -> None:
+    def __init__(self, name_humidity: str, name_switch: str, absolute_threshold: float = 65, extended_time: int = 10 * 60, name_state: str | None = None, state_label: str | None = None) -> None:
         """Init humidity rule.
 
         :param name_humidity: Name of OpenHAB NumberItem which holds the humidity
@@ -57,12 +56,7 @@ class HumiditySwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
 
         # init state machine
         self._previous_state = None
-        self.state_machine = habapp_rules.core.state_machine_rule.HierarchicalStateMachineWithTimeout(
-            model=self,
-            states=self.states,
-            transitions=self.trans,
-            ignore_invalid_triggers=True,
-            after_state_change="_update_openhab_state")
+        self.state_machine = habapp_rules.core.state_machine_rule.HierarchicalStateMachineWithTimeout(model=self, states=self.states, transitions=self.trans, ignore_invalid_triggers=True, after_state_change="_update_openhab_state")
         self._set_initial_state()
 
         self.state_machine.get_state("on_Extended").timeout = extended_time

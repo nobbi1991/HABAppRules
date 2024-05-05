@@ -1,4 +1,5 @@
 """Tests for SummerWinter Rule."""
+
 import collections
 import datetime
 import logging
@@ -133,7 +134,6 @@ class TestSummerWinter(tests.helper.test_case_base.TestCaseBase):
             TestCase([16.24] * 5, False, False),
             TestCase([16.25] * 5, False, True),
             TestCase([16.26] * 5, False, True),
-
             TestCase([15.74] * 5, True, False),
             TestCase([15.75] * 5, True, True),
             TestCase([15.76] * 5, True, True),
@@ -151,8 +151,7 @@ class TestSummerWinter(tests.helper.test_case_base.TestCaseBase):
 
     def test_cb_update_summer(self) -> None:
         """Test correct functionality of summer check callback."""
-        with unittest.mock.patch.object(self._summer_winter, "_SummerWinter__is_summer") as is_summer_mock, \
-                unittest.mock.patch.object(self._summer_winter, "_item_last_check", spec=HABApp.openhab.items.datetime_item.DatetimeItem) as last_check_mock:
+        with unittest.mock.patch.object(self._summer_winter, "_SummerWinter__is_summer") as is_summer_mock, unittest.mock.patch.object(self._summer_winter, "_item_last_check", spec=HABApp.openhab.items.datetime_item.DatetimeItem) as last_check_mock:
             # switch from winter to summer
             is_summer_mock.return_value = True
             self._summer_winter._cb_update_summer()
@@ -191,7 +190,9 @@ class TestSummerWinter(tests.helper.test_case_base.TestCaseBase):
                 self.assertEqual(4, last_check_mock.oh_send_command.call_count)
 
         # exception from __is_summer
-        with unittest.mock.patch.object(self._summer_winter, "_SummerWinter__is_summer", side_effect=habapp_rules.system.summer_winter.SummerWinterException("No update")), \
-                unittest.mock.patch.object(self._summer_winter, "_instance_logger", spec=logging.Logger) as logger_mock:
+        with (
+            unittest.mock.patch.object(self._summer_winter, "_SummerWinter__is_summer", side_effect=habapp_rules.system.summer_winter.SummerWinterException("No update")),
+            unittest.mock.patch.object(self._summer_winter, "_instance_logger", spec=logging.Logger) as logger_mock,
+        ):
             self._summer_winter._cb_update_summer()
             logger_mock.exception.assert_called_once()

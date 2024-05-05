@@ -1,4 +1,5 @@
 """Unit-test for filter functions / rules."""
+
 import collections
 import unittest.mock
 
@@ -27,10 +28,12 @@ class TestExponentialFilter(tests.helper.test_case_base.TestCaseBase):
 
     def test__init__(self) -> None:
         """Test __init__."""
-        self._rule_run_mock.every.assert_has_calls([  # check if self.run.every was called
-            unittest.mock.call(None, 2.0, self.filter._cb_cyclic_calculate_and_update_output),
-            unittest.mock.call(None, 20.0, self.filter_increase._cb_cyclic_calculate_and_update_output),
-        ])
+        self._rule_run_mock.every.assert_has_calls(
+            [  # check if self.run.every was called
+                unittest.mock.call(None, 2.0, self.filter._cb_cyclic_calculate_and_update_output),
+                unittest.mock.call(None, 20.0, self.filter_increase._cb_cyclic_calculate_and_update_output),
+            ]
+        )
 
         self.assertEqual("Unittest_Raw", self.filter._item_raw.name)
         self.assertEqual("Unittest_Raw", self.filter_increase._item_raw.name)
@@ -86,13 +89,14 @@ class TestExponentialFilter(tests.helper.test_case_base.TestCaseBase):
         TestCase = collections.namedtuple("TestCase", "new_value, previous_value, instant_increase, instant_decrease, expected_value")
 
         test_cases = [
+            # new value is 200
             TestCase(200, 100, False, False, 100),
             TestCase(200, 100, False, True, 100),
             TestCase(200, 100, True, False, 200),
             TestCase(200, None, False, False, 200),
             TestCase(200, None, False, True, 200),
             TestCase(200, None, True, False, 200),
-
+            # new value is 50
             TestCase(50, 100, False, False, 100),
             TestCase(50, 100, False, True, 50),
             TestCase(50, 100, True, False, 100),

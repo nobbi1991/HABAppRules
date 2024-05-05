@@ -1,4 +1,5 @@
 """Implementations for observing states of switch / dimmer / roller shutter."""
+
 from __future__ import annotations
 
 import abc

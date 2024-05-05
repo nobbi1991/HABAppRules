@@ -1,4 +1,5 @@
 """Rule to detect presence or absence."""
+
 import logging
 import threading
 
@@ -77,12 +78,7 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
         self.__phone_items = [HABApp.openhab.items.SwitchItem.get_item(name) for name in phone_names]
 
         # init state machine
-        self.state_machine = habapp_rules.core.state_machine_rule.StateMachineWithTimeout(
-            model=self,
-            states=self.states,
-            transitions=self.trans,
-            ignore_invalid_triggers=True,
-            after_state_change="_update_openhab_state")
+        self.state_machine = habapp_rules.core.state_machine_rule.StateMachineWithTimeout(model=self, states=self.states, transitions=self.trans, ignore_invalid_triggers=True, after_state_change="_update_openhab_state")
         self._set_initial_state()
 
         # add callbacks

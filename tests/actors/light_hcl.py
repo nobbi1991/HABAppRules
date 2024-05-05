@@ -1,4 +1,5 @@
 """Test light HCL rules."""
+
 import collections
 import datetime
 import pathlib
@@ -37,17 +38,11 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBase):
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_State_max", None)
 
         self._config_min = habapp_rules.actors.config.light_hcl.LightHclConfig(
-            [(-10, 3000),
-             (-2, 3800),
-             (0, 4200.0),
-             (10, 5000)],
+            [(-10, 3000), (-2, 3800), (0, 4200.0), (10, 5000)],
         )
 
         self._config_max = habapp_rules.actors.config.light_hcl.LightHclConfig(
-            [(-10, 3000),
-             (-2, 3800),
-             (0, 4200.0),
-             (10, 5000)],
+            [(-10, 3000), (-2, 3800), (0, 4200.0), (10, 5000)],
             30 * 60,
             3000,
             500,
@@ -79,11 +74,8 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBase):
         picture_dir.mkdir(parents=True, exist_ok=True)
 
         graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
-            model=tests.helper.graph_machines.FakeModel(),
-            states=self._hcl_elevation_min.states,
-            transitions=self._hcl_elevation_min.trans,
-            initial=self._hcl_elevation_min.state,
-            show_conditions=True)
+            model=tests.helper.graph_machines.FakeModel(), states=self._hcl_elevation_min.states, transitions=self._hcl_elevation_min.trans, initial=self._hcl_elevation_min.state, show_conditions=True
+        )
 
         graph.get_graph().draw(picture_dir / "HCL_Base.png", format="png", prog="dot")
 
@@ -97,7 +89,6 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBase):
             TestCase(False, False, False, True, True),
             TestCase(False, False, True, False, True),
             TestCase(False, False, True, True, False),
-
             # sleep
             TestCase(False, False, False, False, False),
             TestCase(False, True, False, False, True),
@@ -141,17 +132,14 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBase):
             TestCase("OFF", "OFF", habapp_rules.system.SleepState.PRE_SLEEPING, "Auto_HCL", "Auto_Sleep"),
             TestCase("OFF", "OFF", habapp_rules.system.SleepState.SLEEPING, "Auto_HCL", "Auto_Sleep"),
             TestCase("OFF", "OFF", habapp_rules.system.SleepState.POST_SLEEPING, "Auto_HCL", "Auto_HCL"),
-
             TestCase("OFF", "ON", habapp_rules.system.SleepState.AWAKE, "Auto_HCL", "Auto_Focus"),
             TestCase("OFF", "ON", habapp_rules.system.SleepState.PRE_SLEEPING, "Auto_HCL", "Auto_Sleep"),
             TestCase("OFF", "ON", habapp_rules.system.SleepState.SLEEPING, "Auto_HCL", "Auto_Sleep"),
             TestCase("OFF", "ON", habapp_rules.system.SleepState.POST_SLEEPING, "Auto_HCL", "Auto_Focus"),
-
             TestCase("ON", "OFF", habapp_rules.system.SleepState.AWAKE, "Manual", "Manual"),
             TestCase("ON", "OFF", habapp_rules.system.SleepState.PRE_SLEEPING, "Manual", "Manual"),
             TestCase("ON", "OFF", habapp_rules.system.SleepState.SLEEPING, "Manual", "Manual"),
             TestCase("ON", "OFF", habapp_rules.system.SleepState.POST_SLEEPING, "Manual", "Manual"),
-
             TestCase("ON", "ON", habapp_rules.system.SleepState.AWAKE, "Manual", "Manual"),
             TestCase("ON", "ON", habapp_rules.system.SleepState.PRE_SLEEPING, "Manual", "Manual"),
             TestCase("ON", "ON", habapp_rules.system.SleepState.SLEEPING, "Manual", "Manual"),
@@ -306,12 +294,7 @@ class TestHclTime(tests.helper.test_case_base.TestCaseBase):
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual_min", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Unittest_Color_min_state", None)
 
-        self._config = habapp_rules.actors.config.light_hcl.LightHclConfig(
-            [(2, 3000),
-             (8, 4000),
-             (12, 9000),
-             (17, 9000),
-             (20, 4000)])
+        self._config = habapp_rules.actors.config.light_hcl.LightHclConfig([(2, 3000), (8, 4000), (12, 9000), (17, 9000), (20, 4000)])
         self._rule = habapp_rules.actors.light_hcl.HclTime("Unittest_Color_min", "Unittest_Manual_min", self._config)
 
     def test_one_hour_later(self) -> None:
@@ -321,25 +304,21 @@ class TestHclTime(tests.helper.test_case_base.TestCaseBase):
         test_cases = [
             # not configured -> always false
             TestCase(False, datetime.datetime(2023, 12, 19, 12), False, False, False),
-
             # 12:00 -> always false
             TestCase(True, datetime.datetime(2023, 12, 19, 12), False, False, False),
             TestCase(True, datetime.datetime(2023, 12, 19, 12), False, True, False),
             TestCase(True, datetime.datetime(2023, 12, 19, 12), True, False, False),
             TestCase(True, datetime.datetime(2023, 12, 19, 12), True, True, False),
-
             # 13:00 -> true if next day is a free day
             TestCase(True, datetime.datetime(2023, 12, 19, 13), False, False, False),
             TestCase(True, datetime.datetime(2023, 12, 19, 13), False, True, True),
             TestCase(True, datetime.datetime(2023, 12, 19, 13), True, False, False),
             TestCase(True, datetime.datetime(2023, 12, 19, 13), True, True, True),
-
             # 4:00 -> true if today is a free day
             TestCase(True, datetime.datetime(2023, 12, 19, 4), False, False, False),
             TestCase(True, datetime.datetime(2023, 12, 19, 4), False, True, True),
             TestCase(True, datetime.datetime(2023, 12, 19, 4), True, False, False),
             TestCase(True, datetime.datetime(2023, 12, 19, 4), True, True, True),
-
             # 5:00 -> always false
             TestCase(True, datetime.datetime(2023, 12, 19, 5), False, False, False),
             TestCase(True, datetime.datetime(2023, 12, 19, 5), False, True, False),

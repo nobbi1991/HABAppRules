@@ -1,4 +1,5 @@
 """Rules to for garden watering."""
+
 import datetime
 import logging
 
@@ -72,8 +73,7 @@ class Irrigation(HABApp.Rule):
             return False
 
         if any(item.value is None for item in (self._item_hour, self._item_minute, self._item_duration)):
-            self._instance_logger.warning(
-                f"OpenHAB item values are not valid for hour / minute / duration. Will return False. See current values: hour={self._item_hour.value} | minute={self._item_minute.value} | duration={self._item_duration.value}")
+            self._instance_logger.warning(f"OpenHAB item values are not valid for hour / minute / duration. Return False. See current values: hour={self._item_hour.value} | minute={self._item_minute.value} | duration={self._item_duration.value}")
             return False
 
         repetitions = self._item_repetitions.value if self._item_repetitions else 0

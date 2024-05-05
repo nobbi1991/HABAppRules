@@ -1,4 +1,5 @@
 """Test Presence rule."""
+
 import collections
 import pathlib
 import sys
@@ -41,10 +42,8 @@ class TestPresence(tests.helper.test_case_base.TestCaseBase):
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Presence", "ON")
 
         self._presence = habapp_rules.system.presence.Presence(
-            "Unittest_Presence",
-            outside_door_names=["Unittest_Door1", "Unittest_Door2"],
-            leaving_name="Unittest_Leaving", phone_names=["Unittest_Phone1", "Unittest_Phone2"],
-            name_state="CustomState")
+            "Unittest_Presence", outside_door_names=["Unittest_Door1", "Unittest_Door2"], leaving_name="Unittest_Leaving", phone_names=["Unittest_Phone1", "Unittest_Phone2"], name_state="CustomState"
+        )
 
     def test_init_with_none(self) -> None:
         """Test __init__ with None values."""
@@ -56,22 +55,12 @@ class TestPresence(tests.helper.test_case_base.TestCaseBase):
         tests.helper.oh_item.set_state("Unittest_Phone2", None)
         tests.helper.oh_item.set_state("CustomState", None)
 
-        habapp_rules.system.presence.Presence(
-            "Unittest_Presence",
-            outside_door_names=["Unittest_Door1", "Unittest_Door2"],
-            leaving_name="Unittest_Leaving",
-            phone_names=["Unittest_Phone1", "Unittest_Phone2"],
-            name_state="CustomState")
+        habapp_rules.system.presence.Presence("Unittest_Presence", outside_door_names=["Unittest_Door1", "Unittest_Door2"], leaving_name="Unittest_Leaving", phone_names=["Unittest_Phone1", "Unittest_Phone2"], name_state="CustomState")
 
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
     def test_create_graph(self) -> None:  # pragma: no cover
         """Create state machine graph for documentation."""
-        presence_graph = tests.helper.graph_machines.GraphMachineTimer(
-            model=self._presence,
-            states=self._presence.states,
-            transitions=self._presence.trans,
-            initial=self._presence.state,
-            show_conditions=True)
+        presence_graph = tests.helper.graph_machines.GraphMachineTimer(model=self._presence, states=self._presence.states, transitions=self._presence.trans, initial=self._presence.state, show_conditions=True)
 
         presence_graph.get_graph().draw(pathlib.Path(__file__).parent / "Presence.png", format="png", prog="dot")
 
@@ -104,64 +93,52 @@ class TestPresence(tests.helper.test_case_base.TestCaseBase):
             Testcase(presence="ON", leaving="OFF", outside_doors=[], phones=["ON"], expected_result="presence"),
             Testcase(presence="ON", leaving="OFF", outside_doors=[], phones=["OFF"], expected_result="leaving"),
             Testcase(presence="ON", leaving="OFF", outside_doors=[], phones=["ON", "OFF"], expected_result="presence"),
-
             Testcase(presence="ON", leaving="OFF", outside_doors=["CLOSED"], phones=[], expected_result="presence"),
             Testcase(presence="ON", leaving="OFF", outside_doors=["CLOSED"], phones=["ON"], expected_result="presence"),
             Testcase(presence="ON", leaving="OFF", outside_doors=["CLOSED"], phones=["OFF"], expected_result="leaving"),
             Testcase(presence="ON", leaving="OFF", outside_doors=["CLOSED"], phones=["ON", "OFF"], expected_result="presence"),
-
             Testcase(presence="ON", leaving="OFF", outside_doors=["OPEN"], phones=[], expected_result="presence"),
             Testcase(presence="ON", leaving="OFF", outside_doors=["OPEN"], phones=["ON"], expected_result="presence"),
             Testcase(presence="ON", leaving="OFF", outside_doors=["OPEN"], phones=["OFF"], expected_result="leaving"),
             Testcase(presence="ON", leaving="OFF", outside_doors=["OPEN"], phones=["ON", "OFF"], expected_result="presence"),
-
             Testcase(presence="ON", leaving="OFF", outside_doors=["OPEN, CLOSED"], phones=[], expected_result="presence"),
             Testcase(presence="ON", leaving="OFF", outside_doors=["OPEN, CLOSED"], phones=["ON"], expected_result="presence"),
             Testcase(presence="ON", leaving="OFF", outside_doors=["OPEN, CLOSED"], phones=["OFF"], expected_result="leaving"),
             Testcase(presence="ON", leaving="OFF", outside_doors=["OPEN, CLOSED"], phones=["ON", "OFF"], expected_result="presence"),
-
             # presence ON | leaving ON
             Testcase(presence="ON", leaving="ON", outside_doors=[], phones=[], expected_result="leaving"),
             Testcase(presence="ON", leaving="ON", outside_doors=[], phones=["ON"], expected_result="presence"),
             Testcase(presence="ON", leaving="ON", outside_doors=[], phones=["OFF"], expected_result="leaving"),
             Testcase(presence="ON", leaving="ON", outside_doors=[], phones=["ON", "OFF"], expected_result="presence"),
-
             Testcase(presence="ON", leaving="ON", outside_doors=["CLOSED"], phones=[], expected_result="leaving"),
             Testcase(presence="ON", leaving="ON", outside_doors=["CLOSED"], phones=["ON"], expected_result="presence"),
             Testcase(presence="ON", leaving="ON", outside_doors=["CLOSED"], phones=["OFF"], expected_result="leaving"),
             Testcase(presence="ON", leaving="ON", outside_doors=["CLOSED"], phones=["ON", "OFF"], expected_result="presence"),
-
             Testcase(presence="ON", leaving="ON", outside_doors=["OPEN"], phones=[], expected_result="leaving"),
             Testcase(presence="ON", leaving="ON", outside_doors=["OPEN"], phones=["ON"], expected_result="presence"),
             Testcase(presence="ON", leaving="ON", outside_doors=["OPEN"], phones=["OFF"], expected_result="leaving"),
             Testcase(presence="ON", leaving="ON", outside_doors=["OPEN"], phones=["ON", "OFF"], expected_result="presence"),
-
             Testcase(presence="ON", leaving="ON", outside_doors=["OPEN, CLOSED"], phones=[], expected_result="leaving"),
             Testcase(presence="ON", leaving="ON", outside_doors=["OPEN, CLOSED"], phones=["ON"], expected_result="presence"),
             Testcase(presence="ON", leaving="ON", outside_doors=["OPEN, CLOSED"], phones=["OFF"], expected_result="leaving"),
             Testcase(presence="ON", leaving="ON", outside_doors=["OPEN, CLOSED"], phones=["ON", "OFF"], expected_result="presence"),
-
             # presence OFF | leaving OFF
             Testcase(presence="OFF", leaving="OFF", outside_doors=[], phones=[], expected_result="absence"),
             Testcase(presence="OFF", leaving="OFF", outside_doors=[], phones=["ON"], expected_result="presence"),
             Testcase(presence="OFF", leaving="OFF", outside_doors=[], phones=["OFF"], expected_result="absence"),
             Testcase(presence="OFF", leaving="OFF", outside_doors=[], phones=["ON", "OFF"], expected_result="presence"),
-
             Testcase(presence="OFF", leaving="OFF", outside_doors=["CLOSED"], phones=[], expected_result="absence"),
             Testcase(presence="OFF", leaving="OFF", outside_doors=["CLOSED"], phones=["ON"], expected_result="presence"),
             Testcase(presence="OFF", leaving="OFF", outside_doors=["CLOSED"], phones=["OFF"], expected_result="absence"),
             Testcase(presence="OFF", leaving="OFF", outside_doors=["CLOSED"], phones=["ON", "OFF"], expected_result="presence"),
-
             Testcase(presence="OFF", leaving="OFF", outside_doors=["OPEN"], phones=[], expected_result="absence"),
             Testcase(presence="OFF", leaving="OFF", outside_doors=["OPEN"], phones=["ON"], expected_result="presence"),
             Testcase(presence="OFF", leaving="OFF", outside_doors=["OPEN"], phones=["OFF"], expected_result="absence"),
             Testcase(presence="OFF", leaving="OFF", outside_doors=["OPEN"], phones=["ON", "OFF"], expected_result="presence"),
-
             Testcase(presence="OFF", leaving="OFF", outside_doors=["OPEN, CLOSED"], phones=[], expected_result="absence"),
             Testcase(presence="OFF", leaving="OFF", outside_doors=["OPEN, CLOSED"], phones=["ON"], expected_result="presence"),
             Testcase(presence="OFF", leaving="OFF", outside_doors=["OPEN, CLOSED"], phones=["OFF"], expected_result="absence"),
             Testcase(presence="OFF", leaving="OFF", outside_doors=["OPEN, CLOSED"], phones=["ON", "OFF"], expected_result="presence"),
-
             # all None
             Testcase(presence=None, leaving=None, outside_doors=[None, None], phones=[None, None], expected_result="default"),
         ]

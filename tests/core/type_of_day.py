@@ -1,4 +1,5 @@
 """Test type of day functions."""
+
 import collections
 import datetime
 import unittest
@@ -20,19 +21,16 @@ class TestTypeOfDay(unittest.TestCase):
             TestCase(datetime.datetime(2023, 12, 18), 0, False),
             TestCase(datetime.datetime(2023, 12, 18), 1, False),
             TestCase(datetime.datetime(2023, 12, 18), 2, False),
-
             # Friday
             TestCase(datetime.datetime(2023, 12, 22), -1, False),
             TestCase(datetime.datetime(2023, 12, 22), 0, False),
             TestCase(datetime.datetime(2023, 12, 22), 1, True),
             TestCase(datetime.datetime(2023, 12, 22), 2, True),
-
             # Saturday
             TestCase(datetime.datetime(2023, 12, 23), -1, False),
             TestCase(datetime.datetime(2023, 12, 23), 0, True),
             TestCase(datetime.datetime(2023, 12, 23), 1, True),
             TestCase(datetime.datetime(2023, 12, 23), 2, False),
-
             # Sunday
             TestCase(datetime.datetime(2023, 12, 24), -1, True),
             TestCase(datetime.datetime(2023, 12, 24), 0, True),
@@ -56,13 +54,11 @@ class TestTypeOfDay(unittest.TestCase):
             TestCase(datetime.datetime(2023, 12, 23), 0, False),
             TestCase(datetime.datetime(2023, 12, 23), 1, False),
             TestCase(datetime.datetime(2023, 12, 23), 2, True),
-
             # Christmas
             TestCase(datetime.datetime(2023, 12, 25), -1, False),
             TestCase(datetime.datetime(2023, 12, 25), 0, True),
             TestCase(datetime.datetime(2023, 12, 25), 1, True),
             TestCase(datetime.datetime(2023, 12, 25), 2, False),
-
         ]
 
         with unittest.mock.patch("datetime.datetime") as datetime_mock:

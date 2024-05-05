@@ -1,4 +1,5 @@
 """Define graph machine classes."""
+
 import os
 import typing
 from functools import partial

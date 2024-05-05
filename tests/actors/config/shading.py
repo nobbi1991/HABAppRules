@@ -1,4 +1,5 @@
 """Test config for light rules."""
+
 import collections
 import unittest.mock
 

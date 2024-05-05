@@ -1,4 +1,5 @@
 """Test config for light rules."""
+
 import collections
 import unittest.mock
 
@@ -23,7 +24,6 @@ class TestBrightnessTimeout(unittest.TestCase):
             TestCase(False, 0, True),
             TestCase(False, 10, True),
             TestCase(False, 100, True),
-
             # not valid
             TestCase(100, 0, False),
             TestCase(True, 0, False),
@@ -62,22 +62,18 @@ class TestLightConfig(unittest.TestCase):
             TestCase(on=func_bool, pre_off=func_bool, leaving=None, pre_sleep=None, pre_sleep_prevent=None, valid=True),
             TestCase(on=func_bool, pre_off=func_bool, leaving=func_bool, pre_sleep=None, pre_sleep_prevent=None, valid=True),
             TestCase(on=func_bool, pre_off=func_bool, leaving=func_bool, pre_sleep=func_bool, pre_sleep_prevent=None, valid=True),
-
             TestCase(on=func_int, pre_off=None, leaving=None, pre_sleep=None, pre_sleep_prevent=None, valid=True),
             TestCase(on=func_int, pre_off=func_int, leaving=None, pre_sleep=None, pre_sleep_prevent=None, valid=True),
             TestCase(on=func_int, pre_off=func_int, leaving=func_int, pre_sleep=None, pre_sleep_prevent=None, valid=True),
             TestCase(on=func_int, pre_off=func_int, leaving=func_int, pre_sleep=func_int, pre_sleep_prevent=None, valid=True),
-
             TestCase(on=None, pre_off=None, leaving=None, pre_sleep=None, pre_sleep_prevent=None, valid=False),
             TestCase(on=None, pre_off=func_bool, leaving=None, pre_sleep=None, pre_sleep_prevent=None, valid=False),
             TestCase(on=None, pre_off=func_bool, leaving=func_bool, pre_sleep=None, pre_sleep_prevent=None, valid=False),
             TestCase(on=None, pre_off=func_bool, leaving=func_bool, pre_sleep=func_bool, pre_sleep_prevent=None, valid=False),
-
             TestCase(on=None, pre_off=None, leaving=None, pre_sleep=None, pre_sleep_prevent=None, valid=False),
             TestCase(on=None, pre_off=func_int, leaving=None, pre_sleep=None, pre_sleep_prevent=None, valid=False),
             TestCase(on=None, pre_off=func_int, leaving=func_int, pre_sleep=None, pre_sleep_prevent=None, valid=False),
             TestCase(on=None, pre_off=func_int, leaving=func_int, pre_sleep=func_int, pre_sleep_prevent=None, valid=False),
-
             TestCase(on=func_int_partial1, pre_off=None, leaving=None, pre_sleep=None, pre_sleep_prevent=None, valid=False),
             TestCase(on=func_int_partial2, pre_off=None, leaving=None, pre_sleep=None, pre_sleep_prevent=None, valid=False),
             TestCase(on=func_int_partial3, pre_off=None, leaving=None, pre_sleep=None, pre_sleep_prevent=None, valid=False),

@@ -1,4 +1,5 @@
 """Tests for sun sensors."""
+
 import collections
 import unittest.mock
 
@@ -196,26 +197,21 @@ class TestSunPositionFilter(tests.helper.test_case_base.TestCaseBase):
             TestCase(0, 10, "OFF", "OFF", "OFF"),
             TestCase(50, 0, "OFF", "OFF", "OFF"),
             TestCase(50, 10, "OFF", "OFF", "OFF"),
-
             TestCase(0, 0, "ON", "OFF", "OFF"),
             TestCase(0, 10, "ON", "OFF", "OFF"),
             TestCase(50, 0, "ON", "OFF", "OFF"),
             TestCase(50, 10, "ON", "ON", "ON"),
-
             TestCase(0, 0, "OFF", "OFF", "OFF"),
             TestCase(0, 10, "OFF", "OFF", "OFF"),
             TestCase(110, 0, "OFF", "OFF", "OFF"),
             TestCase(110, 10, "OFF", "OFF", "OFF"),
-
             TestCase(0, 0, "ON", "OFF", "OFF"),
             TestCase(0, 10, "ON", "OFF", "OFF"),
             TestCase(110, 0, "ON", "OFF", "ON"),
             TestCase(110, 10, "ON", "OFF", "ON"),
-
             TestCase(50, None, "OFF", "OFF", "OFF"),
             TestCase(None, 10, "OFF", "OFF", "OFF"),
             TestCase(None, None, "OFF", "OFF", "OFF"),
-
             TestCase(50, None, "ON", "ON", "ON"),
             TestCase(None, 10, "ON", "ON", "ON"),
             TestCase(None, None, "ON", "ON", "ON"),

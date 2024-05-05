@@ -1,4 +1,5 @@
 """Test for hysteresis switch."""
+
 import collections
 import unittest
 
@@ -26,7 +27,6 @@ class TestHysteresis(unittest.TestCase):
             TestCase(10, 1, False, 10.4, False),
             TestCase(10, 1, False, 10.5, True),
             TestCase(10, 1, False, 10.5, True),
-
             # hysteresis = 1, current_state = True
             TestCase(10, 1, True, 9, False),
             TestCase(10, 1, True, 9.4, False),
@@ -35,7 +35,6 @@ class TestHysteresis(unittest.TestCase):
             TestCase(10, 1, True, 10.4, True),
             TestCase(10, 1, True, 10.5, True),
             TestCase(10, 1, True, 10.5, True),
-
             # hysteresis = 4, current_state = False
             TestCase(42, 4, False, 39.9, False),
             TestCase(42, 4, False, 40, False),
@@ -44,7 +43,6 @@ class TestHysteresis(unittest.TestCase):
             TestCase(42, 4, False, 43.9, False),
             TestCase(42, 4, False, 44, True),
             TestCase(42, 4, False, 44.1, True),
-
             # hysteresis = 4, current_state = True
             TestCase(42, 4, True, 39.9, False),
             TestCase(42, 4, True, 40, True),
@@ -53,7 +51,6 @@ class TestHysteresis(unittest.TestCase):
             TestCase(42, 4, True, 43.9, True),
             TestCase(42, 4, True, 44, True),
             TestCase(42, 4, True, 44.1, True),
-
             # threshold not set -> always False
             TestCase(None, 4, True, 39.9, False),
             TestCase(None, 4, True, 40, False),

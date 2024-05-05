@@ -1,4 +1,5 @@
 """Tests for monthly energy report."""
+
 import collections
 import datetime
 import unittest
@@ -161,9 +162,7 @@ class TestMonthlyReport(tests.helper.test_case_base.TestCaseBase):
         self._rule._item_energy_sum.value = 20_123.5489135
 
         template_mock = unittest.mock.MagicMock()
-        with (unittest.mock.patch("pathlib.Path.open"),
-              unittest.mock.patch("jinja2.Template", return_value=template_mock),
-              unittest.mock.patch("habapp_rules.energy.monthly_report._get_previous_month_name", return_value="MonthName")):
+        with unittest.mock.patch("pathlib.Path.open"), unittest.mock.patch("jinja2.Template", return_value=template_mock), unittest.mock.patch("habapp_rules.energy.monthly_report._get_previous_month_name", return_value="MonthName"):
             self._rule._create_html(10_042.123456)
 
         template_mock.render.assert_called_once_with(
@@ -180,11 +179,13 @@ class TestMonthlyReport(tests.helper.test_case_base.TestCaseBase):
         self._energy_1.openhab_item.value = 100
         self._energy_2.openhab_item.value = 50
 
-        with (unittest.mock.patch.object(self._rule, "_get_historic_value", side_effect=[800, 90, 45]),
-              unittest.mock.patch("habapp_rules.energy.donut_chart.create_chart", return_value="html text result") as create_chart_mock,
-              unittest.mock.patch.object(self._rule, "_create_html") as create_html_mock,
-              unittest.mock.patch("habapp_rules.energy.monthly_report._get_previous_month_name", return_value="MonthName"),
-              unittest.mock.patch.object(self._rule, "_mail") as mail_mock):
+        with (
+            unittest.mock.patch.object(self._rule, "_get_historic_value", side_effect=[800, 90, 45]),
+            unittest.mock.patch("habapp_rules.energy.donut_chart.create_chart", return_value="html text result") as create_chart_mock,
+            unittest.mock.patch.object(self._rule, "_create_html") as create_html_mock,
+            unittest.mock.patch("habapp_rules.energy.monthly_report._get_previous_month_name", return_value="MonthName"),
+            unittest.mock.patch.object(self._rule, "_mail") as mail_mock,
+        ):
             self._rule._cb_send_energy()
 
         create_chart_mock.assert_called_once_with(["Energy 1", "Energy 2", "Rest"], [10, 5, 185], unittest.mock.ANY)

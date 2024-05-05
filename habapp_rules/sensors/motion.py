@@ -1,4 +1,5 @@
 """Rules for managing motion sensors."""
+
 import logging
 
 import HABApp
@@ -42,13 +43,17 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
         {"name": "Locked"},
         {"name": "SleepLocked"},
         {"name": "PostSleepLocked", "timeout": 99, "on_timeout": "timeout_post_sleep_locked"},
-        {"name": "Unlocked", "initial": "Init", "children": [
-            {"name": "Init"},
-            {"name": "Wait"},
-            {"name": "Motion"},
-            {"name": "MotionExtended", "timeout": 99, "on_timeout": "timeout_motion_extended"},
-            {"name": "TooBright"},
-        ]},
+        {
+            "name": "Unlocked",
+            "initial": "Init",
+            "children": [
+                {"name": "Init"},
+                {"name": "Wait"},
+                {"name": "Motion"},
+                {"name": "MotionExtended", "timeout": 99, "on_timeout": "timeout_motion_extended"},
+                {"name": "TooBright"},
+            ],
+        },
     ]
 
     trans = [
@@ -56,7 +61,6 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
         {"trigger": "lock_on", "source": ["Unlocked", "SleepLocked", "PostSleepLocked"], "dest": "Locked"},
         {"trigger": "lock_off", "source": "Locked", "dest": "Unlocked", "unless": "_sleep_active"},
         {"trigger": "lock_off", "source": "Locked", "dest": "SleepLocked", "conditions": "_sleep_active"},
-
         # sleep
         {"trigger": "sleep_started", "source": ["Unlocked", "PostSleepLocked"], "dest": "SleepLocked"},
         {"trigger": "sleep_end", "source": "SleepLocked", "dest": "Unlocked", "unless": "_post_sleep_lock_configured"},
@@ -64,7 +68,6 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
         {"trigger": "timeout_post_sleep_locked", "source": "PostSleepLocked", "dest": "Unlocked", "unless": "_raw_motion_active"},
         {"trigger": "motion_off", "source": "PostSleepLocked", "dest": "PostSleepLocked"},
         {"trigger": "motion_on", "source": "PostSleepLocked", "dest": "PostSleepLocked"},
-
         # motion
         {"trigger": "motion_on", "source": "Unlocked_Wait", "dest": "Unlocked_Motion"},
         {"trigger": "motion_off", "source": "Unlocked_Motion", "dest": "Unlocked_MotionExtended", "conditions": "_motion_extended_configured"},
@@ -72,24 +75,25 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
         {"trigger": "timeout_motion_extended", "source": "Unlocked_MotionExtended", "dest": "Unlocked_Wait", "unless": "_brightness_over_threshold"},
         {"trigger": "timeout_motion_extended", "source": "Unlocked_MotionExtended", "dest": "Unlocked_TooBright", "conditions": "_brightness_over_threshold"},
         {"trigger": "motion_on", "source": "Unlocked_MotionExtended", "dest": "Unlocked_Motion"},
-
         # brightness
         {"trigger": "brightness_over_threshold", "source": "Unlocked_Wait", "dest": "Unlocked_TooBright"},
         {"trigger": "brightness_below_threshold", "source": "Unlocked_TooBright", "dest": "Unlocked_Wait", "unless": "_raw_motion_active"},
         {"trigger": "brightness_below_threshold", "source": "Unlocked_TooBright", "dest": "Unlocked_Motion", "conditions": "_raw_motion_active"},
     ]
 
-    def __init__(self,  # noqa: PLR0913
-                 name_raw: str,
-                 name_filtered: str,
-                 extended_motion_time: int = 5,
-                 name_brightness: str | None = None,
-                 brightness_threshold: int | str | None = None,
-                 name_lock: str | None = None,
-                 name_sleep_state: str | None = None,
-                 post_sleep_lock_time: int = 10,
-                 name_state: str | None = None,
-                 state_label: str | None = None) -> None:
+    def __init__(  # noqa: PLR0913
+        self,
+        name_raw: str,
+        name_filtered: str,
+        extended_motion_time: int = 5,
+        name_brightness: str | None = None,
+        brightness_threshold: int | str | None = None,
+        name_lock: str | None = None,
+        name_sleep_state: str | None = None,
+        post_sleep_lock_time: int = 10,
+        name_state: str | None = None,
+        state_label: str | None = None,
+    ) -> None:
         """Init of motion filter.
 
         :param name_raw: name of OpenHAB unfiltered motion item (SwitchItem)
@@ -128,12 +132,7 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
 
         # init state machine
         self._previous_state = None
-        self.state_machine = habapp_rules.core.state_machine_rule.HierarchicalStateMachineWithTimeout(
-            model=self,
-            states=self.states,
-            transitions=self.trans,
-            ignore_invalid_triggers=True,
-            after_state_change="_update_openhab_state")
+        self.state_machine = habapp_rules.core.state_machine_rule.HierarchicalStateMachineWithTimeout(model=self, states=self.states, transitions=self.trans, ignore_invalid_triggers=True, after_state_change="_update_openhab_state")
         self._set_initial_state()
 
         self.state_machine.get_state("PostSleepLocked").timeout = self._timeout_post_sleep_lock

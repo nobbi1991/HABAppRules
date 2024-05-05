@@ -1,4 +1,5 @@
 """Module to create donut charts."""
+
 import collections.abc
 import pathlib
 

@@ -1,4 +1,5 @@
 """Nox sessions."""
+
 import pathlib
 import subprocess
 import sys

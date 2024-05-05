@@ -1,4 +1,5 @@
 """Module for filter functions / rules."""
+
 import logging
 
 import HABApp

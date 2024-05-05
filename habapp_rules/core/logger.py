@@ -1,4 +1,5 @@
 """Setup logger."""
+
 import collections.abc
 import logging
 import typing

@@ -1,4 +1,5 @@
 """States of all system state machines."""
+
 import enum
 
 

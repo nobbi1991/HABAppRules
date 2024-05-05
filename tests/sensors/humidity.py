@@ -1,4 +1,5 @@
 """Tests for motion sensors."""
+
 import collections
 import pathlib
 import sys
@@ -47,12 +48,7 @@ class TestMotion(tests.helper.test_case_base.TestCaseBase):
         picture_dir = pathlib.Path(__file__).parent / "Humidity_States"
         picture_dir.mkdir(parents=True, exist_ok=True)
 
-        humidity_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
-            model=tests.helper.graph_machines.FakeModel(),
-            states=self.humidity.states,
-            transitions=self.humidity.trans,
-            initial=self.humidity.state,
-            show_conditions=True)
+        humidity_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self.humidity.states, transitions=self.humidity.trans, initial=self.humidity.state, show_conditions=True)
 
         humidity_graph.get_graph().draw(picture_dir / "Humidity.png", format="png", prog="dot")
 
@@ -89,15 +85,12 @@ class TestMotion(tests.helper.test_case_base.TestCaseBase):
             TestCase(None, 64, False),
             TestCase(64, None, False),
             TestCase(64, 64, False),
-
             # False | True -> True
             TestCase(None, 65, True),
             TestCase(64, 65, True),
-
             # True | False -> False
             TestCase(65, None, True),
             TestCase(65, 64, False),
-
             # True | True -> True
             TestCase(65, 65, True),
         ]
@@ -109,17 +102,21 @@ class TestMotion(tests.helper.test_case_base.TestCaseBase):
 
     def test_cb_humidity(self) -> None:
         """Test _cb_humidity."""
-        with (unittest.mock.patch.object(self.humidity, "high_humidity_start") as start_mock,
-              unittest.mock.patch.object(self.humidity, "high_humidity_end") as end_mock,
-              unittest.mock.patch.object(self.humidity, "_check_high_humidity", return_value=True) as check_mock):
+        with (
+            unittest.mock.patch.object(self.humidity, "high_humidity_start") as start_mock,
+            unittest.mock.patch.object(self.humidity, "high_humidity_end") as end_mock,
+            unittest.mock.patch.object(self.humidity, "_check_high_humidity", return_value=True) as check_mock,
+        ):
             tests.helper.oh_item.item_state_event("Unittest_Humidity", 99)
             check_mock.assert_called_once_with(99)
             start_mock.assert_called_once()
             end_mock.assert_not_called()
 
-        with (unittest.mock.patch.object(self.humidity, "high_humidity_start") as start_mock,
-              unittest.mock.patch.object(self.humidity, "high_humidity_end") as end_mock,
-              unittest.mock.patch.object(self.humidity, "_check_high_humidity", return_value=False) as check_mock):
+        with (
+            unittest.mock.patch.object(self.humidity, "high_humidity_start") as start_mock,
+            unittest.mock.patch.object(self.humidity, "high_humidity_end") as end_mock,
+            unittest.mock.patch.object(self.humidity, "_check_high_humidity", return_value=False) as check_mock,
+        ):
             tests.helper.oh_item.item_state_event("Unittest_Humidity", 42)
             check_mock.assert_called_once_with(42)
             start_mock.assert_not_called()

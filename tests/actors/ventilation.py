@@ -1,4 +1,5 @@
 """Test ventilation rules."""
+
 import collections
 import datetime
 import pathlib
@@ -78,7 +79,8 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBase):
             "Unittest_Ventilation_max_feedback_on",
             "Unittest_Ventilation_max_feedback_power",
             "Unittest_Ventilation_max_display_text",
-            "Unittest_Ventilation_max_Custom_State")
+            "Unittest_Ventilation_max_Custom_State",
+        )
 
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
     def test_create_graph(self) -> None:  # pragma: no cover
@@ -87,21 +89,13 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBase):
         picture_dir.mkdir(parents=True, exist_ok=True)
 
         graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
-            model=tests.helper.graph_machines.FakeModel(),
-            states=self.ventilation_min.states,
-            transitions=self.ventilation_min.trans,
-            initial=self.ventilation_min.state,
-            show_conditions=False)
+            model=tests.helper.graph_machines.FakeModel(), states=self.ventilation_min.states, transitions=self.ventilation_min.trans, initial=self.ventilation_min.state, show_conditions=False
+        )
 
         graph.get_graph().draw(picture_dir / "Ventilation.png", format="png", prog="dot")
 
         for state_name in [state for state in self._get_state_names(self.ventilation_min.states) if state not in ["auto_init"]]:
-            graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
-                model=tests.helper.graph_machines.FakeModel(),
-                states=self.ventilation_min.states,
-                transitions=self.ventilation_min.trans,
-                initial=state_name,
-                show_conditions=True)
+            graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self.ventilation_min.states, transitions=self.ventilation_min.trans, initial=state_name, show_conditions=True)
             graph.get_graph(force_new=True, show_roi=True).draw(picture_dir / f"Ventilation_{state_name}.png", format="png", prog="dot")
 
     def test_init(self) -> None:
@@ -123,18 +117,15 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBase):
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, False, False, True, "Auto_Normal", "Auto_PowerExternal"),
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, False, True, False, "Auto_Normal", "Auto_PowerHand"),
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, False, True, True, "Auto_Normal", "Auto_PowerHand"),
-
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, True, False, False, "Manual", "Manual"),
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, True, False, True, "Manual", "Manual"),
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, True, True, False, "Manual", "Manual"),
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, True, True, True, "Manual", "Manual"),
-
             # long absence
             TestCase(habapp_rules.system.PresenceState.LONG_ABSENCE.value, False, False, False, "Auto_Normal", "Auto_LongAbsence"),
             TestCase(habapp_rules.system.PresenceState.LONG_ABSENCE.value, False, False, True, "Auto_Normal", "Auto_LongAbsence"),
             TestCase(habapp_rules.system.PresenceState.LONG_ABSENCE.value, False, True, False, "Auto_Normal", "Auto_PowerHand"),
             TestCase(habapp_rules.system.PresenceState.LONG_ABSENCE.value, False, True, True, "Auto_Normal", "Auto_PowerHand"),
-
             TestCase(habapp_rules.system.PresenceState.LONG_ABSENCE.value, True, False, False, "Manual", "Manual"),
             TestCase(habapp_rules.system.PresenceState.LONG_ABSENCE.value, True, False, True, "Manual", "Manual"),
             TestCase(habapp_rules.system.PresenceState.LONG_ABSENCE.value, True, True, False, "Manual", "Manual"),
@@ -190,28 +181,24 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBase):
             TestCase(None, "Auto_LongAbsence_On", False, False, "Absence Custom ON"),
             TestCase(None, "Auto_LongAbsence_Off", False, False, "Absence Custom OFF"),
             TestCase(None, "Auto_Init", False, False, "Absence Custom OFF"),
-
             TestCase(0, "Auto_PowerHand", False, False, "Hand Custom 42min"),
             TestCase(0, "Auto_Normal", False, False, "Normal Custom"),
             TestCase(0, "Auto_PowerExternal", False, False, "External Custom"),
             TestCase(0, "Auto_LongAbsence_On", False, False, "Absence Custom ON"),
             TestCase(0, "Auto_LongAbsence_Off", False, False, "Absence Custom OFF"),
             TestCase(0, "Auto_Init", False, False, "Absence Custom OFF"),
-
             TestCase(1, "Auto_PowerHand", True, False, "Hand Custom 42min"),
             TestCase(1, "Auto_Normal", True, False, "Normal Custom"),
             TestCase(1, "Auto_PowerExternal", True, False, "External Custom"),
             TestCase(1, "Auto_LongAbsence_On", True, False, "Absence Custom ON"),
             TestCase(1, "Auto_LongAbsence_Off", True, False, "Absence Custom OFF"),
             TestCase(1, "Auto_Init", True, False, "Absence Custom OFF"),
-
             TestCase(2, "Auto_PowerHand", True, True, "Hand Custom 42min"),
             TestCase(2, "Auto_Normal", True, True, "Normal Custom"),
             TestCase(2, "Auto_PowerExternal", True, True, "External Custom"),
             TestCase(2, "Auto_LongAbsence_On", True, True, "Absence Custom ON"),
             TestCase(2, "Auto_LongAbsence_Off", True, True, "Absence Custom OFF"),
             TestCase(2, "Auto_Init", True, True, "Absence Custom OFF"),
-
             TestCase(42, "Auto_PowerHand", True, True, "Hand Custom 42min"),
             TestCase(42, "Auto_Normal", True, True, "Normal Custom"),
             TestCase(42, "Auto_PowerExternal", True, True, "External Custom"),
@@ -467,7 +454,8 @@ class TestVentilationHeliosTwoStage(tests.helper.test_case_base.TestCaseBase):
             "Unittest_Ventilation_max_feedback_power",
             "Unittest_Ventilation_max_display_text",
             350,
-            "Unittest_Ventilation_max_Custom_State")
+            "Unittest_Ventilation_max_Custom_State",
+        )
 
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
     def test_create_graph(self) -> None:  # pragma: no cover
@@ -476,21 +464,13 @@ class TestVentilationHeliosTwoStage(tests.helper.test_case_base.TestCaseBase):
         picture_dir.mkdir(parents=True, exist_ok=True)
 
         graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
-            model=tests.helper.graph_machines.FakeModel(),
-            states=self.ventilation_min.states,
-            transitions=self.ventilation_min.trans,
-            initial=self.ventilation_min.state,
-            show_conditions=False)
+            model=tests.helper.graph_machines.FakeModel(), states=self.ventilation_min.states, transitions=self.ventilation_min.trans, initial=self.ventilation_min.state, show_conditions=False
+        )
 
         graph.get_graph().draw(picture_dir / "Ventilation.png", format="png", prog="dot")
 
         for state_name in [state for state in self._get_state_names(self.ventilation_min.states) if state not in ["auto_init"]]:
-            graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
-                model=tests.helper.graph_machines.FakeModel(),
-                states=self.ventilation_min.states,
-                transitions=self.ventilation_min.trans,
-                initial=state_name,
-                show_conditions=True)
+            graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self.ventilation_min.states, transitions=self.ventilation_min.trans, initial=state_name, show_conditions=True)
             graph.get_graph(force_new=True, show_roi=True).draw(picture_dir / f"Ventilation_{state_name}.png", format="png", prog="dot")
 
     def test_set_level(self) -> None:
@@ -635,7 +615,8 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
             "Unittest_Ventilation_max_display_text",
             350,
             0.5,
-            "Unittest_Ventilation_max_Custom_State")
+            "Unittest_Ventilation_max_Custom_State",
+        )
 
     def test_set_level(self) -> None:
         """Test _set_level."""
@@ -676,21 +657,13 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
         picture_dir.mkdir(parents=True, exist_ok=True)
 
         graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
-            model=tests.helper.graph_machines.FakeModel(),
-            states=self.ventilation_min.states,
-            transitions=self.ventilation_min.trans,
-            initial=self.ventilation_min.state,
-            show_conditions=False)
+            model=tests.helper.graph_machines.FakeModel(), states=self.ventilation_min.states, transitions=self.ventilation_min.trans, initial=self.ventilation_min.state, show_conditions=False
+        )
 
         graph.get_graph().draw(picture_dir / "Ventilation.png", format="png", prog="dot")
 
         for state_name in [state for state in self._get_state_names(self.ventilation_min.states) if state not in ["auto_init"]]:
-            graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
-                model=tests.helper.graph_machines.FakeModel(),
-                states=self.ventilation_min.states,
-                transitions=self.ventilation_min.trans,
-                initial=state_name,
-                show_conditions=True)
+            graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self.ventilation_min.states, transitions=self.ventilation_min.trans, initial=state_name, show_conditions=True)
             graph.get_graph(force_new=True, show_roi=True).draw(picture_dir / f"Ventilation_{state_name}.png", format="png", prog="dot")
 
     def test_get_initial_state(self) -> None:
@@ -703,40 +676,33 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, None, False, False, True, "Auto_Normal", "Auto_PowerExternal"),
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, None, False, True, False, "Auto_Normal", "Auto_PowerHand"),
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, None, False, True, True, "Auto_Normal", "Auto_PowerHand"),
-
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, None, True, False, False, "Manual", "Manual"),
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, None, True, False, True, "Manual", "Manual"),
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, None, True, True, False, "Manual", "Manual"),
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, None, True, True, True, "Manual", "Manual"),
-
             # present | current smaller than the threshold
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, 0.01, False, False, False, "Auto_Normal", "Auto_Normal"),
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, 0.01, False, False, True, "Auto_Normal", "Auto_PowerExternal"),
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, 0.01, False, True, False, "Auto_Normal", "Auto_PowerHand"),
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, 0.01, False, True, True, "Auto_Normal", "Auto_PowerHand"),
-
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, 0.01, True, False, False, "Manual", "Manual"),
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, 0.01, True, False, True, "Manual", "Manual"),
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, 0.01, True, True, False, "Manual", "Manual"),
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, 0.01, True, True, True, "Manual", "Manual"),
-
             # present | current greater than the threshold
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, 1, False, False, False, "Auto_Normal", "Auto_PowerHumidity"),
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, 1, False, False, True, "Auto_Normal", "Auto_PowerExternal"),
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, 1, False, True, False, "Auto_Normal", "Auto_PowerHand"),
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, 1, False, True, True, "Auto_Normal", "Auto_PowerHand"),
-
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, 1, True, False, False, "Manual", "Manual"),
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, 1, True, False, True, "Manual", "Manual"),
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, 1, True, True, False, "Manual", "Manual"),
             TestCase(habapp_rules.system.PresenceState.PRESENCE.value, 1, True, True, True, "Manual", "Manual"),
-
             # long absence
             TestCase(habapp_rules.system.PresenceState.LONG_ABSENCE.value, 20, False, False, False, "Auto_Normal", "Auto_LongAbsence"),
             TestCase(habapp_rules.system.PresenceState.LONG_ABSENCE.value, 20, False, False, True, "Auto_Normal", "Auto_LongAbsence"),
             TestCase(habapp_rules.system.PresenceState.LONG_ABSENCE.value, 20, False, True, False, "Auto_Normal", "Auto_PowerHand"),
             TestCase(habapp_rules.system.PresenceState.LONG_ABSENCE.value, 20, False, True, True, "Auto_Normal", "Auto_PowerHand"),
-
             TestCase(habapp_rules.system.PresenceState.LONG_ABSENCE.value, 20, True, False, False, "Manual", "Manual"),
             TestCase(habapp_rules.system.PresenceState.LONG_ABSENCE.value, 20, True, False, True, "Manual", "Manual"),
             TestCase(habapp_rules.system.PresenceState.LONG_ABSENCE.value, 20, True, True, False, "Manual", "Manual"),
@@ -789,7 +755,6 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
             TestCase(42, 0, 100, True),
             TestCase(42, 100, 0, False),
             TestCase(42, 100, 100, True),
-
             TestCase(42, 0, None, False),
             TestCase(42, 100, None, True),
             TestCase(42, None, None, False),

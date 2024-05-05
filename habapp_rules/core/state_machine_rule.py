@@ -1,4 +1,5 @@
 """Base class for Rule with State Machine."""
+
 import inspect
 import os
 import pathlib

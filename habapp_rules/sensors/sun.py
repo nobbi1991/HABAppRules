@@ -1,4 +1,5 @@
 """Rules to handle sun sensors."""
+
 import dataclasses
 import logging
 
@@ -42,15 +43,9 @@ class SunPositionWindow:
 class _SensorBase(HABApp.Rule):
     """Base class for sun sensors."""
 
-    def __init__(self,
-                 name_input: str,
-                 name_output: str,
-                 threshold: str | float,
-                 hysteresis: float,
-                 filter_tau: int,
-                 filter_instant_increase: bool = True,
-                 filter_instant_decrease: bool = False,
-                 filtered_signal_groups: list[str] | None = None) -> None:
+    def __init__(
+        self, name_input: str, name_output: str, threshold: str | float, hysteresis: float, filter_tau: int, filter_instant_increase: bool = True, filter_instant_decrease: bool = False, filtered_signal_groups: list[str] | None = None
+    ) -> None:
         """Init of base class for sun sensors.
 
         :param name_input: name of OpenHAB input item (NumberItem)
@@ -122,14 +117,17 @@ class SensorBrightness(_SensorBase):
     habapp_rules.sensors.sun.SensorBrightness("brightness", "sun_protection_brightness", "brightness_threshold")
     """
 
-    def __init__(self,
-                 name_brightness: str,
-                 name_output: str, threshold: str | float,
-                 hysteresis: float = 0.0,
-                 filter_tau: int = 20 * 60,
-                 filter_instant_increase: bool = True,
-                 filter_instant_decrease: bool = False,
-                 filtered_signal_groups: list[str] | None = None) -> None:
+    def __init__(
+        self,
+        name_brightness: str,
+        name_output: str,
+        threshold: str | float,
+        hysteresis: float = 0.0,
+        filter_tau: int = 20 * 60,
+        filter_instant_increase: bool = True,
+        filter_instant_decrease: bool = False,
+        filtered_signal_groups: list[str] | None = None,
+    ) -> None:
         """Init of sun sensor which takes a brightness value.
 
         :param name_brightness: name of OpenHAB brightness item (NumberItem)
@@ -157,17 +155,18 @@ class SensorTemperatureDifference(_SensorBase):
     habapp_rules.sensors.sun.SensorTempDiff("temperature_sun", "temperature_shadow", "sun_protection_temperature", "temperature_threshold")
     """
 
-    def __init__(self,
-                 temperature_item_names: list[str],
-                 name_output: str,
-                 threshold: str | float,
-                 hysteresis: float = 0.0,
-                 filter_tau: int = 30 * 60,
-                 filter_instant_increase: bool = True,
-                 filter_instant_decrease: bool = False,
-                 ignore_old_values_time: int | None = None,
-                 filtered_signal_groups: list[str] | None = None,
-                 ) -> None:
+    def __init__(
+        self,
+        temperature_item_names: list[str],
+        name_output: str,
+        threshold: str | float,
+        hysteresis: float = 0.0,
+        filter_tau: int = 30 * 60,
+        filter_instant_increase: bool = True,
+        filter_instant_decrease: bool = False,
+        ignore_old_values_time: int | None = None,
+        filtered_signal_groups: list[str] | None = None,
+    ) -> None:
         """Init of sun sensor which takes a two or more temperature values (one in the sun and one in the shadow).
 
         :param temperature_item_names: name of all OpenHAB temperature items (NumberItem)

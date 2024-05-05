@@ -1,4 +1,5 @@
 """Tests for motion sensors."""
+
 import collections
 import pathlib
 import sys
@@ -63,12 +64,8 @@ class TestMotion(tests.helper.test_case_base.TestCaseBase):
             {"name": "Locked"},
             {"name": "SleepLocked"},
             {"name": "PostSleepLocked", "timeout": 99, "on_timeout": "timeout_post_sleep_locked"},
-            {"name": "Unlocked", "initial": "Init", "children": [
-                {"name": "Init"},
-                {"name": "Wait"},
-                {"name": "Motion"},
-                {"name": "MotionExtended", "timeout": 99, "on_timeout": "timeout_motion_extended"},
-                {"name": "TooBright"}]}]
+            {"name": "Unlocked", "initial": "Init", "children": [{"name": "Init"}, {"name": "Wait"}, {"name": "Motion"}, {"name": "MotionExtended", "timeout": 99, "on_timeout": "timeout_motion_extended"}, {"name": "TooBright"}]},
+        ]
         self.assertEqual(expected_states, self.motion_min.states)
 
         expected_trans = [
@@ -99,12 +96,7 @@ class TestMotion(tests.helper.test_case_base.TestCaseBase):
         picture_dir = pathlib.Path(__file__).parent / "Motion_States"
         picture_dir.mkdir(parents=True, exist_ok=True)
 
-        motion_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
-            model=tests.helper.graph_machines.FakeModel(),
-            states=self.motion_min.states,
-            transitions=self.motion_min.trans,
-            initial=self.motion_min.state,
-            show_conditions=True)
+        motion_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self.motion_min.states, transitions=self.motion_min.trans, initial=self.motion_min.state, show_conditions=True)
 
         motion_graph.get_graph().draw(picture_dir / "Motion.png", format="png", prog="dot")
 
@@ -130,17 +122,14 @@ class TestMotion(tests.helper.test_case_base.TestCaseBase):
             TestCase(locked=False, sleep_state=habapp_rules.system.SleepState.AWAKE.value, brightness=500, motion_raw=True, expected_state_max="Unlocked_Motion", expected_state_min="Unlocked_Motion"),
             TestCase(locked=False, sleep_state=habapp_rules.system.SleepState.AWAKE.value, brightness=1500, motion_raw=False, expected_state_max="Unlocked_TooBright", expected_state_min="Unlocked_Wait"),
             TestCase(locked=False, sleep_state=habapp_rules.system.SleepState.AWAKE.value, brightness=1500, motion_raw=True, expected_state_max="Unlocked_TooBright", expected_state_min="Unlocked_Motion"),
-
             TestCase(locked=False, sleep_state=habapp_rules.system.SleepState.SLEEPING.value, brightness=500, motion_raw=False, expected_state_max="SleepLocked", expected_state_min="Unlocked_Wait"),
             TestCase(locked=False, sleep_state=habapp_rules.system.SleepState.SLEEPING.value, brightness=500, motion_raw=True, expected_state_max="SleepLocked", expected_state_min="Unlocked_Motion"),
             TestCase(locked=False, sleep_state=habapp_rules.system.SleepState.SLEEPING.value, brightness=1500, motion_raw=False, expected_state_max="SleepLocked", expected_state_min="Unlocked_Wait"),
             TestCase(locked=False, sleep_state=habapp_rules.system.SleepState.SLEEPING.value, brightness=1500, motion_raw=True, expected_state_max="SleepLocked", expected_state_min="Unlocked_Motion"),
-
             TestCase(locked=True, sleep_state=habapp_rules.system.SleepState.AWAKE.value, brightness=500, motion_raw=False, expected_state_max="Locked", expected_state_min="Unlocked_Wait"),
             TestCase(locked=True, sleep_state=habapp_rules.system.SleepState.AWAKE.value, brightness=500, motion_raw=True, expected_state_max="Locked", expected_state_min="Unlocked_Motion"),
             TestCase(locked=True, sleep_state=habapp_rules.system.SleepState.AWAKE.value, brightness=1500, motion_raw=False, expected_state_max="Locked", expected_state_min="Unlocked_Wait"),
             TestCase(locked=True, sleep_state=habapp_rules.system.SleepState.AWAKE.value, brightness=1500, motion_raw=True, expected_state_max="Locked", expected_state_min="Unlocked_Motion"),
-
             TestCase(locked=True, sleep_state=habapp_rules.system.SleepState.SLEEPING.value, brightness=500, motion_raw=False, expected_state_max="Locked", expected_state_min="Unlocked_Wait"),
             TestCase(locked=True, sleep_state=habapp_rules.system.SleepState.SLEEPING.value, brightness=500, motion_raw=True, expected_state_max="Locked", expected_state_min="Unlocked_Motion"),
             TestCase(locked=True, sleep_state=habapp_rules.system.SleepState.SLEEPING.value, brightness=1500, motion_raw=False, expected_state_max="Locked", expected_state_min="Unlocked_Wait"),
@@ -369,16 +358,20 @@ class TestMotion(tests.helper.test_case_base.TestCaseBase):
 
     def test_check_brightness(self) -> None:
         """Test _check_brightness."""
-        with unittest.mock.patch.object(self.motion_max._hysteresis_switch, "get_output", return_value=True), \
-                unittest.mock.patch.object(self.motion_max, "brightness_over_threshold"), \
-                unittest.mock.patch.object(self.motion_max, "brightness_below_threshold"):
+        with (
+            unittest.mock.patch.object(self.motion_max._hysteresis_switch, "get_output", return_value=True),
+            unittest.mock.patch.object(self.motion_max, "brightness_over_threshold"),
+            unittest.mock.patch.object(self.motion_max, "brightness_below_threshold"),
+        ):
             self.motion_max._check_brightness()
             self.motion_max.brightness_over_threshold.assert_called_once()
             self.motion_max.brightness_below_threshold.assert_not_called()
 
-        with unittest.mock.patch.object(self.motion_max._hysteresis_switch, "get_output", return_value=False), \
-                unittest.mock.patch.object(self.motion_max, "brightness_over_threshold"), \
-                unittest.mock.patch.object(self.motion_max, "brightness_below_threshold"):
+        with (
+            unittest.mock.patch.object(self.motion_max._hysteresis_switch, "get_output", return_value=False),
+            unittest.mock.patch.object(self.motion_max, "brightness_over_threshold"),
+            unittest.mock.patch.object(self.motion_max, "brightness_below_threshold"),
+        ):
             self.motion_max._check_brightness()
             self.motion_max.brightness_over_threshold.assert_not_called()
             self.motion_max.brightness_below_threshold.assert_called_once()

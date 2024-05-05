@@ -1,4 +1,5 @@
 """Test sleep rule."""
+
 import collections
 import datetime
 import pathlib
@@ -103,12 +104,10 @@ class TestSleep(tests.helper.test_case_base.TestCaseBase):
             TestCase(sleep_request="OFF", lock_request="ON", expected_state="locked"),
             TestCase(sleep_request="ON", lock_request="OFF", expected_state="sleeping"),
             TestCase(sleep_request="ON", lock_request="ON", expected_state="sleeping"),
-
             TestCase(sleep_request=None, lock_request="ON", expected_state="locked"),
             TestCase(sleep_request=None, lock_request="OFF", expected_state="default"),
             TestCase(sleep_request="ON", lock_request=None, expected_state="sleeping"),
             TestCase(sleep_request="OFF", lock_request=None, expected_state="awake"),
-
             TestCase(sleep_request=None, lock_request=None, expected_state="default"),
         ]
 
@@ -313,7 +312,6 @@ class TestLinkSleep(tests.helper.test_case_base.TestCaseBase):
             TestCase(datetime.time(0), datetime.time(23, 59), datetime.time(0, 0), True),
             TestCase(datetime.time(0), datetime.time(23, 59), datetime.time(12), True),
             TestCase(datetime.time(0), datetime.time(23, 59), datetime.time(23, 59), True),
-
             # range during day
             TestCase(datetime.time(10), datetime.time(16), datetime.time(0, 0), False),
             TestCase(datetime.time(10), datetime.time(16), datetime.time(9, 59), False),
@@ -323,7 +321,6 @@ class TestLinkSleep(tests.helper.test_case_base.TestCaseBase):
             TestCase(datetime.time(10), datetime.time(16), datetime.time(16), True),
             TestCase(datetime.time(10), datetime.time(16), datetime.time(16, 1), False),
             TestCase(datetime.time(10), datetime.time(16), datetime.time(23, 59), False),
-
             # range over midnight day
             TestCase(datetime.time(22), datetime.time(5), datetime.time(12), False),
             TestCase(datetime.time(22), datetime.time(5), datetime.time(21, 59), False),

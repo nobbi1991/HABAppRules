@@ -1,4 +1,5 @@
 """Test shading rules."""
+
 import collections
 import copy
 import pathlib
@@ -79,17 +80,25 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
             {"name": "WindAlarm"},
             {"name": "Manual"},
             {"name": "Hand", "on_timeout": "_auto_hand_timeout", "timeout": 72000},
-            {"name": "Auto", "initial": "Init", "children": [
-                {"name": "Init"},
-                {"name": "Open"},
-                {"name": "DoorOpen", "initial": "Open", "children": [
+            {
+                "name": "Auto",
+                "initial": "Init",
+                "children": [
+                    {"name": "Init"},
                     {"name": "Open"},
-                    {"name": "PostOpen", "on_timeout": "_timeout_post_door_open", "timeout": 300},
-                ]},
-                {"name": "NightClose"},
-                {"name": "SleepingClose"},
-                {"name": "SunProtection"},
-            ]},
+                    {
+                        "name": "DoorOpen",
+                        "initial": "Open",
+                        "children": [
+                            {"name": "Open"},
+                            {"name": "PostOpen", "on_timeout": "_timeout_post_door_open", "timeout": 300},
+                        ],
+                    },
+                    {"name": "NightClose"},
+                    {"name": "SleepingClose"},
+                    {"name": "SunProtection"},
+                ],
+            },
         ]
         self.assertEqual(expected_states, self.shading_max.states)
 
@@ -97,32 +106,26 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
             {"trigger": "_wind_alarm_on", "source": ["Auto", "Hand", "Manual"], "dest": "WindAlarm"},
             {"trigger": "_wind_alarm_off", "source": "WindAlarm", "dest": "Manual", "conditions": "_manual_active"},
             {"trigger": "_wind_alarm_off", "source": "WindAlarm", "dest": "Auto", "unless": "_manual_active"},
-
             # manual
             {"trigger": "_manual_on", "source": ["Auto", "Hand"], "dest": "Manual"},
             {"trigger": "_manual_off", "source": "Manual", "dest": "Auto"},
-
             # hand
             {"trigger": "_hand_command", "source": ["Auto"], "dest": "Hand"},
             {"trigger": "_auto_hand_timeout", "source": "Hand", "dest": "Auto"},
-
             # sun
             {"trigger": "_sun_on", "source": "Auto_Open", "dest": "Auto_SunProtection"},
             {"trigger": "_sun_off", "source": "Auto_SunProtection", "dest": "Auto_Open"},
-
             # sleep
             {"trigger": "_sleep_started", "source": ["Auto_Open", "Auto_NightClose", "Auto_SunProtection"], "dest": "Auto_SleepingClose"},
             {"trigger": "_sleep_started", "source": "Hand", "dest": "Auto"},
             {"trigger": "_sleep_stopped", "source": "Auto_SleepingClose", "dest": "Auto_SunProtection", "conditions": "_sun_protection_active_and_configured"},
             {"trigger": "_sleep_stopped", "source": "Auto_SleepingClose", "dest": "Auto_NightClose", "conditions": ["_night_active_and_configured"]},
             {"trigger": "_sleep_stopped", "source": "Auto_SleepingClose", "dest": "Auto_Open", "unless": ["_night_active_and_configured", "_sun_protection_active_and_configured"]},
-
             # door
             {"trigger": "_door_open", "source": ["Auto_NightClose", "Auto_SunProtection", "Auto_SleepingClose", "Auto_Open"], "dest": "Auto_DoorOpen"},
             {"trigger": "_door_open", "source": "Auto_DoorOpen_PostOpen", "dest": "Auto_DoorOpen_Open"},
             {"trigger": "_door_closed", "source": "Auto_DoorOpen_Open", "dest": "Auto_DoorOpen_PostOpen"},
             {"trigger": "_timeout_post_door_open", "source": "Auto_DoorOpen_PostOpen", "dest": "Auto_Init"},
-
             # night close
             {"trigger": "_night_started", "source": ["Auto_Open", "Auto_SunProtection"], "dest": "Auto_NightClose", "conditions": "_night_active_and_configured"},
             {"trigger": "_night_stopped", "source": "Auto_NightClose", "dest": "Auto_SunProtection", "conditions": "_sun_protection_active_and_configured"},
@@ -163,22 +166,12 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
         picture_dir = pathlib.Path(__file__).parent / "Shading_States"
         picture_dir.mkdir(parents=True, exist_ok=True)
 
-        jal_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
-            model=tests.helper.graph_machines.FakeModel(),
-            states=self.shading_min.states,
-            transitions=self.shading_min.trans,
-            initial=self.shading_min.state,
-            show_conditions=False)
+        jal_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self.shading_min.states, transitions=self.shading_min.trans, initial=self.shading_min.state, show_conditions=False)
 
         jal_graph.get_graph().draw(picture_dir / "Shading.png", format="png", prog="dot")
 
         for state_name in [state for state in self._get_state_names(self.shading_min.states) if state not in ["auto_init"]]:
-            jal_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
-                model=tests.helper.graph_machines.FakeModel(),
-                states=self.shading_min.states,
-                transitions=self.shading_min.trans,
-                initial=state_name,
-                show_conditions=True)
+            jal_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self.shading_min.states, transitions=self.shading_min.trans, initial=state_name, show_conditions=True)
             jal_graph.get_graph(force_new=True, show_roi=True).draw(picture_dir / f"Shading_{state_name}.png", format="png", prog="dot")
 
     def test_check_config(self) -> None:
@@ -221,7 +214,6 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
             TestCase(wind_alarm="OFF", manual="OFF", sleeping_state=habapp_rules.system.SleepState.AWAKE, door="OPEN", night="OFF", sun_protection="ON", expected_state="Auto_DoorOpen_Open"),
             TestCase(wind_alarm="OFF", manual="OFF", sleeping_state=habapp_rules.system.SleepState.AWAKE, door="OPEN", night="ON", sun_protection="OFF", expected_state="Auto_DoorOpen_Open"),
             TestCase(wind_alarm="OFF", manual="OFF", sleeping_state=habapp_rules.system.SleepState.AWAKE, door="OPEN", night="ON", sun_protection="ON", expected_state="Auto_DoorOpen_Open"),
-
             TestCase(wind_alarm="OFF", manual="OFF", sleeping_state=habapp_rules.system.SleepState.SLEEPING, door="CLOSED", night="OFF", sun_protection="OFF", expected_state="Auto_SleepingClose"),
             TestCase(wind_alarm="OFF", manual="OFF", sleeping_state=habapp_rules.system.SleepState.SLEEPING, door="CLOSED", night="OFF", sun_protection="ON", expected_state="Auto_SleepingClose"),
             TestCase(wind_alarm="OFF", manual="OFF", sleeping_state=habapp_rules.system.SleepState.SLEEPING, door="CLOSED", night="ON", sun_protection="OFF", expected_state="Auto_SleepingClose"),
@@ -230,7 +222,6 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
             TestCase(wind_alarm="OFF", manual="OFF", sleeping_state=habapp_rules.system.SleepState.SLEEPING, door="OPEN", night="OFF", sun_protection="ON", expected_state="Auto_DoorOpen_Open"),
             TestCase(wind_alarm="OFF", manual="OFF", sleeping_state=habapp_rules.system.SleepState.SLEEPING, door="OPEN", night="ON", sun_protection="OFF", expected_state="Auto_DoorOpen_Open"),
             TestCase(wind_alarm="OFF", manual="OFF", sleeping_state=habapp_rules.system.SleepState.SLEEPING, door="OPEN", night="ON", sun_protection="ON", expected_state="Auto_DoorOpen_Open"),
-
             # wind_alarm = OFF | manual = ON
             TestCase(wind_alarm="OFF", manual="ON", sleeping_state=habapp_rules.system.SleepState.AWAKE, door="CLOSED", night="OFF", sun_protection="OFF", expected_state="Manual"),
             TestCase(wind_alarm="OFF", manual="ON", sleeping_state=habapp_rules.system.SleepState.AWAKE, door="CLOSED", night="OFF", sun_protection="ON", expected_state="Manual"),
@@ -240,7 +231,6 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
             TestCase(wind_alarm="OFF", manual="ON", sleeping_state=habapp_rules.system.SleepState.AWAKE, door="OPEN", night="OFF", sun_protection="ON", expected_state="Manual"),
             TestCase(wind_alarm="OFF", manual="ON", sleeping_state=habapp_rules.system.SleepState.AWAKE, door="OPEN", night="ON", sun_protection="OFF", expected_state="Manual"),
             TestCase(wind_alarm="OFF", manual="ON", sleeping_state=habapp_rules.system.SleepState.AWAKE, door="OPEN", night="ON", sun_protection="ON", expected_state="Manual"),
-
             TestCase(wind_alarm="OFF", manual="ON", sleeping_state=habapp_rules.system.SleepState.SLEEPING, door="CLOSED", night="OFF", sun_protection="OFF", expected_state="Manual"),
             TestCase(wind_alarm="OFF", manual="ON", sleeping_state=habapp_rules.system.SleepState.SLEEPING, door="CLOSED", night="OFF", sun_protection="ON", expected_state="Manual"),
             TestCase(wind_alarm="OFF", manual="ON", sleeping_state=habapp_rules.system.SleepState.SLEEPING, door="CLOSED", night="ON", sun_protection="OFF", expected_state="Manual"),
@@ -249,7 +239,6 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
             TestCase(wind_alarm="OFF", manual="ON", sleeping_state=habapp_rules.system.SleepState.SLEEPING, door="OPEN", night="OFF", sun_protection="ON", expected_state="Manual"),
             TestCase(wind_alarm="OFF", manual="ON", sleeping_state=habapp_rules.system.SleepState.SLEEPING, door="OPEN", night="ON", sun_protection="OFF", expected_state="Manual"),
             TestCase(wind_alarm="OFF", manual="ON", sleeping_state=habapp_rules.system.SleepState.SLEEPING, door="OPEN", night="ON", sun_protection="ON", expected_state="Manual"),
-
             # wind_alarm = ON | manual = OFF
             TestCase(wind_alarm="ON", manual="OFF", sleeping_state=habapp_rules.system.SleepState.AWAKE, door="CLOSED", night="OFF", sun_protection="OFF", expected_state="WindAlarm"),
             TestCase(wind_alarm="ON", manual="OFF", sleeping_state=habapp_rules.system.SleepState.AWAKE, door="CLOSED", night="OFF", sun_protection="ON", expected_state="WindAlarm"),
@@ -259,7 +248,6 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
             TestCase(wind_alarm="ON", manual="OFF", sleeping_state=habapp_rules.system.SleepState.AWAKE, door="OPEN", night="OFF", sun_protection="ON", expected_state="WindAlarm"),
             TestCase(wind_alarm="ON", manual="OFF", sleeping_state=habapp_rules.system.SleepState.AWAKE, door="OPEN", night="ON", sun_protection="OFF", expected_state="WindAlarm"),
             TestCase(wind_alarm="ON", manual="OFF", sleeping_state=habapp_rules.system.SleepState.AWAKE, door="OPEN", night="ON", sun_protection="ON", expected_state="WindAlarm"),
-
             TestCase(wind_alarm="ON", manual="OFF", sleeping_state=habapp_rules.system.SleepState.SLEEPING, door="CLOSED", night="OFF", sun_protection="OFF", expected_state="WindAlarm"),
             TestCase(wind_alarm="ON", manual="OFF", sleeping_state=habapp_rules.system.SleepState.SLEEPING, door="CLOSED", night="OFF", sun_protection="ON", expected_state="WindAlarm"),
             TestCase(wind_alarm="ON", manual="OFF", sleeping_state=habapp_rules.system.SleepState.SLEEPING, door="CLOSED", night="ON", sun_protection="OFF", expected_state="WindAlarm"),
@@ -268,7 +256,6 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
             TestCase(wind_alarm="ON", manual="OFF", sleeping_state=habapp_rules.system.SleepState.SLEEPING, door="OPEN", night="OFF", sun_protection="ON", expected_state="WindAlarm"),
             TestCase(wind_alarm="ON", manual="OFF", sleeping_state=habapp_rules.system.SleepState.SLEEPING, door="OPEN", night="ON", sun_protection="OFF", expected_state="WindAlarm"),
             TestCase(wind_alarm="ON", manual="OFF", sleeping_state=habapp_rules.system.SleepState.SLEEPING, door="OPEN", night="ON", sun_protection="ON", expected_state="WindAlarm"),
-
             # wind_alarm = ON | manual = ON
             TestCase(wind_alarm="ON", manual="ON", sleeping_state=habapp_rules.system.SleepState.AWAKE, door="CLOSED", night="OFF", sun_protection="OFF", expected_state="WindAlarm"),
             TestCase(wind_alarm="ON", manual="ON", sleeping_state=habapp_rules.system.SleepState.AWAKE, door="CLOSED", night="OFF", sun_protection="ON", expected_state="WindAlarm"),
@@ -278,7 +265,6 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
             TestCase(wind_alarm="ON", manual="ON", sleeping_state=habapp_rules.system.SleepState.AWAKE, door="OPEN", night="OFF", sun_protection="ON", expected_state="WindAlarm"),
             TestCase(wind_alarm="ON", manual="ON", sleeping_state=habapp_rules.system.SleepState.AWAKE, door="OPEN", night="ON", sun_protection="OFF", expected_state="WindAlarm"),
             TestCase(wind_alarm="ON", manual="ON", sleeping_state=habapp_rules.system.SleepState.AWAKE, door="OPEN", night="ON", sun_protection="ON", expected_state="WindAlarm"),
-
             TestCase(wind_alarm="ON", manual="ON", sleeping_state=habapp_rules.system.SleepState.SLEEPING, door="CLOSED", night="OFF", sun_protection="OFF", expected_state="WindAlarm"),
             TestCase(wind_alarm="ON", manual="ON", sleeping_state=habapp_rules.system.SleepState.SLEEPING, door="CLOSED", night="OFF", sun_protection="ON", expected_state="WindAlarm"),
             TestCase(wind_alarm="ON", manual="ON", sleeping_state=habapp_rules.system.SleepState.SLEEPING, door="CLOSED", night="ON", sun_protection="OFF", expected_state="WindAlarm"),
@@ -346,9 +332,7 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
             self.assertEqual(config_day, self.shading_max._get_target_position())
 
         # item night is None
-        with (unittest.mock.patch.object(self.shading_max._config, "pos_sleeping", config_night),
-              unittest.mock.patch.object(self.shading_max._config, "pos_sleeping_day", config_day),
-              unittest.mock.patch.object(self.shading_max, "_item_night", None)):
+        with unittest.mock.patch.object(self.shading_max._config, "pos_sleeping", config_night), unittest.mock.patch.object(self.shading_max._config, "pos_sleeping_day", config_day), unittest.mock.patch.object(self.shading_max, "_item_night", None):
             self.shading_max.state = "Auto_SleepingClose"
             tests.helper.oh_item.set_state("Unittest_Night", "ON")
             self.assertEqual(config_night, self.shading_max._get_target_position())
@@ -442,28 +426,23 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
             TestCase("OFF", None, None, shading_pos, False),
             TestCase("OFF", None, shading_pos, None, False),
             TestCase("OFF", None, shading_pos, shading_pos, False),
-
             TestCase("OFF", "OFF", None, None, False),
             TestCase("OFF", "OFF", None, shading_pos, False),
             TestCase("OFF", "OFF", shading_pos, None, False),
             TestCase("OFF", "OFF", shading_pos, shading_pos, False),
-
             TestCase("OFF", "ON", None, None, False),
             TestCase("OFF", "ON", None, shading_pos, False),
             TestCase("OFF", "ON", shading_pos, None, False),
             TestCase("OFF", "ON", shading_pos, shading_pos, False),
-
             # night on
             TestCase("ON", None, None, None, False),
             TestCase("ON", None, None, shading_pos, True),
             TestCase("ON", None, shading_pos, None, False),
             TestCase("ON", None, shading_pos, shading_pos, True),
-
             TestCase("ON", "OFF", None, None, False),
             TestCase("ON", "OFF", None, shading_pos, True),
             TestCase("ON", "OFF", shading_pos, None, False),
             TestCase("ON", "OFF", shading_pos, shading_pos, True),
-
             TestCase("ON", "ON", None, None, False),
             TestCase("ON", "ON", None, shading_pos, False),
             TestCase("ON", "ON", shading_pos, None, True),
@@ -747,7 +726,6 @@ class TestShadingShutter(tests.helper.test_case_base.TestCaseBase):
             TestCase(habapp_rules.actors.config.shading.ShadingPosition(None, 25), None),
             TestCase(habapp_rules.actors.config.shading.ShadingPosition(50, None), 50),
             TestCase(habapp_rules.actors.config.shading.ShadingPosition(80, 90), 80),
-
             TestCase(habapp_rules.actors.config.shading.ShadingPosition(0, 0), 0),
             TestCase(habapp_rules.actors.config.shading.ShadingPosition(0, 25), 0),
             TestCase(habapp_rules.actors.config.shading.ShadingPosition(50, 0), 50),
@@ -922,16 +900,17 @@ class TestShadingRaffstore(tests.helper.test_case_base.TestCaseBase):
             TestCase(habapp_rules.actors.config.shading.ShadingPosition(None, 25), None, 25),
             TestCase(habapp_rules.actors.config.shading.ShadingPosition(50, None), 50, None),
             TestCase(habapp_rules.actors.config.shading.ShadingPosition(80, 90), 80, 90),
-
             TestCase(habapp_rules.actors.config.shading.ShadingPosition(0, 0), 0, 0),
             TestCase(habapp_rules.actors.config.shading.ShadingPosition(0, 25), 0, 25),
             TestCase(habapp_rules.actors.config.shading.ShadingPosition(50, 0), 50, 0),
             TestCase(habapp_rules.actors.config.shading.ShadingPosition(80, 90), 80, 90),
         ]
 
-        with (unittest.mock.patch.object(self.raffstore, "_get_target_position") as get_pos_mock,
-              unittest.mock.patch.object(self.raffstore._state_observer_pos, "send_command") as send_pos_mock,
-              unittest.mock.patch.object(self.raffstore._state_observer_slat, "send_command") as send_slat_mock):
+        with (
+            unittest.mock.patch.object(self.raffstore, "_get_target_position") as get_pos_mock,
+            unittest.mock.patch.object(self.raffstore._state_observer_pos, "send_command") as send_pos_mock,
+            unittest.mock.patch.object(self.raffstore._state_observer_slat, "send_command") as send_slat_mock,
+        ):
             for test_case in test_cases:
                 get_pos_mock.return_value = test_case.target_pos
                 send_pos_mock.reset_mock()
@@ -960,11 +939,13 @@ class TestShadingRaffstore(tests.helper.test_case_base.TestCaseBase):
             tests.helper.oh_item.send_command("Unittest_SunProtection", "ON", "OFF")
             self.assertEqual("Auto_SunProtection", self.raffstore.state)
             tests.helper.oh_item.send_command("Unittest_SunProtection_Slat", 22, 15)
-            send_command_mock.assert_has_calls([
-                unittest.mock.call(0),
-                unittest.mock.call(15),
-                unittest.mock.call(22),
-            ])
+            send_command_mock.assert_has_calls(
+                [
+                    unittest.mock.call(0),
+                    unittest.mock.call(15),
+                    unittest.mock.call(22),
+                ]
+            )
 
     def test_manual_position_restore(self) -> None:
         """Test if manual position is restored correctly."""
@@ -1015,7 +996,6 @@ class TestResetAllManualHand(tests.helper.test_case_base.TestCaseBase):
             TestCase("OFF", "Auto", []),
             TestCase("OFF", "Hand", []),
             TestCase("OFF", "Manual", []),
-
             TestCase("ON", "Auto", []),
             TestCase("ON", "Hand", [unittest.mock.call("ON"), unittest.mock.call("OFF")]),
             TestCase("ON", "Manual", [unittest.mock.call("OFF")]),
@@ -1113,11 +1093,9 @@ class TestSlatValueSun(tests.helper.test_case_base.TestCaseBase):
         test_cases = [
             TestCase([(0, 100), (10, 50)], [(0, 100), (10, 50)], False),
             TestCase([(10, 50), (0, 100)], [(0, 100), (10, 50)], False),
-
             TestCase([(0, 100), (10, 50), (20, 50)], [(0, 100), (10, 50), (20, 50)], False),
             TestCase([(10, 50), (0, 100), (20, 50)], [(0, 100), (10, 50), (20, 50)], False),
             TestCase([(10, 50), (20, 50), (0, 100)], [(0, 100), (10, 50), (20, 50)], False),
-
             TestCase(None, None, True),
             TestCase([(1, 2, 3)], None, True),
             TestCase([1, 2, 3], None, True),
@@ -1142,23 +1120,18 @@ class TestSlatValueSun(tests.helper.test_case_base.TestCaseBase):
 
         test_cases = [
             TestCase(-10, 100, 100),
-
             TestCase(-1, 100, 100),
             TestCase(0, 100, 100),
             TestCase(1, 100, 100),
-
             TestCase(9, 100, 100),
             TestCase(10, 70, 80),
             TestCase(11, 70, 80),
-
             TestCase(29, 60, 70),
             TestCase(30, 50, 60),
             TestCase(31, 50, 60),
-
             TestCase(39, 50, 60),
             TestCase(40, 50, 50),
             TestCase(41, 50, 50),
-
             TestCase(60, 50, 50),
         ]
 

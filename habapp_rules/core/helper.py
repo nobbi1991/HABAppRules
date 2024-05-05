@@ -1,4 +1,5 @@
 """Common helper functions for all rules."""
+
 import logging
 import time
 

@@ -1,4 +1,5 @@
 """Test KNX MQTT bridges."""
+
 import collections
 import unittest
 import unittest.mock
@@ -117,10 +118,12 @@ class TestLight(tests.helper.test_case_base.TestCaseBase):
             TestCase(0, 0, "OFF"),
         ]
 
-        with unittest.mock.patch.object(self._knx_bridge_full, "_knx_dimmer_item") as full_knx_dimmer_item_mock, \
-                unittest.mock.patch.object(self._knx_bridge_full, "_knx_switch_item") as full_knx_switch_item_mock, \
-                unittest.mock.patch.object(self._knx_bridge_switch, "_knx_switch_item") as switch_knx_switch_item_mock, \
-                unittest.mock.patch.object(self._knx_bridge_dimmer, "_knx_dimmer_item") as dimmer_knx_dimmer_item_mock:
+        with (
+            unittest.mock.patch.object(self._knx_bridge_full, "_knx_dimmer_item") as full_knx_dimmer_item_mock,
+            unittest.mock.patch.object(self._knx_bridge_full, "_knx_switch_item") as full_knx_switch_item_mock,
+            unittest.mock.patch.object(self._knx_bridge_switch, "_knx_switch_item") as switch_knx_switch_item_mock,
+            unittest.mock.patch.object(self._knx_bridge_dimmer, "_knx_dimmer_item") as dimmer_knx_dimmer_item_mock,
+        ):
             for test_case in test_cases:
                 full_knx_dimmer_item_mock.oh_post_update.reset_mock()
                 full_knx_switch_item_mock.oh_post_update.reset_mock()

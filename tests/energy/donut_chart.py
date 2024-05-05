@@ -1,4 +1,5 @@
 """Tests for donut chart."""
+
 import unittest
 import unittest.mock
 

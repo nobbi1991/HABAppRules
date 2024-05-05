@@ -1,4 +1,5 @@
 """Test Presence rule."""
+
 import collections
 import unittest
 import unittest.mock
@@ -237,9 +238,10 @@ class TestStateObserverDimmer(tests.helper.test_case_base.TestCaseBase):
         TestCase = collections.namedtuple("TestCase", "event, current_value, on_called, off_called, change_called")
 
         test_cases = [
+            # ON / OFF
             TestCase(HABApp.openhab.events.ItemCommandEvent("any", "ON"), 0, True, False, False),
             TestCase(HABApp.openhab.events.ItemCommandEvent("any", "OFF"), 42, False, True, False),
-
+            # numeric value
             TestCase(HABApp.openhab.events.ItemCommandEvent("any", 0), 0, False, False, False),
             TestCase(HABApp.openhab.events.ItemCommandEvent("any", 42), 0, True, False, False),
             TestCase(HABApp.openhab.events.ItemCommandEvent("any", 0), 42, False, True, False),
@@ -247,9 +249,11 @@ class TestStateObserverDimmer(tests.helper.test_case_base.TestCaseBase):
             TestCase(HABApp.openhab.events.ItemCommandEvent("any", 42), 80, False, False, True),
         ]
 
-        with unittest.mock.patch.object(self._observer_dimmer, "_cb_on") as cb_on_mock, \
-                unittest.mock.patch.object(self._observer_dimmer, "_cb_off") as cb_off_mock, \
-                unittest.mock.patch.object(self._observer_dimmer, "_cb_brightness_change") as cb_change_mock:
+        with (
+            unittest.mock.patch.object(self._observer_dimmer, "_cb_on") as cb_on_mock,
+            unittest.mock.patch.object(self._observer_dimmer, "_cb_off") as cb_off_mock,
+            unittest.mock.patch.object(self._observer_dimmer, "_cb_brightness_change") as cb_change_mock,
+        ):
             for test_case in test_cases:
                 cb_on_mock.reset_mock()
                 self._observer_dimmer._value = test_case.current_value
@@ -398,17 +402,13 @@ class TestStateObserverRollerShutter(tests.helper.test_case_base.TestCaseBase):
         test_cases = [
             TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", None, None), 0, 0, False),
             TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 0, None), None, 0, False),
-
             TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 0, None), 0, 0, False),
             TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 10, None), 10, 0, False),
-
             TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 1, None), 0, 0, True),
             TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 10, None), 0, 0, True),
-
             TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 1, None), 0, 2, False),
             TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 2, None), 0, 2, False),
             TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 3, None), 0, 2, True),
-
             TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 9, None), 10, 2, False),
             TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 8, None), 10, 2, False),
             TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 7, None), 10, 2, True),
@@ -499,7 +499,6 @@ class TestStateObserverNumber(tests.helper.test_case_base.TestCaseBase):
             TestCase(0, 0, False),
             TestCase(1, 1, False),
             TestCase(100, 100, False),
-
             # diff < 0.1 -> False
             TestCase(1, 0.9, False),
             TestCase(1, 1.09, False),
@@ -509,7 +508,6 @@ class TestStateObserverNumber(tests.helper.test_case_base.TestCaseBase):
             TestCase(0, 0.1, False),
             TestCase(-0.1, 0, False),
             TestCase(0.1, 0, False),
-
             # diff > 0.1 -> True
             TestCase(0, 0.2, True),
             TestCase(0, -0.2, True),

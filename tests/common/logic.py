@@ -1,4 +1,5 @@
 """Unit-test for logic functions."""
+
 import collections
 import unittest.mock
 
@@ -58,16 +59,13 @@ class TestAndOR(tests.helper.test_case_base.TestCaseBase):
             # test toggle of one switch
             TestStep("Unittest_Switch_in1", "ON", "OFF"),
             TestStep("Unittest_Switch_in1", "OFF", "OFF"),
-
             # switch on all
             TestStep("Unittest_Switch_in1", "ON", "OFF"),
             TestStep("Unittest_Switch_in2", "ON", "OFF"),
             TestStep("Unittest_Switch_in3", "ON", "ON"),
-
             # toggle one switch
             TestStep("Unittest_Switch_in1", "OFF", "OFF"),
             TestStep("Unittest_Switch_in1", "ON", "ON"),
-
             # switch off all
             TestStep("Unittest_Switch_in2", "OFF", "OFF"),
             TestStep("Unittest_Switch_in1", "OFF", "OFF"),
@@ -89,16 +87,13 @@ class TestAndOR(tests.helper.test_case_base.TestCaseBase):
             # test toggle of one switch
             TestStep("Unittest_Switch_in1", "ON", "ON"),
             TestStep("Unittest_Switch_in1", "OFF", "OFF"),
-
             # switch on all
             TestStep("Unittest_Switch_in1", "ON", "ON"),
             TestStep("Unittest_Switch_in2", "ON", "ON"),
             TestStep("Unittest_Switch_in3", "ON", "ON"),
-
             # toggle one switch
             TestStep("Unittest_Switch_in1", "OFF", "ON"),
             TestStep("Unittest_Switch_in1", "ON", "ON"),
-
             # switch off all
             TestStep("Unittest_Switch_in2", "OFF", "ON"),
             TestStep("Unittest_Switch_in1", "OFF", "ON"),
@@ -120,16 +115,13 @@ class TestAndOR(tests.helper.test_case_base.TestCaseBase):
             # test toggle of one Contact
             TestStep("Unittest_Contact_in1", "CLOSED", "OPEN"),
             TestStep("Unittest_Contact_in1", "OPEN", "OPEN"),
-
             # Contact on all
             TestStep("Unittest_Contact_in1", "CLOSED", "OPEN"),
             TestStep("Unittest_Contact_in2", "CLOSED", "OPEN"),
             TestStep("Unittest_Contact_in3", "CLOSED", "CLOSED"),
-
             # toggle one Contact
             TestStep("Unittest_Contact_in1", "OPEN", "OPEN"),
             TestStep("Unittest_Contact_in1", "CLOSED", "CLOSED"),
-
             # Contact off all
             TestStep("Unittest_Contact_in2", "OPEN", "OPEN"),
             TestStep("Unittest_Contact_in1", "OPEN", "OPEN"),
@@ -151,16 +143,13 @@ class TestAndOR(tests.helper.test_case_base.TestCaseBase):
             # test toggle of one Contact
             TestStep("Unittest_Contact_in1", "CLOSED", "CLOSED"),
             TestStep("Unittest_Contact_in1", "OPEN", "OPEN"),
-
             # Contact on all
             TestStep("Unittest_Contact_in1", "CLOSED", "CLOSED"),
             TestStep("Unittest_Contact_in2", "CLOSED", "CLOSED"),
             TestStep("Unittest_Contact_in3", "CLOSED", "CLOSED"),
-
             # toggle one Contact
             TestStep("Unittest_Contact_in1", "OPEN", "CLOSED"),
             TestStep("Unittest_Contact_in1", "CLOSED", "CLOSED"),
-
             # Contact off all
             TestStep("Unittest_Contact_in2", "OPEN", "CLOSED"),
             TestStep("Unittest_Contact_in1", "OPEN", "CLOSED"),
@@ -225,12 +214,10 @@ class TestNumericLogic(tests.helper.test_case_base.TestCaseBase):
             TestStep(1, 100, 100, 100, 100),
             TestStep(1, 0, 0, 0, 0),
             TestStep(1, -100, -100, -100, -100),
-
             # change all values to 5000
             TestStep(1, 5000, 5000, 5000, 5000),
             TestStep(2, 5000, 5000, 5000, 10_000),
             TestStep(3, 5000, 5000, 5000, 15_000),
-
             # some random values
             TestStep(3, -1000, -1000, 5000, 9000),
             TestStep(3, -500, -500, 5000, 9500),
@@ -261,12 +248,10 @@ class TestNumericLogic(tests.helper.test_case_base.TestCaseBase):
             TestStep(1, 100, 100, 100),
             TestStep(1, 0, 0, 0),
             TestStep(1, 50, 50, 50),
-
             # change all values to 80
             TestStep(1, 80, 80, 80),
             TestStep(2, 80, 80, 80),
             TestStep(3, 80, 80, 80),
-
             # some random values
             TestStep(3, 1, 1, 80),
             TestStep(3, 20, 20, 80),

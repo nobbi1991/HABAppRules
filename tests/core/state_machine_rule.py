@@ -1,4 +1,5 @@
 """Unit-test for state_machine."""
+
 import collections
 import time
 import types
@@ -42,8 +43,10 @@ class TestStateMachineRule(tests.helper.test_case_base.TestCaseBase):
 
     def test__init_exceptions(self) -> None:
         """Test exceptions of __init__."""
-        with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_common_state_machine_rule_StateMachineRule_state", "")), \
-                unittest.mock.patch("pathlib.Path.relative_to", side_effect=ValueError("not relative")):
+        with (
+            unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_common_state_machine_rule_StateMachineRule_state", "")),
+            unittest.mock.patch("pathlib.Path.relative_to", side_effect=ValueError("not relative")),
+        ):
             state_machine = habapp_rules.core.state_machine_rule.StateMachineRule()
 
         self.assertEqual("state_machine_rule_TestRule_StateMachineRule", state_machine._item_prefix)
@@ -86,10 +89,7 @@ class TestStateMachineRule(tests.helper.test_case_base.TestCaseBase):
             for initial_state in ["stopped", "running"]:
                 state_machine_rule = habapp_rules.core.state_machine_rule.StateMachineRule()
 
-                state_machine_rule.state_machine = habapp_rules.core.state_machine_rule.StateMachineWithTimeout(
-                    model=state_machine_rule,
-                    states=states,
-                    ignore_invalid_triggers=True)
+                state_machine_rule.state_machine = habapp_rules.core.state_machine_rule.StateMachineWithTimeout(model=state_machine_rule, states=states, ignore_invalid_triggers=True)
 
                 state_machine_rule._set_state(initial_state)
 

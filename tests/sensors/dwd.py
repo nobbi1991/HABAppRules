@@ -1,4 +1,5 @@
 """Test DWD rules."""
+
 import collections
 import datetime
 import pathlib
@@ -110,11 +111,8 @@ class TestDwdWindAlarm(tests.helper.test_case_base.TestCaseBase):
         picture_dir.mkdir(parents=True, exist_ok=True)
 
         graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
-            model=tests.helper.graph_machines.FakeModel(),
-            states=self._wind_alarm_rule_1.states,
-            transitions=self._wind_alarm_rule_1.trans,
-            initial=self._wind_alarm_rule_1.state,
-            show_conditions=True)
+            model=tests.helper.graph_machines.FakeModel(), states=self._wind_alarm_rule_1.states, transitions=self._wind_alarm_rule_1.trans, initial=self._wind_alarm_rule_1.state, show_conditions=True
+        )
 
         graph.get_graph().draw(picture_dir / "DWD_Wind_Alarm.png", format="png", prog="dot")
 

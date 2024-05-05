@@ -1,4 +1,5 @@
 """Get type of day."""
+
 import datetime
 
 import holidays

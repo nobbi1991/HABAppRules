@@ -1,4 +1,5 @@
 """Helper for testing transitions."""
+
 import unittest.mock
 
 

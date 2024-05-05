@@ -1,4 +1,5 @@
 """Implementations of logical functions."""
+
 import abc
 import logging
 
@@ -265,8 +266,7 @@ class InvertValue(HABApp.Rule):
 
         output_value = -1 * event.value
 
-        if (self._only_negative and output_value > 0 or
-                self._only_positive and output_value < 0):
+        if self._only_negative and output_value > 0 or self._only_positive and output_value < 0:
             output_value = 0
 
         self._item_output.oh_send_command(output_value)

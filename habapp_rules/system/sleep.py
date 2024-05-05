@@ -1,4 +1,5 @@
 """Rule to set/unset sleep state."""
+
 import datetime
 import logging
 
@@ -92,12 +93,7 @@ class Sleep(habapp_rules.core.state_machine_rule.StateMachineRule):
         self._lock_request_active = self.__item_lock_request.is_on() if self.__item_lock_request is not None else False
 
         # init state machine
-        self.state_machine = habapp_rules.core.state_machine_rule.StateMachineWithTimeout(
-            model=self,
-            states=self.states,
-            transitions=self.trans,
-            ignore_invalid_triggers=True,
-            after_state_change="_update_openhab_state")
+        self.state_machine = habapp_rules.core.state_machine_rule.StateMachineWithTimeout(model=self, states=self.states, transitions=self.trans, ignore_invalid_triggers=True, after_state_change="_update_openhab_state")
         self._set_initial_state()
 
         self._update_openhab_state()
@@ -220,12 +216,9 @@ class Sleep(habapp_rules.core.state_machine_rule.StateMachineRule):
 class LinkSleep(HABApp.Rule):
     """Link sleep items depending on current time."""
 
-    def __init__(self,
-                 sleep_master_name: str,
-                 sleep_req_slave_names: list[str],
-                 link_active_time_start: datetime.time = LINK_SLEEP_DEFAULT_START,
-                 link_active_time_end: datetime.time = LINK_SLEEP_DEFAULT_END,
-                 link_active_name: str | None = None) -> None:
+    def __init__(
+        self, sleep_master_name: str, sleep_req_slave_names: list[str], link_active_time_start: datetime.time = LINK_SLEEP_DEFAULT_START, link_active_time_end: datetime.time = LINK_SLEEP_DEFAULT_END, link_active_name: str | None = None
+    ) -> None:
         """Init rule.
 
         :param sleep_master_name: Name of OpenHAB switch item for master sleep item

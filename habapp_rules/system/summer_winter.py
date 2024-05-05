@@ -1,4 +1,5 @@
 """Rule to detect whether it is summer or winter."""
+
 import datetime
 import logging
 import statistics

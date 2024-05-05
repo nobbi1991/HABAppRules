@@ -1,4 +1,5 @@
 """Test irrigation rule."""
+
 import collections
 import datetime
 import unittest
@@ -105,30 +106,35 @@ class TestIrrigation(tests.helper.test_case_base.TestCaseBase):
         with unittest.mock.patch.object(irrigation_max, "_is_in_time_range", return_value=False):
             self.assertFalse(irrigation_max._get_target_valve_state())
             self.assertEqual(3, irrigation_max._is_in_time_range.call_count)
-            irrigation_max._is_in_time_range.assert_has_calls([
-                unittest.mock.call(datetime.time(12, 30), datetime.time(12, 35), unittest.mock.ANY),
-                unittest.mock.call(datetime.time(12, 45), datetime.time(12, 50), unittest.mock.ANY),
-                unittest.mock.call(datetime.time(13, 0), datetime.time(13, 5), unittest.mock.ANY),
-            ])
+            irrigation_max._is_in_time_range.assert_has_calls(
+                [
+                    unittest.mock.call(datetime.time(12, 30), datetime.time(12, 35), unittest.mock.ANY),
+                    unittest.mock.call(datetime.time(12, 45), datetime.time(12, 50), unittest.mock.ANY),
+                    unittest.mock.call(datetime.time(13, 0), datetime.time(13, 5), unittest.mock.ANY),
+                ]
+            )
 
         with unittest.mock.patch.object(irrigation_max, "_is_in_time_range", side_effect=[False, True]):
             self.assertTrue(irrigation_max._get_target_valve_state())
             self.assertEqual(2, irrigation_max._is_in_time_range.call_count)
-            irrigation_max._is_in_time_range.assert_has_calls([
-                unittest.mock.call(datetime.time(12, 30), datetime.time(12, 35), unittest.mock.ANY),
-                unittest.mock.call(datetime.time(12, 45), datetime.time(12, 50), unittest.mock.ANY),
-            ])
+            irrigation_max._is_in_time_range.assert_has_calls(
+                [
+                    unittest.mock.call(datetime.time(12, 30), datetime.time(12, 35), unittest.mock.ANY),
+                    unittest.mock.call(datetime.time(12, 45), datetime.time(12, 50), unittest.mock.ANY),
+                ]
+            )
 
     def test_is_in_time_range(self) -> None:
         """Test _is_in_time_range."""
         TestCase = collections.namedtuple("TestCase", "start_time, end_time, time_to_check, expected_result")
 
         test_cases = [
+            # no day change
             TestCase(datetime.time(12, 00), datetime.time(13, 00), datetime.time(12, 30), True),
             TestCase(datetime.time(12, 00), datetime.time(13, 00), datetime.time(14, 30), False),
             TestCase(datetime.time(12, 00), datetime.time(13, 00), datetime.time(13, 00), False),
             TestCase(datetime.time(12, 00), datetime.time(13, 00), datetime.time(12, 00), True),
-
+            # day change included
             TestCase(datetime.time(23, 00), datetime.time(1, 00), datetime.time(23, 0), True),
             TestCase(datetime.time(23, 00), datetime.time(1, 00), datetime.time(23, 59), True),
             TestCase(datetime.time(23, 00), datetime.time(1, 00), datetime.time(0, 0), True),

@@ -1,13 +1,14 @@
 """Module for sending the monthly energy consumption."""
+
 import dataclasses
 import datetime
 import logging
 import pathlib
 import tempfile
 
+import dateutil.relativedelta
 import HABApp
 import HABApp.core.internals
-import dateutil.relativedelta
 import jinja2
 import multi_notifier.connectors.connector_mail
 import pkg_resources
@@ -109,13 +110,8 @@ class MonthlyReport(HABApp.Rule):
     """
 
     def __init__(
-            self,
-            name_energy_sum: str,
-            known_energy_share: list[EnergyShare],
-            persistence_group_name: str | None,
-            config_mail: multi_notifier.connectors.connector_mail.MailConfig | None,
-            recipients: str | list[str],
-            debug: bool = False) -> None:
+        self, name_energy_sum: str, known_energy_share: list[EnergyShare], persistence_group_name: str | None, config_mail: multi_notifier.connectors.connector_mail.MailConfig | None, recipients: str | list[str], debug: bool = False
+    ) -> None:
         """Initialize the rule.
 
         :param name_energy_sum: name of OpenHAB Number item, which holds the total energy consumption (NumberItem)

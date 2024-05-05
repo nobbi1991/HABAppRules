@@ -1,4 +1,5 @@
 """DWD rules."""
+
 import dataclasses
 import datetime
 import logging
@@ -86,32 +87,37 @@ class DwdWindAlarm(habapp_rules.core.state_machine_rule.StateMachineRule):
     states = [
         {"name": "Manual"},
         {"name": "Hand", "timeout": 20 * 3600, "on_timeout": "_auto_hand_timeout"},
-        {"name": "Auto", "initial": "Init", "children": [
-            {"name": "Init"},
-            {"name": "On"},
-            {"name": "Off"},
-        ]},
+        {
+            "name": "Auto",
+            "initial": "Init",
+            "children": [
+                {"name": "Init"},
+                {"name": "On"},
+                {"name": "Off"},
+            ],
+        },
     ]
 
     trans = [
         {"trigger": "manual_on", "source": ["Auto", "Hand"], "dest": "Manual"},
         {"trigger": "manual_off", "source": "Manual", "dest": "Auto"},
         {"trigger": "hand", "source": "Auto", "dest": "Hand"},
-
         {"trigger": "wind_alarm_start", "source": "Auto_Off", "dest": "Auto_On"},
         {"trigger": "wind_alarm_end", "source": "Auto_On", "dest": "Auto_Off"},
     ]
 
-    def __init__(self,
-                 name_wind_alarm: str,
-                 manual_name: str,
-                 hand_timeout: str | int,
-                 dwd_item_prefix: str = "I26_99_warning_",
-                 number_dwd_objects: int = 3,
-                 threshold_wind_speed: int = 70,
-                 threshold_severity: int = 2,
-                 name_state: str | None = None,
-                 state_label: str | None = None) -> None:
+    def __init__(
+        self,
+        name_wind_alarm: str,
+        manual_name: str,
+        hand_timeout: str | int,
+        dwd_item_prefix: str = "I26_99_warning_",
+        number_dwd_objects: int = 3,
+        threshold_wind_speed: int = 70,
+        threshold_severity: int = 2,
+        name_state: str | None = None,
+        state_label: str | None = None,
+    ) -> None:
         """Init of DWD wind alarm object.
 
         :param name_wind_alarm: name of OpenHAB wind alarm item (SwitchItem)
@@ -147,12 +153,7 @@ class DwdWindAlarm(habapp_rules.core.state_machine_rule.StateMachineRule):
 
         # init state machine
         self._previous_state = None
-        self.state_machine = habapp_rules.core.state_machine_rule.HierarchicalStateMachineWithTimeout(
-            model=self,
-            states=self.states,
-            transitions=self.trans,
-            ignore_invalid_triggers=True,
-            after_state_change="_update_openhab_state")  # this function is missing!
+        self.state_machine = habapp_rules.core.state_machine_rule.HierarchicalStateMachineWithTimeout(model=self, states=self.states, transitions=self.trans, ignore_invalid_triggers=True, after_state_change="_update_openhab_state")
 
         self._wind_alarm_observer = habapp_rules.actors.state_observer.StateObserverSwitch(name_wind_alarm, self._cb_hand, self._cb_hand)
 
@@ -244,9 +245,7 @@ class DwdWindAlarm(habapp_rules.core.state_machine_rule.StateMachineRule):
                 if not speed_values:
                     continue
 
-                if (max(speed_values) >= self._threshold_wind_speed and
-                        dwd_items.severity_as_int >= self._threshold_severity and
-                        dwd_items.start_time.value < datetime.datetime.now() < dwd_items.end_time.value):
+                if max(speed_values) >= self._threshold_wind_speed and dwd_items.severity_as_int >= self._threshold_severity and dwd_items.start_time.value < datetime.datetime.now() < dwd_items.end_time.value:
                     return True
         return False
 

@@ -1,4 +1,5 @@
 """Test ventilation config."""
+
 import datetime
 import unittest
 

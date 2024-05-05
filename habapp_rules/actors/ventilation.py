@@ -1,4 +1,5 @@
 """Ventilation rules."""
+
 import abc
 import copy
 import datetime
@@ -20,32 +21,37 @@ class _VentilationBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
     states = [
         {"name": "Manual"},
-        {"name": "Auto", "initial": "Init", "children": [
-            {"name": "Init"},
-            {"name": "Normal"},
-            {"name": "PowerHand", "timeout": 3600, "on_timeout": "_hand_off"},
-            {"name": "PowerExternal"},
-            {"name": "LongAbsence", "initial": "Off", "children": [
-                {"name": "On", "timeout": 3600, "on_timeout": "_long_absence_power_off"},
-                {"name": "Off"},
-            ]},
-        ]},
+        {
+            "name": "Auto",
+            "initial": "Init",
+            "children": [
+                {"name": "Init"},
+                {"name": "Normal"},
+                {"name": "PowerHand", "timeout": 3600, "on_timeout": "_hand_off"},
+                {"name": "PowerExternal"},
+                {
+                    "name": "LongAbsence",
+                    "initial": "Off",
+                    "children": [
+                        {"name": "On", "timeout": 3600, "on_timeout": "_long_absence_power_off"},
+                        {"name": "Off"},
+                    ],
+                },
+            ],
+        },
     ]
 
     trans = [
         # manual
         {"trigger": "_manual_on", "source": ["Auto"], "dest": "Manual"},
         {"trigger": "_manual_off", "source": "Manual", "dest": "Auto"},
-
         # PowerHand
         {"trigger": "_hand_on", "source": ["Auto_Normal", "Auto_PowerExternal", "Auto_LongAbsence"], "dest": "Auto_PowerHand"},
         {"trigger": "_hand_off", "source": "Auto_PowerHand", "dest": "Auto_PowerExternal", "conditions": "_external_active_and_configured"},
         {"trigger": "_hand_off", "source": "Auto_PowerHand", "dest": "Auto_Normal", "unless": "_external_active_and_configured"},
-
         # PowerExternal
         {"trigger": "_external_on", "source": "Auto_Normal", "dest": "Auto_PowerExternal"},
         {"trigger": "_external_off", "source": "Auto_PowerExternal", "dest": "Auto_Normal"},
-
         # long absence
         {"trigger": "_long_absence_on", "source": ["Auto_Normal", "Auto_PowerExternal"], "dest": "Auto_LongAbsence"},
         {"trigger": "_long_absence_power_on", "source": "Auto_LongAbsence_Off", "dest": "Auto_LongAbsence_On"},
@@ -53,17 +59,19 @@ class _VentilationBase(habapp_rules.core.state_machine_rule.StateMachineRule):
         {"trigger": "_long_absence_off", "source": "Auto_LongAbsence", "dest": "Auto_Normal"},
     ]
 
-    def __init__(self,  # noqa: PLR0913
-                 name_manual: str,
-                 config: habapp_rules.actors.config.ventilation.VentilationConfig,
-                 name_hand_request: str | None = None,
-                 name_external_request: str | None = None,
-                 name_presence_state: str | None = None,
-                 name_feedback_on: str | None = None,
-                 name_feedback_power: str | None = None,
-                 name_display_text: str | None = None,
-                 name_state: str | None = None,
-                 state_label: str | None = None) -> None:
+    def __init__(  # noqa: PLR0913
+        self,
+        name_manual: str,
+        config: habapp_rules.actors.config.ventilation.VentilationConfig,
+        name_hand_request: str | None = None,
+        name_external_request: str | None = None,
+        name_presence_state: str | None = None,
+        name_feedback_on: str | None = None,
+        name_feedback_power: str | None = None,
+        name_display_text: str | None = None,
+        name_state: str | None = None,
+        state_label: str | None = None,
+    ) -> None:
         """Init of ventilation base.
 
         :param name_manual: name of OpenHAB switch item to disable all automatic functions  (SwitchItem)
@@ -94,12 +102,7 @@ class _VentilationBase(habapp_rules.core.state_machine_rule.StateMachineRule):
         # init state machine
         self._previous_state = None
         self._state_change_time = datetime.datetime.now()
-        self.state_machine = habapp_rules.core.state_machine_rule.HierarchicalStateMachineWithTimeout(
-            model=self,
-            states=self.states,
-            transitions=self.trans,
-            ignore_invalid_triggers=True,
-            after_state_change="_update_openhab_state")
+        self.state_machine = habapp_rules.core.state_machine_rule.HierarchicalStateMachineWithTimeout(model=self, states=self.states, transitions=self.trans, ignore_invalid_triggers=True, after_state_change="_update_openhab_state")
         self._set_initial_state()
 
         self._apply_config()
@@ -311,18 +314,20 @@ class Ventilation(_VentilationBase):
     )
     """
 
-    def __init__(self,  # noqa: PLR0913
-                 name_ventilation_level: str,
-                 name_manual: str,
-                 config: habapp_rules.actors.config.ventilation.VentilationConfig,
-                 name_hand_request: str | None = None,
-                 name_external_request: str | None = None,
-                 name_presence_state: str | None = None,
-                 name_feedback_on: str | None = None,
-                 name_feedback_power: str | None = None,
-                 name_display_text: str | None = None,
-                 name_state: str | None = None,
-                 state_label: str | None = None) -> None:
+    def __init__(  # noqa: PLR0913
+        self,
+        name_ventilation_level: str,
+        name_manual: str,
+        config: habapp_rules.actors.config.ventilation.VentilationConfig,
+        name_hand_request: str | None = None,
+        name_external_request: str | None = None,
+        name_presence_state: str | None = None,
+        name_feedback_on: str | None = None,
+        name_feedback_power: str | None = None,
+        name_display_text: str | None = None,
+        name_state: str | None = None,
+        state_label: str | None = None,
+    ) -> None:
         """Init of ventilation object.
 
         :param name_ventilation_level: name of OpenHAB number item to set the ventilation level (NumberItem
@@ -412,20 +417,22 @@ class VentilationHeliosTwoStage(_VentilationBase):
     # add new PowerAfterRun transitions
     trans.append({"trigger": "_after_run_timeout", "source": "Auto_PowerAfterRun", "dest": "Auto_Normal"})
 
-    def __init__(self,  # noqa: PLR0913
-                 name_ventilation_output_on: str,
-                 name_ventilation_output_power: str,
-                 name_manual: str,
-                 config: habapp_rules.actors.config.ventilation.VentilationConfig,
-                 name_hand_request: str | None = None,
-                 name_external_request: str | None = None,
-                 name_presence_state: str | None = None,
-                 name_feedback_on: str | None = None,
-                 name_feedback_power: str | None = None,
-                 name_display_text: str | None = None,
-                 after_run_timeout: int = 390,
-                 name_state: str | None = None,
-                 state_label: str | None = None) -> None:
+    def __init__(  # noqa: PLR0913
+        self,
+        name_ventilation_output_on: str,
+        name_ventilation_output_power: str,
+        name_manual: str,
+        config: habapp_rules.actors.config.ventilation.VentilationConfig,
+        name_hand_request: str | None = None,
+        name_external_request: str | None = None,
+        name_presence_state: str | None = None,
+        name_feedback_on: str | None = None,
+        name_feedback_power: str | None = None,
+        name_display_text: str | None = None,
+        after_run_timeout: int = 390,
+        name_state: str | None = None,
+        state_label: str | None = None,
+    ) -> None:
         """Init of a Helios ventilation object which uses two switches to set the level.
 
         :param name_ventilation_output_on: name of OpenHAB switch item to switch on the ventilation (SwitchItem)
@@ -546,22 +553,24 @@ class VentilationHeliosTwoStageHumidity(VentilationHeliosTwoStage):
     trans.append({"trigger": "_hand_on", "source": "Auto_PowerHumidity", "dest": "Auto_PowerHand"})
     trans.append({"trigger": "_external_on", "source": "Auto_PowerHumidity", "dest": "Auto_PowerExternal"})
 
-    def __init__(self,  # noqa: PLR0913
-                 name_ventilation_output_on: str,
-                 name_ventilation_output_power: str,
-                 name_current: str,
-                 name_manual: str,
-                 config: habapp_rules.actors.config.ventilation.VentilationConfig,
-                 name_hand_request: str | None = None,
-                 name_external_request: str | None = None,
-                 name_presence_state: str | None = None,
-                 name_feedback_on: str | None = None,
-                 name_feedback_power: str | None = None,
-                 name_display_text: str | None = None,
-                 after_run_timeout: int = 390,
-                 current_threshold_power: float = 0.105,
-                 name_state: str | None = None,
-                 state_label: str | None = None) -> None:
+    def __init__(  # noqa: PLR0913
+        self,
+        name_ventilation_output_on: str,
+        name_ventilation_output_power: str,
+        name_current: str,
+        name_manual: str,
+        config: habapp_rules.actors.config.ventilation.VentilationConfig,
+        name_hand_request: str | None = None,
+        name_external_request: str | None = None,
+        name_presence_state: str | None = None,
+        name_feedback_on: str | None = None,
+        name_feedback_power: str | None = None,
+        name_display_text: str | None = None,
+        after_run_timeout: int = 390,
+        current_threshold_power: float = 0.105,
+        name_state: str | None = None,
+        state_label: str | None = None,
+    ) -> None:
         """Init of a Helios ventilation object which uses two switches to set the level, including a humidity sensor.
 
         :param name_ventilation_output_on: name of OpenHAB switch item to switch on the ventilation (SwitchItem)

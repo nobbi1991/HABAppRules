@@ -1,4 +1,5 @@
 """Configuration of shading objects."""
+
 import copy
 import dataclasses
 

@@ -1,4 +1,5 @@
 """Rules to manage lights."""
+
 from __future__ import annotations
 
 import abc
@@ -32,15 +33,19 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 
     states = [
         {"name": "manual"},
-        {"name": "auto", "initial": "init", "children": [
-            {"name": "init"},
-            {"name": "on", "timeout": 10, "on_timeout": "auto_on_timeout"},
-            {"name": "preoff", "timeout": 4, "on_timeout": "preoff_timeout"},
-            {"name": "off"},
-            {"name": "leaving", "timeout": 5, "on_timeout": "leaving_timeout"},
-            {"name": "presleep", "timeout": 5, "on_timeout": "presleep_timeout"},
-            {"name": "restoreState"},
-        ]},
+        {
+            "name": "auto",
+            "initial": "init",
+            "children": [
+                {"name": "init"},
+                {"name": "on", "timeout": 10, "on_timeout": "auto_on_timeout"},
+                {"name": "preoff", "timeout": 4, "on_timeout": "preoff_timeout"},
+                {"name": "off"},
+                {"name": "leaving", "timeout": 5, "on_timeout": "leaving_timeout"},
+                {"name": "presleep", "timeout": 5, "on_timeout": "presleep_timeout"},
+                {"name": "restoreState"},
+            ],
+        },
     ]
 
     trans = [
@@ -62,15 +67,9 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
     _item_light: HABApp.openhab.items.switch_item.SwitchItem | HABApp.openhab.items.dimmer_item.DimmerItem
     _state_observer: habapp_rules.actors.state_observer.StateObserverSwitch | habapp_rules.actors.state_observer.StateObserverDimmer
 
-    def __init__(self,
-                 name_light: str,
-                 manual_name: str,
-                 presence_state_name: str,
-                 day_name: str,
-                 config: habapp_rules.actors.config.light.LightConfig,
-                 sleeping_state_name: str | None = None,
-                 name_state: str | None = None,
-                 state_label: str | None = None) -> None:
+    def __init__(
+        self, name_light: str, manual_name: str, presence_state_name: str, day_name: str, config: habapp_rules.actors.config.light.LightConfig, sleeping_state_name: str | None = None, name_state: str | None = None, state_label: str | None = None
+    ) -> None:
         """Init of basic light object.
 
         :param name_light: name of OpenHAB light item (SwitchItem | DimmerItem)
@@ -99,12 +98,7 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
         # init state machine
         self._previous_state = None
         self._restore_state = None
-        self.state_machine = habapp_rules.core.state_machine_rule.HierarchicalStateMachineWithTimeout(
-            model=self,
-            states=self.states,
-            transitions=self.trans,
-            ignore_invalid_triggers=True,
-            after_state_change="_update_openhab_state")
+        self.state_machine = habapp_rules.core.state_machine_rule.HierarchicalStateMachineWithTimeout(model=self, states=self.states, transitions=self.trans, ignore_invalid_triggers=True, after_state_change="_update_openhab_state")
 
         self._brightness_before = -1
         self._timeout_on = 0
@@ -134,12 +128,17 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
         if self._item_manual.is_on():
             return "manual"
         if self._item_light.is_on():
-            if self._item_presence_state.value == habapp_rules.system.PresenceState.PRESENCE.value and \
-                    getattr(self._item_sleeping_state, "value", "awake") in (habapp_rules.system.SleepState.AWAKE.value, habapp_rules.system.SleepState.POST_SLEEPING.value, habapp_rules.system.SleepState.LOCKED.value):
+            if self._item_presence_state.value == habapp_rules.system.PresenceState.PRESENCE.value and getattr(self._item_sleeping_state, "value", "awake") in (
+                habapp_rules.system.SleepState.AWAKE.value,
+                habapp_rules.system.SleepState.POST_SLEEPING.value,
+                habapp_rules.system.SleepState.LOCKED.value,
+            ):
                 return "auto_on"
-            if self._pre_sleep_configured() and \
-                    self._item_presence_state.value in (habapp_rules.system.PresenceState.PRESENCE.value, habapp_rules.system.PresenceState.LEAVING.value) and \
-                    getattr(self._item_sleeping_state, "value", "") in (habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value):
+            if (
+                self._pre_sleep_configured()
+                and self._item_presence_state.value in (habapp_rules.system.PresenceState.PRESENCE.value, habapp_rules.system.PresenceState.LEAVING.value)
+                and getattr(self._item_sleeping_state, "value", "") in (habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value)
+            ):
                 return "auto_presleep"
             if self._leaving_configured():
                 return "auto_leaving"
@@ -398,15 +397,9 @@ class LightSwitch(_LightBase):
     )
     """
 
-    def __init__(self,
-                 name_light: str,
-                 manual_name: str,
-                 presence_state_name: str,
-                 day_name: str,
-                 config: habapp_rules.actors.config.light.LightConfig,
-                 sleeping_state_name: str | None = None,
-                 name_state: str | None = None,
-                 state_label: str | None = None) -> None:
+    def __init__(
+        self, name_light: str, manual_name: str, presence_state_name: str, day_name: str, config: habapp_rules.actors.config.light.LightConfig, sleeping_state_name: str | None = None, name_state: str | None = None, state_label: str | None = None
+    ) -> None:
         """Init of basic light object.
 
         :param name_light: name of OpenHAB light item (SwitchItem)
@@ -507,17 +500,19 @@ class LightDimmer(_LightBase):
     trans = copy.deepcopy(_LightBase.trans)
     trans.append({"trigger": "hand_changed", "source": "auto_on", "dest": "auto_on"})
 
-    def __init__(self,  # noqa: PLR0913
-                 name_light: str,
-                 control_names: list[str],
-                 manual_name: str,
-                 presence_state_name: str,
-                 day_name: str,
-                 config: habapp_rules.actors.config.light.LightConfig,
-                 sleeping_state_name: str | None = None,
-                 name_state: str | None = None,
-                 state_label: str | None = None,
-                 group_names: list[str] | None = None) -> None:
+    def __init__(  # noqa: PLR0913
+        self,
+        name_light: str,
+        control_names: list[str],
+        manual_name: str,
+        presence_state_name: str,
+        day_name: str,
+        config: habapp_rules.actors.config.light.LightConfig,
+        sleeping_state_name: str | None = None,
+        name_state: str | None = None,
+        state_label: str | None = None,
+        group_names: list[str] | None = None,
+    ) -> None:
         """Init of basic light object.
 
         :param name_light: name of OpenHAB light item (DimmerItem)
@@ -774,15 +769,19 @@ class LightSwitchExtended(_LightExtendedMixin, LightSwitch):
     """
 
     # pylint: disable=too-many-arguments
-    def __init__(self, name_light: str,  # noqa: PLR0913
-                 manual_name: str,
-                 presence_state_name: str,
-                 day_name: str,
-                 config: habapp_rules.actors.config.light.LightConfigExtended, sleeping_state_name: str | None = None,
-                 name_motion: str | None = None,
-                 door_names: list[str] | None = None,
-                 name_state: str | None = None,
-                 state_label: str | None = None) -> None:
+    def __init__(  # noqa: PLR0913
+        self,
+        name_light: str,
+        manual_name: str,
+        presence_state_name: str,
+        day_name: str,
+        config: habapp_rules.actors.config.light.LightConfigExtended,
+        sleeping_state_name: str | None = None,
+        name_motion: str | None = None,
+        door_names: list[str] | None = None,
+        name_state: str | None = None,
+        state_label: str | None = None,
+    ) -> None:
         """Init of extended light object.
 
         :param name_light: name of OpenHAB light item (SwitchItem)
@@ -812,18 +811,21 @@ class LightDimmerExtended(_LightExtendedMixin, LightDimmer):
     """
 
     # pylint:disable=too-many-arguments
-    def __init__(self, name_light: str,  # noqa: PLR0913
-                 control_names: list[str],
-                 manual_name: str,
-                 presence_state_name: str,
-                 day_name: str,
-                 config: habapp_rules.actors.config.light.LightConfigExtended,
-                 sleeping_state_name: str | None = None,
-                 name_motion: str | None = None,
-                 door_names: list[str] | None = None,
-                 name_state: str | None = None,
-                 state_label: str | None = None,
-                 group_names: list[str] | None = None) -> None:
+    def __init__(  # noqa: PLR0913
+        self,
+        name_light: str,
+        control_names: list[str],
+        manual_name: str,
+        presence_state_name: str,
+        day_name: str,
+        config: habapp_rules.actors.config.light.LightConfigExtended,
+        sleeping_state_name: str | None = None,
+        name_motion: str | None = None,
+        door_names: list[str] | None = None,
+        name_state: str | None = None,
+        state_label: str | None = None,
+        group_names: list[str] | None = None,
+    ) -> None:
         """Init of extended light object.
 
         :param name_light: name of OpenHAB light item (DimmerItem)

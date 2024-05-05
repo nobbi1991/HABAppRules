@@ -1,4 +1,5 @@
 """Common part for tests with simulated OpenHAB items."""
+
 import unittest
 import unittest.mock
 

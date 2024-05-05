@@ -1,4 +1,5 @@
 """Configuration of ventilation."""
+
 import dataclasses
 import datetime
 

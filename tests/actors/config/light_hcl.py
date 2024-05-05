@@ -1,4 +1,5 @@
 """Test config for HCL light rules."""
+
 import collections
 import unittest.mock
 
