@@ -211,13 +211,13 @@ class MonthlyReport(HABApp.Rule):
 		now = datetime.datetime.now()
 		last_month = now - dateutil.relativedelta.relativedelta(months=1)
 
-		energy_sum_month = self._item_energy_sum.value - self._get_historic_value(self._item_energy_sum, last_month)
+		energy_sum_month = self._item_energy_sum.value - self._get_historic_value(self._item_energy_sum, last_month) # todo handle if 0
 		for share in self._known_energy_share:
 			share.monthly_power = share.openhab_item.value - self._get_historic_value(share.openhab_item, last_month)
 
 		energy_unknown = energy_sum_month - sum(share.monthly_power for share in self._known_energy_share)
 
-		with tempfile.TemporaryDirectory() as temp_dir_name:
+		with tempfile.TemporaryDirectory() as temp_dir_name: # todo only create if there are valid values
 			# create plot
 			labels = [share.chart_name for share in self._known_energy_share] + ["Rest"]
 			values = [share.monthly_power for share in self._known_energy_share] + [energy_unknown]
