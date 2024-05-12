@@ -105,8 +105,8 @@ class SummerWinter(HABApp.Rule):
 
 		# send state
 		if self._item_summer.value != target_value:
-			self._item_summer.oh_send_command(target_value)
 			self._instance_logger.info(f"Summer changed to {target_value}")
+		self._item_summer.oh_send_command(target_value)
 
 		# update last update item at every call
 		if self._item_last_check:

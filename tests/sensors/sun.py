@@ -30,7 +30,7 @@ class TestSensorTemperatureDifference(tests.helper.test_case_base.TestCaseBase):
 
 	def test_init(self):
 		"""Test __init__."""
-		self.assertEqual(None, self._sensor._threshold)
+		self.assertEqual(None, self._sensor._hysteresis_switch._threshold)
 		self.assertEqual("H_Temperature_diff_for_Unittest_Output_Temperature", self._sensor._item_temp_diff.name)
 		self.assertEqual("H_Temperature_diff_for_Unittest_Output_Temperature_filtered", self._sensor._item_input_filtered.name)
 
@@ -38,12 +38,12 @@ class TestSensorTemperatureDifference(tests.helper.test_case_base.TestCaseBase):
 		"""Test __init__ with fixed threshold value."""
 		with unittest.mock.patch("HABApp.openhab.interface_sync.item_exists", return_value=True), unittest.mock.patch("habapp_rules.common.filter.ExponentialFilter"):
 			sensor = habapp_rules.sensors.sun.SensorTemperatureDifference(["Unittest_Temperature_1", "Unittest_Temperature_2"], "Unittest_Output_Temperature", 42)
-		self.assertEqual(42, sensor._threshold)
+		self.assertEqual(42, sensor._hysteresis_switch._threshold)
 
 	def test_cb_threshold(self):
 		"""Test _cb_threshold"""
 		tests.helper.oh_item.item_state_change_event("Unittest_Threshold_Temperature", 20)
-		self.assertEqual(20, self._sensor._threshold)
+		self.assertEqual(20, self._sensor._hysteresis_switch._threshold)
 
 	def test_temp_diff(self):
 		"""Test if temperature difference is calculated correctly."""
@@ -75,12 +75,8 @@ class TestSensorTemperatureDifference(tests.helper.test_case_base.TestCaseBase):
 		output_item = HABApp.openhab.items.OpenhabItem.get_item("Unittest_Output_Temperature")
 		self.assertEqual(None, output_item.value)
 
-		# update temp_diff to 10 | threshold == None!
-		tests.helper.oh_item.item_state_change_event("H_Temperature_diff_for_Unittest_Output_Temperature_filtered", 10)
-		self.assertEqual(None, output_item.value)
-
 		# set threshold to 10
-		self._sensor._threshold = 10
+		self._sensor._hysteresis_switch.set_threshold_on(10)
 
 		# update temp_diff to 10
 		tests.helper.oh_item.item_state_change_event("H_Temperature_diff_for_Unittest_Output_Temperature_filtered", 10)
@@ -112,31 +108,27 @@ class TestSensorBrightness(tests.helper.test_case_base.TestCaseBase):
 
 	def test_init(self):
 		"""Test __init__."""
-		self.assertEqual(None, self._sensor._threshold)
+		self.assertEqual(None, self._sensor._hysteresis_switch._threshold)
 		self.assertEqual("H_Unittest_Brightness_filtered", self._sensor._item_input_filtered.name)
 
 	def test_init_with_fixed_threshold(self):
 		"""Test __init__ with fixed threshold value."""
 		with unittest.mock.patch("HABApp.openhab.interface_sync.item_exists", return_value=True), unittest.mock.patch("habapp_rules.common.filter.ExponentialFilter"):
 			sensor = habapp_rules.sensors.sun.SensorBrightness("Unittest_Brightness", "Unittest_Output_Brightness", 42)
-		self.assertEqual(42, sensor._threshold)
+		self.assertEqual(42, sensor._hysteresis_switch._threshold)
 
 	def test_cb_threshold(self):
 		"""Test _cb_threshold."""
 		tests.helper.oh_item.item_state_change_event("Unittest_Threshold_Brightness", 42000)
-		self.assertEqual(42000, self._sensor._threshold)
+		self.assertEqual(42000, self._sensor._hysteresis_switch._threshold)
 
 	def test_threshold_behavior(self):
 		"""Test overall behavior"""
 		output_item = HABApp.openhab.items.OpenhabItem.get_item("Unittest_Output_Brightness")
 		self.assertEqual(None, output_item.value)
 
-		# update temp_diff to 1000 | threshold == None!
-		tests.helper.oh_item.item_state_change_event("H_Unittest_Brightness_filtered", 1000)
-		self.assertEqual(None, output_item.value)
-
 		# set threshold to 1000
-		self._sensor._threshold = 1000
+		self._sensor._hysteresis_switch.set_threshold_on(1000)
 
 		# update temp_diff to 1000
 		tests.helper.oh_item.item_state_change_event("H_Unittest_Brightness_filtered", 1000)

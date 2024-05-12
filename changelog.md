@@ -1,3 +1,22 @@
+# Version 6.0.0 - dd.mm.2024
+
+## Breaking changes
+
+- added hysteresis switch to ``habapp_rules.sensors.sun.SensorBrightness`` and ``habapp_rules.sensors.sun.SunPositionFilter``. Breaking change: Parameter order changed!
+
+## Features
+
+- added additional config to ``habapp_rules.actors.shading.Shutter`` and ``habapp_rules.actors.shading.Raffstore`` which allows to set different positions for day and night if sleeping is active
+- added possibility to pass shading objects to ``habapp_rules.actors.shading.ResetAllManualHand`` which should be reset by this rule
+- added ``habapp_rules.sensors.humidity.HumiditySwitch`` to set a switch item if high humidity is detected. Currently only a absolut threshold is accepted
+- send update of summer / winter of ``habapp_rules.system.summer_winter.SummerWinter`` after every check. If this rule is used to send the summer / winter state to the KNX bus, this ensures, that the state is sent at least once a day
+- bumped holidays to 0.47
+- bumped matplotlib to 3.8.4
+
+## Bugfix
+
+- fixed bug in ``habapp_rules.actors.shading.Shutter`` and ``habapp_rules.actors.shading.Raffstore`` which caused the ``Hand`` state if MDT actors are used
+
 # Version 5.7.0 - 09.04.2024
 
 ## Features

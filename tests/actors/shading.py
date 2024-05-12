@@ -5,6 +5,7 @@ import os
 import pathlib
 import sys
 import threading
+import time
 import unittest
 import unittest.mock
 
@@ -333,6 +334,32 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
 		self.shading_max._set_state("Auto_NightClose")
 		self.assertEqual(None, self.shading_max._get_target_position())
 
+	def test_get_target_position_sleeping(self):
+		"""Test get_target_position if sleeping is active"""
+		config_night = habapp_rules.actors.config.shading.ShadingPosition(20, 30)
+		config_day = habapp_rules.actors.config.shading.ShadingPosition(40, 50)
+
+		# item night is not None
+		with unittest.mock.patch.object(self.shading_max._config, "pos_sleeping", config_night), unittest.mock.patch.object(self.shading_max._config, "pos_sleeping_day", config_day):
+			self.shading_max.state = "Auto_SleepingClose"
+			tests.helper.oh_item.set_state("Unittest_Night", "ON")
+			self.assertEqual(config_night, self.shading_max._get_target_position())
+
+			tests.helper.oh_item.set_state("Unittest_Night", "OFF")
+			self.assertEqual(config_day, self.shading_max._get_target_position())
+
+		# item night is None
+		with (unittest.mock.patch.object(self.shading_max._config, "pos_sleeping", config_night),
+		      unittest.mock.patch.object(self.shading_max._config, "pos_sleeping_day", config_day),
+		      unittest.mock.patch.object(self.shading_max, "_item_night", None)):
+			self.shading_max.state = "Auto_SleepingClose"
+			tests.helper.oh_item.set_state("Unittest_Night", "ON")
+			self.assertEqual(config_night, self.shading_max._get_target_position())
+
+			tests.helper.oh_item.set_state("Unittest_Night", "OFF")
+			self.assertEqual(config_night, self.shading_max._get_target_position())
+
+
 	def test_cb_sleep_state(self):
 		"""Test _cb_sleep_state"""
 		TestCase = collections.namedtuple("TestCase", "sleep_state, started_triggered, stopped_triggered")
@@ -362,10 +389,44 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBase):
 				else:
 					stopped_mock.assert_not_called()
 
+	def test_cb_night(self):
+		"""Test _cb_night"""
+		config_night = habapp_rules.actors.config.shading.ShadingPosition(20, 30)
+		config_day = habapp_rules.actors.config.shading.ShadingPosition(40, 50)
+
+		self.shading_max.state = "Auto_SleepingClose"
+		with unittest.mock.patch.object(self.shading_max._config, "pos_sleeping", config_night), unittest.mock.patch.object(self.shading_max._config, "pos_sleeping_day", config_day):
+			with unittest.mock.patch.object(self.shading_max, "_apply_target_position") as apply_pos_mock:
+				tests.helper.oh_item.item_state_change_event("Unittest_Night", "OFF")
+			apply_pos_mock.assert_called_once_with(config_day)
+
+			with unittest.mock.patch.object(self.shading_max, "_apply_target_position") as apply_pos_mock:
+				tests.helper.oh_item.item_state_change_event("Unittest_Night", "ON")
+			apply_pos_mock.assert_called_once_with(config_night)
+
+			self.shading_max.state = "Manual"
+			with unittest.mock.patch.object(self.shading_max, "_apply_target_position") as apply_pos_mock:
+				tests.helper.oh_item.item_state_change_event("Unittest_Night", "OFF")
+			apply_pos_mock.assert_not_called()
+
 	def test_cb_hand(self):
 		"""Test _cb_hand."""
 		self.shading_min.to_Auto()
 		self.shading_max.to_Auto()
+
+		# last rule command was less than a second ago
+		self.shading_min._set_shading_state_timestamp = time.time() - 0.1
+		self.shading_max._set_shading_state_timestamp = time.time() - 0.1
+
+		self.shading_min._cb_hand(unittest.mock.MagicMock())
+		self.shading_max._cb_hand(unittest.mock.MagicMock())
+
+		self.assertEqual("Auto_Open", self.shading_min.state)
+		self.assertEqual("Auto_Open", self.shading_max.state)
+
+		# last rule command was longer ago
+		self.shading_min._set_shading_state_timestamp = time.time() - 1.6
+		self.shading_max._set_shading_state_timestamp = time.time() - 1.6
 
 		self.shading_min._cb_hand(unittest.mock.MagicMock())
 		self.shading_max._cb_hand(unittest.mock.MagicMock())
@@ -683,6 +744,7 @@ class TestShadingShutter(tests.helper.test_case_base.TestCaseBase):
 	def test_set_shading_state(self):
 		"""Test _set_shading_state."""
 		TestCase = collections.namedtuple("TestCase", "target_pos, sent_pos")
+		self.shutter._set_shading_state_timestamp = None
 
 		test_cases = [
 			TestCase(None, None),
@@ -708,6 +770,8 @@ class TestShadingShutter(tests.helper.test_case_base.TestCaseBase):
 					send_pos_mock.assert_not_called()
 				else:
 					send_pos_mock.assert_called_once_with(test_case.sent_pos)
+
+		self.assertTrue(self.shutter._set_shading_state_timestamp > 1000)
 
 
 class TestShadingRaffstore(tests.helper.test_case_base.TestCaseBase):
@@ -936,6 +1000,13 @@ class TestResetAllManualHand(tests.helper.test_case_base.TestCaseBase):
 
 	def test__get_shading_objects(self):
 		"""Test __get_shading_objects."""
+		# shading objects where given
+		shading_object_1 = unittest.mock.MagicMock()
+		shading_object_2 = unittest.mock.MagicMock()
+		reset_shading_rule_2 = habapp_rules.actors.shading.ResetAllManualHand("Unittest_Reset", [shading_object_1, shading_object_2])
+		self.assertEqual([shading_object_1, shading_object_2], reset_shading_rule_2._ResetAllManualHand__get_shading_objects())
+
+		# shading objects are not set via __init__
 		with unittest.mock.patch.object(self.reset_shading_rule, "get_rule") as get_rule_mock:
 			self.reset_shading_rule._ResetAllManualHand__get_shading_objects()
 

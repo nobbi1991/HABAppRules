@@ -252,7 +252,7 @@ class DwdWindAlarm(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 	def _cb_cyclic_check(self) -> None:
 		"""Callback to check if wind alarm is active. This should be called cyclic every few minutes."""
-		if not self.state in {"Auto_On", "Auto_Off"}:
+		if self.state not in {"Auto_On", "Auto_Off"}:
 			return
 
 		if self._wind_alarm_active() and self.state != "Auto_On":

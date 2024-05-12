@@ -41,7 +41,7 @@ class TestFunctions(unittest.TestCase):
 		with unittest.mock.patch("datetime.date") as mock_date:
 			for test_case in test_cases:
 				with self.subTest(test_case=test_case):
-					mock_date.today.return_value = today.replace(month=test_case.month_number)
+					mock_date.today.return_value = today.replace(month=test_case.month_number, day=1)
 					self.assertEqual(test_case.expected_name, habapp_rules.energy.monthly_report._get_previous_month_name())
 
 	def test_get_next_trigger(self):
