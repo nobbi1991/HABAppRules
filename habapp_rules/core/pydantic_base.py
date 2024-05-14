@@ -1,50 +1,114 @@
-import enum
+"""Base classes for pydantic config models."""
 import types
 import typing
 
 import HABApp.openhab.items
 import pydantic
 
-class ItemTypes(enum.Enum):
-	number = "number"
-	string = "string"
+import habapp_rules.core.exceptions
+import habapp_rules.core.helper
 
-class AdditionalItem(pydantic.BaseModel):
-	type: ItemTypes
-	name: str
-	groups: list[str]
 
 class ItemBase(pydantic.BaseModel):
-	"""Base class for item configs."""
+	"""Base class for item config."""
 	model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
 
 	@pydantic.model_validator(mode="before")
 	@classmethod
-	def check_all_fields_oh_items(cls, data):
-		for field_type in [cls._get_type_of_fild(name) for name in cls.model_fields]:
-			if not issubclass(field_type, HABApp.openhab.items.OpenhabItem) and AdditionalItem != AdditionalItem:
-				raise ValueError(f"Field {field_type} is not an OpenhabItem")
+	def check_all_fields_oh_items(cls, data: typing.Any) -> typing.Any:
+		"""Validate that all fields are OpenHAB items.
+
+		All items must be subclasses of `HABApp.openhab.items.OpenhabItem`.
+		If create_if_not_exists is set, only one type is allowed.
+		For lists, only one type is allowed.
+
+		:param data: data object given by pydantic
+		:return: data object
+		:raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: if validation fails
+		"""
+		for name, field_info in cls.model_fields.items():
+			field_types = cls._get_type_of_field(name)
+			extra_args = extra if (extra := field_info.json_schema_extra) else {}
+
+			if isinstance(field_types, types.GenericAlias):
+				# type is list of OpenHAB items
+				field_types = list(typing.get_args(field_types))
+
+				# validate that create_if_not_exists is not set for lists
+				if extra_args.get("create_if_not_exists", False):
+					raise habapp_rules.core.exceptions.HabAppRulesConfigurationException("create_if_not_exists is not allowed for list fields")
+
+			field_types = field_types if isinstance(field_types, list) else [field_types]
+
+			for field_type in field_types:
+				if not issubclass(field_type, HABApp.openhab.items.OpenhabItem):
+					raise habapp_rules.core.exceptions.HabAppRulesConfigurationException(f"Field {field_type} is not an OpenhabItem")
+
+			# validate that only one type is given if create_if_not_exists is set
+			if extra_args.get("create_if_not_exists", False) and len(field_types) > 1:
+				raise habapp_rules.core.exceptions.HabAppRulesConfigurationException("If create_if_not_exists is set, only one type is allowed")
+
 		return data
 
 	@pydantic.field_validator("*", mode="before")
 	@classmethod
-	def get_oh_item(cls, var: str, validation_info: pydantic.ValidationInfo) -> HABApp.openhab.items.OpenhabItem | None:
-		json_schema_extra = cls.model_fields[validation_info.field_name].json_schema_extra
-		target_type = cls._get_type_of_fild(validation_info.field_name)
-		if issubclass(target_type, HABApp.openhab.items.OpenhabItem):
-			return target_type(var)
-		return var
+	def convert_to_oh_item(cls, var: str | HABApp.openhab.items.OpenhabItem, validation_info: pydantic.ValidationInfo) -> HABApp.openhab.items.OpenhabItem | None:
+		"""Convert to OpenHAB item.
+
+		:param var: variable given by the user
+		:param validation_info: validation info given by pydantic
+		:return: variable converted to OpenHAB item
+		:raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: if type is not supported
+		"""
+
+		extra_args = extra if (extra := cls.model_fields[validation_info.field_name].json_schema_extra) else {}
+		create_if_not_exists = extra_args.get("create_if_not_exists", False)
+
+		if create_if_not_exists:
+			item_type = cls._get_type_of_field(validation_info.field_name).__qualname__.removesuffix("Item")
+			return habapp_rules.core.helper.create_additional_item(var, item_type)
+
+		if isinstance(var, list):
+			return [cls._get_oh_item(itm) for itm in var]
+
+		if issubclass(type(var), HABApp.openhab.items.OpenhabItem) or isinstance(var, str):
+			return cls._get_oh_item(var)
+
+		raise habapp_rules.core.exceptions.HabAppRulesConfigurationException(f"The following var is not supported: {var}")
+
+	@staticmethod
+	def _get_oh_item(item: str | HABApp.openhab.items.OpenhabItem) -> HABApp.openhab.items.OpenhabItem:
+		"""get OpenHAB item from string or OpenHAB item
+
+		:param item: name of OpenHAB item or OpenHAB item
+		:return: OpenHAB item
+		:raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: if type is not supported
+		"""
+		if issubclass(type(item), HABApp.openhab.items.OpenhabItem):
+			return item
+		if isinstance(item, str):
+			return HABApp.openhab.items.OpenhabItem.get_item(item)
+		raise habapp_rules.core.exceptions.HabAppRulesConfigurationException(f"The following type is not supported for list items: {type(item)}")
 
 	@classmethod
-	def _get_type_of_fild(cls, field_name: str) -> type:
+	def _get_type_of_field(cls, field_name: str) -> type | list[type]:
+		"""Get type of field
+
+		:param field_name: name of field
+		:return: type of field, NoneType will be ignored
+		"""
 		field_type = cls.model_fields[field_name].annotation
 		if isinstance(field_type, types.UnionType):
-			field_type = next(arg for arg in typing.get_args(field_type) if arg is not types.NoneType)
+			field_type = [arg for arg in typing.get_args(field_type) if arg is not types.NoneType]
 		return field_type
+
+
+class ParameterBase(pydantic.BaseModel):
+	"""Base class for parameter config."""
+	model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
 
 
 class ConfigBase(pydantic.BaseModel):
 	"""Base class for config objects."""
 	items: ItemBase
-
-
+	parameter: ParameterBase

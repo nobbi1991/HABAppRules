@@ -19,6 +19,7 @@ msg
 png
 pre
 pragma
+pydantic
 raffstore
 Raffstore
 rollershutter
