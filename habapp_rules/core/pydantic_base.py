@@ -32,7 +32,10 @@ class ItemBase(pydantic.BaseModel):
 
 			if isinstance(field_types, types.GenericAlias):
 				# type is list of OpenHAB items
-				field_types = list(typing.get_args(field_types))
+				field_types = typing.get_args(field_types)[0]
+
+				if isinstance(field_types, types.UnionType):
+					field_types = [arg for arg in typing.get_args(field_types) if arg is not types.NoneType]
 
 				# validate that create_if_not_exists is not set for lists
 				if extra_args.get("create_if_not_exists", False):

@@ -28,6 +28,8 @@ LOGGER = logging.getLogger(__name__)
 BrightnessTypes = typing.Union[list[typing.Union[float, bool]], float, bool]
 
 
+# todo: docstring
+
 # pylint: disable=no-member, too-many-instance-attributes
 class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclass=abc.ABCMeta):
 	"""Base class for lights."""
@@ -96,7 +98,8 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 		self._config.items.manual.listen_event(self._cb_manu, HABApp.openhab.events.ItemStateUpdatedEventFilter())
 		if self._config.items.sleeping_state is not None:
 			self._config.items.sleeping_state.listen_event(self._cb_sleeping, HABApp.openhab.events.ItemStateChangedEventFilter())
-		self._config.items.presence_state.listen_event(self._cb_presence, HABApp.openhab.events.ItemStateChangedEventFilter())
+		if self._config.items.presence_state is not None:
+			self._config.items.presence_state.listen_event(self._cb_presence, HABApp.openhab.events.ItemStateChangedEventFilter())
 		self._config.items.day.listen_event(self._cb_day, HABApp.openhab.events.ItemStateChangedEventFilter())
 
 		self._update_openhab_state()
@@ -111,12 +114,13 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 		if self._config.items.manual.is_on():
 			return "manual"
 		if self._config.items.light.is_on():
-			if self._config.items.presence_state.value == habapp_rules.system.PresenceState.PRESENCE.value and \
-					getattr(self._config.items.sleeping_state, "value", "awake") in (habapp_rules.system.SleepState.AWAKE.value, habapp_rules.system.SleepState.POST_SLEEPING.value, habapp_rules.system.SleepState.LOCKED.value):
+			if (self._config.items.presence_state is not None and self._config.items.presence_state.value == habapp_rules.system.PresenceState.PRESENCE.value and
+					getattr(self._config.items.sleeping_state, "value", "awake") in (habapp_rules.system.SleepState.AWAKE.value, habapp_rules.system.SleepState.POST_SLEEPING.value, habapp_rules.system.SleepState.LOCKED.value)):
 				return "auto_on"
-			if self._pre_sleep_configured() and \
-					self._config.items.presence_state.value in (habapp_rules.system.PresenceState.PRESENCE.value, habapp_rules.system.PresenceState.LEAVING.value) and \
-					getattr(self._config.items.sleeping_state, "value", "") in (habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value):
+			if (self._pre_sleep_configured() and
+					self._config.items.presence_state is not None and
+					self._config.items.presence_state.value in (habapp_rules.system.PresenceState.PRESENCE.value, habapp_rules.system.PresenceState.LEAVING.value) and
+					getattr(self._config.items.sleeping_state, "value", "") in (habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value)):
 				return "auto_presleep"
 			if self._leaving_configured():
 				return "auto_leaving"

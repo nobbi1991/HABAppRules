@@ -5,7 +5,7 @@ import time
 
 import HABApp
 
-import habapp_rules.actors.config.shading
+import habapp_rules.actors.config.shading_pydantic
 import habapp_rules.actors.state_observer
 import habapp_rules.core.exceptions
 import habapp_rules.core.logger
@@ -73,64 +73,20 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		{"trigger": "_night_stopped", "source": "Auto_NightClose", "dest": "Auto_Open", "unless": ["_sun_protection_active_and_configured"]}
 
 	]
-	_item_shading_position: HABApp.openhab.items.rollershutter_item.RollershutterItem | HABApp.openhab.items.dimmer_item.DimmerItem
 	_state_observer_pos: habapp_rules.actors.state_observer.StateObserverRollerShutter | habapp_rules.actors.state_observer.StateObserverDimmer
 
 	# pylint: disable=too-many-arguments
-	def __init__(self,
-	             name_shading_position: str,
-	             name_manual: str,
-	             config: habapp_rules.actors.config.shading.ShadingConfig,
-	             shading_position_control_names: list[str] | None = None,
-	             shading_position_group_names: list[str] | None = None,
-	             name_wind_alarm: str | None = None,
-	             name_sun_protection: str | None = None,
-	             name_sleeping_state: str | None = None,
-	             name_night: str | None = None,
-	             name_door: str | None = None,
-	             name_summer: str | None = None,
-	             name_hand_manual_is_active_feedback: str | None = None,
-	             name_state: str | None = None,
-	             state_label: str | None = None,
-	             value_tolerance: int = 0) -> None:
+	def __init__(self, config: habapp_rules.actors.config.shading_pydantic.ShadingConfig) -> None:
 		"""Init of _ShadingBase.
 
-		:param name_shading_position:  name of OpenHAB shading item (RollershutterItem | DimmerItem)
-		:param name_manual: name of OpenHAB switch item to disable all automatic functions
-		:param config: configuration of the shading object
-		:param shading_position_control_names: [optional] list of control items.
-		:param shading_position_group_names: [optional]  list of group items where the item is a part of. Group item type must match with type of item_name
-		:param name_wind_alarm: [optional] name of OpenHAB switch item which is 'ON' when wind-alarm is active
-		:param name_sun_protection: [optional] name of OpenHAB switch item which is 'ON' when sun protection is active
-		:param name_sleeping_state: [optional] name of OpenHAB sleeping state item (StringItem)
-		:param name_night: [optional] name of OpenHAB switch item which is 'ON' when it is dark and 'OFF' when it is bright
-		:param name_door: [optional] name of OpenHAB door item (ContactItem)
-		:param name_summer: [optional] name of OpenHAB switch item which is 'ON' during summer and 'OFF' during winter
-		:param name_hand_manual_is_active_feedback: [optional] name of OpenHAB switch item which is 'ON' if state is manual or hand
-		:param name_state: name of OpenHAB item for storing the current state (StringItem)
-		:param state_label: [optional] label of OpenHAB item for storing the current state (StringItem)
-		:param value_tolerance: the tolerance can be used to allow a difference when comparing new and old values.
+		:param config: shading config
 		:raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: if given config / items are not valid
 		"""
 		self._config = config
-		self._value_tolerance = value_tolerance
 		self._set_shading_state_timestamp = 0
 
-		if not name_state:
-			name_state = f"H_{name_shading_position}_state"
-		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, name_state, state_label)
-		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, name_shading_position)
-
-		# init items
-		self._item_shading_position = HABApp.openhab.items.base_item.OpenhabItem.get_item(name_shading_position)
-		self._item_manual = HABApp.openhab.items.switch_item.SwitchItem.get_item(name_manual)
-		self._item_wind_alarm = HABApp.openhab.items.switch_item.SwitchItem.get_item(name_wind_alarm) if name_wind_alarm else None
-		self._item_sun_protection = HABApp.openhab.items.switch_item.SwitchItem.get_item(name_sun_protection) if name_sun_protection else None
-		self._item_sleeping_state = HABApp.openhab.items.string_item.StringItem.get_item(name_sleeping_state) if name_sleeping_state else None
-		self._item_night = HABApp.openhab.items.switch_item.SwitchItem.get_item(name_night) if name_night else None
-		self._item_door = HABApp.openhab.items.contact_item.ContactItem.get_item(name_door) if name_door else None
-		self._item_summer = HABApp.openhab.items.switch_item.SwitchItem.get_item(name_summer) if name_summer else None
-		self._item_hand_manual_is_active_feedback = HABApp.openhab.items.switch_item.SwitchItem.get_item(name_hand_manual_is_active_feedback) if name_hand_manual_is_active_feedback else None
+		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, self._config.items.state.name)
+		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, self._config.items.shading_position.name)
 
 		# init state machine
 		self._previous_state = None
@@ -141,46 +97,49 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 			ignore_invalid_triggers=True,
 			after_state_change="_update_openhab_state")
 		self._set_initial_state()
-		self._check_config()
 		self._apply_config()
 
-		self._position_before: habapp_rules.actors.config.shading.ShadingPosition = habapp_rules.actors.config.shading.ShadingPosition(self._item_shading_position.value)
+		self._position_before = habapp_rules.actors.config.shading_pydantic.ShadingPosition(self._config.items.shading_position.value)
 
-		if isinstance(self._item_shading_position, HABApp.openhab.items.rollershutter_item.RollershutterItem):
-			self._state_observer_pos = habapp_rules.actors.state_observer.StateObserverRollerShutter(name_shading_position, self._cb_hand, shading_position_control_names, shading_position_group_names, value_tolerance)
-		elif isinstance(self._item_shading_position, HABApp.openhab.items.dimmer_item.DimmerItem):
-			self._state_observer_pos = habapp_rules.actors.state_observer.StateObserverDimmer(name_shading_position, self._cb_hand, self._cb_hand, self._cb_hand, shading_position_control_names, shading_position_group_names, value_tolerance)
-		else:
-			raise habapp_rules.core.exceptions.HabAppRulesConfigurationException(f"shading position item must be a dimmer or roller-shutter item. Given type: {type(self._item_shading_position)}")
+		if isinstance(self._config.items.shading_position, HABApp.openhab.items.rollershutter_item.RollershutterItem):
+			self._state_observer_pos = habapp_rules.actors.state_observer.StateObserverRollerShutter(
+				self._config.items.shading_position.name,
+				self._cb_hand,
+				[item.name for item in self._config.items.shading_position_control],
+				[item.name for item in self._config.items.shading_position_group],  # todo: is this still needed?
+				self._config.parameter.value_tolerance
+			)
+		elif isinstance(self._config.items.shading_position, HABApp.openhab.items.dimmer_item.DimmerItem):
+			self._state_observer_pos = habapp_rules.actors.state_observer.StateObserverDimmer(
+				self._config.items.shading_position.name,
+				self._cb_hand,
+				self._cb_hand,
+				self._cb_hand,
+				[item.name for item in self._config.items.shading_position_control],
+				[item.name for item in self._config.items.shading_position_group],  # todo: is this still needed?
+				self._config.parameter.value_tolerance
+			)
 
 		# callbacks
-		self._item_manual.listen_event(self._cb_manual, HABApp.openhab.events.ItemStateChangedEventFilter())
-		if self._item_wind_alarm is not None:
-			self._item_wind_alarm.listen_event(self._cb_wind_alarm, HABApp.openhab.events.ItemStateChangedEventFilter())
-		if self._item_sun_protection is not None:
-			self._item_sun_protection.listen_event(self._cb_sun, HABApp.openhab.events.ItemStateChangedEventFilter())
-		if self._item_sleeping_state is not None:
-			self._item_sleeping_state.listen_event(self._cb_sleep_state, HABApp.openhab.events.ItemStateChangedEventFilter())
-		if self._item_night is not None:
-			self._item_night.listen_event(self._cb_night, HABApp.openhab.events.ItemStateChangedEventFilter())
-		if self._item_door is not None:
-			self._item_door.listen_event(self._cb_door, HABApp.openhab.events.ItemStateChangedEventFilter())
+		self._config.items.manual.listen_event(self._cb_manual, HABApp.openhab.events.ItemStateChangedEventFilter())
+		if self._config.items.wind_alarm is not None:
+			self._config.items.wind_alarm.listen_event(self._cb_wind_alarm, HABApp.openhab.events.ItemStateChangedEventFilter())
+		if self._config.items.sun_protection is not None:
+			self._config.items.sun_protection.listen_event(self._cb_sun, HABApp.openhab.events.ItemStateChangedEventFilter())
+		if self._config.items.sleeping_state is not None:
+			self._config.items.sleeping_state.listen_event(self._cb_sleep_state, HABApp.openhab.events.ItemStateChangedEventFilter())
+		if self._config.items.night is not None:
+			self._config.items.night.listen_event(self._cb_night, HABApp.openhab.events.ItemStateChangedEventFilter())
+		if self._config.items.door is not None:
+			self._config.items.door.listen_event(self._cb_door, HABApp.openhab.events.ItemStateChangedEventFilter())
 
 		self._update_openhab_state()
-
-	def _check_config(self):
-		"""Check if config can be applied with the given items.
-
-		:raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: if given config / items are not valid
-		"""
-		if self._config.pos_night_close_summer is not None and self._item_summer is None:
-			raise habapp_rules.core.exceptions.HabAppRulesConfigurationException("Night close position is set for summer, but item for summer / winter is missing!")
 
 	def _apply_config(self) -> None:
 		"""Apply config to state machine."""
 		# set timeouts
-		self.state_machine.states["Auto"].states["DoorOpen"].states["PostOpen"].timeout = self._config.door_post_time
-		self.state_machine.states["Manual"].timeout = self._config.manual_timeout
+		self.state_machine.states["Auto"].states["DoorOpen"].states["PostOpen"].timeout = self._config.parameter.door_post_time
+		self.state_machine.states["Manual"].timeout = self._config.parameter.manual_timeout
 
 	def _get_initial_state(self, default_value: str = "") -> str:
 		"""Get initial state of state machine.
@@ -188,15 +147,15 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		:param default_value: default / initial state
 		:return: if OpenHAB item has a state it will return it, otherwise return the given default value
 		"""
-		if self._item_wind_alarm is not None and self._item_wind_alarm.is_on():
+		if self._config.items.wind_alarm is not None and self._config.items.wind_alarm.is_on():
 			return "WindAlarm"
-		if self._item_manual.is_on():
+		if self._config.items.manual.is_on():
 			return "Manual"
-		if self._item_door is not None and self._item_door.is_open():  # self._item_door.is_open():
+		if self._config.items.door is not None and self._config.items.door.is_open():  # self._item_door.is_open():
 			return "Auto_DoorOpen_Open"
-		if self._item_sleeping_state in (habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value):
+		if self._config.items.sleeping_state in (habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value):
 			return "Auto_SleepingClose"
-		if self._item_night is not None and self._item_night.is_on() and self._night_active_and_configured():
+		if self._config.items.night is not None and self._config.items.night.is_on() and self._night_active_and_configured():
 			return "Auto_NightClose"
 		if self._sun_protection_active_and_configured():
 			return "Auto_SunProtection"
@@ -213,8 +172,8 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 			self._set_shading_state()
 
-			if self._item_hand_manual_is_active_feedback is not None:
-				self._item_hand_manual_is_active_feedback.oh_post_update("ON" if self.state in {"Manual", "Hand"} else "OFF")
+			if self._config.items.hand_manual_is_active_feedback is not None:
+				self._config.items.hand_manual_is_active_feedback.oh_post_update("ON" if self.state in {"Manual", "Hand"} else "OFF")
 
 			self._previous_state = self.state
 
@@ -239,33 +198,32 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 		:return: target shading position
 		"""
-
 		if self.state in {"Hand", "Manual"}:
 			if self._previous_state == "WindAlarm":
 				return self._position_before
 			return None
 
 		if self.state == "WindAlarm":
-			return self._config.pos_wind_alarm
+			return self._config.parameter.pos_wind_alarm
 
 		if self.state == "Auto_Open":
-			return self._config.pos_auto_open
+			return self._config.parameter.pos_auto_open
 
 		if self.state == "Auto_SunProtection":
-			return self._config.pos_sun_protection
+			return self._config.parameter.pos_sun_protection
 
 		if self.state == "Auto_SleepingClose":
-			if self._item_night is None:
-				return self._config.pos_sleeping
-			return self._config.pos_sleeping if self._item_night.is_on() else self._config.pos_sleeping_day
+			if self._config.items.night is None:
+				return self._config.parameter.pos_sleeping_night
+			return self._config.parameter.pos_sleeping_night if self._config.items.night.is_on() else self._config.parameter.pos_sleeping_day
 
 		if self.state == "Auto_NightClose":
-			if self._item_summer is not None and self._item_summer.is_on():
-				return self._config.pos_night_close_summer
-			return self._config.pos_night_close_winter
+			if self._config.items.summer is not None and self._config.items.summer.is_on():
+				return self._config.parameter.pos_night_close_summer
+			return self._config.parameter.pos_night_close_winter
 
 		if self.state == "Auto_DoorOpen_Open":
-			return self._config.pos_door_open
+			return self._config.parameter.pos_door_open
 
 		return None
 
@@ -283,29 +241,29 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 	def _set_position_before(self) -> None:
 		"""Set / save position before manual state is entered. This is used to restore the previous position"""
-		self._position_before = habapp_rules.actors.config.shading.ShadingPosition(self._item_shading_position.value)
+		self._position_before = habapp_rules.actors.config.shading_pydantic.ShadingPosition(self._config.items.shading_position.value)
 
 	def _manual_active(self) -> bool:
 		"""Check if manual is active.
 
 		:return: True if night is active
 		"""
-		return self._item_manual.is_on()
+		return self._config.items.manual.is_on()
 
 	def _sun_protection_active_and_configured(self) -> bool:
 		"""Check if sun protection is active.
 
 		:return: True if night is active
 		"""
-		return self._item_sun_protection is not None and self._item_sun_protection.is_on() and self._config.pos_sun_protection is not None
+		return self._config.items.sun_protection is not None and self._config.items.sun_protection.is_on() and self._config.parameter.pos_sun_protection is not None
 
 	def _night_active_and_configured(self) -> bool:
 		"""Check if night is active and configured.
 
 		:return: True if night is active
 		"""
-		night_config = self._config.pos_night_close_summer if self._item_summer is not None and self._item_summer.is_on() else self._config.pos_night_close_winter
-		return self._item_night is not None and self._item_night.is_on() and night_config is not None
+		night_config = self._config.parameter.pos_night_close_summer if self._config.items.summer is not None and self._config.items.summer.is_on() else self._config.parameter.pos_night_close_winter
+		return self._config.items.night is not None and self._config.items.night.is_on() and night_config is not None
 
 	def _cb_hand(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
 		"""Callback which is triggered if a external control was detected.
@@ -365,7 +323,7 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		:param event: original trigger event
 		"""
 		if self.state == "Auto_SleepingClose":
-			target_position = self._config.pos_sleeping if event.value == "ON" else self._config.pos_sleeping_day
+			target_position = self._config.parameter.pos_sleeping_night if event.value == "ON" else self._config.parameter.pos_sleeping_day
 			self._apply_target_position(target_position)
 
 		if event.value == "ON":
@@ -421,62 +379,16 @@ class Shutter(_ShadingBase):
 			"""
 
 	# pylint: disable=too-many-arguments,too-many-locals
-	def __init__(self,
-	             name_shading_position: str,
-	             name_manual: str,
-	             config: habapp_rules.actors.config.shading.ShadingConfig,
-	             shading_position_control_names: list[str] | None = None,
-	             shading_position_group_names: list[str] | None = None,
-	             name_wind_alarm: str | None = None,
-	             name_sun_protection: str | None = None,
-	             name_sleeping_state: str | None = None,
-	             name_night: str | None = None,
-	             name_door: str | None = None,
-	             name_summer: str | None = None,
-	             name_hand_manual_is_active_feedback: str | None = None,
-	             name_state: str | None = None,
-	             state_label: str | None = None,
-	             value_tolerance: int = 0) -> None:
+	def __init__(self, config: habapp_rules.actors.config.shading_pydantic.ShadingConfig) -> None:
 		"""Init of Raffstore object.
 
-		:param name_shading_position: name of OpenHAB shading item (RollershutterItem)
-		:param name_manual: name of OpenHAB switch item to disable all automatic functions
-		:param config: configuration of the shading object
-		:param shading_position_control_names: [optional] list of control items.
-		:param shading_position_group_names: [optional]  list of group items where the item is a part of. Group item type must match with type of item_name
-		:param name_wind_alarm: [optional] name of OpenHAB switch item which is 'ON' when wind-alarm is active
-		:param name_sun_protection: [optional] name of OpenHAB switch item which is 'ON' when sun protection is active
-		:param name_sleeping_state: [optional] name of OpenHAB sleeping state item (StringItem)
-		:param name_night: [optional] name of OpenHAB switch item which is 'ON' when it is dark and 'OFF' when it is bright
-		:param name_door: [optional] name of OpenHAB door item (ContactItem)
-		:param name_summer: [optional] name of OpenHAB switch item which is 'ON' during summer and 'OFF' during winter
-		:param name_hand_manual_is_active_feedback: [optional] name of OpenHAB switch item which is 'ON' if state is manual or hand
-		:param name_state: name of OpenHAB item for storing the current state (StringItem)
-		:param state_label: [optional] label of OpenHAB item for storing the current state (StringItem)
-		:param value_tolerance: the tolerance can be used to allow a difference when comparing new and old values.
+		:param config: shading config
 		"""
-		_ShadingBase.__init__(
-			self,
-			name_shading_position,
-			name_manual,
-			config,
-			shading_position_control_names,
-			shading_position_group_names,
-			name_wind_alarm,
-			name_sun_protection,
-			name_sleeping_state,
-			name_night,
-			name_door,
-			name_summer,
-			name_hand_manual_is_active_feedback,
-			name_state,
-			state_label,
-			value_tolerance
-		)
+		_ShadingBase.__init__(self, config)
 
 		self._instance_logger.debug(self.get_initial_log_message())
 
-	def _apply_target_position(self, target_position: habapp_rules.actors.config.shading.ShadingPosition) -> None:
+	def _apply_target_position(self, target_position: habapp_rules.actors.config.shading_pydantic.ShadingPosition) -> None:
 		"""Apply target position by sending it via the observer(s).
 
 		:param target_position: target position of the shading object
@@ -531,73 +443,21 @@ class Raffstore(_ShadingBase):
 		"""
 
 	# pylint: disable=too-many-locals
-	def __init__(self,
-	             name_shading_position: str,
-	             name_slat: str,
-	             name_manual: str,
-	             config: habapp_rules.actors.config.shading.ShadingConfig,
-	             shading_position_control_names: list[str] | None = None,
-	             shading_position_group_names: list[str] | None = None,
-	             name_wind_alarm: str | None = None,
-	             name_sun_protection: str | None = None,
-	             name_sun_protection_slat: str | None = None,
-	             name_sleeping_state: str | None = None,
-	             name_night: str | None = None,
-	             name_door: str | None = None,
-	             name_summer: str | None = None,
-	             name_hand_manual_is_active_feedback: str | None = None,
-	             name_state: str | None = None,
-	             state_label: str | None = None,
-	             value_tolerance: int = 0) -> None:
+	def __init__(self, config: habapp_rules.actors.config.shading_pydantic.ShadingConfig) -> None:
 		"""Init of Raffstore object.
 
-		:param name_shading_position: name of OpenHAB shading item (RollershutterItem)
-		:param name_slat: name of OpenHAB slat item (DimmerItem)
-		:param name_manual: name of OpenHAB switch item to disable all automatic functions
-		:param config: configuration of the shading object
-		:param shading_position_control_names: [optional] list of control items.
-		:param shading_position_group_names: [optional]  list of group items where the item is a part of. Group item type must match with type of item_name
-		:param name_wind_alarm: [optional] name of OpenHAB switch item which is 'ON' when wind-alarm is active
-		:param name_sun_protection: [optional] name of OpenHAB switch item which is 'ON' when sun protection is active
-		:param name_sun_protection_slat:
-		:param name_sleeping_state: [optional] name of OpenHAB sleeping state item (StringItem)
-		:param name_night: [optional] name of OpenHAB switch item which is 'ON' when it is dark and 'OFF' when it is bright
-		:param name_door: [optional] name of OpenHAB door item (ContactItem)
-		:param name_summer: [optional] name of OpenHAB switch item which is 'ON' during summer and 'OFF' during winter
-		:param name_hand_manual_is_active_feedback: [optional] name of OpenHAB switch item which is 'ON' if state is manual or hand
-		:param name_state: name of OpenHAB item for storing the current state (StringItem)
-		:param state_label: [optional] label of OpenHAB item for storing the current state (StringItem)
-		:param value_tolerance: the tolerance can be used to allow a difference when comparing new and old values.
+		:param config: shading config
 		"""
-		_ShadingBase.__init__(
-			self,
-			name_shading_position,
-			name_manual,
-			config,
-			shading_position_control_names,
-			shading_position_group_names,
-			name_wind_alarm,
-			name_sun_protection,
-			name_sleeping_state,
-			name_night,
-			name_door,
-			name_summer,
-			name_hand_manual_is_active_feedback,
-			name_state,
-			state_label,
-			value_tolerance
-		)
+		_ShadingBase.__init__(self, config)
 
-		self._state_observer_slat = habapp_rules.actors.state_observer.StateObserverSlat(name_slat, self._cb_hand, value_tolerance)
+		self._state_observer_slat = habapp_rules.actors.state_observer.StateObserverSlat(config.items.slat.name, self._cb_hand, config.parameter.value_tolerance)
 
 		# init items
-		self._item_slat = HABApp.openhab.items.dimmer_item.DimmerItem.get_item(name_slat)
-		self._item_sun_protection_slat = HABApp.openhab.items.dimmer_item.DimmerItem.get_item(name_sun_protection_slat) if name_sun_protection_slat else None
 		self.__verify_items()
 
 		# callbacks
-		if self._item_sun_protection_slat is not None:
-			self._item_sun_protection_slat.listen_event(self._cb_slat_target, HABApp.openhab.events.ItemStateChangedEventFilter())
+		if self._config.items.sun_protection_slat is not None:
+			self._config.items.sun_protection_slat.listen_event(self._cb_slat_target, HABApp.openhab.events.ItemStateChangedEventFilter())
 
 		self._instance_logger.debug(self.get_initial_log_message())
 
@@ -607,14 +467,11 @@ class Raffstore(_ShadingBase):
 		:raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: if given items are not valid
 		"""
 		# check type of rollershutter item
-		if not isinstance(self._item_shading_position, HABApp.openhab.items.rollershutter_item.RollershutterItem):
-			raise habapp_rules.core.exceptions.HabAppRulesConfigurationException(f"The shading position item must be of type RollershutterItem. Given: {type(self._item_shading_position)}")
+		if not isinstance(self._config.items.shading_position, HABApp.openhab.items.rollershutter_item.RollershutterItem):
+			raise habapp_rules.core.exceptions.HabAppRulesConfigurationException(f"The shading position item must be of type RollershutterItem. Given: {type(self._config.items.shading_position)}")
 
-		# check if the correct items are given for sun protection mode
-		if (self._item_sun_protection is None) != (self._item_sun_protection_slat is None):
-			raise habapp_rules.core.exceptions.HabAppRulesConfigurationException("Ether sun_protection item AND sun_protection_slat item must be given or None of them.")
 
-	def _get_target_position(self) -> habapp_rules.actors.config.shading.ShadingPosition | None:
+	def _get_target_position(self) -> habapp_rules.actors.config.shading_pydantic.ShadingPosition | None:
 		"""Get target position for shading object(s).
 
 		:return: target shading position
@@ -622,11 +479,11 @@ class Raffstore(_ShadingBase):
 		target_position = super()._get_target_position()
 
 		if self.state == "Auto_SunProtection" and target_position is not None:
-			target_position.slat = self._item_sun_protection_slat.value
+			target_position.slat = self._config.items.sun_protection_slat.value # todo value of None?
 
 		return target_position
 
-	def _apply_target_position(self, target_position: habapp_rules.actors.config.shading.ShadingPosition) -> None:
+	def _apply_target_position(self, target_position: habapp_rules.actors.config.shading_pydantic.ShadingPosition) -> None:
 		"""Apply target position by sending it via the observer(s).
 
 		:param target_position: target position of the shading object
@@ -645,7 +502,7 @@ class Raffstore(_ShadingBase):
 
 	def _set_position_before(self) -> None:
 		"""Set / save position before manual state is entered. This is used to restore the previous position"""
-		self._position_before = habapp_rules.actors.config.shading.ShadingPosition(self._item_shading_position.value, self._item_slat.value)
+		self._position_before = habapp_rules.actors.config.shading_pydantic.ShadingPosition(self._config.items.shading_position.value, self._config.items.slat.value)
 
 	def _cb_slat_target(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
 		"""Callback which is triggered if the target slat value changed.

@@ -426,8 +426,8 @@ class TestLightBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
 			parameter=LightParameter(
 				on=FunctionConfig(day=BrightnessTimeout(True, 10), night=BrightnessTimeout(80, 5), sleeping=BrightnessTimeout(40, 2)),
 				pre_off=None,
-				leaving=None,
-				pre_sleep=None
+				leaving=FunctionConfig(day=None, night=None, sleeping=None),
+				pre_sleep=FunctionConfig(day=None, night=None, sleeping=None),
 			)
 		)
 
@@ -1390,7 +1390,7 @@ class TestLightExtended(tests.helper.test_case_base.TestCaseBaseStateMachine):
 				doors=["Unittest_Door_1", "Unittest_Door_2"],
 				state="H_Unittest_Light_Switch_state",
 			),
-			paramter=self.light_parameter
+			parameter=self.light_parameter
 		)
 
 		light_extended_switch = habapp_rules.actors.light.LightSwitchExtended(config)
@@ -1499,10 +1499,10 @@ class TestLightExtended(tests.helper.test_case_base.TestCaseBaseStateMachine):
 			parameter=LightParameter(
 				on=FunctionConfig(day=BrightnessTimeout(True, 10), night=BrightnessTimeout(80, 5), sleeping=BrightnessTimeout(40, 2)),
 				pre_off=None,
-				leaving=None,
-				pre_sleep=None,
-				motion=None,
-				door=None
+				leaving=FunctionConfig(day=None, night=None, sleeping=None),
+				pre_sleep=FunctionConfig(day=None, night=None, sleeping=None),
+				motion=FunctionConfig(day=None, night=None, sleeping=None),
+				door=FunctionConfig(day=None, night=None, sleeping=None),
 			)
 		)
 
