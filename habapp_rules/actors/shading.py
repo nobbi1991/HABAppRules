@@ -187,13 +187,13 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		self._apply_target_position(self._get_target_position())
 
 	@abc.abstractmethod
-	def _apply_target_position(self, target_position: habapp_rules.actors.config.shading.ShadingPosition) -> None:
+	def _apply_target_position(self, target_position: habapp_rules.actors.config.shading_pydantic.ShadingPosition) -> None:
 		"""Apply target position by sending it via the observer(s).
 
 		:param target_position: target position of the shading object
 		"""
 
-	def _get_target_position(self) -> habapp_rules.actors.config.shading.ShadingPosition | None:
+	def _get_target_position(self) -> habapp_rules.actors.config.shading_pydantic.ShadingPosition | None:
 		"""Get target position for shading object.
 
 		:return: target shading position

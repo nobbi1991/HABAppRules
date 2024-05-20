@@ -10,7 +10,7 @@ import habapp_rules.core.pydantic_base
 
 class ShadingPosition(pydantic.BaseModel):
 	"""Position of shading object"""
-	position: float | bool | None = pydantic.Field(..., description="target position")  # todo maybe remove bool?! and why None?!
+	position: float | bool | None = pydantic.Field(..., description="target position")
 	slat: float | None = pydantic.Field(None, description="target slat position")
 
 	def __init__(self, position=float | bool | None, slat: float | None = None) -> None:
@@ -18,41 +18,34 @@ class ShadingPosition(pydantic.BaseModel):
 
 
 class ShadingItems(habapp_rules.core.pydantic_base.ItemBase):
-	shading_position: HABApp.openhab.items.RollershutterItem | HABApp.openhab.items.DimmerItem = pydantic.Field(..., description="")
-	slat: HABApp.openhab.items.DimmerItem | None = pydantic.Field(None, description="")
-	manual: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="")
-	shading_position_control: list[HABApp.openhab.items.RollershutterItem | HABApp.openhab.items.DimmerItem] = pydantic.Field([], description="")
-	shading_position_group: list[HABApp.openhab.items.RollershutterItem | HABApp.openhab.items.DimmerItem] = pydantic.Field([], description="")
-	wind_alarm: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="")
-	sun_protection: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="")
-	sun_protection_slat: HABApp.openhab.items.DimmerItem | None = pydantic.Field(None, description="")
-	sleeping_state: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="")
-	night: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="")
-	door: HABApp.openhab.items.ContactItem | None = pydantic.Field(None, description="")
-	summer: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="")
-	hand_manual_is_active_feedback: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="")
+	shading_position: HABApp.openhab.items.RollershutterItem | HABApp.openhab.items.DimmerItem = pydantic.Field(..., description="item for setting the shading position")
+	slat: HABApp.openhab.items.DimmerItem | None = pydantic.Field(None, description="item for setting the slat value")
+	manual: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="item to switch to manual mode and disable the automatic functions")
+	shading_position_control: list[HABApp.openhab.items.RollershutterItem | HABApp.openhab.items.DimmerItem] = pydantic.Field([], description="control items to improve manual detection")
+	shading_position_group: list[HABApp.openhab.items.RollershutterItem | HABApp.openhab.items.DimmerItem] = pydantic.Field([], description="") # todo why groups? use-case?
+	wind_alarm: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="item which is ON when wind alarm is active")
+	sun_protection: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="item which is ON when sun protection is needed")
+	sun_protection_slat: HABApp.openhab.items.DimmerItem | None = pydantic.Field(None, description="value for the slat when sun protection is active")
+	sleeping_state: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="item of the sleeping state set via habapp_rules.system.sleep.Sleep")
+	night: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="item which is ON at night or darkness")
+	door: HABApp.openhab.items.ContactItem | None = pydantic.Field(None, description="item for setting position when door is opened")
+	summer: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="item which is ON during summer")
+	hand_manual_is_active_feedback: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="feedback item which is ON when hand or manual is active")
 	state: HABApp.openhab.items.StringItem = pydantic.Field(..., description="item to store the current state of the state machine", json_schema_extra={"create_if_not_exists": True})
 
 
 class ShadingParameter(habapp_rules.core.pydantic_base.ParameterBase):
-	pos_auto_open: ShadingPosition = pydantic.Field(ShadingPosition(0, 0), description="")
-	pos_wind_alarm: ShadingPosition | None = pydantic.Field(ShadingPosition(0, 0), description="")
-	pos_sleeping_night: ShadingPosition | None = pydantic.Field(ShadingPosition(100, 100), description="")
-	pos_sleeping_day: ShadingPosition | None = pydantic.Field(None, description="")
-	pos_sun_protection: ShadingPosition | None = pydantic.Field(ShadingPosition(100, None), description="")
-	pos_night_close_summer: ShadingPosition | None = pydantic.Field(None, description="")
-	pos_night_close_winter: ShadingPosition | None = pydantic.Field(ShadingPosition(100, 100), description="")
-	pos_door_open: ShadingPosition | None = pydantic.Field(ShadingPosition(0, 0), description="")
-	manual_timeout: int = pydantic.Field(24 * 3600, description="")
-	door_post_time: int = pydantic.Field(5 * 60, description="")
-	value_tolerance: int = pydantic.Field(0, description="")
-
-	@pydantic.field_validator("door_post_time")
-	@classmethod
-	def check_post_time(cls, v: int) -> int:
-		if v in {0, None}:
-			return 1
-		return v
+	pos_auto_open: ShadingPosition = pydantic.Field(ShadingPosition(0, 0), description="position for auto open")
+	pos_wind_alarm: ShadingPosition | None = pydantic.Field(ShadingPosition(0, 0), description="position for wind alarm")
+	pos_sleeping_night: ShadingPosition | None = pydantic.Field(ShadingPosition(100, 100), description="position for sleeping at night")
+	pos_sleeping_day: ShadingPosition | None = pydantic.Field(None, description="position for sleeping at day")
+	pos_sun_protection: ShadingPosition | None = pydantic.Field(ShadingPosition(100, None), description="position for sun protection")
+	pos_night_close_summer: ShadingPosition | None = pydantic.Field(None, description="position for night close during summer")
+	pos_night_close_winter: ShadingPosition | None = pydantic.Field(ShadingPosition(100, 100), description="position for night close during winter")
+	pos_door_open: ShadingPosition | None = pydantic.Field(ShadingPosition(0, 0), description="position if door is opened")
+	manual_timeout: int = pydantic.Field(24 * 3600, description="fallback timeout for manual state", gt=0)
+	door_post_time: int = pydantic.Field(5 * 60, description="extended time after door is closed", gt=0)
+	value_tolerance: int = pydantic.Field(0, description="value tolerance for shading position which is allowed without manual detection", ge=0)
 
 	@pydantic.model_validator(mode="after")
 	def validate_model(self) -> typing.Self:
