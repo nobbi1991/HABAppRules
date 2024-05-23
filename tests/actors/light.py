@@ -20,7 +20,7 @@ import tests.helper.graph_machines
 import tests.helper.oh_item
 import tests.helper.test_case_base
 import tests.helper.timer
-from habapp_rules.actors.config.light_pydantic import LightConfig, LightItems, LightParameter, FunctionConfig, BrightnessTimeout
+from habapp_rules.actors.config.light import LightConfig, LightItems, LightParameter, FunctionConfig, BrightnessTimeout
 
 
 # pylint: disable=protected-access,no-member,too-many-public-methods
@@ -1306,6 +1306,21 @@ class TestLightExtended(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
 		self.light_extended = habapp_rules.actors.light.LightDimmerExtended(self.config_full)
 		self.light_extended_2 = habapp_rules.actors.light.LightDimmerExtended(self.config_without_door_motion)
+
+	def test__init__min_config(self):
+		"""Test __init__ with minimum config."""
+		config_min = LightConfig(
+			items=LightItems(
+				light="Unittest_Light_2",
+				light_control=["Unittest_Light_2_ctr"],
+				manual="Unittest_Manual_2",
+				day="Unittest_Day",
+				state="H_Unittest_Light_2_state",
+			),
+			parameter=self.light_parameter
+		)
+
+		habapp_rules.actors.light.LightDimmerExtended(config_min)
 
 	def test__init__(self):
 		"""Test __init__."""

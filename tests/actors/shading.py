@@ -69,7 +69,7 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
 				night="Unittest_Night",
 				door="Unittest_Door",
 				summer="Unittest_Summer",
-				hand_manual_active="Unittest_Hand_Manual_active",
+				hand_manual_is_active_feedback="Unittest_Hand_Manual_active",
 				state="CustomState"
 			),
 			parameter=habapp_rules.actors.config.shading_pydantic.ShadingParameter()

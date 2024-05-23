@@ -50,43 +50,17 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		{"trigger": "focus_end", "source": "Auto_Focus", "dest": "Auto_HCL"},
 	]
 
-	def __init__(self,
-	             name_color: str,
-	             name_manual: str,
-	             config: habapp_rules.actors.config.light_hcl.LightHclConfig,
-	             name_sleep_state: str | None = None,
-	             name_focus: str | None = None,
-	             name_switch_on: str | None = None,
-	             name_state: str | None = None,
-	             state_label: str | None = None) -> None:
+	def __init__(self, config: habapp_rules.actors.config.light_hcl.HclConfigElevation | habapp_rules.actors.config.light_hcl.HclConfigTime) -> None:
 		"""Init base class.
 
-		:param name_color: Name of openHAB color item (NumberItem)
-    	:param name_manual: name of OpenHAB switch item to disable all automatic functions (SwitchItem)
-		:param config: config for HCL rule
-		:param name_sleep_state: [optional] name of OpenHAB sleeping state item (StringItem)
-		:param name_focus: [optional] name of OpenHAB focus state item (SwitchItem)
-		:param name_switch_on: name of OpenHAB switch item, which additionally triggers a color update if switched on. This can be used to also trigger an update if the power supply or a single light switched on
-		:param name_state: name of OpenHAB item for storing the current state (StringItem)
-		:param state_label: label of OpenHAB item for storing the current state (StringItem)
+		:param config: config of HCL light.
 		"""
 		self._config = config
 
-		if not name_state:
-			name_state = f"H_{name_color}_state"
+		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, self._config.items.state.name)
+		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, self._config.items.color.name)
 
-		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, name_state, state_label)
-		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, name_color)
-
-		# get items
-		self._item_color = HABApp.openhab.items.NumberItem.get_item(name_color)
-		self._item_manual = HABApp.openhab.items.SwitchItem.get_item(name_manual)
-		self._item_sleep = HABApp.openhab.items.StringItem.get_item(name_sleep_state) if name_sleep_state else None
-		self._item_focus = HABApp.openhab.items.SwitchItem.get_item(name_focus) if name_focus else None
-		self._item_switch_on = HABApp.openhab.items.SwitchItem.get_item(name_switch_on) if name_switch_on else None
-
-		self._validate_config()
-		self._state_observer = habapp_rules.actors.state_observer.StateObserverNumber(name_color, self._cb_hand, value_tolerance=10)
+		self._state_observer = habapp_rules.actors.state_observer.StateObserverNumber(self._config.items.color.name, self._cb_hand, value_tolerance=10)
 
 		# init state machine
 		self._previous_state = None
@@ -101,30 +75,18 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		self._set_timeouts()
 
 		# set callbacks
-		self._item_manual.listen_event(self._cb_manual, HABApp.openhab.events.ItemStateChangedEventFilter())
-		if self._item_sleep is not None:
-			self._item_sleep.listen_event(self._cb_sleep, HABApp.openhab.events.ItemStateChangedEventFilter())
-		if self._item_focus is not None:
-			self._item_focus.listen_event(self._cb_focus, HABApp.openhab.events.ItemStateChangedEventFilter())
-		if self._item_switch_on is not None:
-			self._item_switch_on.listen_event(self._cb_switch_on, HABApp.openhab.events.ItemStateChangedEventFilter())
-
-	def _validate_config(self) -> None:
-		"""Validate configuration.
-
-		:raises habapp_rules.common.exceptions.HabAppRulesConfigurationException: if config is not valid.
-		"""
-
-		if (self._item_sleep is None) != (self._config.sleep_color is None):
-			raise habapp_rules.core.exceptions.HabAppRulesConfigurationException("Ether item_sleep and sleep_color must be given or none of them!")
-
-		if (self._item_focus is None) != (self._config.focus_color is None):
-			raise habapp_rules.core.exceptions.HabAppRulesConfigurationException("Ether item_focus and focus_color must be given or none of them!")
+		self._config.items.manual.listen_event(self._cb_manual, HABApp.openhab.events.ItemStateChangedEventFilter())
+		if self._config.items.sleep_state is not None:
+			self._config.items.sleep_state.listen_event(self._cb_sleep, HABApp.openhab.events.ItemStateChangedEventFilter())
+		if self._config.items.focus is not None:
+			self._config.items.focus.listen_event(self._cb_focus, HABApp.openhab.events.ItemStateChangedEventFilter())
+		if self._config.items.switch_on is not None:
+			self._config.items.switch_on.listen_event(self._cb_switch_on, HABApp.openhab.events.ItemStateChangedEventFilter())
 
 	def _set_timeouts(self) -> None:
 		"""Set timeouts."""
-		self.state_machine.get_state("Auto_Sleep_Post").timeout = self._config.post_sleep_timeout if self._config.post_sleep_timeout else 1
-		self.state_machine.get_state("Hand").timeout = self._config.hand_timeout if self._config.hand_timeout else 0
+		self.state_machine.get_state("Auto_Sleep_Post").timeout = self._config.parameter.post_sleep_timeout
+		self.state_machine.get_state("Hand").timeout = self._config.parameter.hand_timeout
 
 	def _get_initial_state(self, default_value: str = "") -> str:
 		"""Get initial state of state machine.
@@ -132,11 +94,11 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		:param default_value: default / initial state
 		:return: if OpenHAB item has a state it will return it, otherwise return the given default value
 		"""
-		if self._item_manual.is_on():
+		if self._config.items.manual.is_on():
 			return "Manual"
-		if self._item_sleep is not None and self._item_sleep.value in (habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value):
+		if self._config.items.sleep_state is not None and self._config.items.sleep_state.value in (habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value):
 			return "Auto_Sleep"
-		if self._item_focus is not None and self._item_focus.is_on():
+		if self._config.items.focus is not None and self._config.items.focus.is_on():
 			return "Auto_Focus"
 		return "Auto_HCL"
 
@@ -159,9 +121,9 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		if self.state == "Auto_HCL":
 			target_color = self._get_hcl_color()
 		elif self.state == "Auto_Focus":
-			target_color = self._config.focus_color
+			target_color = self._config.parameter.focus_color
 		elif self.state == "Auto_Sleep_Active":
-			target_color = self._config.sleep_color
+			target_color = self._config.parameter.sleep_color
 
 		if target_color is not None:
 			self._state_observer.send_command(target_color)
@@ -226,8 +188,8 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		"""
 		if event.value == habapp_rules.system.SleepState.PRE_SLEEPING.value:
 			self.sleep_start()
-			if self._item_focus and self._item_focus.is_on():
-				self._item_focus.oh_send_command("OFF")
+			if self._config.items.focus is not None and self._config.items.focus.is_on():
+				self._config.items.focus.oh_send_command("OFF")
 		elif event.value == habapp_rules.system.SleepState.AWAKE.value:
 			self.sleep_end()
 
@@ -258,17 +220,7 @@ class HclElevation(_HclBase):
 		)
 	"""
 
-	def __init__(self,
-	             name_elevation: str,
-	             name_color: str,
-	             name_manual: str,
-	             config: habapp_rules.actors.config.light_hcl.LightHclConfig,
-	             name_sleep_state: str | None = None,
-	             name_focus: str | None = None,
-	             name_switch_on: str | None = None,
-	             name_state: str | None = None,
-	             state_label: str | None = None
-	             ):
+	def __init__(self, config: habapp_rules.actors.config.light_hcl.HclConfigElevation) -> None:
 		"""Init sun elevation based HCL rule.
 
 		:param name_elevation: Name of sun elevation openHAB item (NumberItem)
@@ -281,11 +233,10 @@ class HclElevation(_HclBase):
 		:param name_state: name of OpenHAB item for storing the current state (StringItem)
 		:param state_label: label of OpenHAB item for storing the current state (StringItem)
 		"""
-		self._item_elevation = HABApp.openhab.items.NumberItem.get_item(name_elevation)
+		_HclBase.__init__(self, config)
+		self._config = config
 
-		_HclBase.__init__(self, name_color, name_manual, config, name_sleep_state, name_focus, name_switch_on, name_state, state_label)
-
-		self._item_elevation.listen_event(self._cb_elevation, HABApp.openhab.events.ItemStateChangedEventFilter())
+		self._config.items.elevation.listen_event(self._cb_elevation, HABApp.openhab.events.ItemStateChangedEventFilter())
 		self._cb_elevation(None)
 
 	def _get_hcl_color(self) -> float | None:
@@ -293,29 +244,29 @@ class HclElevation(_HclBase):
 
 		:return: HCL light color
 		"""
-		elevation = self._item_elevation.value
+		elevation = self._config.items.elevation.value
 
 		if elevation is None:
 			return None
 
 		return_value = 0
-		if elevation <= self._config.color_config[0][0]:
-			return_value = self._config.color_config[0][1]
+		if elevation <= self._config.parameter.color_map[0][0]:
+			return_value = self._config.parameter.color_map[0][1]
 
-		elif elevation >= self._config.color_config[-1][0]:
-			return_value = self._config.color_config[-1][1]
+		elif elevation >= self._config.parameter.color_map[-1][0]:
+			return_value = self._config.parameter.color_map[-1][1]
 
 		else:
-			for idx, config_itm in enumerate(self._config.color_config):  # pragma: no cover
-				if config_itm[0] <= elevation <= self._config.color_config[idx + 1][0]:
-					return_value = self._get_interpolated_value(config_itm, self._config.color_config[idx + 1], elevation)
+			for idx, config_itm in enumerate(self._config.parameter.color_map):  # pragma: no cover
+				if config_itm[0] <= elevation <= self._config.parameter.color_map[idx + 1][0]:
+					return_value = self._get_interpolated_value(config_itm, self._config.parameter.color_map[idx + 1], elevation)
 					break
 
 		return return_value
 
 	def _cb_elevation(self, _: HABApp.openhab.events.ItemStateChangedEvent | None) -> None:
 		"""Callback which is called if elevation changed"""
-		if self.state == "Auto_HCL" and self._item_elevation.value is not None:
+		if self.state == "Auto_HCL" and self._config.items.elevation.value is not None:
 			self._state_observer.send_command(self._get_hcl_color())
 
 
@@ -333,16 +284,7 @@ class HclTime(_HclBase):
 		)
 	"""
 
-	def __init__(self,
-	             name_color: str,
-	             name_manual: str,
-	             config: habapp_rules.actors.config.light_hcl.LightHclConfig,
-	             name_sleep_state: str | None = None,
-	             name_focus: str | None = None,
-	             name_switch_on: str | None = None,
-	             name_state: str | None = None,
-	             state_label: str | None = None
-	             ) -> None:
+	def __init__(self, config: habapp_rules.actors.config.light_hcl.HclConfigTime) -> None:
 		"""Init time based HCL rule.
 
 		:param name_color: Name of openHAB color item (NumberItem)
@@ -354,7 +296,7 @@ class HclTime(_HclBase):
 		:param name_state: name of OpenHAB item for storing the current state (StringItem)
 		:param state_label: label of OpenHAB item for storing the current state (StringItem)
 		"""
-		_HclBase.__init__(self, name_color, name_manual, config, name_sleep_state, name_focus, name_switch_on, name_state, state_label)
+		_HclBase.__init__(self, config)
 		self.run.every(None, 300, self._update_color)  # every 5 minutes
 
 	def _one_hour_later(self, current_time: datetime.datetime) -> bool:
@@ -363,7 +305,7 @@ class HclTime(_HclBase):
 		:param current_time: current time
 		:return: True if next day is a weekend / holiday day
 		"""
-		if not self._config.shift_weekend_holiday:
+		if not self._config.parameter.shift_weekend_holiday:
 			return False
 
 		if current_time.hour > 12 and (habapp_rules.core.type_of_day.is_holiday(1) or habapp_rules.core.type_of_day.is_weekend(1)):
@@ -382,19 +324,19 @@ class HclTime(_HclBase):
 		if self._one_hour_later(current_time):
 			current_time -= datetime.timedelta(hours=1)
 
-		if current_time.hour < self._config.color_config[0][0]:
-			start_config = (self._config.color_config[-1][0] - 24, self._config.color_config[-1][1])
-			end_config = self._config.color_config[0]
+		if current_time.hour < self._config.parameter.color_map[0][0]:
+			start_config = (self._config.parameter.color_map[-1][0] - 24, self._config.parameter.color_map[-1][1])
+			end_config = self._config.parameter.color_map[0]
 
-		elif current_time.hour >= self._config.color_config[-1][0]:
-			start_config = self._config.color_config[-1]
-			end_config = (self._config.color_config[0][0] + 24, self._config.color_config[0][1])
+		elif current_time.hour >= self._config.parameter.color_map[-1][0]:
+			start_config = self._config.parameter.color_map[-1]
+			end_config = (self._config.parameter.color_map[0][0] + 24, self._config.parameter.color_map[0][1])
 
 		else:
-			for idx, config_itm in enumerate(self._config.color_config):  # pragma: no cover
-				if config_itm[0] <= current_time.hour < self._config.color_config[idx + 1][0]:
+			for idx, config_itm in enumerate(self._config.parameter.color_map):  # pragma: no cover
+				if config_itm[0] <= current_time.hour < self._config.parameter.color_map[idx + 1][0]:
 					start_config = config_itm
-					end_config = self._config.color_config[idx + 1]
+					end_config = self._config.parameter.color_map[idx + 1]
 					break
 
 		return self._get_interpolated_value(start_config, end_config, current_time.hour + current_time.minute / 60)

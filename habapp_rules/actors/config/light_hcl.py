@@ -1,42 +1,53 @@
 """Config for HCL color"""
-import dataclasses
+import typing
+
+import HABApp
+import pydantic
+
+import habapp_rules.core.pydantic_base
 
 
-@dataclasses.dataclass
-class LightHclConfig:
-	"""Config for HCL color"""
-	color_config: list[tuple[float, float]]
-	hand_timeout: int = 5 * 3600  # 5 hours
-	sleep_color: float | None = None
-	post_sleep_timeout: int | None = None
-	focus_color: float | None = None
-	shift_weekend_holiday: bool = False  # only relevant for HclTime
-
-	def __post_init__(self) -> None:
-		"""Trigger checks after init."""
-		self._sorted_color_config()
-
-	def _sorted_color_config(self) -> None:
-		"""Sort color config"""
-		self.color_config = sorted(self.color_config, key=lambda x: x[0])
+class HclItemsTime(habapp_rules.core.pydantic_base.ItemBase):
+	"""Items for HCL color which depends on time"""
+	color: HABApp.openhab.items.NumberItem = pydantic.Field(..., description="HCL color which will be set by the HCL rule")
+	manual: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="switch item to disable all automatic functions")
+	sleep_state: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="sleep state item")
+	focus: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="focus state item")
+	switch_on: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="switch item which triggers a color update if switched on")
+	state: HABApp.openhab.items.StringItem | None = pydantic.Field(..., description="state item for storing the current state")
 
 
-EXAMPLE_CONFIG_ELEVATION = LightHclConfig([
-	(-15, 3900),
-	(0, 4500),
-	(5, 5500),
-	(15, 6500)
-])
+class HclItemsElevation(HclItemsTime):
+	"""Items for HCL color which depends on sun elevation"""
+	elevation: HABApp.openhab.items.NumberItem = pydantic.Field(..., description="sun elevation")
 
-EXAMPLE_CONFIG_TIME = LightHclConfig([
-	(0, 2200),
-	(4, 2200),
-	(5, 3200),
-	(6, 3940),
-	(8, 5000),
-	(12, 7000),
-	(19, 7000),
-	(21, 5450),
-	(22, 4000),
-	(23, 2600),
-])
+
+class HclParameterElevation(habapp_rules.core.pydantic_base.ParameterBase):
+	"""Parameter for HCL color"""
+	color_map: list[tuple[float, float]] = pydantic.Field(..., description="")  # todo add description
+	hand_timeout: int = pydantic.Field(18_000, description="", gt=0)  # 5 hours # todo add description
+	sleep_color: float = pydantic.Field(2500, description="", gt=0)  # todo add description
+	post_sleep_timeout: int = pydantic.Field(1, description="", gt=0)  # todo add description
+	focus_color: float = pydantic.Field(6000, description="", gt=0)  # todo add description, # todo set to 0 if None
+
+	@pydantic.model_validator(mode="after")
+	def validate_model(self) -> typing.Self:
+		self.color_map = sorted(self.color_map, key=lambda x: x[0])
+		return self
+
+
+class HclParameterTime(HclParameterElevation):
+	"""Parameter for HCL color which depends on time"""
+	shift_weekend_holiday: bool = pydantic.Field(False, description="")  # todo add description
+
+
+class HclConfigElevation(habapp_rules.core.pydantic_base.ConfigBase):
+	"""Config for HCL color which depends on sun elevation"""
+	items: HclItemsElevation
+	parameter: HclParameterElevation
+
+
+class HclConfigTime(HclConfigElevation):
+	"""Config for HCL color which depends on time"""
+	items: HclItemsTime
+	parameter: HclParameterTime

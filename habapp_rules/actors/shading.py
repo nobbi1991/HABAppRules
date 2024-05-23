@@ -109,7 +109,8 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 				[item.name for item in self._config.items.shading_position_group],  # todo: is this still needed?
 				self._config.parameter.value_tolerance
 			)
-		elif isinstance(self._config.items.shading_position, HABApp.openhab.items.dimmer_item.DimmerItem):
+		else:
+			# self._config.items.shading_position is instance of HABApp.openhab.items.dimmer_item.DimmerItem
 			self._state_observer_pos = habapp_rules.actors.state_observer.StateObserverDimmer(
 				self._config.items.shading_position.name,
 				self._cb_hand,

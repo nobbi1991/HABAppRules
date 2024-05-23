@@ -77,6 +77,9 @@ class ItemBase(pydantic.BaseModel):
 		if issubclass(type(var), HABApp.openhab.items.OpenhabItem) or isinstance(var, str):
 			return cls._get_oh_item(var)
 
+		if var is None:
+			return None
+
 		raise habapp_rules.core.exceptions.HabAppRulesConfigurationException(f"The following var is not supported: {var}")
 
 	@staticmethod
@@ -113,5 +116,5 @@ class ParameterBase(pydantic.BaseModel):
 
 class ConfigBase(pydantic.BaseModel):
 	"""Base class for config objects."""
-	items: ItemBase
-	parameter: ParameterBase
+	items: ItemBase | None
+	parameter: ParameterBase | None

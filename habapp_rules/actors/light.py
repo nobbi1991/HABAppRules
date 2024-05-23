@@ -15,7 +15,6 @@ import HABApp.openhab.items
 import HABApp.util
 
 import habapp_rules.actors.config.light
-import habapp_rules.actors.config.light_pydantic
 import habapp_rules.actors.state_observer
 import habapp_rules.core.exceptions
 import habapp_rules.core.helper
@@ -64,7 +63,7 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 	]
 	_state_observer: habapp_rules.actors.state_observer.StateObserverSwitch | habapp_rules.actors.state_observer.StateObserverDimmer
 
-	def __init__(self, config: habapp_rules.actors.config.light_pydantic.LightConfig) -> None:
+	def __init__(self, config: habapp_rules.actors.config.light.LightConfig) -> None:
 		"""Init of basic light object.
 
 		:param config: light config
@@ -380,7 +379,7 @@ class LightSwitch(_LightBase):
 		)
 		"""
 
-	def __init__(self, config: habapp_rules.actors.config.light_pydantic.LightConfig) -> None:
+	def __init__(self, config: habapp_rules.actors.config.light.LightConfig) -> None:
 		"""Init of basic light object.
 
 		:param config: light config
@@ -474,7 +473,7 @@ class LightDimmer(_LightBase):
 	trans.append({"trigger": "hand_changed", "source": "auto_on", "dest": "auto_on"})
 
 	# pylint: disable=too-many-arguments
-	def __init__(self, config: habapp_rules.actors.config.light_pydantic.LightConfig) -> None:
+	def __init__(self, config: habapp_rules.actors.config.light.LightConfig) -> None:
 		"""Init of basic light object.
 
 		:param config: light config
@@ -519,11 +518,11 @@ class _LightExtendedMixin:
 	states: dict
 	trans: list
 	state: str
-	_config: habapp_rules.actors.config.light_pydantic.LightConfig
+	_config: habapp_rules.actors.config.light.LightConfig
 	state_machine: habapp_rules.core.state_machine_rule.HierarchicalStateMachineWithTimeout
 	_get_sleeping_activ: typing.Callable[[bool | None], bool]
 
-	def __init__(self, config: habapp_rules.actors.config.light_pydantic.LightConfig) -> None:
+	def __init__(self, config: habapp_rules.actors.config.light.LightConfig) -> None:
 		"""Init mixin class.
 
 		:param config: light config
@@ -715,7 +714,7 @@ class LightSwitchExtended(_LightExtendedMixin, LightSwitch):
 	"""
 
 	# pylint: disable=too-many-arguments
-	def __init__(self, config: habapp_rules.actors.config.light_pydantic.LightConfig) -> None:
+	def __init__(self, config: habapp_rules.actors.config.light.LightConfig) -> None:
 		"""Init of extended light object.
 
 		:param config: light config
@@ -736,7 +735,7 @@ class LightDimmerExtended(_LightExtendedMixin, LightDimmer):
 	"""
 
 	# pylint:disable=too-many-arguments
-	def __init__(self, config: habapp_rules.actors.config.light_pydantic.LightConfig) -> None:
+	def __init__(self, config: habapp_rules.actors.config.light.LightConfig) -> None:
 		"""Init of extended light object.
 
 		:param config: light config
