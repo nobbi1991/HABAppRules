@@ -5,7 +5,7 @@ import time
 
 import HABApp
 
-import habapp_rules.actors.config.shading_pydantic
+import habapp_rules.actors.config.shading
 import habapp_rules.actors.state_observer
 import habapp_rules.core.exceptions
 import habapp_rules.core.logger
@@ -76,7 +76,7 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 	_state_observer_pos: habapp_rules.actors.state_observer.StateObserverRollerShutter | habapp_rules.actors.state_observer.StateObserverDimmer
 
 	# pylint: disable=too-many-arguments
-	def __init__(self, config: habapp_rules.actors.config.shading_pydantic.ShadingConfig) -> None:
+	def __init__(self, config: habapp_rules.actors.config.shading.ShadingConfig) -> None:
 		"""Init of _ShadingBase.
 
 		:param config: shading config
@@ -99,7 +99,7 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		self._set_initial_state()
 		self._apply_config()
 
-		self._position_before = habapp_rules.actors.config.shading_pydantic.ShadingPosition(self._config.items.shading_position.value)
+		self._position_before = habapp_rules.actors.config.shading.ShadingPosition(self._config.items.shading_position.value)
 
 		if isinstance(self._config.items.shading_position, HABApp.openhab.items.rollershutter_item.RollershutterItem):
 			self._state_observer_pos = habapp_rules.actors.state_observer.StateObserverRollerShutter(
@@ -188,13 +188,13 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		self._apply_target_position(self._get_target_position())
 
 	@abc.abstractmethod
-	def _apply_target_position(self, target_position: habapp_rules.actors.config.shading_pydantic.ShadingPosition) -> None:
+	def _apply_target_position(self, target_position: habapp_rules.actors.config.shading.ShadingPosition) -> None:
 		"""Apply target position by sending it via the observer(s).
 
 		:param target_position: target position of the shading object
 		"""
 
-	def _get_target_position(self) -> habapp_rules.actors.config.shading_pydantic.ShadingPosition | None:
+	def _get_target_position(self) -> habapp_rules.actors.config.shading.ShadingPosition | None:
 		"""Get target position for shading object.
 
 		:return: target shading position
@@ -242,7 +242,7 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 	def _set_position_before(self) -> None:
 		"""Set / save position before manual state is entered. This is used to restore the previous position"""
-		self._position_before = habapp_rules.actors.config.shading_pydantic.ShadingPosition(self._config.items.shading_position.value)
+		self._position_before = habapp_rules.actors.config.shading.ShadingPosition(self._config.items.shading_position.value)
 
 	def _manual_active(self) -> bool:
 		"""Check if manual is active.
@@ -380,7 +380,7 @@ class Shutter(_ShadingBase):
 			"""
 
 	# pylint: disable=too-many-arguments,too-many-locals
-	def __init__(self, config: habapp_rules.actors.config.shading_pydantic.ShadingConfig) -> None:
+	def __init__(self, config: habapp_rules.actors.config.shading.ShadingConfig) -> None:
 		"""Init of Raffstore object.
 
 		:param config: shading config
@@ -389,7 +389,7 @@ class Shutter(_ShadingBase):
 
 		self._instance_logger.debug(self.get_initial_log_message())
 
-	def _apply_target_position(self, target_position: habapp_rules.actors.config.shading_pydantic.ShadingPosition) -> None:
+	def _apply_target_position(self, target_position: habapp_rules.actors.config.shading.ShadingPosition) -> None:
 		"""Apply target position by sending it via the observer(s).
 
 		:param target_position: target position of the shading object
@@ -444,7 +444,7 @@ class Raffstore(_ShadingBase):
 		"""
 
 	# pylint: disable=too-many-locals
-	def __init__(self, config: habapp_rules.actors.config.shading_pydantic.ShadingConfig) -> None:
+	def __init__(self, config: habapp_rules.actors.config.shading.ShadingConfig) -> None:
 		"""Init of Raffstore object.
 
 		:param config: shading config
@@ -471,8 +471,7 @@ class Raffstore(_ShadingBase):
 		if not isinstance(self._config.items.shading_position, HABApp.openhab.items.rollershutter_item.RollershutterItem):
 			raise habapp_rules.core.exceptions.HabAppRulesConfigurationException(f"The shading position item must be of type RollershutterItem. Given: {type(self._config.items.shading_position)}")
 
-
-	def _get_target_position(self) -> habapp_rules.actors.config.shading_pydantic.ShadingPosition | None:
+	def _get_target_position(self) -> habapp_rules.actors.config.shading.ShadingPosition | None:
 		"""Get target position for shading object(s).
 
 		:return: target shading position
@@ -480,11 +479,11 @@ class Raffstore(_ShadingBase):
 		target_position = super()._get_target_position()
 
 		if self.state == "Auto_SunProtection" and target_position is not None:
-			target_position.slat = self._config.items.sun_protection_slat.value # todo value of None?
+			target_position.slat = self._config.items.sun_protection_slat.value  # todo value of None?
 
 		return target_position
 
-	def _apply_target_position(self, target_position: habapp_rules.actors.config.shading_pydantic.ShadingPosition) -> None:
+	def _apply_target_position(self, target_position: habapp_rules.actors.config.shading.ShadingPosition) -> None:
 		"""Apply target position by sending it via the observer(s).
 
 		:param target_position: target position of the shading object
@@ -503,7 +502,7 @@ class Raffstore(_ShadingBase):
 
 	def _set_position_before(self) -> None:
 		"""Set / save position before manual state is entered. This is used to restore the previous position"""
-		self._position_before = habapp_rules.actors.config.shading_pydantic.ShadingPosition(self._config.items.shading_position.value, self._config.items.slat.value)
+		self._position_before = habapp_rules.actors.config.shading.ShadingPosition(self._config.items.shading_position.value, self._config.items.slat.value)
 
 	def _cb_slat_target(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
 		"""Callback which is triggered if the target slat value changed.

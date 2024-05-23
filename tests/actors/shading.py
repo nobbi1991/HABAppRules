@@ -11,7 +11,6 @@ import HABApp.rule.rule
 import pydantic_core._pydantic_core
 
 import habapp_rules.actors.config.shading
-import habapp_rules.actors.config.shading_pydantic
 import habapp_rules.actors.light
 import habapp_rules.actors.shading
 import habapp_rules.actors.state_observer
@@ -50,17 +49,17 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Summer", "OFF")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Hand_Manual_active", "OFF")
 
-		config_min = habapp_rules.actors.config.shading_pydantic.ShadingConfig(
-			items=habapp_rules.actors.config.shading_pydantic.ShadingItems(
+		config_min = habapp_rules.actors.config.shading.ShadingConfig(
+			items=habapp_rules.actors.config.shading.ShadingItems(
 				shading_position="Unittest_Shading_min",
 				manual="Unittest_Manual_min",
 				state="H_Unittest_Shading_min_state"
 			),
-			parameter=habapp_rules.actors.config.shading_pydantic.ShadingParameter()
+			parameter=habapp_rules.actors.config.shading.ShadingParameter()
 		)
 
-		config_max = habapp_rules.actors.config.shading_pydantic.ShadingConfig(
-			items=habapp_rules.actors.config.shading_pydantic.ShadingItems(
+		config_max = habapp_rules.actors.config.shading.ShadingConfig(
+			items=habapp_rules.actors.config.shading.ShadingItems(
 				shading_position="Unittest_Shading_max",
 				manual="Unittest_Manual_max",
 				wind_alarm="Unittest_WindAlarm",
@@ -72,7 +71,7 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
 				hand_manual_is_active_feedback="Unittest_Hand_Manual_active",
 				state="CustomState"
 			),
-			parameter=habapp_rules.actors.config.shading_pydantic.ShadingParameter()
+			parameter=habapp_rules.actors.config.shading.ShadingParameter()
 		)
 
 		self.shading_min = habapp_rules.actors.shading._ShadingBase(config_min)
@@ -159,22 +158,22 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
 				if test_case.raises_exc:
 					with self.assertRaises(pydantic_core._pydantic_core.ValidationError):
-						habapp_rules.actors.config.shading_pydantic.ShadingConfig(
-							items=habapp_rules.actors.config.shading_pydantic.ShadingItems(
+						habapp_rules.actors.config.shading.ShadingConfig(
+							items=habapp_rules.actors.config.shading.ShadingItems(
 								shading_position="Unittest_Temp",
 								manual="Unittest_Manual_min",
 								state="H_Unittest_Shading_min_state"
 							),
-							parameter=habapp_rules.actors.config.shading_pydantic.ShadingParameter()
+							parameter=habapp_rules.actors.config.shading.ShadingParameter()
 						)
 				else:
-					config = habapp_rules.actors.config.shading_pydantic.ShadingConfig(
-						items=habapp_rules.actors.config.shading_pydantic.ShadingItems(
+					config = habapp_rules.actors.config.shading.ShadingConfig(
+						items=habapp_rules.actors.config.shading.ShadingItems(
 							shading_position="Unittest_Temp",
 							manual="Unittest_Manual_min",
 							state="H_Unittest_Shading_min_state"
 						),
-						parameter=habapp_rules.actors.config.shading_pydantic.ShadingParameter()
+						parameter=habapp_rules.actors.config.shading.ShadingParameter()
 					)
 					habapp_rules.actors.shading._ShadingBase(config)
 				tests.helper.oh_item.remove_mocked_item_by_name("Unittest_Temp")
@@ -313,12 +312,12 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
 		return [
 			TestCase("Hand", None),
 			TestCase("Manual", None),
-			TestCase("WindAlarm", habapp_rules.actors.config.shading_pydantic.ShadingPosition(0, 0)),
-			TestCase("Auto_Open", habapp_rules.actors.config.shading_pydantic.ShadingPosition(0, 0)),
-			TestCase("Auto_SunProtection", habapp_rules.actors.config.shading_pydantic.ShadingPosition(100, None)),
-			TestCase("Auto_SleepingClose", habapp_rules.actors.config.shading_pydantic.ShadingPosition(100, 100)),
-			TestCase("Auto_NightClose", habapp_rules.actors.config.shading_pydantic.ShadingPosition(100, 100)),
-			TestCase("Auto_DoorOpen_Open", habapp_rules.actors.config.shading_pydantic.ShadingPosition(0, 0)),
+			TestCase("WindAlarm", habapp_rules.actors.config.shading.ShadingPosition(0, 0)),
+			TestCase("Auto_Open", habapp_rules.actors.config.shading.ShadingPosition(0, 0)),
+			TestCase("Auto_SunProtection", habapp_rules.actors.config.shading.ShadingPosition(100, None)),
+			TestCase("Auto_SleepingClose", habapp_rules.actors.config.shading.ShadingPosition(100, 100)),
+			TestCase("Auto_NightClose", habapp_rules.actors.config.shading.ShadingPosition(100, 100)),
+			TestCase("Auto_DoorOpen_Open", habapp_rules.actors.config.shading.ShadingPosition(0, 0)),
 			TestCase("Auto_DoorOpen_PostOpen", None),
 		]
 
@@ -335,8 +334,8 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
 	def test_get_target_position_sleeping(self):
 		"""Test get_target_position if sleeping is active"""
-		config_night = habapp_rules.actors.config.shading_pydantic.ShadingPosition(20, 30)
-		config_day = habapp_rules.actors.config.shading_pydantic.ShadingPosition(40, 50)
+		config_night = habapp_rules.actors.config.shading.ShadingPosition(20, 30)
+		config_day = habapp_rules.actors.config.shading.ShadingPosition(40, 50)
 
 		# item night is not None
 		with unittest.mock.patch.object(self.shading_max._config.parameter, "pos_sleeping_night", config_night), unittest.mock.patch.object(self.shading_max._config.parameter, "pos_sleeping_day", config_day):
@@ -389,8 +388,8 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
 	def test_cb_night(self):
 		"""Test _cb_night"""
-		config_night = habapp_rules.actors.config.shading_pydantic.ShadingPosition(20, 30)
-		config_day = habapp_rules.actors.config.shading_pydantic.ShadingPosition(40, 50)
+		config_night = habapp_rules.actors.config.shading.ShadingPosition(20, 30)
+		config_day = habapp_rules.actors.config.shading.ShadingPosition(40, 50)
 
 		self.shading_max.state = "Auto_SleepingClose"
 		with unittest.mock.patch.object(self.shading_max._config.parameter, "pos_sleeping_night", config_night), unittest.mock.patch.object(self.shading_max._config.parameter, "pos_sleeping_day", config_day):
@@ -436,7 +435,7 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
 		"""Test _night_active_and_configured."""
 		TestCase = collections.namedtuple("TestCase", "night, summer, config_summer, config_winter, expected_result")
 
-		shading_pos = habapp_rules.actors.config.shading_pydantic.ShadingPosition(42, 0)
+		shading_pos = habapp_rules.actors.config.shading.ShadingPosition(42, 0)
 
 		test_cases = [
 			# night off
@@ -716,8 +715,8 @@ class TestShadingShutter(tests.helper.test_case_base.TestCaseBaseStateMachine):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Summer", "OFF")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Hand_Manual_active", "OFF")
 
-		config = habapp_rules.actors.config.shading_pydantic.ShadingConfig(
-			items=habapp_rules.actors.config.shading_pydantic.ShadingItems(
+		config = habapp_rules.actors.config.shading.ShadingConfig(
+			items=habapp_rules.actors.config.shading.ShadingItems(
 				shading_position="Unittest_Shading",
 				manual="Unittest_Manual",
 				wind_alarm="Unittest_WindAlarm",
@@ -729,7 +728,7 @@ class TestShadingShutter(tests.helper.test_case_base.TestCaseBaseStateMachine):
 				hand_manual_active="Unittest_Hand_Manual_active",
 				state="H_Unittest_Shading_state"
 			),
-			parameter=habapp_rules.actors.config.shading_pydantic.ShadingParameter()
+			parameter=habapp_rules.actors.config.shading.ShadingParameter()
 		)
 
 		self.shutter = habapp_rules.actors.shading.Shutter(config)
@@ -741,15 +740,15 @@ class TestShadingShutter(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
 		test_cases = [
 			TestCase(None, None),
-			TestCase(habapp_rules.actors.config.shading_pydantic.ShadingPosition(None, None), None),
-			TestCase(habapp_rules.actors.config.shading_pydantic.ShadingPosition(None, 25), None),
-			TestCase(habapp_rules.actors.config.shading_pydantic.ShadingPosition(50, None), 50),
-			TestCase(habapp_rules.actors.config.shading_pydantic.ShadingPosition(80, 90), 80),
+			TestCase(habapp_rules.actors.config.shading.ShadingPosition(None, None), None),
+			TestCase(habapp_rules.actors.config.shading.ShadingPosition(None, 25), None),
+			TestCase(habapp_rules.actors.config.shading.ShadingPosition(50, None), 50),
+			TestCase(habapp_rules.actors.config.shading.ShadingPosition(80, 90), 80),
 
-			TestCase(habapp_rules.actors.config.shading_pydantic.ShadingPosition(0, 0), 0),
-			TestCase(habapp_rules.actors.config.shading_pydantic.ShadingPosition(0, 25), 0),
-			TestCase(habapp_rules.actors.config.shading_pydantic.ShadingPosition(50, 0), 50),
-			TestCase(habapp_rules.actors.config.shading_pydantic.ShadingPosition(80, 90), 80),
+			TestCase(habapp_rules.actors.config.shading.ShadingPosition(0, 0), 0),
+			TestCase(habapp_rules.actors.config.shading.ShadingPosition(0, 25), 0),
+			TestCase(habapp_rules.actors.config.shading.ShadingPosition(50, 0), 50),
+			TestCase(habapp_rules.actors.config.shading.ShadingPosition(80, 90), 80),
 		]
 
 		with unittest.mock.patch.object(self.shutter, "_get_target_position") as get_pos_mock, unittest.mock.patch.object(self.shutter._state_observer_pos, "send_command") as send_pos_mock:
@@ -789,8 +788,8 @@ class TestShadingRaffstore(tests.helper.test_case_base.TestCaseBaseStateMachine)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Summer", "OFF")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Hand_Manual_active", "OFF")
 
-		config = habapp_rules.actors.config.shading_pydantic.ShadingConfig(
-			items=habapp_rules.actors.config.shading_pydantic.ShadingItems(
+		config = habapp_rules.actors.config.shading.ShadingConfig(
+			items=habapp_rules.actors.config.shading.ShadingItems(
 				shading_position="Unittest_Shading",
 				slat="Unittest_Slat",
 				manual="Unittest_Manual",
@@ -804,7 +803,7 @@ class TestShadingRaffstore(tests.helper.test_case_base.TestCaseBaseStateMachine)
 				hand_manual_active="Unittest_Hand_Manual_active",
 				state="H_Unittest_Shading_state"
 			),
-			parameter=habapp_rules.actors.config.shading_pydantic.ShadingParameter()
+			parameter=habapp_rules.actors.config.shading.ShadingParameter()
 		)
 
 		self.raffstore = habapp_rules.actors.shading.Raffstore(config)
@@ -823,8 +822,8 @@ class TestShadingRaffstore(tests.helper.test_case_base.TestCaseBaseStateMachine)
 		tests.helper.oh_item.set_state("Unittest_Summer", None)
 		tests.helper.oh_item.set_state("Unittest_Hand_Manual_active", None)
 
-		config = habapp_rules.actors.config.shading_pydantic.ShadingConfig(
-			items=habapp_rules.actors.config.shading_pydantic.ShadingItems(
+		config = habapp_rules.actors.config.shading.ShadingConfig(
+			items=habapp_rules.actors.config.shading.ShadingItems(
 				shading_position="Unittest_Shading",
 				slat="Unittest_Slat",
 				manual="Unittest_Manual",
@@ -838,21 +837,21 @@ class TestShadingRaffstore(tests.helper.test_case_base.TestCaseBaseStateMachine)
 				hand_manual_active="Unittest_Hand_Manual_active",
 				state="H_Unittest_Shading_state"
 			),
-			parameter=habapp_rules.actors.config.shading_pydantic.ShadingParameter()
+			parameter=habapp_rules.actors.config.shading.ShadingParameter()
 		)
 
 		habapp_rules.actors.shading.Raffstore(config)
 
 	def test_init_min(self):
 		"""Test init of raffstore with minimal attributes."""
-		config = habapp_rules.actors.config.shading_pydantic.ShadingConfig(
-			items=habapp_rules.actors.config.shading_pydantic.ShadingItems(
+		config = habapp_rules.actors.config.shading.ShadingConfig(
+			items=habapp_rules.actors.config.shading.ShadingItems(
 				shading_position="Unittest_Shading",
 				slat="Unittest_Slat",
 				manual="Unittest_Manual",
 				state="H_Unittest_Shading_state"
 			),
-			parameter=habapp_rules.actors.config.shading_pydantic.ShadingParameter()
+			parameter=habapp_rules.actors.config.shading.ShadingParameter()
 		)
 
 		habapp_rules.actors.shading.Raffstore(config)
@@ -884,7 +883,7 @@ class TestShadingRaffstore(tests.helper.test_case_base.TestCaseBaseStateMachine)
 		TestCase = collections.namedtuple("TestCase", "state, target_pos")
 
 		test_cases = TestShadingBase.get_target_positions_test_cases()
-		test_cases[4] = TestCase("Auto_SunProtection", habapp_rules.actors.config.shading_pydantic.ShadingPosition(100, 83))
+		test_cases[4] = TestCase("Auto_SunProtection", habapp_rules.actors.config.shading.ShadingPosition(100, 83))
 
 		for test_case in test_cases:
 			self.raffstore._set_state(test_case.state)
@@ -896,15 +895,15 @@ class TestShadingRaffstore(tests.helper.test_case_base.TestCaseBaseStateMachine)
 
 		test_cases = [
 			TestCase(None, None, None),
-			TestCase(habapp_rules.actors.config.shading_pydantic.ShadingPosition(None, None), None, None),
-			TestCase(habapp_rules.actors.config.shading_pydantic.ShadingPosition(None, 25), None, 25),
-			TestCase(habapp_rules.actors.config.shading_pydantic.ShadingPosition(50, None), 50, None),
-			TestCase(habapp_rules.actors.config.shading_pydantic.ShadingPosition(80, 90), 80, 90),
+			TestCase(habapp_rules.actors.config.shading.ShadingPosition(None, None), None, None),
+			TestCase(habapp_rules.actors.config.shading.ShadingPosition(None, 25), None, 25),
+			TestCase(habapp_rules.actors.config.shading.ShadingPosition(50, None), 50, None),
+			TestCase(habapp_rules.actors.config.shading.ShadingPosition(80, 90), 80, 90),
 
-			TestCase(habapp_rules.actors.config.shading_pydantic.ShadingPosition(0, 0), 0, 0),
-			TestCase(habapp_rules.actors.config.shading_pydantic.ShadingPosition(0, 25), 0, 25),
-			TestCase(habapp_rules.actors.config.shading_pydantic.ShadingPosition(50, 0), 50, 0),
-			TestCase(habapp_rules.actors.config.shading_pydantic.ShadingPosition(80, 90), 80, 90),
+			TestCase(habapp_rules.actors.config.shading.ShadingPosition(0, 0), 0, 0),
+			TestCase(habapp_rules.actors.config.shading.ShadingPosition(0, 25), 0, 25),
+			TestCase(habapp_rules.actors.config.shading.ShadingPosition(50, 0), 50, 0),
+			TestCase(habapp_rules.actors.config.shading.ShadingPosition(80, 90), 80, 90),
 		]
 
 		with (unittest.mock.patch.object(self.raffstore, "_get_target_position") as get_pos_mock,
