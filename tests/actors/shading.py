@@ -8,7 +8,7 @@ import unittest
 import unittest.mock
 
 import HABApp.rule.rule
-import pydantic_core._pydantic_core
+import pydantic_core
 
 import habapp_rules.actors.config.shading
 import habapp_rules.actors.light
@@ -157,7 +157,7 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
 				tests.helper.oh_item.add_mock_item(test_case.item_type, "Unittest_Temp", None)
 
 				if test_case.raises_exc:
-					with self.assertRaises(pydantic_core._pydantic_core.ValidationError):
+					with self.assertRaises(pydantic_core.ValidationError):
 						habapp_rules.actors.config.shading.ShadingConfig(
 							items=habapp_rules.actors.config.shading.ShadingItems(
 								shading_position="Unittest_Temp",

@@ -1,6 +1,6 @@
 """Test irrigation config."""
 import HABApp
-import pydantic_core._pydantic_core
+import pydantic_core
 
 import habapp_rules.actors.config.irrigation
 import tests.helper.oh_item
@@ -20,7 +20,7 @@ class TestIrrigationConfig(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_repetitions", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_brake", None)
 
-		with self.assertRaises(pydantic_core._pydantic_core.ValidationError):
+		with self.assertRaises(pydantic_core.ValidationError):
 			# config without repetitions
 			habapp_rules.actors.config.irrigation.IrrigationConfig(
 				items=habapp_rules.actors.config.irrigation.IrrigationItems(
@@ -33,7 +33,7 @@ class TestIrrigationConfig(tests.helper.test_case_base.TestCaseBase):
 				)
 			)
 
-		with self.assertRaises(pydantic_core._pydantic_core.ValidationError):
+		with self.assertRaises(pydantic_core.ValidationError):
 			# config without brake
 			habapp_rules.actors.config.irrigation.IrrigationConfig(
 				items=habapp_rules.actors.config.irrigation.IrrigationItems(
