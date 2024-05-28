@@ -5,6 +5,7 @@ import logging
 import HABApp
 
 import habapp_rules.core.helper
+import habapp_rules.sensors.config.astro
 
 LOGGER = logging.getLogger(__name__)
 
@@ -12,17 +13,17 @@ LOGGER = logging.getLogger(__name__)
 class _SetNightDayBase(HABApp.Rule):
 	"""Base class for set night / day."""
 
-	def __init__(self, name_target: str, name_elevation: str, elevation_threshold: float) -> None:
+	def __init__(self, item_target: HABApp.openhab.items.SwitchItem, item_elevation: HABApp.openhab.items.NumberItem, elevation_threshold: float) -> None:
 		"""Init Rule.
 
-		:param name_target: name of OpenHAB switch item which should be set depending on the sun elevation value
-		:param name_elevation: name of OpenHAB elevation (NumberItem)
+		:param item_target: OpenHab item which should be set depending on the sun elevation value
+		:param item_elevation: OpenHAB item of sun elevation (NumberItem)
 		:param elevation_threshold: Threshold value for elevation.
 		"""
 		HABApp.Rule.__init__(self)
 
-		self._item_target = HABApp.openhab.items.SwitchItem.get_item(name_target)
-		self._item_elevation = HABApp.openhab.items.NumberItem.get_item(name_elevation)
+		self._item_target = item_target
+		self._item_elevation = item_elevation
 		self._elevation_threshold = elevation_threshold
 
 		self._item_elevation.listen_event(self._set_night, HABApp.openhab.events.ItemStateChangedEventFilter())
@@ -54,14 +55,12 @@ class SetDay(_SetNightDayBase):
 		habapp_rules.actors.shading.SetNight("night_for_shading", "elevation")
 	"""
 
-	def __init__(self, name_day: str, name_elevation: str, elevation_threshold: float = 0) -> None:
+	def __init__(self, config: habapp_rules.sensors.config.astro.SetDayConfig) -> None:
 		"""Init Rule.
 
-		:param name_day: name of OpenHAB switch item which should be set to "ON" after dawn and "OFF after dusk
-		:param name_elevation: name of OpenHAB elevation (NumberItem)
-		:param elevation_threshold: Threshold value for elevation. If the sun elevation is greater than the threshold, the day item will be set to "ON"
+		:param config: Config for set day rule
 		"""
-		_SetNightDayBase.__init__(self, name_day, name_elevation, elevation_threshold)
+		_SetNightDayBase.__init__(self, config.items.day, config.items.elevation, config.parameter.elevation_threshold)
 
 	def _get_target_value(self) -> str:
 		"""Get target value which should be set.
@@ -82,14 +81,14 @@ class SetNight(_SetNightDayBase):
 		habapp_rules.actors.shading.SetNight("night_for_shading", "elevation")
 	"""
 
-	def __init__(self, name_night: str, name_elevation: str, elevation_threshold: float = -8) -> None:
+	def __init__(self, config: habapp_rules.sensors.config.astro.SetNightConfig) -> None:
 		"""Init Rule.
 
 		:param name_night: name of OpenHAB switch item which should be set to "ON" after dusk and "OFF after dawn
 		:param name_elevation: name of OpenHAB elevation (NumberItem)
 		:param elevation_threshold: Threshold value for elevation. If the sun elevation is below the threshold, the night item will be set to "ON"
 		"""
-		_SetNightDayBase.__init__(self, name_night, name_elevation, elevation_threshold)
+		_SetNightDayBase.__init__(self, config.items.night, config.items.elevation, config.parameter.elevation_threshold)
 
 	def _get_target_value(self) -> str:
 		"""Get target value which should be set.
