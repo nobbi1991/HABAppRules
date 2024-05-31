@@ -9,6 +9,7 @@ import unittest.mock
 import HABApp
 
 import habapp_rules.core.exceptions
+import habapp_rules.sensors.config.dwd
 import habapp_rules.sensors.dwd
 import habapp_rules.system
 import tests.helper.graph_machines
@@ -51,11 +52,11 @@ class TestDwdItems(tests.helper.test_case_base.TestCaseBase):
 
 
 # pylint: disable=protected-access
-class TestDwdWindAlarm(tests.helper.test_case_base.TestCaseBase):
+class TestDwdWindAlarm(tests.helper.test_case_base.TestCaseBaseStateMachine):
 	"""Tests for DwdWindAlarm."""
 
 	def setUp(self):
-		tests.helper.test_case_base.TestCaseBase.setUp(self)
+		tests.helper.test_case_base.TestCaseBaseStateMachine.setUp(self)
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Wind_Alarm_1", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual_1", None)
@@ -78,30 +79,32 @@ class TestDwdWindAlarm(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DatetimeItem, "I26_99_warning_2_start_time", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DatetimeItem, "I26_99_warning_2_end_time", None)
 
-		self._wind_alarm_rule_1 = habapp_rules.sensors.dwd.DwdWindAlarm(
-			"Unittest_Wind_Alarm_1",
-			"Unittest_Manual_1",
-			12 * 3600,
-			number_dwd_objects=2
-		)
-
-		self._wind_alarm_rule_2 = habapp_rules.sensors.dwd.DwdWindAlarm(
-			"Unittest_Wind_Alarm_2",
-			"Unittest_Manual_2",
-			"Unittest_Hand_Timeout",
-			number_dwd_objects=2,
-			name_state="Unittest_Wind_Alarm_2_state"
-		)
-
-	def test_init_exceptions(self):
-		"""Test exceptions of init."""
-		with self.assertRaises(TypeError):
-			self._wind_alarm_rule_1 = habapp_rules.sensors.dwd.DwdWindAlarm(
-				"Unittest_Wind_Alarm_1",
-				"Unittest_Manual_1",
-				datetime.timedelta(10),
+		config_1 = habapp_rules.sensors.config.dwd.WindAlarmConfig(
+			items=habapp_rules.sensors.config.dwd.WindAlarmItems(
+				wind_alarm="Unittest_Wind_Alarm_1",
+				manual="Unittest_Manual_1",
+				state="H_Unittest_Wind_Alarm_1_state"
+			),
+			parameter=habapp_rules.sensors.config.dwd.WindAlarmParameter(
+				hand_timeout=12 * 3600,
 				number_dwd_objects=2
 			)
+		)
+
+		config_2 = habapp_rules.sensors.config.dwd.WindAlarmConfig(
+			items=habapp_rules.sensors.config.dwd.WindAlarmItems(
+				wind_alarm="Unittest_Wind_Alarm_2",
+				manual="Unittest_Manual_2",
+				hand_timeout="Unittest_Hand_Timeout",
+				state="Unittest_Wind_Alarm_2_state"
+			),
+			parameter=habapp_rules.sensors.config.dwd.WindAlarmParameter(
+				number_dwd_objects=2
+			)
+		)
+
+		self._wind_alarm_rule_1 = habapp_rules.sensors.dwd.DwdWindAlarm(config_1)
+		self._wind_alarm_rule_2 = habapp_rules.sensors.dwd.DwdWindAlarm(config_2)
 
 	@unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
 	def test_create_graph(self):  # pragma: no cover
