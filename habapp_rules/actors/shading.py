@@ -449,6 +449,12 @@ class Raffstore(_ShadingBase):
 
 		:param config: shading config
 		"""
+		# check if the correct items are given for sun protection mode
+		if (config.items.sun_protection is None) != (config.items.sun_protection_slat is None):
+			raise habapp_rules.core.exceptions.HabAppRulesConfigurationException("Ether items.sun_protection AND items.sun_protection_slat item must be given or None of them.")
+		if config.items.slat is None:
+			raise habapp_rules.core.exceptions.HabAppRulesConfigurationException("Item for setting the slat value must be given.")
+
 		_ShadingBase.__init__(self, config)
 
 		self._state_observer_slat = habapp_rules.actors.state_observer.StateObserverSlat(config.items.slat.name, self._cb_hand, config.parameter.value_tolerance)
@@ -523,26 +529,23 @@ class ResetAllManualHand(HABApp.Rule):
 	habapp_rules.actors.shading.ResetAllManualHand("clear_hand_manual")
 	"""
 
-	def __init__(self, name_reset_manual_hand: str, shading_objects: list[_ShadingBase] | None = None) -> None:
+	def __init__(self, config: habapp_rules.actors.config.shading.ResetAllManualHandConfig) -> None:
 		"""Init of reset class.
 
-		:param name_reset_manual_hand: name of OpenHAB reset item (SwitchItem)
-		:param shading_objects: optional list of shading objects which should be reset by this rule
+		:param config: config for reset all manual / hand rule
 		"""
-		self._shading_objects = shading_objects
-
+		self._config = config
 		HABApp.Rule.__init__(self)
 
-		self._item_reset = HABApp.openhab.items.SwitchItem.get_item(name_reset_manual_hand)
-		self._item_reset.listen_event(self._cb_reset_all, HABApp.openhab.events.ItemStateUpdatedEventFilter())
+		self._config.items.reset_manual_hand.listen_event(self._cb_reset_all, HABApp.openhab.events.ItemStateUpdatedEventFilter())
 
 	def __get_shading_objects(self) -> list[_ShadingBase]:
 		"""Get all shading objects.
 
 		:return: list of shading objects
 		"""
-		if self._shading_objects:
-			return self._shading_objects
+		if self._config.parameter.shading_objects:
+			return self._config.parameter.shading_objects
 		return [rule for rule in self.get_rule(None) if issubclass(rule.__class__, _ShadingBase)]
 
 	def _cb_reset_all(self, event: HABApp.openhab.events.ItemCommandEvent) -> None:
@@ -555,7 +558,7 @@ class ResetAllManualHand(HABApp.Rule):
 
 		for shading_object in self.__get_shading_objects():
 			state = shading_object.state
-			manual_item: HABApp.openhab.items.SwitchItem = shading_object._item_manual  # pylint: disable=protected-access
+			manual_item = shading_object._config.items.manual  # pylint: disable=protected-access
 
 			if state == "Manual":
 				manual_item.oh_send_command("OFF")
@@ -564,7 +567,7 @@ class ResetAllManualHand(HABApp.Rule):
 				manual_item.oh_send_command("ON")
 				manual_item.oh_send_command("OFF")
 
-		self._item_reset.oh_send_command("OFF")
+		self._config.items.reset_manual_hand.oh_send_command("OFF")
 
 
 class SlatValueSun(HABApp.Rule):
@@ -584,66 +587,26 @@ class SlatValueSun(HABApp.Rule):
 		)
 		"""
 
-	_item_slat_value: HABApp.openhab.items.dimmer_item.DimmerItem | HABApp.openhab.items.number_item.NumberItem
-
-	def __init__(self,
-	             name_sun_elevation: str,
-	             name_slat_value: str,
-	             elevation_slat_characteristic: list[(float | int, float | int)],
-	             name_summer: str | None = None,
-	             elevation_slat_characteristic_summer: list[(float | int, float | int)] | None = None):
+	def __init__(self, config: habapp_rules.actors.config.shading.SlatValueConfig) -> None:
 		"""Init SlatValueSun
 
-		:param name_sun_elevation: name of OpenHAB sun elevation item (NumberItem)
-		:param name_slat_value: name of OpenHAB target slat item (NumberItem | DimmerItem)
-		:param elevation_slat_characteristic: List of tuple-mappings from elevation to slat value
-		:param name_summer: name of OpenHAB summer item (SwitchItem)
-		:param elevation_slat_characteristic_summer: List of tuple-mappings from elevation to slat value, which is used if summer is active
+		:param config: configuration of slat value
 		:raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: if configuration is not valid
 		"""
-		if (name_summer is None) != (elevation_slat_characteristic_summer is None):
-			raise habapp_rules.core.exceptions.HabAppRulesConfigurationException("Ether both 'name_summer' and 'elevation_slat_characteristic_summer' must be None or a value.")
-
+		self._config = config
 		HABApp.Rule.__init__(self)
-		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, name_slat_value)
-
-		# init items
-		self._item_sun_elevation = HABApp.openhab.items.number_item.NumberItem.get_item(name_sun_elevation)
-		self._item_slat_value = HABApp.openhab.items.OpenhabItem.get_item(name_slat_value)
-		self._item_summer = HABApp.openhab.items.switch_item.SwitchItem.get_item(name_summer) if name_summer else None
-
-		if not isinstance(self._item_slat_value, (HABApp.openhab.items.dimmer_item.DimmerItem, HABApp.openhab.items.number_item.NumberItem)):
-			raise habapp_rules.core.exceptions.HabAppRulesConfigurationException("Item slat_value must be of type DimmerItem or NumberItem!")
+		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, self._config.items.slat_value.name)
 
 		# slat characteristics
-		self.__slat_characteristic_default = self.__check_and_sort_characteristic(elevation_slat_characteristic)
-		self.__slat_characteristic_summer = self.__check_and_sort_characteristic(elevation_slat_characteristic_summer) if elevation_slat_characteristic_summer else None
-		self._slat_characteristic_active = self.__slat_characteristic_summer if self._item_summer is not None and self._item_summer.is_on() else self.__slat_characteristic_default
+		self._slat_characteristic_active = self._config.parameter.elevation_slat_characteristic_summer if self._config.items.summer is not None and self._config.items.summer.is_on() else self._config.parameter.elevation_slat_characteristic
 
 		# callbacks
-		self._item_sun_elevation.listen_event(self._cb_elevation, HABApp.openhab.events.ItemStateChangedEventFilter())
-		if self._item_summer is not None:
-			self._item_summer.listen_event(self._cb_summer_winter, HABApp.openhab.events.ItemStateChangedEventFilter())
+		self._config.items.sun_elevation.listen_event(self._cb_elevation, HABApp.openhab.events.ItemStateChangedEventFilter())
+		if self._config.items.summer is not None:
+			self._config.items.summer.listen_event(self._cb_summer_winter, HABApp.openhab.events.ItemStateChangedEventFilter())
 		self.run.soon(self.__send_slat_value)
 
 		self._instance_logger.debug(f"Init of rule '{self.__class__.__name__}' with name '{self.rule_name}' was successful.")
-
-	@staticmethod
-	def __check_and_sort_characteristic(characteristic: list[(float | int, float | int)]) -> list[(float, float)]:
-		"""Check and sort characteristic
-
-		:param characteristic: characteristic for slats. First value must be elevation, second the slat value
-		:return: sorted characteristic
-		:raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: if characteristic is not valid
-		"""
-
-		if not isinstance(characteristic, list) or not all(isinstance(itm, tuple) and len(itm) == 2 for itm in characteristic):
-			raise habapp_rules.core.exceptions.HabAppRulesConfigurationException("Characteristic must be a list of value pairs as tuple")
-
-		if len(set(value_pair[0] for value_pair in characteristic)) != len(characteristic):
-			raise habapp_rules.core.exceptions.HabAppRulesConfigurationException("Elevation values must be unique!")
-
-		return sorted(characteristic)
 
 	def __get_slat_value(self, elevation: float) -> float:
 		"""Get slat value for given elevation.
@@ -651,20 +614,22 @@ class SlatValueSun(HABApp.Rule):
 		:param elevation: elevation of the sun
 		:return: slat value
 		"""
-		if elevation >= self._slat_characteristic_active[-1][0]:
-			return self._slat_characteristic_active[-1][1]
-		if elevation < self._slat_characteristic_active[0][0]:
-			return self._slat_characteristic_active[0][1]
+		if elevation >= self._slat_characteristic_active[-1].elevation:
+			return self._slat_characteristic_active[-1].slat_value
+		if elevation < self._slat_characteristic_active[0].elevation:
+			return self._slat_characteristic_active[0].slat_value
 
 		# no cover because of loop does not finish, but is handled with the two if statements above
-		return next(config for idx, config in enumerate(self._slat_characteristic_active) if config[0] <= elevation < self._slat_characteristic_active[idx + 1][0])[1]  # pragma: no cover
+		return next(config for idx, config in enumerate(self._slat_characteristic_active) if config.elevation <= elevation < self._slat_characteristic_active[idx + 1].elevation).slat_value  # pragma: no cover
 
 	def __send_slat_value(self) -> None:
 		"""Send slat value to OpenHAB item."""
-		slat_value = self.__get_slat_value(self._item_sun_elevation.value)
+		if self._config.items.sun_elevation.value is None:
+			return
+		slat_value = self.__get_slat_value(self._config.items.sun_elevation.value)
 
-		if self._item_slat_value.value != slat_value:
-			self._item_slat_value.oh_send_command(slat_value)
+		if self._config.items.slat_value.value != slat_value:
+			self._config.items.slat_value.oh_send_command(slat_value)
 
 	def _cb_elevation(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
 		"""Callback which is called if sun elevation changed
@@ -678,5 +643,5 @@ class SlatValueSun(HABApp.Rule):
 
 		:param event: summer / winter event
 		"""
-		self._slat_characteristic_active = self.__slat_characteristic_summer if event.value == "ON" else self.__slat_characteristic_default
+		self._slat_characteristic_active = self._config.parameter.elevation_slat_characteristic_summer if event.value == "ON" else self._config.parameter.elevation_slat_characteristic
 		self.__send_slat_value()

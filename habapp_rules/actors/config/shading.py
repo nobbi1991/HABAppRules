@@ -1,4 +1,6 @@
 """Configuration of shading objects."""
+from __future__ import annotations
+
 import copy
 import typing
 
@@ -22,7 +24,7 @@ class ShadingItems(habapp_rules.core.pydantic_base.ItemBase):
 	slat: HABApp.openhab.items.DimmerItem | None = pydantic.Field(None, description="item for setting the slat value")
 	manual: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="item to switch to manual mode and disable the automatic functions")
 	shading_position_control: list[HABApp.openhab.items.RollershutterItem | HABApp.openhab.items.DimmerItem] = pydantic.Field([], description="control items to improve manual detection")
-	shading_position_group: list[HABApp.openhab.items.RollershutterItem | HABApp.openhab.items.DimmerItem] = pydantic.Field([], description="") # todo why groups? use-case?
+	shading_position_group: list[HABApp.openhab.items.RollershutterItem | HABApp.openhab.items.DimmerItem] = pydantic.Field([], description="")  # todo why groups? use-case?
 	wind_alarm: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="item which is ON when wind alarm is active")
 	sun_protection: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="item which is ON when sun protection is needed")
 	sun_protection_slat: HABApp.openhab.items.DimmerItem | None = pydantic.Field(None, description="value for the slat when sun protection is active")
@@ -63,13 +65,71 @@ class ShadingConfig(habapp_rules.core.pydantic_base.ConfigBase):
 	def validate_model(self) -> typing.Self:
 		if self.parameter.pos_night_close_summer is not None and self.items.summer is None:
 			raise AssertionError("Night close position is set for summer, but item for summer / winter is missing!")
-
-		# check if the correct items are given for sun protection mode # todo move this check to raffstore
-		# if (self.items.sun_protection is None) != (self.items.sun_protection_slat is None):
-		# 	raise AssertionError("Ether items.sun_protection AND items.sun_protection_slat item must be given or None of them.") # todo really?
-
 		return self
 
 
-CONFIG_DEFAULT_ELEVATION_SLAT_WINTER = [(0, 100), (4, 100), (8, 90), (18, 80), (26, 70), (34, 60), (41, 50), (42, 50), (90, 50), ]  # todo pydantic?!
-CONFIG_DEFAULT_ELEVATION_SLAT_SUMMER = [(0, 100), (4, 100), (8, 100), (18, 100), (26, 100), (34, 90), (41, 80), (42, 80), (90, 80), ]
+class ResetAllManualHandItems(habapp_rules.core.pydantic_base.ItemBase):
+	"""Items for reset all manual hand items."""
+	reset_manual_hand: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="item for resetting manual and hand state to automatic state")
+
+
+class ResetAllManualHandParameter(habapp_rules.core.pydantic_base.ParameterBase):
+	"""Parameter for reset all manual hand parameter."""
+	shading_objects: list[object] | None = pydantic.Field(None, description="list of shading objects to reset")
+
+
+class ResetAllManualHandConfig(habapp_rules.core.pydantic_base.ConfigBase):
+	"""Config for reset all manual hand config."""
+	items: ResetAllManualHandItems = pydantic.Field(..., description="items for reset all manual hand config")
+	parameter: ResetAllManualHandParameter = pydantic.Field(ResetAllManualHandParameter(), description="parameter for reset all manual hand config")
+
+
+class SlatValueItems(habapp_rules.core.pydantic_base.ItemBase):
+	"""Items for slat values for sun protection."""
+	sun_elevation: HABApp.openhab.items.NumberItem = pydantic.Field(..., description="item for sun elevation")
+	slat_value: HABApp.openhab.items.NumberItem | HABApp.openhab.items.DimmerItem = pydantic.Field(..., description="item for slat value, which should be set")
+	summer: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="item for summer")
+
+
+class ElevationSlatMapping(pydantic.BaseModel):
+	"""Mapping from elevation to slat value."""
+	elevation: int
+	slat_value: int
+
+	def __init__(self, elevation: int, slat_value: int):
+		"""Initialize the elevation slat mapping."""
+		super().__init__(elevation=elevation, slat_value=slat_value)
+
+
+class SlatValueParameter(habapp_rules.core.pydantic_base.ParameterBase):
+	"""Parameter for slat values for sun protection."""
+	elevation_slat_characteristic: list[ElevationSlatMapping] = pydantic.Field([
+		ElevationSlatMapping(0, 100),
+		ElevationSlatMapping(4, 100),
+		ElevationSlatMapping(8, 90),
+		ElevationSlatMapping(18, 80),
+		ElevationSlatMapping(26, 70),
+		ElevationSlatMapping(34, 60),
+		ElevationSlatMapping(41, 50)], description="list of tuple-mappings from elevation to slat value")
+	elevation_slat_characteristic_summer: list[ElevationSlatMapping] = pydantic.Field([
+		ElevationSlatMapping(0, 100),
+		ElevationSlatMapping(4, 100),
+		ElevationSlatMapping(8, 90),
+		ElevationSlatMapping(18, 80)], description="list of tuple-mappings from elevation to slat value, which is used if summer is active")
+
+	@pydantic.field_validator("elevation_slat_characteristic", "elevation_slat_characteristic_summer")
+	@classmethod
+	def sort_mapping(cls, values: list[ElevationSlatMapping]) -> list[ElevationSlatMapping]:
+		"""Sort the elevation slat mappings."""
+		values.sort(key=lambda x: x.elevation)
+
+		if len(values) != len(set(value.elevation for value in values)):
+			raise AssertionError("Elevation values must be unique!")
+
+		return values
+
+
+class SlatValueConfig(habapp_rules.core.pydantic_base.ConfigBase):
+	"""Config for slat values for sun protection."""
+	items: SlatValueItems
+	parameter: SlatValueParameter

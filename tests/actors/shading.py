@@ -1,5 +1,6 @@
 """Test shading rules."""
 import collections
+import copy
 import os
 import pathlib
 import sys
@@ -30,7 +31,7 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
 	def setUp(self) -> None:
 		"""Setup test case."""
-		tests.helper.test_case_base.TestCaseBase.setUp(self)
+		tests.helper.test_case_base.TestCaseBaseStateMachine.setUp(self)
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.RollershutterItem, "Unittest_Shading_min", 0)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual_min", "OFF")
@@ -856,6 +857,74 @@ class TestShadingRaffstore(tests.helper.test_case_base.TestCaseBaseStateMachine)
 
 		habapp_rules.actors.shading.Raffstore(config)
 
+	def test_init_missing_items(self):
+		"""Test init with missing items."""
+		# sun_protection item NOT given | item sun_protection_slat NOT given
+		config = habapp_rules.actors.config.shading.ShadingConfig(
+			items=habapp_rules.actors.config.shading.ShadingItems(
+				shading_position="Unittest_Shading",
+				slat="Unittest_Slat",
+				manual="Unittest_Manual",
+				state="H_Unittest_Shading_state"
+			),
+			parameter=habapp_rules.actors.config.shading.ShadingParameter()
+		)
+		habapp_rules.actors.shading.Raffstore(config)
+
+		# sun_protection item NOT given | item sun_protection_slat given
+		config = habapp_rules.actors.config.shading.ShadingConfig(
+			items=habapp_rules.actors.config.shading.ShadingItems(
+				shading_position="Unittest_Shading",
+				slat="Unittest_Slat",
+				manual="Unittest_Manual",
+				state="H_Unittest_Shading_state",
+				sun_protection_slat="Unittest_SunProtection_Slat"
+			),
+			parameter=habapp_rules.actors.config.shading.ShadingParameter()
+		)
+		with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
+			habapp_rules.actors.shading.Raffstore(config)
+
+		# sun_protection item given | item sun_protection_slat NOT given
+		config = habapp_rules.actors.config.shading.ShadingConfig(
+			items=habapp_rules.actors.config.shading.ShadingItems(
+				shading_position="Unittest_Shading",
+				slat="Unittest_Slat",
+				manual="Unittest_Manual",
+				state="H_Unittest_Shading_state",
+				sun_protection="Unittest_SunProtection",
+			),
+			parameter=habapp_rules.actors.config.shading.ShadingParameter()
+		)
+		with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
+			habapp_rules.actors.shading.Raffstore(config)
+
+		# sun_protection item given | item sun_protection_slat given
+		config = habapp_rules.actors.config.shading.ShadingConfig(
+			items=habapp_rules.actors.config.shading.ShadingItems(
+				shading_position="Unittest_Shading",
+				slat="Unittest_Slat",
+				manual="Unittest_Manual",
+				state="H_Unittest_Shading_state",
+				sun_protection="Unittest_SunProtection",
+				sun_protection_slat="Unittest_SunProtection_Slat"
+			),
+			parameter=habapp_rules.actors.config.shading.ShadingParameter()
+		)
+		habapp_rules.actors.shading.Raffstore(config)
+
+		# slat is missing
+		with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
+			config = habapp_rules.actors.config.shading.ShadingConfig(
+				items=habapp_rules.actors.config.shading.ShadingItems(
+					shading_position="Unittest_Shading",
+					manual="Unittest_Manual",
+					state="H_Unittest_Shading_state"
+				),
+				parameter=habapp_rules.actors.config.shading.ShadingParameter()
+			)
+			habapp_rules.actors.shading.Raffstore(config)
+
 	def test_verify_items(self):
 		"""Test __verify_items"""
 		# test shading position type
@@ -968,14 +1037,30 @@ class TestResetAllManualHand(tests.helper.test_case_base.TestCaseBase):
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Reset", None)
 
-		self.reset_shading_rule = habapp_rules.actors.shading.ResetAllManualHand("Unittest_Reset")
+		config = habapp_rules.actors.config.shading.ResetAllManualHandConfig(
+			items=habapp_rules.actors.config.shading.ResetAllManualHandItems(
+				reset_manual_hand="Unittest_Reset"
+			)
+		)
+
+		self.reset_shading_rule = habapp_rules.actors.shading.ResetAllManualHand(config)
 
 	def test__get_shading_objects(self):
 		"""Test __get_shading_objects."""
 		# shading objects where given
 		shading_object_1 = unittest.mock.MagicMock()
 		shading_object_2 = unittest.mock.MagicMock()
-		reset_shading_rule_2 = habapp_rules.actors.shading.ResetAllManualHand("Unittest_Reset", [shading_object_1, shading_object_2])
+
+		config_2 = habapp_rules.actors.config.shading.ResetAllManualHandConfig(
+			items=habapp_rules.actors.config.shading.ResetAllManualHandItems(
+				reset_manual_hand="Unittest_Reset",
+			),
+			parameter=habapp_rules.actors.config.shading.ResetAllManualHandParameter(
+				shading_objects=[shading_object_1, shading_object_2]
+			)
+		)
+
+		reset_shading_rule_2 = habapp_rules.actors.shading.ResetAllManualHand(config_2)
 		self.assertEqual([shading_object_1, shading_object_2], reset_shading_rule_2._ResetAllManualHand__get_shading_objects())
 
 		# shading objects are not set via __init__
@@ -998,18 +1083,18 @@ class TestResetAllManualHand(tests.helper.test_case_base.TestCaseBase):
 			TestCase("ON", "Manual", [unittest.mock.call("OFF")])
 		]
 
-		shading_rule_mock = unittest.mock.MagicMock(spec=habapp_rules.actors.shading.Raffstore)
-		shading_rule_mock._item_manual = unittest.mock.MagicMock(spec=HABApp.openhab.items.SwitchItem)
+		shading_rule_mock = unittest.mock.MagicMock()
+		shading_rule_mock._config.items.manual = unittest.mock.MagicMock(spec=HABApp.openhab.items.SwitchItem)
 
 		with unittest.mock.patch.object(self.reset_shading_rule, "_ResetAllManualHand__get_shading_objects", return_value=[shading_rule_mock]):
 			for test_case in test_cases:
 				shading_rule_mock.state = test_case.state
-				shading_rule_mock._item_manual.oh_send_command.reset_mock()
+				shading_rule_mock._config.items.manual.oh_send_command.reset_mock()
 
 				self.reset_shading_rule._cb_reset_all(HABApp.openhab.events.ItemCommandEvent("name", test_case.event))
 
-				self.assertEqual(len(test_case.manual_commands), shading_rule_mock._item_manual.oh_send_command.call_count)
-				shading_rule_mock._item_manual.oh_send_command.assert_has_calls(test_case.manual_commands)
+				self.assertEqual(len(test_case.manual_commands), shading_rule_mock._config.items.manual.oh_send_command.call_count)
+				shading_rule_mock._config.items.manual.oh_send_command.assert_has_calls(test_case.manual_commands)
 
 
 class TestSlatValueSun(tests.helper.test_case_base.TestCaseBase):
@@ -1026,92 +1111,43 @@ class TestSlatValueSun(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_SlatValueSingle", None)  # NumberItem
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_SlatValueDual", None)  # DimmerItem
 
-		self.characteristic_winter = [(0, 100), (10, 70), (20, 60), (30, 50), (40, 50)]
-		self.characteristic_summer = [(0, 100), (10, 80), (20, 70), (30, 60), (40, 50), (50, 50)]
+		self.config_single = habapp_rules.actors.config.shading.SlatValueConfig(
+			items=habapp_rules.actors.config.shading.SlatValueItems(
+				sun_elevation="Unittest_Elevation",
+				slat_value="Unittest_SlatValueSingle",
+			),
+			parameter=habapp_rules.actors.config.shading.SlatValueParameter(
+				elevation_slat_characteristic=[
+					habapp_rules.actors.config.shading.ElevationSlatMapping(0, 100),
+					habapp_rules.actors.config.shading.ElevationSlatMapping(10, 70),
+					habapp_rules.actors.config.shading.ElevationSlatMapping(20, 60),
+					habapp_rules.actors.config.shading.ElevationSlatMapping(30, 50),
+					habapp_rules.actors.config.shading.ElevationSlatMapping(40, 50),
+				]
+			)
+		)
 
-		self.slat_value_sun_single = habapp_rules.actors.shading.SlatValueSun("Unittest_Elevation", "Unittest_SlatValueSingle", self.characteristic_winter)
-		self.slat_value_sun_dual = habapp_rules.actors.shading.SlatValueSun("Unittest_Elevation", "Unittest_SlatValueDual", self.characteristic_winter, "Unittest_Summer", self.characteristic_summer)
+		self.config_dual = habapp_rules.actors.config.shading.SlatValueConfig(
+			items=habapp_rules.actors.config.shading.SlatValueItems(
+				sun_elevation="Unittest_Elevation",
+				summer="Unittest_Summer",
+				slat_value="Unittest_SlatValueDual",
+			),
+			parameter=habapp_rules.actors.config.shading.SlatValueParameter(
+				elevation_slat_characteristic=copy.deepcopy(self.config_single.parameter.elevation_slat_characteristic),
+				elevation_slat_characteristic_summer=[
+					habapp_rules.actors.config.shading.ElevationSlatMapping(0, 100),
+					habapp_rules.actors.config.shading.ElevationSlatMapping(10, 80),
+					habapp_rules.actors.config.shading.ElevationSlatMapping(20, 70),
+					habapp_rules.actors.config.shading.ElevationSlatMapping(30, 60),
+					habapp_rules.actors.config.shading.ElevationSlatMapping(40, 50),
+					habapp_rules.actors.config.shading.ElevationSlatMapping(50, 50),
+				]
+			)
+		)
 
-	def test_init(self):
-		"""Test __init__."""
-		# single
-		self.assertEqual("Unittest_Elevation", self.slat_value_sun_single._item_sun_elevation.name)
-		self.assertEqual(self.characteristic_winter, self.slat_value_sun_single._SlatValueSun__slat_characteristic_default)
-		self.assertEqual(None, self.slat_value_sun_single._SlatValueSun__slat_characteristic_summer)
-		self.assertEqual("Unittest_SlatValueSingle", self.slat_value_sun_single._item_slat_value.name)
-		self.assertEqual(None, self.slat_value_sun_single._item_summer)
-		self.assertEqual(self.characteristic_winter, self.slat_value_sun_single._slat_characteristic_active)
-
-		# with summer / winter
-		self.assertEqual("Unittest_Elevation", self.slat_value_sun_dual._item_sun_elevation.name)
-		self.assertEqual(self.characteristic_winter, self.slat_value_sun_dual._SlatValueSun__slat_characteristic_default)
-		self.assertEqual(self.characteristic_summer, self.slat_value_sun_dual._SlatValueSun__slat_characteristic_summer)
-		self.assertEqual("Unittest_SlatValueDual", self.slat_value_sun_dual._item_slat_value.name)
-		self.assertEqual("Unittest_Summer", self.slat_value_sun_dual._item_summer.name)
-		self.assertEqual(self.characteristic_winter, self.slat_value_sun_dual._slat_characteristic_active)
-
-		# send summer on
-		tests.helper.oh_item.item_state_change_event("Unittest_Summer", "ON")
-		self.assertEqual(self.characteristic_summer, self.slat_value_sun_dual._slat_characteristic_active)
-
-	def test_init_exception(self):
-		"""Test exceptions of __init__."""
-		# summer_name is given but no summer_characteristic
-		with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
-			habapp_rules.actors.shading.SlatValueSun("Unittest_Elevation", "Unittest_SlatValueDual", self.characteristic_winter, "Unittest_Summer")
-
-		# summer_characteristic but no summer_name
-		with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
-			habapp_rules.actors.shading.SlatValueSun("Unittest_Elevation", "Unittest_SlatValueDual", self.characteristic_winter, None, self.characteristic_summer)
-
-		# exception if a wrong type is given for name_slat_value
-		TestCase = collections.namedtuple("TestCase", "slat_type, raises_exc")
-		test_cases = [
-			TestCase(HABApp.openhab.items.RollershutterItem, True),
-			TestCase(HABApp.openhab.items.DimmerItem, False),
-			TestCase(HABApp.openhab.items.SwitchItem, True),
-			TestCase(HABApp.openhab.items.ContactItem, True),
-			TestCase(HABApp.openhab.items.NumberItem, False)
-		]
-
-		for test_case in test_cases:
-			tests.helper.oh_item.add_mock_item(test_case.slat_type, "Unittest_SlatValueTypeTest", None)  # NumberItem
-			if test_case.raises_exc:
-				with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
-					habapp_rules.actors.shading.SlatValueSun("Unittest_Elevation", "Unittest_SlatValueTypeTest", self.characteristic_winter)
-			else:
-				habapp_rules.actors.shading.SlatValueSun("Unittest_Elevation", "Unittest_SlatValueTypeTest", self.characteristic_winter)
-			tests.helper.oh_item.remove_mocked_item_by_name("Unittest_SlatValueTypeTest")
-
-	def test__check_and_sort_characteristic(self):
-		"""Test __check_and_sort_characteristic."""
-		tests.helper.oh_item.item_state_change_event("Unittest_Summer", "ON")
-		TestCase = collections.namedtuple("TestCase", "input, expected_output, raises")
-
-		test_cases = [
-			TestCase([(0, 100), (10, 50)], [(0, 100), (10, 50)], False),
-			TestCase([(10, 50), (0, 100)], [(0, 100), (10, 50)], False),
-
-			TestCase([(0, 100), (10, 50), (20, 50)], [(0, 100), (10, 50), (20, 50)], False),
-			TestCase([(10, 50), (0, 100), (20, 50)], [(0, 100), (10, 50), (20, 50)], False),
-			TestCase([(10, 50), (20, 50), (0, 100)], [(0, 100), (10, 50), (20, 50)], False),
-
-			TestCase(None, None, True),
-			TestCase([(1, 2, 3)], None, True),
-			TestCase([1, 2, 3], None, True),
-			TestCase([(0, 50), (1)], None, True),
-			TestCase([(0, 50), (0)], None, True),
-			TestCase([(0, 50), (1, 2, 3)], None, True),
-			TestCase([(0, 50), (0, 40)], None, True),
-			TestCase([(0, 50), (10, 40), (0, 100)], None, True),
-		]
-
-		for test_case in test_cases:
-			if test_case.raises:
-				with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
-					self.slat_value_sun_single._SlatValueSun__check_and_sort_characteristic(test_case.input)
-			else:
-				self.assertEqual(test_case.expected_output, self.slat_value_sun_single._SlatValueSun__check_and_sort_characteristic(test_case.input))
+		self.slat_value_sun_single = habapp_rules.actors.shading.SlatValueSun(self.config_single)
+		self.slat_value_sun_dual = habapp_rules.actors.shading.SlatValueSun(self.config_dual)
 
 	def test__get_slat_value(self):
 		"""Test __get_slat_value."""
@@ -1141,8 +1177,9 @@ class TestSlatValueSun(tests.helper.test_case_base.TestCaseBase):
 		]
 
 		for test_case in test_cases:
-			self.assertEqual(test_case.expected_result_single, self.slat_value_sun_single._SlatValueSun__get_slat_value(test_case.elevation))
-			self.assertEqual(test_case.expected_result_dual, self.slat_value_sun_dual._SlatValueSun__get_slat_value(test_case.elevation))
+			with self.subTest(test_case=test_case):
+				self.assertEqual(test_case.expected_result_single, self.slat_value_sun_single._SlatValueSun__get_slat_value(test_case.elevation))
+				self.assertEqual(test_case.expected_result_dual, self.slat_value_sun_dual._SlatValueSun__get_slat_value(test_case.elevation))
 
 	def test_cb_elevation(self):
 		"""Test _cb_elevation."""
@@ -1158,15 +1195,15 @@ class TestSlatValueSun(tests.helper.test_case_base.TestCaseBase):
 		"""Test _cb_summer_winter."""
 		# initial -> None == Winter
 		tests.helper.oh_item.item_state_change_event("Unittest_Elevation", 30)
-		self.assertEqual(self.characteristic_winter, self.slat_value_sun_dual._slat_characteristic_active)
+		self.assertEqual(self.config_dual.parameter.elevation_slat_characteristic, self.slat_value_sun_dual._slat_characteristic_active)
 		tests.helper.oh_item.assert_value("Unittest_SlatValueDual", 50)
 
 		# change to summer
 		tests.helper.oh_item.item_state_change_event("Unittest_Summer", "ON")
-		self.assertEqual(self.characteristic_summer, self.slat_value_sun_dual._slat_characteristic_active)
+		self.assertEqual(self.config_dual.parameter.elevation_slat_characteristic_summer, self.slat_value_sun_dual._slat_characteristic_active)
 		tests.helper.oh_item.assert_value("Unittest_SlatValueDual", 60)
 
 		# change to winter
 		tests.helper.oh_item.item_state_change_event("Unittest_Summer", "OFF")
-		self.assertEqual(self.characteristic_winter, self.slat_value_sun_dual._slat_characteristic_active)
+		self.assertEqual(self.config_dual.parameter.elevation_slat_characteristic, self.slat_value_sun_dual._slat_characteristic_active)
 		tests.helper.oh_item.assert_value("Unittest_SlatValueDual", 50)
