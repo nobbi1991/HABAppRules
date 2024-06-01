@@ -3,7 +3,6 @@ import collections
 import os
 import pathlib
 import sys
-import threading
 import unittest
 import unittest.mock
 
@@ -11,6 +10,7 @@ import HABApp
 
 import habapp_rules.core.exceptions
 import habapp_rules.core.state_machine_rule
+import habapp_rules.sensors.config.humidity
 import habapp_rules.sensors.humidity
 import habapp_rules.system
 import tests.helper.graph_machines
@@ -20,27 +20,27 @@ import tests.helper.timer
 
 
 # pylint: disable=no-member, protected-access, too-many-public-methods
-class TestMotion(tests.helper.test_case_base.TestCaseBase):
+class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
 	"""Tests cases for testing motion sensors rule."""
 
 	def setUp(self) -> None:
 		"""Setup test case."""
-		self.transitions_timer_mock_patcher = unittest.mock.patch("transitions.extensions.states.Timer", spec=threading.Timer)
-		self.addCleanup(self.transitions_timer_mock_patcher.stop)
-		self.transitions_timer_mock = self.transitions_timer_mock_patcher.start()
-
-		self.threading_timer_mock_patcher = unittest.mock.patch("threading.Timer", spec=threading.Timer)
-		self.addCleanup(self.threading_timer_mock_patcher.stop)
-		self.threading_timer_mock = self.threading_timer_mock_patcher.start()
-
-		tests.helper.test_case_base.TestCaseBase.setUp(self)
+		tests.helper.test_case_base.TestCaseBaseStateMachine.setUp(self)
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Humidity", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Output", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Unittest_Output_state", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Custom_Name", None)
 
-		self.humidity = habapp_rules.sensors.humidity.HumiditySwitch("Unittest_Humidity", "Unittest_Output")
+		config = habapp_rules.sensors.config.humidity.HumiditySwitchConfig(
+			items=habapp_rules.sensors.config.humidity.HumiditySwitchItems(
+				humidity="Unittest_Humidity",
+				output="Unittest_Output",
+				state="H_Unittest_Output_state"
+			)
+		)
+
+		self.humidity = habapp_rules.sensors.humidity.HumiditySwitch(config)
 
 	@unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
 	def test_create_graph(self):  # pragma: no cover
@@ -60,8 +60,20 @@ class TestMotion(tests.helper.test_case_base.TestCaseBase):
 
 	def test_init(self):
 		"""Test init."""
-		humidity = habapp_rules.sensors.humidity.HumiditySwitch("Unittest_Humidity", "Unittest_Output", 70, 42, "Custom_Name", "custom label")
-		self.assertEqual(70, humidity._absolute_threshold)
+		full_config = habapp_rules.sensors.config.humidity.HumiditySwitchConfig(
+			items=habapp_rules.sensors.config.humidity.HumiditySwitchItems(
+				humidity="Unittest_Humidity",
+				output="Unittest_Output",
+				state="Custom_Name"
+			),
+			parameter=habapp_rules.sensors.config.humidity.HumiditySwitchParameter(
+				absolute_threshold=70,
+				extended_time=42
+			)
+		)
+
+		humidity = habapp_rules.sensors.humidity.HumiditySwitch(full_config)
+		self.assertEqual(70, humidity._config.parameter.absolute_threshold)
 		self.assertEqual(42, humidity.state_machine.get_state("on_Extended").timeout)
 		self.assertEqual("Custom_Name", humidity._item_state.name)
 
@@ -134,25 +146,33 @@ class TestMotion(tests.helper.test_case_base.TestCaseBase):
 		# some humidity changes below threshold
 		tests.helper.oh_item.item_state_event("Unittest_Humidity", 64)
 		self.assertEqual("off", self.humidity.state)
+		tests.helper.oh_item.assert_value("Unittest_Output", "OFF")
 		tests.helper.oh_item.item_state_event("Unittest_Humidity", 10)
 		self.assertEqual("off", self.humidity.state)
+		tests.helper.oh_item.assert_value("Unittest_Output", "OFF")
 
 		# some humidity changes above threshold
 		tests.helper.oh_item.item_state_event("Unittest_Humidity", 65)
 		self.assertEqual("on_HighHumidity", self.humidity.state)
+		tests.helper.oh_item.assert_value("Unittest_Output", "ON")
 		tests.helper.oh_item.item_state_event("Unittest_Humidity", 100)
 		self.assertEqual("on_HighHumidity", self.humidity.state)
+		tests.helper.oh_item.assert_value("Unittest_Output", "ON")
 
 		# humidity below threshold again
 		tests.helper.oh_item.item_state_event("Unittest_Humidity", 50)
 		self.assertEqual("on_Extended", self.humidity.state)
+		tests.helper.oh_item.assert_value("Unittest_Output", "ON")
 
 		# humidity above threshold again
 		tests.helper.oh_item.item_state_event("Unittest_Humidity", 70)
 		self.assertEqual("on_HighHumidity", self.humidity.state)
+		tests.helper.oh_item.assert_value("Unittest_Output", "ON")
 
 		# humidity below threshold again and timeout
 		tests.helper.oh_item.item_state_event("Unittest_Humidity", 64)
 		self.assertEqual("on_Extended", self.humidity.state)
+		tests.helper.oh_item.assert_value("Unittest_Output", "ON")
 		tests.helper.timer.call_timeout(self.transitions_timer_mock)
 		self.assertEqual("off", self.humidity.state)
+		tests.helper.oh_item.assert_value("Unittest_Output", "OFF")
