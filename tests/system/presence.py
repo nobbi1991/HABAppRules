@@ -9,6 +9,7 @@ import unittest.mock
 import HABApp.rule.rule
 
 import habapp_rules.core.state_machine_rule
+import habapp_rules.system.config.presence
 import habapp_rules.system.presence
 import tests.helper.graph_machines
 import tests.helper.oh_item
@@ -17,20 +18,12 @@ import tests.helper.timer
 
 
 # pylint: disable=protected-access
-class TestPresence(tests.helper.test_case_base.TestCaseBase):
+class TestPresence(tests.helper.test_case_base.TestCaseBaseStateMachine):
 	"""Tests cases for testing presence rule."""
 
 	def setUp(self) -> None:
 		"""Setup test case."""
-		self.transitions_timer_mock_patcher = unittest.mock.patch("transitions.extensions.states.Timer", spec=threading.Timer)
-		self.addCleanup(self.transitions_timer_mock_patcher.stop)
-		self.transitions_timer_mock = self.transitions_timer_mock_patcher.start()
-
-		self.threading_timer_mock_patcher = unittest.mock.patch("threading.Timer", spec=threading.Timer)
-		self.addCleanup(self.threading_timer_mock_patcher.stop)
-		self.threading_timer_mock = self.threading_timer_mock_patcher.start()
-
-		tests.helper.test_case_base.TestCaseBase.setUp(self)
+		tests.helper.test_case_base.TestCaseBaseStateMachine.setUp(self)
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.ContactItem, "Unittest_Door1", "CLOSED")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.ContactItem, "Unittest_Door2", "CLOSED")
@@ -41,8 +34,17 @@ class TestPresence(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Presence_Unittest_Presence_state", "")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Presence", "ON")
 
-		self._presence = habapp_rules.system.presence.Presence("Unittest_Presence", outside_door_names=["Unittest_Door1", "Unittest_Door2"], leaving_name="Unittest_Leaving", phone_names=["Unittest_Phone1", "Unittest_Phone2"],
-		                                                       name_state="CustomState")
+		config = habapp_rules.system.config.presence.PresenceConfig(
+			items=habapp_rules.system.config.presence.PresenceItems(
+				presence="Unittest_Presence",
+				leaving="Unittest_Leaving",
+				outdoor_doors=["Unittest_Door1", "Unittest_Door2"],
+				phones=["Unittest_Phone1", "Unittest_Phone2"],
+				state="CustomState"
+			)
+		)
+
+		self._presence = habapp_rules.system.presence.Presence(config)
 
 	def test_init_with_none(self):
 		"""Test __init__ with None values."""
@@ -54,8 +56,17 @@ class TestPresence(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.set_state("Unittest_Phone2", None)
 		tests.helper.oh_item.set_state("CustomState", None)
 
-		habapp_rules.system.presence.Presence("Unittest_Presence", outside_door_names=["Unittest_Door1", "Unittest_Door2"], leaving_name="Unittest_Leaving", phone_names=["Unittest_Phone1", "Unittest_Phone2"],
-		                                      name_state="CustomState")
+		config = habapp_rules.system.config.presence.PresenceConfig(
+			items=habapp_rules.system.config.presence.PresenceItems(
+				presence="Unittest_Presence",
+				leaving="Unittest_Leaving",
+				outdoor_doors=["Unittest_Door1", "Unittest_Door2"],
+				phones=["Unittest_Phone1", "Unittest_Phone2"],
+				state="CustomState"
+			)
+		)
+
+		habapp_rules.system.presence.Presence(config)
 
 	@unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
 	def test_create_graph(self):  # pragma: no cover
@@ -71,10 +82,18 @@ class TestPresence(tests.helper.test_case_base.TestCaseBase):
 
 	def test_minimal_init(self):
 		"""Test init with minimal set of arguments."""
-		presence_min = habapp_rules.system.presence.Presence("Unittest_Presence", "Unittest_Leaving")
+		config = habapp_rules.system.config.presence.PresenceConfig(
+			items=habapp_rules.system.config.presence.PresenceItems(
+				presence="Unittest_Presence",
+				leaving="Unittest_Leaving",
+				state="CustomState"
+			)
+		)
 
-		self.assertEqual([], presence_min._Presence__outside_door_items)
-		self.assertEqual([], presence_min._Presence__phone_items)
+		presence_min = habapp_rules.system.presence.Presence(config)
+
+		self.assertEqual([], presence_min._config.items.phones)
+		self.assertEqual([], presence_min._config.items.outdoor_doors)
 
 	def test_enums(self):
 		"""Test if all enums from __init__.py are implemented"""
@@ -161,28 +180,29 @@ class TestPresence(tests.helper.test_case_base.TestCaseBase):
 		]
 
 		for testcase in testcases:
-			self._presence._Presence__presence_item.value = testcase.presence
-			self._presence._Presence__leaving_item.value = testcase.leaving
+			with self.subTest(testcase=testcase):
+				self._presence._config.items.presence.value = testcase.presence
+				self._presence._config.items.leaving.value = testcase.leaving
 
-			self._presence._Presence__outside_door_items = [HABApp.openhab.items.ContactItem(f"Unittest_Door{idx}", state) for idx, state in enumerate(testcase.outside_doors)]
-			self._presence._Presence__phone_items = [HABApp.openhab.items.SwitchItem(f"Unittest_Phone{idx}", state) for idx, state in enumerate(testcase.phones)]
+				self._presence._config.items.outdoor_doors = [HABApp.openhab.items.ContactItem(f"Unittest_Door{idx}", state) for idx, state in enumerate(testcase.outside_doors)]
+				self._presence._config.items.phones = [HABApp.openhab.items.SwitchItem(f"Unittest_Phone{idx}", state) for idx, state in enumerate(testcase.phones)]
 
-			self.assertEqual(self._presence._get_initial_state("default"), testcase.expected_result, f"failed testcase: {testcase}")
+				self.assertEqual(self._presence._get_initial_state("default"), testcase.expected_result, f"failed testcase: {testcase}")
 
 	def test_get_initial_state_extra(self):
 		"""Test getting correct initial state for special cases."""
 		# current state value is long_absence
-		self._presence._Presence__presence_item.value = "OFF"
-		self._presence._Presence__leaving_item.value = "OFF"
-		self._presence._item_state.value = "long_absence"
-		self._presence._Presence__outside_door_items = []
+		self._presence._config.items.presence.value = "OFF"
+		self._presence._config.items.leaving.value = "OFF"
+		self._presence._config.items.state.value = "long_absence"
+		self._presence._config.items.outdoor_doors = []
 
 		# no phones
-		self._presence._Presence__phone_items = []
+		self._presence._config.items.phones = []
 		self.assertEqual(self._presence._get_initial_state("default"), "long_absence")
 
 		# with phones
-		self._presence._Presence__phone_items = [HABApp.openhab.items.SwitchItem("Unittest_Phone1}")]
+		self._presence._config.items.phones = [HABApp.openhab.items.SwitchItem("Unittest_Phone1")]
 		self.assertEqual(self._presence._get_initial_state("default"), "long_absence")
 
 	def test_presence_trough_doors(self):
