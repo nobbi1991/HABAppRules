@@ -1,5 +1,6 @@
 """Config models for light actors."""
 import collections.abc
+import logging
 import typing
 
 import HABApp.openhab.items
@@ -7,6 +8,8 @@ import pydantic
 
 import habapp_rules.core.exceptions
 import habapp_rules.core.pydantic_base
+
+LOGGER = logging.getLogger(__name__)
 
 
 class LightItems(habapp_rules.core.pydantic_base.ItemBase):
@@ -42,7 +45,7 @@ class BrightnessTimeout(pydantic.BaseModel):
 		:raises AssertionError: if brightness and timeout are not valid
 		:return: self
 		"""
-		if self.brightness is False:
+		if self.brightness is False or self.brightness == 0:
 			# Default if the light should be switched off e.g. for leaving / sleeping
 			if not self.timeout:
 				self.timeout = 0.5
@@ -74,6 +77,30 @@ class LightParameter(habapp_rules.core.pydantic_base.ParameterBase):
 	door: FunctionConfig | None = pydantic.Field(None, description="values which are used if the light is enabled via a door opening")
 	off_at_door_closed_during_leaving: bool = pydantic.Field(False, description="this can be used to switch lights off, when door is closed in leaving state")
 	hand_off_lock_time: int = pydantic.Field(20, description="time in seconds where door / motion switch on is disabled after a manual OFF")
+
+	@pydantic.field_validator("on", mode="after")
+	@classmethod
+	def validate_on(cls, value: FunctionConfig) -> FunctionConfig:
+		if any(conf is None for conf in [value.day, value.night, value.sleeping]):
+			raise AssertionError("For function 'on' all brightness / timeout values must be set.")
+		return value
+
+	@pydantic.field_validator("pre_sleep", mode="after")
+	@classmethod
+	def validate_pre_sleep(cls, value: FunctionConfig | None) -> FunctionConfig | None:
+		"""Validate pre_sleep config
+
+		:raises AssertionError: if pre_sleep is not valid
+		:return: self
+		"""
+		if value is None:
+			return value
+
+		if value.sleeping is not None:
+			LOGGER.warning("It's not allowed to set brightness / timeout for pre_sleep.sleeping. Set it to None")
+			value.sleeping = None
+
+		return value
 
 
 class LightConfig(habapp_rules.core.pydantic_base.ConfigBase):
