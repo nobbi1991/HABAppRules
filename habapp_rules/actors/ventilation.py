@@ -7,11 +7,11 @@ import logging
 import HABApp
 
 import habapp_rules.actors.config.ventilation
+import habapp_rules.core.exceptions
 import habapp_rules.core.helper
 import habapp_rules.core.logger
 import habapp_rules.core.state_machine_rule
 import habapp_rules.system
-import habapp_rules.core.exceptions
 
 LOGGER = logging.getLogger(__name__)
 
@@ -290,17 +290,7 @@ class Ventilation(_VentilationBase):
 	def __init__(self, config: habapp_rules.actors.config.ventilation.VentilationConfig) -> None:
 		"""Init of ventilation object.
 
-		:param name_ventilation_level: name of OpenHAB number item to set the ventilation level (NumberItem
-		:param name_manual: name of OpenHAB switch item to disable all automatic functions  (SwitchItem)
-		:param config: configuration of the ventilation
-		:param name_hand_request: name of OpenHAB switch item to enter the hand state (SwitchItem)
-		:param name_external_request: name of OpenHAB switch item to enter the external state (e.g. used for dryer request) (SwitchItem)
-		:param name_presence_state: name of OpenHAB presence state item (StringItem)
-		:param name_feedback_on: name of OpenHAB item which shows that ventilation is on (SwitchItem)
-		:param name_feedback_power: name of OpenHAB item which shows that ventilation is in power mode (SwitchItem)
-		:param name_display_text: name of OpenHAB item which can be used to set the display text (e.g. for user interface) (StringItem)
-		:param name_state: name of OpenHAB item for storing the current state (StringItem)
-		:param state_label: label of OpenHAB item for storing the current state (StringItem)
+		:param config: config of the ventilation rule
 		"""
 		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, config.items.ventilation_level.name)
 
@@ -364,19 +354,7 @@ class VentilationHeliosTwoStage(_VentilationBase):
 	def __init__(self, config: habapp_rules.actors.config.ventilation.VentilationConfigTwoStage) -> None:
 		"""Init of a Helios ventilation object which uses two switches to set the level.
 
-		:param name_ventilation_output_on: name of OpenHAB switch item to switch on the ventilation (SwitchItem)
-		:param name_ventilation_output_power: name of OpenHAB switch item to switch on the power mode (SwitchItem)
-		:param name_manual: name of OpenHAB switch item to disable all automatic functions  (SwitchItem)
-		:param config: configuration of the ventilation
-		:param name_hand_request: name of OpenHAB switch item to enter the hand state (SwitchItem)
-		:param name_external_request: name of OpenHAB switch item to enter the external state (e.g. used for dryer request) (SwitchItem)
-		:param name_presence_state: name of OpenHAB presence state item (StringItem)
-		:param name_feedback_on: name of OpenHAB item which shows that ventilation is on (SwitchItem)
-		:param name_feedback_power: name of OpenHAB item which shows that ventilation is in power mode (SwitchItem)
-		:param name_display_text: name of OpenHAB item which can be used to set the display text (e.g. for user interface) (StringItem)
-		:param after_run_timeout: timeout of after-run-state in seconds
-		:param name_state: name of OpenHAB item for storing the current state (StringItem)
-		:param state_label: label of OpenHAB item for storing the current state (StringItem)
+		:param config: config for the ventilation rule
 		"""
 		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, config.items.ventilation_output_on.name)
 		_VentilationBase.__init__(self, config)
@@ -467,27 +445,12 @@ class VentilationHeliosTwoStageHumidity(VentilationHeliosTwoStage):
 	def __init__(self, config: habapp_rules.actors.config.ventilation.VentilationConfigTwoStage) -> None:
 		"""Init of a Helios ventilation object which uses two switches to set the level, including a humidity sensor.
 
-		:param name_ventilation_output_on: name of OpenHAB switch item to switch on the ventilation (SwitchItem)
-		:param name_ventilation_output_power: name of OpenHAB switch item to switch on the power mode (SwitchItem)
-		:param name_current: name of OpenHAB number item which measures the current of the ventilation (NumberItem)
-		:param name_manual: name of OpenHAB switch item to disable all automatic functions  (SwitchItem)
-		:param config: configuration of the ventilation
-		:param name_hand_request: name of OpenHAB switch item to enter the hand state (SwitchItem)
-		:param name_external_request: name of OpenHAB switch item to enter the external state (e.g. used for dryer request) (SwitchItem)
-		:param name_presence_state: name of OpenHAB presence state item (StringItem)
-		:param name_feedback_on: name of OpenHAB item which shows that ventilation is on (SwitchItem)
-		:param name_feedback_power: name of OpenHAB item which shows that ventilation is in power mode (SwitchItem)
-		:param name_display_text: name of OpenHAB item which can be used to set the display text (e.g. for user interface) (StringItem)
-		:param after_run_timeout: timeout of after-run-state in seconds
-		:param current_threshold_power: Threshold of the current which is used in power mode (NumberItem)
-		:param name_state: name of OpenHAB item for storing the current state (StringItem)
-		:param state_label: label of OpenHAB item for storing the current state (StringItem)
+		:param config: configuration of the ventilation rule
+		:raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: if config is missing required items
 		"""
 		if config.items.current is None:
 			raise habapp_rules.core.exceptions.HabAppRulesConfigurationException("Missing item 'current'")
 		self._current_threshold_power = config.parameter.current_threshold_power
-
-
 
 		VentilationHeliosTwoStage.__init__(self, config)
 		config.items.current.listen_event(self._cb_current, HABApp.openhab.events.ItemStateUpdatedEventFilter())

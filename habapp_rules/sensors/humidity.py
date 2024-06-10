@@ -33,12 +33,7 @@ class HumiditySwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
 	def __init__(self, config: habapp_rules.sensors.config.humidity.HumiditySwitchConfig) -> None:
 		"""Init humidity rule.
 
-		:param name_humidity: Name of OpenHAB NumberItem which holds the humidity
-		:param name_switch: Name of OpenHab SwitchItem which will be switched on if high humidity is detected
-		:param absolute_threshold: Threshold for high humidity
-		:param extended_time: Extended time if humidity is below threshold
-		:param name_state: name of the item to hold the state
-		:param state_label: OpenHAB label of the state_item; This will be used if the state_item will be created by HABApp
+		:param config: config for humidity switch rule
 		"""
 		self._config = config
 		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, self._config.items.state.name)
@@ -69,7 +64,7 @@ class HumiditySwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 	def _set_output(self) -> None:
 		"""Set output."""
-		target_state = "ON" if self.state in ("on_HighHumidity", "on_Extended") else "OFF"
+		target_state = "ON" if self.state in {"on_HighHumidity", "on_Extended"} else "OFF"
 		habapp_rules.core.helper.send_if_different(self._config.items.output, target_state)
 
 	def _get_initial_state(self, default_value: str = "initial") -> str:

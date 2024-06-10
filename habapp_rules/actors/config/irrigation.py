@@ -1,4 +1,4 @@
-"""Config models for irrigation actors."""
+"""Config models for irrigation rules."""
 import typing
 
 import HABApp.openhab.items
@@ -20,6 +20,11 @@ class IrrigationItems(habapp_rules.core.pydantic_base.ItemBase):
 
 	@pydantic.model_validator(mode="after")
 	def validate_model(self) -> typing.Self:
+		"""Validate model
+
+		:return: validated model
+		:raises AssertionError: if 'repetitions' and 'brake' are not set together
+		"""
 		if (self.repetitions is None) != (self.brake is None):
 			raise AssertionError("If repeats item is given, also the brake item must be given!")
 

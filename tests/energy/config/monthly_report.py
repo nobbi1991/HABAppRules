@@ -1,10 +1,10 @@
+"""Test config models for monthly energy report rules."""
+import HABApp
 import pydantic
 
-import tests.helper.test_case_base
-import tests.helper.oh_item
-import HABApp
-
 import habapp_rules.energy.config.monthly_report
+import tests.helper.oh_item
+import tests.helper.test_case_base
 
 
 class TestEnergyShare(tests.helper.test_case_base.TestCaseBase):

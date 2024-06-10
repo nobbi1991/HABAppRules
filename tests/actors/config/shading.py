@@ -1,3 +1,4 @@
+"""Test config models for shading rules."""
 import collections
 import unittest
 
@@ -88,18 +89,18 @@ class TestSlatValueParameter(unittest.TestCase):
 
 		for test_case in test_cases:
 			with self.subTest(test_case=test_case):
-				input = [habapp_rules.actors.config.shading.ElevationSlatMapping(*conf) for conf in test_case.input]
+				input_conf = [habapp_rules.actors.config.shading.ElevationSlatMapping(*conf) for conf in test_case.input]
 				output = [habapp_rules.actors.config.shading.ElevationSlatMapping(*conf) for conf in test_case.expected_output] if test_case.expected_output else None
 				if test_case.raises:
 					with self.assertRaises(pydantic.ValidationError):
 						habapp_rules.actors.config.shading.SlatValueParameter(
-							elevation_slat_characteristic=input,
-							elevation_slat_characteristic_summer=input
+							elevation_slat_characteristic=input_conf,
+							elevation_slat_characteristic_summer=input_conf
 						)
 				else:
 					config = habapp_rules.actors.config.shading.SlatValueParameter(
-						elevation_slat_characteristic=input,
-						elevation_slat_characteristic_summer=input
+						elevation_slat_characteristic=input_conf,
+						elevation_slat_characteristic_summer=input_conf
 					)
 
 					self.assertEqual(output, config.elevation_slat_characteristic)

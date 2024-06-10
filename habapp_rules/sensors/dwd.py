@@ -107,15 +107,7 @@ class DwdWindAlarm(habapp_rules.core.state_machine_rule.StateMachineRule):
 	def __init__(self, config: habapp_rules.sensors.config.dwd.WindAlarmConfig) -> None:
 		"""Init of DWD wind alarm object.
 
-		:param name_wind_alarm: name of OpenHAB wind alarm item (SwitchItem)
-		:param manual_name: name of OpenHAB switch item to disable all automatic functions (SwitchItem)
-		:param hand_timeout: name of OpenHAB number item or fixed value as integer to set timeout of manual change
-		:param dwd_item_prefix: [optional] prefix of dwd warning names
-		:param number_dwd_objects: [optional] number of dwd objects
-		:param threshold_wind_speed: [optional] threshold for wind speed -> wind alarm will only be active if greater or equal
-		:param threshold_severity: [optional] threshold for severity -> wind alarm will only be active if greater or equal
-		:param name_state: [optional] name of OpenHAB item for storing the current state (StringItem)
-		:param state_label: [optional] label of OpenHAB item for storing the current state (StringItem)
+		:param config: config for DWD wind alarm rule
 		:raises TypeError: if type of hand_timeout is not supported
 		"""
 		self._config = config
@@ -166,8 +158,7 @@ class DwdWindAlarm(habapp_rules.core.state_machine_rule.StateMachineRule):
 			if (item_value := self._config.items.hand_timeout.value) is None:
 				self._instance_logger.warning("The value of the hand timeout item is None. Will use 24 hours as default!")
 				return 24 * 3600
-			else:
-				return item_value
+			return item_value
 		return self._config.parameter.hand_timeout
 
 	def _set_timeouts(self) -> None:

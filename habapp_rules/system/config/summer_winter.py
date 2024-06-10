@@ -1,3 +1,4 @@
+"""Config models for summer / winter rules."""
 import HABApp
 import pydantic
 

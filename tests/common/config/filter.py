@@ -1,4 +1,4 @@
-"""Test ExponentialFilterConfig."""
+"""Test config models for filter rules."""
 import HABApp
 
 import habapp_rules.common.config.filter
@@ -7,6 +7,7 @@ import tests.helper.test_case_base
 
 
 class TestExponentialFilterConfig(tests.helper.test_case_base.TestCaseBase):
+	"""Test ExponentialFilterConfig."""
 
 	def setUp(self) -> None:
 		"""Setup test case."""

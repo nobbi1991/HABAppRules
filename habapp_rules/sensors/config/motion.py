@@ -1,4 +1,4 @@
-"""Config for motion rules."""
+"""Config models for motion rules."""
 import HABApp
 import pydantic
 

@@ -1,3 +1,4 @@
+"""Test config models of logic rules."""
 import HABApp
 
 import habapp_rules.common.config.logic

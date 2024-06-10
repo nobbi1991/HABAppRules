@@ -1,3 +1,4 @@
+"""Test config models for sun rules."""
 import unittest
 
 import HABApp

@@ -1,3 +1,4 @@
+"""Config rules for DWD rules."""
 import typing
 
 import HABApp
@@ -31,8 +32,11 @@ class WindAlarmConfig(habapp_rules.core.pydantic_base.ConfigBase):
 
 	@pydantic.model_validator(mode="after")
 	def check_hand_timeout(self) -> typing.Self:
-		if not (self.items.hand_timeout is None) ^ (self.parameter.hand_timeout is None): # XNOR
+		"""Validate hand timeout.
+
+		:return: validated config model
+		:raises ValueError: if both 'items.hand_timeout' and 'parameter.hand_timeout' are set
+		"""
+		if not (self.items.hand_timeout is None) ^ (self.parameter.hand_timeout is None):  # XNOR
 			raise ValueError("Either 'items.wind_alarm' or 'parameter.hand_timeout' must be set")
 		return self
-
-

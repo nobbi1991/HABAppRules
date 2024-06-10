@@ -1,3 +1,4 @@
+"""Config models for sleep rules."""
 import datetime
 
 import HABApp

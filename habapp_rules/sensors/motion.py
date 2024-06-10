@@ -84,16 +84,7 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
 	def __init__(self, config: habapp_rules.sensors.config.motion.MotionConfig) -> None:
 		"""Init of motion filter.
 
-		:param name_raw: name of OpenHAB unfiltered motion item (SwitchItem)
-		:param name_filtered: name of OpenHAB filtered motion item (SwitchItem)
-		:param extended_motion_time: time in seconds which will extend the motion after motion is off. If it is set to 0 the time will not be extended
-		:param name_brightness: name of OpenHAB brightness item (NumberItem)
-		:param brightness_threshold: brightness threshold value (float) or name of OpenHAB brightness threshold item (NumberItem)
-		:param name_lock: name of OpenHAB lock item (SwitchItem)
-		:param name_sleep_state: name of OpenHAB sleep state item (StringItem)
-		:param post_sleep_lock_time: Lock time after sleep
-		:param name_state: name of OpenHAB item for storing the current state (StringItem)
-		:param state_label: label of OpenHAB item for storing the current state (StringItem)
+		:param config: config for the motion filter
 		:raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: if configuration is not valid
 		"""
 		self._config = config

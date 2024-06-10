@@ -1,4 +1,4 @@
-"""Test config for light rules."""
+"""Test config models for light rules."""
 import collections
 import unittest.mock
 
@@ -48,7 +48,6 @@ class TestBrightnessTimeout(unittest.TestCase):
 						BrightnessTimeout(test_case.value, test_case.timeout)
 
 
-#
 class TestLightParameter(unittest.TestCase):
 	"""Tests for LightParameter."""
 

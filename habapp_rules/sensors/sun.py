@@ -1,5 +1,4 @@
 """Rules to handle sun sensors."""
-import dataclasses
 import logging
 
 import HABApp
@@ -13,8 +12,6 @@ import habapp_rules.core.state_machine_rule
 import habapp_rules.sensors.config.sun
 
 LOGGER = logging.getLogger(__name__)
-
-
 
 
 class _SensorBase(HABApp.Rule):
@@ -159,7 +156,7 @@ class SunPositionFilter(HABApp.Rule):
 	habapp_rules.sensors.sun.SunPositionFilter(position_window, "sun_azimuth", "sun_elevation", "sun_shining", "sun_hits_window")
 	"""
 
-	def __init__(self, config=habapp_rules.sensors.config.sun.SunPositionConfig) -> None:
+	def __init__(self, config: habapp_rules.sensors.config.sun.SunPositionConfig) -> None:
 		"""Init of sun position filter.
 
 		:param config: config for the sun position filter

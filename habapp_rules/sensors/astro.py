@@ -84,9 +84,7 @@ class SetNight(_SetNightDayBase):
 	def __init__(self, config: habapp_rules.sensors.config.astro.SetNightConfig) -> None:
 		"""Init Rule.
 
-		:param name_night: name of OpenHAB switch item which should be set to "ON" after dusk and "OFF after dawn
-		:param name_elevation: name of OpenHAB elevation (NumberItem)
-		:param elevation_threshold: Threshold value for elevation. If the sun elevation is below the threshold, the night item will be set to "ON"
+		:param config: Config for setting night depending on sun elevation
 		"""
 		_SetNightDayBase.__init__(self, config.items.night, config.items.elevation, config.parameter.elevation_threshold)
 

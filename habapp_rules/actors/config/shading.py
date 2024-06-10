@@ -1,4 +1,4 @@
-"""Configuration of shading objects."""
+"""Config models for shading rules."""
 from __future__ import annotations
 
 import copy
@@ -15,11 +15,17 @@ class ShadingPosition(pydantic.BaseModel):
 	position: float | bool | None = pydantic.Field(..., description="target position")
 	slat: float | None = pydantic.Field(None, description="target slat position")
 
-	def __init__(self, position=float | bool | None, slat: float | None = None) -> None:
+	def __init__(self, position:float | bool | None, slat: float | None = None) -> None:
+		"""Initialize shading position with position and slat
+
+		:param position: target position value
+		:param slat: slat value
+		"""
 		super().__init__(position=position, slat=slat)
 
 
 class ShadingItems(habapp_rules.core.pydantic_base.ItemBase):
+	"""Items for shading rules."""
 	shading_position: HABApp.openhab.items.RollershutterItem | HABApp.openhab.items.DimmerItem = pydantic.Field(..., description="item for setting the shading position")
 	slat: HABApp.openhab.items.DimmerItem | None = pydantic.Field(None, description="item for setting the slat value")
 	manual: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="item to switch to manual mode and disable the automatic functions")
@@ -37,6 +43,7 @@ class ShadingItems(habapp_rules.core.pydantic_base.ItemBase):
 
 
 class ShadingParameter(habapp_rules.core.pydantic_base.ParameterBase):
+	"""Parameter for shading rules."""
 	pos_auto_open: ShadingPosition = pydantic.Field(ShadingPosition(0, 0), description="position for auto open")
 	pos_wind_alarm: ShadingPosition | None = pydantic.Field(ShadingPosition(0, 0), description="position for wind alarm")
 	pos_sleeping_night: ShadingPosition | None = pydantic.Field(ShadingPosition(100, 100), description="position for sleeping at night")
@@ -51,6 +58,10 @@ class ShadingParameter(habapp_rules.core.pydantic_base.ParameterBase):
 
 	@pydantic.model_validator(mode="after")
 	def validate_model(self) -> typing.Self:
+		"""Validate model
+
+		:return: validated model
+		"""
 		if self.pos_sleeping_night and not self.pos_sleeping_day:
 			self.pos_sleeping_day = copy.deepcopy(self.pos_sleeping_night)
 		return self
@@ -63,6 +74,11 @@ class ShadingConfig(habapp_rules.core.pydantic_base.ConfigBase):
 
 	@pydantic.model_validator(mode="after")
 	def validate_model(self) -> typing.Self:
+		"""Validate model
+
+		:return: validated model
+		:raises AssertionError: if 'parameter.pos_night_close_summer' is set but 'items.summer' is missing
+		"""
 		if self.parameter.pos_night_close_summer is not None and self.items.summer is None:
 			raise AssertionError("Night close position is set for summer, but item for summer / winter is missing!")
 		return self
@@ -97,7 +113,11 @@ class ElevationSlatMapping(pydantic.BaseModel):
 	slat_value: int
 
 	def __init__(self, elevation: int, slat_value: int):
-		"""Initialize the elevation slat mapping."""
+		"""Initialize the elevation slat mapping.
+
+		:param elevation: elevation value
+		:param slat_value: mapped slat value
+		"""
 		super().__init__(elevation=elevation, slat_value=slat_value)
 
 
@@ -120,7 +140,12 @@ class SlatValueParameter(habapp_rules.core.pydantic_base.ParameterBase):
 	@pydantic.field_validator("elevation_slat_characteristic", "elevation_slat_characteristic_summer")
 	@classmethod
 	def sort_mapping(cls, values: list[ElevationSlatMapping]) -> list[ElevationSlatMapping]:
-		"""Sort the elevation slat mappings."""
+		"""Sort the elevation slat mappings.
+
+		:param values: input values
+		:return: sorted values
+		:raises AssertionError: if elevation values are not unique
+		"""
 		values.sort(key=lambda x: x.elevation)
 
 		if len(values) != len(set(value.elevation for value in values)):

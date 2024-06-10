@@ -78,12 +78,7 @@ class MonthlyReport(HABApp.Rule):
 	def __init__(self, config: habapp_rules.energy.config.monthly_report.MonthlyReportConfig) -> None:
 		"""Initialize the rule.
 
-		:param name_energy_sum: name of OpenHAB Number item, which holds the total energy consumption (NumberItem)
-		:param known_energy_share: list of EnergyShare objects
-		:param persistence_group_name: OpenHAB group name which holds all items which are persisted. If the group name is given it will be checked if all energy items are in the group
-		:param config_mail: config for sending mails
-		:param recipients: list of recipients who get the mail
-		:param debug: if debug mode is active
+		:param config: config for the monthly energy report rule
 		:raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: if config is not valid
 		"""
 		self._config = config

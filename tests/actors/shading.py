@@ -25,7 +25,7 @@ import tests.helper.test_case_base
 import tests.helper.timer
 
 
-# pylint: disable=protected-access,no-member,too-many-public-methods
+# pylint: disable=protected-access,no-member,too-many-public-methods, too-many-lines
 class TestShadingBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
 	"""Tests cases for testing _ShadingBase."""
 

@@ -1,3 +1,6 @@
+"""Config models for filter rules."""
+import typing
+
 import HABApp.openhab.items
 import pydantic
 
@@ -17,8 +20,12 @@ class ExponentialFilterParameter(habapp_rules.core.pydantic_base.ParameterBase):
 	instant_decrease: bool = pydantic.Field(False, description="if set to True, decrease of input values will not be filtered")
 
 	@pydantic.model_validator(mode="after")
-	def validate_instant_parameters(self):
-		"""Validate instant_increase and instant_decrease."""
+	def validate_instant_parameters(self) -> typing.Self:
+		"""Validate instant_increase and instant_decrease.
+
+		:return: validated model
+		:raises ValueError: if both parameters are set
+		"""
 		if self.instant_decrease and self.instant_increase:
 			raise ValueError("instant_increase and instant_decrease can not be set to True at the same time!")
 		return self

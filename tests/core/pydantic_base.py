@@ -1,3 +1,4 @@
+"""Test pydantic base models."""
 import unittest.mock
 
 import HABApp

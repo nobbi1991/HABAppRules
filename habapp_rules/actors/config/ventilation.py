@@ -1,4 +1,4 @@
-"""Configuration of ventilation."""
+"""Config models for ventilation rules."""
 import datetime
 
 import HABApp
@@ -25,6 +25,7 @@ class StateConfigLongAbsence(StateConfig):
 
 
 class _VentilationItemsBase(habapp_rules.core.pydantic_base.ItemBase):
+	"""Base class for ventilation items."""
 	manual: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="Item to disable all automatic functions")
 	hand_request: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="Item to enter the hand state")
 	external_request: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="Item to enter the external state")
@@ -41,6 +42,7 @@ class VentilationItems(_VentilationItemsBase):
 
 
 class VentilationItemsTwoStage(_VentilationItemsBase):
+	"""Items for ventilation."""
 	ventilation_output_on: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="Item to switch on the ventilation")
 	ventilation_output_power: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="Item to switch on the power mode")
 	current: HABApp.openhab.items.NumberItem | None = pydantic.Field(None, description="Item to measure the current of the ventilation")

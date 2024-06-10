@@ -1,4 +1,4 @@
-"""Test config for HCL light rules."""
+"""Test config models for HCL light rules."""
 import collections
 
 import habapp_rules.actors.config.light_hcl

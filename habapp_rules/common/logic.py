@@ -181,9 +181,7 @@ class Sum(_NumericLogicBase):
 	def __init__(self, config: habapp_rules.common.config.logic.NumericLogicConfig) -> None:
 		"""Init a logical function.
 
-		:param input_names: list of input items (must be either Dimmer or Number and all have to match to output_item)
-		:param output_name: name of output item
-		:param ignore_old_values_time: ignores values which are older than the given time in seconds. If None, all values will be taken
+		:param config: config for logical sum rule
 		:raises TypeError: if unsupported item-type is given for output_name
 		"""
 		if isinstance(config.items.output, HABApp.openhab.items.DimmerItem):

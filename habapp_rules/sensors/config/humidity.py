@@ -1,4 +1,4 @@
-"""Config for humidity rules."""
+"""Config models for humidity rules."""
 import HABApp
 import pydantic
 

@@ -1,3 +1,4 @@
+"""Test config models for KNX / MQTT bridge rules."""
 import HABApp
 
 import habapp_rules.bridge.config.knx_mqtt

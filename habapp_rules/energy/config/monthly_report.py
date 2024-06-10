@@ -1,3 +1,4 @@
+"""Config models for monthly energy report."""
 import HABApp
 import multi_notifier.connectors.connector_mail
 import pydantic
@@ -14,11 +15,23 @@ class EnergyShare(pydantic.BaseModel):
 	monthly_power: float = 0.0
 
 	def __init__(self, energy_item: str | HABApp.openhab.items.NumberItem, chart_name: str, monthly_power: float = 0.0):
+		"""Init energy share object without keywords.
+
+		:param energy_item: name or item of energy
+		:param chart_name: name which will be shown in the chart
+		:param monthly_power: monthly power of this energy share. This will be set by the energy share rule.
+		"""
 		super().__init__(energy_item=energy_item, chart_name=chart_name, monthly_power=monthly_power)
 
-	@pydantic.field_validator("energy_item",mode="before")
+	@pydantic.field_validator("energy_item", mode="before")
 	@classmethod
 	def check_oh_item(cls, data: str | HABApp.openhab.items.NumberItem) -> HABApp.openhab.items.NumberItem:
+		"""Check if given item is an OpenHAB item or try to get it from OpenHAB.
+
+		:param data: configuration for energy item
+		:return: energy item
+		:raises ValueError: if item could not be found
+		"""
 		if isinstance(data, HABApp.openhab.items.NumberItem):
 			return data
 		try:

@@ -1,4 +1,4 @@
-"""Test irrigation config."""
+"""Test config models of irrigation rules."""
 import HABApp
 import pydantic_core
 

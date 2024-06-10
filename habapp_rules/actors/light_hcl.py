@@ -223,15 +223,7 @@ class HclElevation(_HclBase):
 	def __init__(self, config: habapp_rules.actors.config.light_hcl.HclConfigElevation) -> None:
 		"""Init sun elevation based HCL rule.
 
-		:param name_elevation: Name of sun elevation openHAB item (NumberItem)
-		:param name_color: Name of openHAB color item (NumberItem)
-    	:param name_manual: name of OpenHAB switch item to disable all automatic functions (SwitchItem)
 		:param config: config for HCL rule
-		:param name_sleep_state: [optional] name of OpenHAB sleeping state item (StringItem)
-		:param name_focus: [optional] name of OpenHAB focus state item (SwitchItem)
-		:param name_switch_on: name of OpenHAB switch item, which additionally triggers a color update if switched on. This can be used to also trigger an update if the power supply or a single light switched on
-		:param name_state: name of OpenHAB item for storing the current state (StringItem)
-		:param state_label: label of OpenHAB item for storing the current state (StringItem)
 		"""
 		_HclBase.__init__(self, config)
 		self._config = config
@@ -287,14 +279,7 @@ class HclTime(_HclBase):
 	def __init__(self, config: habapp_rules.actors.config.light_hcl.HclConfigTime) -> None:
 		"""Init time based HCL rule.
 
-		:param name_color: Name of openHAB color item (NumberItem)
-    	:param name_manual: name of OpenHAB switch item to disable all automatic functions (SwitchItem)
-		:param config: config for HCL rule
-		:param name_sleep_state: [optional] name of OpenHAB sleeping state item (StringItem)
-		:param name_focus: [optional] name of OpenHAB focus state item (SwitchItem)
-		:param name_switch_on: name of OpenHAB switch item, which additionally triggers a color update if switched on. This can be used to also trigger an update if the power supply or a single light switched on
-		:param name_state: name of OpenHAB item for storing the current state (StringItem)
-		:param state_label: label of OpenHAB item for storing the current state (StringItem)
+		:param config: config for HCL light rule
 		"""
 		_HclBase.__init__(self, config)
 		self.run.every(None, 300, self._update_color)  # every 5 minutes

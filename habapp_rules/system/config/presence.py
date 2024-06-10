@@ -1,3 +1,4 @@
+"""Config models for presence rules."""
 import HABApp
 import pydantic
 

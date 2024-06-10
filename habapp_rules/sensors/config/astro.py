@@ -1,3 +1,4 @@
+"""Config models for astro rules."""
 import HABApp.openhab.items
 import pydantic
 

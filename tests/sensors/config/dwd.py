@@ -1,3 +1,4 @@
+"""Test config models of dwd rules."""
 import HABApp
 
 import habapp_rules.sensors.config.dwd
@@ -35,7 +36,7 @@ class TestWindAlarmConfig(tests.helper.test_case_base.TestCaseBase):
 			)
 		)
 
-		# only timeout parameter ist given
+		# only timeout parameter is given
 		habapp_rules.sensors.config.dwd.WindAlarmConfig(
 			items=habapp_rules.sensors.config.dwd.WindAlarmItems(
 				wind_alarm="Unittest_Wind_Alarm",

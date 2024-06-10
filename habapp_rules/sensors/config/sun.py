@@ -1,3 +1,4 @@
+"""Config models for sun rules."""
 import logging
 import typing
 
@@ -10,26 +11,34 @@ LOGGER = logging.getLogger(__name__)
 
 
 class _ItemsBase(habapp_rules.core.pydantic_base.ItemBase):
+	"""Base class for items for sun sensor."""
 	output: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="output item")
 	threshold: HABApp.openhab.items.NumberItem | None = pydantic.Field(None, description="threshold item")
 
 
 class BrightnessItems(_ItemsBase):
+	"""Items for sun sensor which uses brightness items as input."""
 	brightness: HABApp.openhab.items.NumberItem = pydantic.Field(..., description="brightness item")
 
 
 class TemperatureDifferenceItems(_ItemsBase):
+	"""Items for sun sensor which uses temperature items as input."""
 	temperatures: list[HABApp.openhab.items.NumberItem] = pydantic.Field(..., description="temperature items")
 
 	@pydantic.model_validator(mode="after")
 	def validate_temperature_items(self) -> typing.Self:
-		"""Validate that at least two temperature items are given."""
+		"""Validate that at least two temperature items are given.
+
+		:return: validated model
+		:raises ValueError: if less than two temperature items are given
+		"""
 		if len(self.temperatures) < 2:
 			raise ValueError("At least two temperature items are required!")
 		return self
 
 
 class BrightnessParameter(habapp_rules.core.pydantic_base.ParameterBase):
+	"""Parameter for sun sensor which uses brightness items as input."""
 	threshold: float | None = pydantic.Field(None, description="threshold value")
 	hysteresis: float = pydantic.Field(0.0, description="hysteresis value")
 	filter_tau: int = pydantic.Field(30 * 60, description="filter constant for the exponential filter. Default is set to 30 minutes")
@@ -39,16 +48,22 @@ class BrightnessParameter(habapp_rules.core.pydantic_base.ParameterBase):
 
 
 class TemperatureDifferenceParameter(BrightnessParameter):
+	"""Parameter for sun sensor which uses temperature items as input."""
 	ignore_old_values_time: int | None = pydantic.Field(None, description="ignores values which are older than the given time in seconds. If None, all values will be taken")
 
 
 class _ConfigBase(habapp_rules.core.pydantic_base.ConfigBase):
+	"""Base config model for sun sensor."""
 	items: BrightnessItems | TemperatureDifferenceItems = pydantic.Field(..., description="items for sun sensor")
 	parameter: BrightnessParameter | TemperatureDifferenceParameter = pydantic.Field(..., description="parameter for sun sensor")
 
 	@pydantic.model_validator(mode="after")
 	def validate_threshold(self) -> typing.Self:
-		"""Validate threshold."""
+		"""Validate threshold.
+
+		:return: validated model
+		:raises ValueError: if threshold and parameter are not set
+		"""
 		if (self.items.threshold is None) == (self.parameter.threshold is None):
 			raise ValueError("The threshold must be set ether with the parameter or with the item, both are not allowed")
 		return self
@@ -67,17 +82,17 @@ class _ConfigBase(habapp_rules.core.pydantic_base.ConfigBase):
 
 
 class BrightnessConfig(_ConfigBase):
+	"""Config model for sun sensor which uses brightness as input."""
 	items: BrightnessItems = pydantic.Field(..., description="items for sun sensor which uses brightness as input")
 	parameter: BrightnessParameter = pydantic.Field(BrightnessParameter(), description="parameter for sun sensor which uses brightness as input")
 
 
 class TemperatureDifferenceConfig(_ConfigBase):
+	"""Config model for sun sensor which uses temperature items as input."""
 	items: TemperatureDifferenceItems = pydantic.Field(..., description="items for sun sensor which uses temperature items as input")
 	parameter: TemperatureDifferenceParameter = pydantic.Field(TemperatureDifferenceParameter(), description="parameter for sun sensor which uses temperature items as input")
 
 ############################ SunPositionFilter ###############################
-
-
 class SunPositionWindow(pydantic.BaseModel):
 	"""Class for defining min / max values for azimuth and elevation."""
 	azimuth_min: float = pydantic.Field(..., description="Starting value for azimuth", ge=0.0, le=360.0)
@@ -86,12 +101,21 @@ class SunPositionWindow(pydantic.BaseModel):
 	elevation_max: float = pydantic.Field(90.0, description="End value for elevation", ge=-90.0, le=90.0)
 
 	def __init__(self, azimuth_min: float, azimuth_max: float, elevation_min: float = 0.0, elevation_max: float = 90.0) -> None:
-		"""Init of class for defining min / max values for azimuth and elevation."""
+		"""Init of class for defining min / max values for azimuth and elevation.
+
+		:param azimuth_min: minimum azimuth value
+		:param azimuth_max: maximum azimuth value
+		:param elevation_min: minimum elevation value
+		:param elevation_max: maximum elevation value
+		"""
 		super().__init__(azimuth_min=azimuth_min, azimuth_max=azimuth_max, elevation_min=elevation_min, elevation_max=elevation_max)
 
 	@pydantic.model_validator(mode="after")
-	def validate(self) -> typing.Self:
-		"""Validate values."""
+	def validate_model(self) -> typing.Self:
+		"""Validate values.
+
+		:return: validated model
+		"""
 		if self.azimuth_min > self.azimuth_max:
 			LOGGER.warning(f"azimuth_min should be smaller than azimuth_max -> min / max will be swapped. Given values: azimuth_min = {self.azimuth_min} | azimuth_max = {self.azimuth_max}")
 			min_orig = self.azimuth_min
@@ -109,6 +133,7 @@ class SunPositionWindow(pydantic.BaseModel):
 
 
 class SunPositionItems(habapp_rules.core.pydantic_base.ItemBase):
+	"""Items for sun position filter."""
 	azimuth: HABApp.openhab.items.NumberItem = pydantic.Field(..., description="sun azimuth item")
 	elevation: HABApp.openhab.items.NumberItem = pydantic.Field(..., description="sun elevation item")
 	input: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="input item (sun protection required)")
@@ -116,6 +141,7 @@ class SunPositionItems(habapp_rules.core.pydantic_base.ItemBase):
 
 
 class SunPositionParameter(habapp_rules.core.pydantic_base.ParameterBase):
+	"""Parameter for sun position filter."""
 	sun_position_window: SunPositionWindow | list[SunPositionWindow] = pydantic.Field(..., description="sun position window, where the sun hits the target")
 
 	@property
@@ -125,5 +151,6 @@ class SunPositionParameter(habapp_rules.core.pydantic_base.ParameterBase):
 
 
 class SunPositionConfig(habapp_rules.core.pydantic_base.ConfigBase):
+	"""Config model for sun position filter."""
 	items: SunPositionItems = pydantic.Field(..., description="items for sun position filter")
 	parameter: SunPositionParameter = pydantic.Field(..., description="parameter for sun position filter")

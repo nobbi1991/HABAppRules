@@ -1,4 +1,4 @@
-"""Config models for light actors."""
+"""Config models for light rules."""
 import collections.abc
 import logging
 import typing
@@ -81,6 +81,12 @@ class LightParameter(habapp_rules.core.pydantic_base.ParameterBase):
 	@pydantic.field_validator("on", mode="after")
 	@classmethod
 	def validate_on(cls, value: FunctionConfig) -> FunctionConfig:
+		"""Validate config for on-state
+
+		:param value: given value
+		:return: validated value
+		:raises AssertionError: if on is not valid
+		"""
 		if any(conf is None for conf in [value.day, value.night, value.sleeping]):
 			raise AssertionError("For function 'on' all brightness / timeout values must be set.")
 		return value
@@ -90,8 +96,9 @@ class LightParameter(habapp_rules.core.pydantic_base.ParameterBase):
 	def validate_pre_sleep(cls, value: FunctionConfig | None) -> FunctionConfig | None:
 		"""Validate pre_sleep config
 
+		:param value: value of pre sleep
 		:raises AssertionError: if pre_sleep is not valid
-		:return: self
+		:return: validated value
 		"""
 		if value is None:
 			return value

@@ -1,4 +1,4 @@
-"""Config for HCL color"""
+"""Config models for HCL color rules."""
 import typing
 
 import HABApp
@@ -24,21 +24,25 @@ class HclItemsElevation(HclItemsTime):
 
 class HclParameterElevation(habapp_rules.core.pydantic_base.ParameterBase):
 	"""Parameter for HCL color"""
-	color_map: list[tuple[float, float]] = pydantic.Field(..., description="")  # todo add description
-	hand_timeout: int = pydantic.Field(18_000, description="", gt=0)  # 5 hours # todo add description
-	sleep_color: float = pydantic.Field(2500, description="", gt=0)  # todo add description
-	post_sleep_timeout: int = pydantic.Field(1, description="", gt=0)  # todo add description
-	focus_color: float = pydantic.Field(6000, description="", gt=0)  # todo add description, # todo set to 0 if None
+	color_map: list[tuple[float, float]] = pydantic.Field(..., description="Color mapping. The first value is the sun elevation, the second is the HCL color")
+	hand_timeout: int = pydantic.Field(18_000, description="hand timeout. After this time the HCL light rule will fall back to auto mode", gt=0)  # 5 hours
+	sleep_color: float = pydantic.Field(2500, description="color if sleeping is active", gt=0)
+	post_sleep_timeout: int = pydantic.Field(1, description="time after sleeping was active where the sleeping color will be set", gt=0)
+	focus_color: float = pydantic.Field(6000, description="color if focus is active", gt=0)
 
 	@pydantic.model_validator(mode="after")
 	def validate_model(self) -> typing.Self:
+		"""Sort color map
+
+		:return: model with sorted color map
+		"""
 		self.color_map = sorted(self.color_map, key=lambda x: x[0])
 		return self
 
 
 class HclParameterTime(HclParameterElevation):
 	"""Parameter for HCL color which depends on time"""
-	shift_weekend_holiday: bool = pydantic.Field(False, description="")  # todo add description
+	shift_weekend_holiday: bool = pydantic.Field(False, description="If this is active the color will shift on weekends and holidays for one hour")
 
 
 class HclConfigElevation(habapp_rules.core.pydantic_base.ConfigBase):

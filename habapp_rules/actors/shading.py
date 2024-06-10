@@ -448,6 +448,7 @@ class Raffstore(_ShadingBase):
 		"""Init of Raffstore object.
 
 		:param config: shading config
+		:raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: if the correct items are given for sun protection mode
 		"""
 		# check if the correct items are given for sun protection mode
 		if (config.items.sun_protection is None) != (config.items.sun_protection_slat is None):
