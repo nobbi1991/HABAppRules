@@ -90,11 +90,7 @@ class ItemBase(pydantic.BaseModel):
 		:return: OpenHAB item
 		:raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: if type is not supported
 		"""
-		if issubclass(type(item), HABApp.openhab.items.OpenhabItem):
-			return item
-		if isinstance(item, str):
-			return HABApp.openhab.items.OpenhabItem.get_item(item)
-		raise habapp_rules.core.exceptions.HabAppRulesConfigurationException(f"The following type is not supported for list items: {type(item)}")
+		return item if isinstance(item, HABApp.openhab.items.OpenhabItem) else HABApp.openhab.items.OpenhabItem.get_item(item)
 
 	@classmethod
 	def _get_type_of_field(cls, field_name: str) -> type | list[type]:
@@ -118,3 +114,5 @@ class ConfigBase(pydantic.BaseModel):
 	"""Base class for config objects."""
 	items: ItemBase | None
 	parameter: ParameterBase | None
+
+# todo raise habapp_rules.core.exceptions.HabAppRulesConfigurationException instead ValidationError
