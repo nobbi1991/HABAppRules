@@ -85,7 +85,7 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		self._config = config
 		self._set_shading_state_timestamp = 0
 
-		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, self._config.items.state.name)
+		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, self._config.items.state)
 		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, self._config.items.shading_position.name)
 
 		# init state machine

@@ -58,7 +58,7 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
 		:param config: config for presence detection
 		"""
 		self._config = config
-		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, config.items.state.name)
+		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, config.items.state)
 		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, config.items.presence.name)
 
 

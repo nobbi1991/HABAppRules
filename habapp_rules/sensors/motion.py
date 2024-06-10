@@ -88,7 +88,7 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
 		:raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: if configuration is not valid
 		"""
 		self._config = config
-		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, self._config.items.state.name)
+		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, self._config.items.state)
 		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, self._config.items.motion_raw.name)
 
 		self._hysteresis_switch = habapp_rules.common.hysteresis.HysteresisSwitch(threshold := self._get_brightness_threshold(), threshold * 0.1 if threshold else 5) if self._config.items.brightness is not None else None

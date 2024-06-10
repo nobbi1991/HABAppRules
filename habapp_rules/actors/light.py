@@ -27,8 +27,6 @@ LOGGER = logging.getLogger(__name__)
 BrightnessTypes = typing.Union[list[typing.Union[float, bool]], float, bool]
 
 
-# todo: docstring
-
 # pylint: disable=no-member, too-many-instance-attributes
 class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclass=abc.ABCMeta):
 	"""Base class for lights."""
@@ -67,11 +65,10 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 		"""Init of basic light object.
 
 		:param config: light config
-		:raises TypeError: if type of light_item is not supported # todo really?
 		"""
 		self._config = config
 
-		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, self._config.items.state.name)
+		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, self._config.items.state)
 		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, self._config.items.light.name)
 
 		# init state machine
@@ -718,7 +715,6 @@ class LightSwitchExtended(_LightExtendedMixin, LightSwitch):
 		"""Init of extended light object.
 
 		:param config: light config
-		:raises TypeError: if type of light_item is not supported # todo really?
 		"""
 		_LightExtendedMixin.__init__(self, config)
 		LightSwitch.__init__(self, config)
@@ -739,7 +735,6 @@ class LightDimmerExtended(_LightExtendedMixin, LightDimmer):
 		"""Init of extended light object.
 
 		:param config: light config
-		:raises TypeError: if type of light_item is not supported # todo really?
 		"""
 		_LightExtendedMixin.__init__(self, config)
 		LightDimmer.__init__(self, config)

@@ -36,7 +36,7 @@ class HumiditySwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
 		:param config: config for humidity switch rule
 		"""
 		self._config = config
-		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, self._config.items.state.name)
+		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, self._config.items.state)
 		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, self._config.items.humidity.name)
 
 		# init state machine

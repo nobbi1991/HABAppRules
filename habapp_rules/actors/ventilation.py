@@ -64,7 +64,7 @@ class _VentilationBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		self._config = config
 		self._ventilation_level: int | None = None
 
-		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, self._config.items.state.name)
+		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, self._config.items.state)
 
 		# init state machine
 		self._previous_state = None

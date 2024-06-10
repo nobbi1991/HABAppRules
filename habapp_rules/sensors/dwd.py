@@ -111,7 +111,7 @@ class DwdWindAlarm(habapp_rules.core.state_machine_rule.StateMachineRule):
 		:raises TypeError: if type of hand_timeout is not supported
 		"""
 		self._config = config
-		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, self._config.items.state.name)
+		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, self._config.items.state)
 		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, self._config.items.wind_alarm.name)
 
 		self._items_dwd = [DwdItems.from_prefix(f"{self._config.parameter.dwd_item_prefix}{idx + 1}") for idx in range(self._config.parameter.number_dwd_objects)]
