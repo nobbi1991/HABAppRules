@@ -17,9 +17,31 @@ class ExponentialFilter(HABApp.Rule):
 	Number    BrightnessFiltered                    "Brightness filtered [%d]"
 	Number    BrightnessFilteredInstantIncrease     "Brightness filtered instant increase [%d]"
 
+	# Config
+	config = habapp_rules.common.config.filter.ExponentialFilterConfig(
+		items = habapp_rules.common.config.filter.ExponentialFilterItems(
+			raw = "BrightnessValue",
+			filtered = "BrightnessFiltered"
+		),
+		parameter = habapp_rules.common.config.filter.ExponentialFilterParameter(  # filter constant 1 minute
+			tau = 60
+		)
+	)
+
+	config2 = habapp_rules.common.config.filter.ExponentialFilterConfig(
+		items = habapp_rules.common.config.filter.ExponentialFilterItems(
+			raw = "BrightnessValue",
+			filtered = "BrightnessFilteredInstantIncrease"
+		),
+		parameter = habapp_rules.common.config.filter.ExponentialFilterParameter(   # filter constant 10 minutes + instant increase
+			tau = 600,
+			instant_increase = True
+		)
+	)
+
 	# Rule init:
-	habapp_rules.common.filter.ExponentialFilter("BrightnessValue", "BrightnessFiltered", 60)  # filter constant 1 minute
-    habapp_rules.common.filter.ExponentialFilter("BrightnessValue", "BrightnessFilteredInstantIncrease", 600, True)  # filter constant 10 minutes + instant increase
+	habapp_rules.common.filter.ExponentialFilter(config)  # filter constant 1 minute
+    habapp_rules.common.filter.ExponentialFilter(config2)  # filter constant 10 minutes + instant increase
 	"""
 
 	def __init__(self, config: habapp_rules.common.config.filter.ExponentialFilterConfig):

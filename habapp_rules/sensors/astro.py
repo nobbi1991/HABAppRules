@@ -47,12 +47,23 @@ class _SetNightDayBase(HABApp.Rule):
 class SetDay(_SetNightDayBase):
 	"""Rule to set / unset day item at dusk / dawn.
 
-		# Items:
-		Switch    night_for_shading     "Night for shading"
-		Number    elevation             "Sun elevation [%s]"    <sun>     {channel="astro...}
+	# Items:
+	Switch    day                   "Day"
+	Number    elevation             "Sun elevation [%s]"    <sun>     {channel="astro...}
 
-		# Rule init:
-		habapp_rules.actors.shading.SetNight("night_for_shading", "elevation")
+	# Config:
+	config = habapp_rules.sensors.config.astro.SetDayConfig(
+		items=habapp_rules.sensors.config.astro.SetDayItems(
+			day="day",
+			elevation="elevation"
+		),
+		parameter=habapp_rules.sensors.config.astro.SetDayParameter(
+			elevation_threshold=5
+		)
+	)
+
+	# Rule init:
+	habapp_rules.sensors.astro.SetNight(config)
 	"""
 
 	def __init__(self, config: habapp_rules.sensors.config.astro.SetDayConfig) -> None:
@@ -73,12 +84,23 @@ class SetDay(_SetNightDayBase):
 class SetNight(_SetNightDayBase):
 	"""Rule to set / unset night item at dusk / dawn.
 
-		# Items:
-		Switch    night_for_shading     "Night for shading"
-		Number    elevation             "Sun elevation [%s]"    <sun>     {channel="astro...}
+	# Items:
+	Switch    night_for_shading     "Night for shading"
+	Number    elevation             "Sun elevation [%s]"    <sun>     {channel="astro...}
 
-		# Rule init:
-		habapp_rules.actors.shading.SetNight("night_for_shading", "elevation")
+	# Config:
+	config = habapp_rules.sensors.config.astro.SetNightConfig(
+		items=habapp_rules.sensors.config.astro.SetNightItems(
+			night="night_for_shading",
+			elevation="elevation"
+		),
+		parameter=habapp_rules.sensors.config.astro.SetNightParameter(
+			elevation_threshold=5
+		)
+	)
+
+	# Rule init:
+	habapp_rules.sensors.astro.SetNight(config)
 	"""
 
 	def __init__(self, config: habapp_rules.sensors.config.astro.SetNightConfig) -> None:

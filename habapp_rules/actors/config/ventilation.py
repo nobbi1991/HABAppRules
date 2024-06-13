@@ -41,7 +41,7 @@ class VentilationItems(_VentilationItemsBase):
 	ventilation_level: HABApp.openhab.items.NumberItem = pydantic.Field(..., description="Item to set the ventilation level")
 
 
-class VentilationItemsTwoStage(_VentilationItemsBase):
+class VentilationTwoStageItems(_VentilationItemsBase):
 	"""Items for ventilation."""
 	ventilation_output_on: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="Item to switch on the ventilation")
 	ventilation_output_power: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="Item to switch on the power mode")
@@ -57,7 +57,7 @@ class VentilationParameter(habapp_rules.core.pydantic_base.ParameterBase):
 	state_long_absence: StateConfigLongAbsence = pydantic.Field(StateConfigLongAbsence(level=2, display_text="LongAbsence"))
 
 
-class VentilationParameterTwoStage(VentilationParameter):
+class VentilationTwoStageParameter(VentilationParameter):
 	"""Parameter for ventilation."""
 	state_after_run: StateConfig = pydantic.Field(StateConfig(level=2, display_text="After run"))
 	after_run_timeout: int = pydantic.Field(390, description="")
@@ -66,11 +66,11 @@ class VentilationParameterTwoStage(VentilationParameter):
 
 class VentilationConfig(habapp_rules.core.pydantic_base.ConfigBase):
 	"""Config for ventilation."""
-	items: VentilationItems
-	parameter: VentilationParameter = pydantic.Field(VentilationParameter())
+	items: VentilationItems = pydantic.Field(..., description="Items for ventilation")
+	parameter: VentilationParameter = pydantic.Field(VentilationParameter(), description="Parameter for ventilation")
 
 
-class VentilationConfigTwoStage(habapp_rules.core.pydantic_base.ConfigBase):
+class VentilationTwoStageConfig(habapp_rules.core.pydantic_base.ConfigBase):
 	"""Config for ventilation."""
-	items: VentilationItemsTwoStage
-	parameter: VentilationParameterTwoStage = pydantic.Field(VentilationParameterTwoStage())
+	items: VentilationTwoStageItems = pydantic.Field(..., description="Items for ventilation")
+	parameter: VentilationTwoStageParameter = pydantic.Field(VentilationTwoStageParameter(), description="Parameter for ventilation")

@@ -106,7 +106,7 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 				self._config.items.shading_position.name,
 				self._cb_hand,
 				[item.name for item in self._config.items.shading_position_control],
-				[item.name for item in self._config.items.shading_position_group],  # todo: is this still needed?
+				[item.name for item in self._config.items.shading_position_group],
 				self._config.parameter.value_tolerance
 			)
 		else:
@@ -117,7 +117,7 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 				self._cb_hand,
 				self._cb_hand,
 				[item.name for item in self._config.items.shading_position_control],
-				[item.name for item in self._config.items.shading_position_group],  # todo: is this still needed?
+				[item.name for item in self._config.items.shading_position_group],
 				self._config.parameter.value_tolerance
 			)
 
@@ -346,38 +346,40 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 class Shutter(_ShadingBase):
 	"""Rules class to manage a normal shutters (or curtains).
 
-			# KNX-things:
-			Thing device KNX_Shading "KNX OpenHAB dimmer observer"{
-				Type dimmer                 : shading_position          "Shading position"          [ position="5.001:4/1/12+<4/1/15" ]
-	            Type dimmer-control         : shading_position_ctr      "Shading position ctr"      [ position="5.001:4/1/12+<4/1/15" ]
-				Type dimmer-control         : shading_group_all_ctr     "Shading all ctr"           [ position="5.001:4/1/112+<4/1/115""]
-				Type switch-control         : shading_hand_manual_ctr   "Shading hand / manual"     [ ga="4/1/20" ]
-			}
+	# KNX-things:
+	Thing device KNX_Shading "KNX OpenHAB dimmer observer"{
+	Type dimmer                 : shading_position          "Shading position"          [ position="5.001:4/1/12+<4/1/15" ]
+    Type dimmer-control         : shading_position_ctr      "Shading position ctr"      [ position="5.001:4/1/12+<4/1/15" ]
+	Type dimmer-control         : shading_group_all_ctr     "Shading all ctr"           [ position="5.001:4/1/112+<4/1/115""]
+	Type switch-control         : shading_hand_manual_ctr   "Shading hand / manual"     [ ga="4/1/20" ]
+	}
 
-			# Items:
-			Rollershutter    shading_position       "Shading position [%s %%]"          <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position"}
-			Rollershutter    shading_position_ctr   "Shading position ctr [%s %%]"      <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position_ctr"}
-			Switch           shading_manual         "Shading manual"
-			Rollershutter    shading_all_ctr        "Shading all ctr [%s %%]"           <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_group_all_ctr"}
-			Switch           shading_hand_manual    "Shading in Hand / Manual state"                        {channel="knx:device:bridge:KNX_Shading:shading_hand_manual_ctr"}
+	# Items:
+	Rollershutter    shading_position       "Shading position [%s %%]"          <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position"}
+	Rollershutter    shading_position_ctr   "Shading position ctr [%s %%]"      <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position_ctr"}
+	Switch           shading_manual         "Shading manual"
+	Rollershutter    shading_all_ctr        "Shading all ctr [%s %%]"           <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_group_all_ctr"}
+	Switch           shading_hand_manual    "Shading in Hand / Manual state"                        {channel="knx:device:bridge:KNX_Shading:shading_hand_manual_ctr"}
 
+	# Config:
+	config = habapp_rules.actors.config.shading.ShadingConfig(
+		items = habapp_rules.actors.config.shading.ShadingItems(
+			shading_position="shading_position",
+			shading_position_control=["shading_position_ctr", "shading_all_ctr"],
+			manual="shading_manual",
+			wind_alarm="I99_99_WindAlarm",
+			sun_protection="I99_99_SunProtection",
+			sleeping_state="I99_99_Sleeping_State",
+			night="I99_99_Night",
+			door="I99_99_Door",
+			summer="I99_99_Summer",
+			hand_manual_is_active_feedback="shading_hand_manual"
+		)
+	)
 
-			# Rule init:
-			habapp_rules.actors.shading.Shutter(
-				"shading_position",
-				"shading_manual",
-				habapp_rules.actors.config.shading.CONFIG_DEFAULT,
-				["shading_position_ctr", "shading_all_ctr"],
-				[],
-				"I99_99_WindAlarm",
-				"I99_99_SunProtection",
-				"I99_99_Sleeping_State",
-				"I99_99_Night",
-				"I99_99_Door",
-				"I99_99_Summer"
-				"shading_hand_manual"
-			)
-			"""
+	# Rule init:
+	habapp_rules.actors.shading.Shutter(config)
+	"""
 
 	# pylint: disable=too-many-arguments,too-many-locals
 	def __init__(self, config: habapp_rules.actors.config.shading.ShadingConfig) -> None:
@@ -406,42 +408,42 @@ class Shutter(_ShadingBase):
 class Raffstore(_ShadingBase):
 	"""Rules class to manage a raffstore.
 
-		# KNX-things:
-		Thing device KNX_Shading "KNX OpenHAB dimmer observer"{
-			Type rollershutter          : shading_position          "Shading position"          [ upDown="4/1/10", stopMove="4/1/11", position="5.001:4/1/12+<4/1/15" ]
-            Type rollershutter-control  : shading_position_ctr      "Shading position ctr"      [ upDown="4/1/10", stopMove="4/1/11" ]
-            Type dimmer                 : shading_slat              "Shading slat"              [ position="5.001:4/1/13+<4/1/16" ]
-			Type rollershutter-control  : shading_group_all_ctr     "Shading all ctr"           [ upDown="4/1/110", stopMove="4/1/111"]
-			Type switch-control         : shading_hand_manual_ctr   "Shading hand / manual"     [ ga="4/1/20" ]
-		}
+	# KNX-things:
+	Thing device KNX_Shading "KNX OpenHAB dimmer observer"{
+	Type rollershutter          : shading_position          "Shading position"          [ upDown="4/1/10", stopMove="4/1/11", position="5.001:4/1/12+<4/1/15" ]
+    Type rollershutter-control  : shading_position_ctr      "Shading position ctr"      [ upDown="4/1/10", stopMove="4/1/11" ]
+    Type dimmer                 : shading_slat              "Shading slat"              [ position="5.001:4/1/13+<4/1/16" ]
+	Type rollershutter-control  : shading_group_all_ctr     "Shading all ctr"           [ upDown="4/1/110", stopMove="4/1/111"]
+	Type switch-control         : shading_hand_manual_ctr   "Shading hand / manual"     [ ga="4/1/20" ]
+	}
 
-		# Items:
-		Rollershutter    shading_position       "Shading position [%s %%]"          <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position"}
-		Rollershutter    shading_position_ctr   "Shading position ctr [%s %%]"      <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position_ctr"}
-		Dimmer           shading_slat           "Shading slat [%s %%]"              <slat>              {channel="knx:device:bridge:KNX_Shading:shading_slat"}
-		Switch           shading_manual         "Shading manual"
-		Rollershutter    shading_all_ctr        "Shading all ctr [%s %%]"           <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_group_all_ctr"}
-		Switch           shading_hand_manual    "Shading in Hand / Manual state"                        {channel="knx:device:bridge:KNX_Shading:shading_hand_manual_ctr"}
+	# Items:
+	Rollershutter    shading_position       "Shading position [%s %%]"          <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position"}
+	Rollershutter    shading_position_ctr   "Shading position ctr [%s %%]"      <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position_ctr"}
+	Dimmer           shading_slat           "Shading slat [%s %%]"              <slat>              {channel="knx:device:bridge:KNX_Shading:shading_slat"}
+	Switch           shading_manual         "Shading manual"
+	Rollershutter    shading_all_ctr        "Shading all ctr [%s %%]"           <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_group_all_ctr"}
+	Switch           shading_hand_manual    "Shading in Hand / Manual state"                        {channel="knx:device:bridge:KNX_Shading:shading_hand_manual_ctr"}
 
-
-		# Rule init:
-		habapp_rules.actors.shading.Raffstore(
-			"shading_position",
-			"shading_slat",
-			"shading_manual",
-			habapp_rules.actors.config.shading.CONFIG_DEFAULT,
-			["shading_position_ctr", "shading_all_ctr"],
-			[],
-			"I99_99_WindAlarm",
-			"I99_99_SunProtection",
-			"I99_99_SunProtection_Slat",
-			"I99_99_Sleeping_State",
-			"I99_99_Night",
-			"I99_99_Door",
-			"I99_99_Summer"
-			"shading_hand_manual"
+	# Config:
+	config = habapp_rules.actors.config.shading.ShadingConfig(
+		items = habapp_rules.actors.config.shading.ShadingItems(
+			shading_position="shading_position",
+			shading_position_control=["shading_position_ctr", "shading_all_ctr"],
+			manual="shading_manual",
+			wind_alarm="I99_99_WindAlarm",
+			sun_protection="I99_99_SunProtection",
+			sleeping_state="I99_99_Sleeping_State",
+			night="I99_99_Night",
+			door="I99_99_Door",
+			summer="I99_99_Summer",
+			hand_manual_is_active_feedback="shading_hand_manual"
 		)
-		"""
+	)
+
+	# Rule init:
+	habapp_rules.actors.shading.Raffstore(config)
+	"""
 
 	# pylint: disable=too-many-locals
 	def __init__(self, config: habapp_rules.actors.config.shading.ShadingConfig) -> None:
@@ -486,7 +488,7 @@ class Raffstore(_ShadingBase):
 		target_position = super()._get_target_position()
 
 		if self.state == "Auto_SunProtection" and target_position is not None:
-			target_position.slat = self._config.items.sun_protection_slat.value  # todo value of None?
+			target_position.slat = self._config.items.sun_protection_slat.value
 
 		return target_position
 
@@ -526,8 +528,15 @@ class ResetAllManualHand(HABApp.Rule):
 	# Items:
 	Switch           clear_hand_manual         "Clear Hand / Manual state of all shading objects"
 
+	# Config
+	config = habapp_rules.actors.config.shading.ResetAllManualHandConfig(
+		items=habapp_rules.actors.config.shading.ResetAllManualHandItems(
+			reset_manual_hand="clear_hand_manual"
+		)
+	)
+
 	# Rule init:
-	habapp_rules.actors.shading.ResetAllManualHand("clear_hand_manual")
+	habapp_rules.actors.shading.ResetAllManualHand(config)
 	"""
 
 	def __init__(self, config: habapp_rules.actors.config.shading.ResetAllManualHandConfig) -> None:
@@ -574,19 +583,22 @@ class ResetAllManualHand(HABApp.Rule):
 class SlatValueSun(HABApp.Rule):
 	"""Rules class to get slat value depending on sun elevation.
 
-		# Items:
-		Number    elevation             "Sun elevation [%s]"    <sun>     {channel="astro...}
-		Number    sun_protection_slat   "Slat value [%s %%]"    <slat>
+	# Items:
+	Number    elevation             "Sun elevation [%s]"    <sun>     {channel="astro...}
+	Number    sun_protection_slat   "Slat value [%s %%]"    <slat>
 
-		# Rule init:
-		habapp_rules.actors.shading.SlatValueSun(
-			"elevation",
-			"sun_protection_slat",
-			habapp_rules.actors.config.shading.CONFIG_DEFAULT_ELEVATION_SLAT_WINTER,
-			"I99_99_Summer",
-			habapp_rules.actors.config.shading.CONFIG_DEFAULT_ELEVATION_SLAT_SUMMER,
+	# Config
+	config = habapp_rules.actors.config.shading.SlatValueConfig(
+		items=habapp_rules.actors.config.shading.SlatValueItems(
+			sun_elevation="elevation",
+			slat_value="sun_protection_slat",
+			summer="I99_99_Summer",
 		)
-		"""
+	)
+
+	# Rule init:
+	habapp_rules.actors.shading.SlatValueSun(config)
+	"""
 
 	def __init__(self, config: habapp_rules.actors.config.shading.SlatValueConfig) -> None:
 		"""Init SlatValueSun

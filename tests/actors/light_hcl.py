@@ -37,14 +37,14 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch_on_max", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_State_max", None)
 
-		self._config_min = habapp_rules.actors.config.light_hcl.HclConfigElevation(
-			items=habapp_rules.actors.config.light_hcl.HclItemsElevation(
+		self._config_min = habapp_rules.actors.config.light_hcl.HclElevationConfig(
+			items=habapp_rules.actors.config.light_hcl.HclElevationItems(
 				color="Unittest_Color_min",
 				manual="Unittest_Manual_min",
 				elevation="Unittest_Elevation",
 				state="H_Unittest_Color_min_state"
 			),
-			parameter=habapp_rules.actors.config.light_hcl.HclParameterElevation(
+			parameter=habapp_rules.actors.config.light_hcl.HclElevationParameter(
 				color_map=[
 					(-10, 3000),
 					(-2, 3800),
@@ -55,8 +55,8 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
 		)
 
-		self._config_max = habapp_rules.actors.config.light_hcl.HclConfigElevation(
-			items=habapp_rules.actors.config.light_hcl.HclItemsElevation(
+		self._config_max = habapp_rules.actors.config.light_hcl.HclElevationConfig(
+			items=habapp_rules.actors.config.light_hcl.HclElevationItems(
 				color="Unittest_Color_max",
 				manual="Unittest_Manual_max",
 				elevation="Unittest_Elevation",
@@ -66,7 +66,7 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
 				switch_on="Unittest_Switch_on_max",
 				h_state="H_State_max"
 			),
-			parameter=habapp_rules.actors.config.light_hcl.HclParameterElevation(
+			parameter=habapp_rules.actors.config.light_hcl.HclElevationParameter(
 				color_map=[
 					(-10, 3000),
 					(-2, 3800),
@@ -286,13 +286,13 @@ class TestHclTime(tests.helper.test_case_base.TestCaseBaseStateMachine):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual_min", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Unittest_Color_min_state", None)
 
-		self._config = habapp_rules.actors.config.light_hcl.HclConfigTime(
-			items=habapp_rules.actors.config.light_hcl.HclItemsTime(
+		self._config = habapp_rules.actors.config.light_hcl.HclTimeConfig(
+			items=habapp_rules.actors.config.light_hcl.HclTimeItems(
 				color=HABApp.openhab.items.NumberItem("Unittest_Color_min"),
 				manual=HABApp.openhab.items.SwitchItem("Unittest_Manual_min"),
 				state=HABApp.openhab.items.StringItem("H_Unittest_Color_min_state"),
 			),
-			parameter=habapp_rules.actors.config.light_hcl.HclParameterTime(
+			parameter=habapp_rules.actors.config.light_hcl.HclTimeParameter(
 				color_map=[
 					(2, 3000),
 					(8, 4000),

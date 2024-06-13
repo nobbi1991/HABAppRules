@@ -59,19 +59,27 @@ def _get_next_trigger() -> datetime.datetime:
 class MonthlyReport(HABApp.Rule):
 	"""Rule for sending the monthly energy consumption.
 
-	Example:
-	known_energy_share = [
-		habapp_rules.energy.monthly_report.EnergyShare("Dishwasher_Energy", "Dishwasher"),
-		habapp_rules.energy.monthly_report.EnergyShare("Light", "Light")
-	]
-
-	config_mail = multi_notifier.connectors.connector_mail.MailConfig(
-		user="sender@test.de",
-		password="fancy_password",
-		smtp_host="smtp.test.de",
-		smtp_port=587,
+	# Config
+	config = habapp_rules.energy.config.monthly_report.MonthlyReportConfig(
+		items=habapp_rules.energy.config.monthly_report.MonthlyReportItems(
+			energy_sum="Total Energy"
+		),
+		parameter=habapp_rules.energy.config.monthly_report.MonthlyReportParameter(
+			known_energy_shares=[
+				habapp_rules.energy.config.monthly_report.EnergyShare("Dishwasher_Energy", "Dishwasher"),
+				habapp_rules.energy.config.monthly_report.EnergyShare("Light", "Light")
+			],
+			config_mail=multi_notifier.connectors.connector_mail.MailConfig(
+				user="sender@test.de",
+				password="fancy_password",
+				smtp_host="smtp.test.de",
+				smtp_port=587
+			),
+			recipients=["test@test.de"],
+		)
 	)
 
+	# Rule init
 	habapp_rules.energy.monthly_report.MonthlyReport("Total_Energy", known_energy_share, "Group_RRD4J", config_mail, "test@test.de")
 	"""
 

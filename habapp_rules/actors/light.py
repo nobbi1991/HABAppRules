@@ -356,25 +356,29 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 class LightSwitch(_LightBase):
 	"""Rules class to manage basic light states.
 
-		# KNX-things:
-		Thing device T00_99_OpenHab_DimmerObserver "KNX OpenHAB dimmer observer"{
-			Type switch             : light             "Light"             [ switch="1/1/10+1/1/13" ]
-		}
+	# KNX-things:
+	Thing device T00_99_OpenHab_DimmerObserver "KNX OpenHAB dimmer observer"{
+		Type switch             : light             "Light"             [ switch="1/1/10+1/1/13" ]
+	}
 
-		# Items:
-		Switch    I01_01_Light              "Light [%s]"        {channel="knx:device:bridge:T00_99_OpenHab_DimmerObserver:light"}
-		Switch    I00_00_Light_manual       "Light manual"
+	# Items:
+	Switch    I01_01_Light              "Light [%s]"        {channel="knx:device:bridge:T00_99_OpenHab_DimmerObserver:light"}
+	Switch    I00_00_Light_manual       "Light manual"
 
-		# Rule init:
-		habapp_rules.actors.light.LightSwitch(
-			"I01_01_Light",
-			manual_name="I00_00_Light_manual",
-			presence_state_name="I999_00_Presence_state", # string item!
-			sleeping_state_name="I999_00_Sleeping_state", # string item!
-			day_name="I999_00_Day",
-			config=CONFIG_TEST,
+	# Config:
+	config = habapp_rules.actors.config.light.LightConfig(
+		items = habapp_rules.actors.config.light.LightItems(
+			light="I01_01_Light",
+			manual="I00_00_Light_manual",
+			presence_state="I999_00_Presence_state",
+			sleeping_state="I999_00_Sleeping_state",
+			day="I999_00_Day"
 		)
-		"""
+	)
+
+	# Rule init:
+	habapp_rules.actors.light.LightSwitch(config)
+	"""
 
 	def __init__(self, config: habapp_rules.actors.config.light.LightConfig) -> None:
 		"""Init of basic light object.
@@ -453,17 +457,20 @@ class LightDimmer(_LightBase):
 	Dimmer    I01_01_Light_group        "Light Group"       {channel="knx:device:bridge:T00_99_OpenHab_DimmerObserver:light_group"}
 	Switch    I00_00_Light_manual       "Light manual"
 
-	# Rule init:
-	habapp_rules.actors.light.LightDimmer(
-		"I01_01_Light",
-		control_names=["I01_01_Light_ctr"],
-		manual_name="I00_00_Light_manual",
-		presence_state_name="I999_00_Presence_state", # string item!
-		sleeping_state_name="I999_00_Sleeping_state", # string item!
-		day_name="I999_00_Day",
-		config=CONFIG_TEST,
-		group_names=["I01_01_Light_group"]
+	# Config:
+	config = habapp_rules.actors.config.light.LightConfig(
+		items=habapp_rules.actors.config.light.LightItems(
+			light="I01_01_Light",
+			light_control=["I01_01_Light_ctr"],
+			manual="I00_00_Light_manual",
+			presence_state="I999_00_Presence_state",
+			sleeping_state="I999_00_Sleeping_state",
+			day="I999_00_Day"
+		)
 	)
+
+	# Rule init:
+	habapp_rules.actors.light.LightDimmer(config)
 	"""
 
 	trans = copy.deepcopy(_LightBase.trans)
@@ -480,7 +487,7 @@ class LightDimmer(_LightBase):
 			raise TypeError(f"type: {type(config.items.light)} is not supported!")
 
 		control_names = [item.name for item in config.items.light_control]
-		group_names = []  # todo add.. is it missing in the config?
+		group_names = [item.name for item in config.items.light_groups]
 		self._state_observer = habapp_rules.actors.state_observer.StateObserverDimmer(config.items.light.name, self._cb_hand_on, self._cb_hand_off, self._cb_hand_changed, control_names=control_names, group_names=group_names)
 
 		_LightBase.__init__(self, config)

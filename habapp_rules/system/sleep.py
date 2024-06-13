@@ -39,8 +39,20 @@ class Sleep(habapp_rules.core.state_machine_rule.StateMachineRule):
 	Switch    I01_02_Sleep_lock_req     "Lock request"              <lock>     {channel="knx:device:bridge:T00_99_OpenHab_Sleep:sleep_lock"}
 	String    I01_02_Sleep_State        "State [%s]"                <state>
 
+	# Config:
+	config = habapp_rules.system.config.sleep.SleepConfig(
+		items=habapp_rules.system.config.sleep.SleepItems(
+			sleep="I01_02_Sleep",
+			sleep_req="I01_02_Sleep_req",
+			state="I01_02_Sleep_State",
+			lock="I01_02_Sleep_lock",
+			lock_req="I01_02_Sleep_lock_req",
+			display_text="I01_02_Sleep_text"
+		)
+	)
+
 	# Rule init:
-	habapp_rules.system.sleep.Sleep("I01_02_Sleep","I01_02_Sleep_req", "I01_02_Sleep_State", "I01_02_Sleep_lock", "I01_02_Sleep_lock_req", "I01_02_Sleep_text")
+	habapp_rules.system.sleep.Sleep(config)
 	"""
 
 	states = [

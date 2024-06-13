@@ -10,8 +10,8 @@ import HABApp.util
 import habapp_rules.core.helper
 import habapp_rules.core.logger
 import habapp_rules.core.state_machine_rule
-from habapp_rules.system import PresenceState
 import habapp_rules.system.config.presence
+from habapp_rules.system import PresenceState
 
 LOGGER = logging.getLogger(__name__)
 
@@ -33,8 +33,16 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
     Switch    I01_00_Presence    "Presence [%s]"    <presence>    (G00_00_rrd4j)    ["Status", "Presence"]    {channel="knx:device:bridge:T00_99_OpenHab_Presence:presence"}
 	Switch    I01_00_Leaving     "Leaving [%s]"     <leaving>                                                 {channel="knx:device:bridge:T00_99_OpenHab_Presence:leaving"}
 
+	# Config:
+	config = habapp_rules.system.config.presence.PresenceConfig(
+		items=habapp_rules.system.config.presence.PresenceItems(
+			presence="I01_00_Presence",
+			leaving="I01_00_Leaving"
+		)
+	)
+
 	# Rule init:
-	habapp_rules.system.presence.Presence("I01_00_Presence", "I01_00_Leaving")
+	habapp_rules.system.presence.Presence(config)
 	"""
 
 	states = [
@@ -52,7 +60,7 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
 		{"trigger": "long_absence_detected", "source": "absence", "dest": "long_absence"},
 	]
 
-	def __init__(self, config:habapp_rules.system.config.presence.PresenceConfig) -> None:
+	def __init__(self, config: habapp_rules.system.config.presence.PresenceConfig) -> None:
 		"""Init of Presence object.
 
 		:param config: config for presence detection
@@ -60,7 +68,6 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
 		self._config = config
 		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, config.items.state)
 		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, config.items.presence.name)
-
 
 		# init state machine
 		self.state_machine = habapp_rules.core.state_machine_rule.StateMachineWithTimeout(
@@ -88,7 +95,7 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
 		:param default_value: default / initial state
 		:return: return correct state if it could be detected, if not return default value
 		"""
-		phone_items = [phone for phone in self._config.items.phones if phone.value is not None] # phones with valid state (not None)
+		phone_items = [phone for phone in self._config.items.phones if phone.value is not None]  # phones with valid state (not None)
 		if phone_items:
 			if any((item.value == "ON" for item in phone_items)):
 				return PresenceState.PRESENCE.value

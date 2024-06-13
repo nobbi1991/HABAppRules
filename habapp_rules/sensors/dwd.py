@@ -63,6 +63,7 @@ class DwdWindAlarm(habapp_rules.core.state_machine_rule.StateMachineRule):
 	# Items:
 	Switch      I26_99_wind_alarm               "Wind alarm"
 	Switch      I26_99_wind_alarm_manual        "Wind alarm manual"
+	String      I26_99_wind_alarm_state         "Wind alarm state"
 
 	String      I26_99_warning_1_severity       "Severity"              {channel="dwdunwetter:dwdwarnings:ingolstadt:severity1"}
 	String      I26_99_warning_1_description    "Description [%s]"      {channel="dwdunwetter:dwdwarnings:ingolstadt:description1"}
@@ -76,15 +77,21 @@ class DwdWindAlarm(habapp_rules.core.state_machine_rule.StateMachineRule):
 	DateTime    I26_99_warning_2_end_time       "valid till [%s]"       {channel="dwdunwetter:dwdwarnings:ingolstadt:expires2"}
 	String      I26_99_warning_2_type           "Type [%s]"             {channel="dwdunwetter:dwdwarnings:ingolstadt:event2"}
 
-	# Rule init:
-	habapp_rules.sensors.dwd.DwdWindAlarm(
-			"I26_99_wind_alarm",
-			"I26_99_wind_alarm_manual",
-			12 * 3600,
-			number_dwd_objects=2
-	)
-	"""
+	# Config
+	config = habapp_rules.sensors.config.dwd.WindAlarmConfig(
+		items=habapp_rules.sensors.config.dwd.WindAlarmItems(
+			wind_alarm="I26_99_wind_alarm",
+			manual="I26_99_wind_alarm_manual",
+			state="I26_99_wind_alarm_state"
+		),
+		parameter=habapp_rules.sensors.config.dwd.WindAlarmParameter(
 
+		)
+	)
+
+	# Rule init:
+	habapp_rules.sensors.dwd.DwdWindAlarm(config)
+	"""
 	states = [
 		{"name": "Manual"},
 		{"name": "Hand", "timeout": 20 * 3600, "on_timeout": "_auto_hand_timeout"},

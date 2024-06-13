@@ -15,7 +15,7 @@ class ShadingPosition(pydantic.BaseModel):
 	position: float | bool | None = pydantic.Field(..., description="target position")
 	slat: float | None = pydantic.Field(None, description="target slat position")
 
-	def __init__(self, position:float | bool | None, slat: float | None = None) -> None:
+	def __init__(self, position: float | bool | None, slat: float | None = None) -> None:
 		"""Initialize shading position with position and slat
 
 		:param position: target position value
@@ -30,7 +30,7 @@ class ShadingItems(habapp_rules.core.pydantic_base.ItemBase):
 	slat: HABApp.openhab.items.DimmerItem | None = pydantic.Field(None, description="item for setting the slat value")
 	manual: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="item to switch to manual mode and disable the automatic functions")
 	shading_position_control: list[HABApp.openhab.items.RollershutterItem | HABApp.openhab.items.DimmerItem] = pydantic.Field([], description="control items to improve manual detection")
-	shading_position_group: list[HABApp.openhab.items.RollershutterItem | HABApp.openhab.items.DimmerItem] = pydantic.Field([], description="")  # todo why groups? use-case?
+	shading_position_group: list[HABApp.openhab.items.RollershutterItem | HABApp.openhab.items.DimmerItem] = pydantic.Field([], description="")
 	wind_alarm: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="item which is ON when wind alarm is active")
 	sun_protection: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="item which is ON when sun protection is needed")
 	sun_protection_slat: HABApp.openhab.items.DimmerItem | None = pydantic.Field(None, description="value for the slat when sun protection is active")

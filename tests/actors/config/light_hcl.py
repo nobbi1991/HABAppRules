@@ -22,5 +22,5 @@ class TestLightHclConfig(tests.helper.test_case_base.TestCaseBase):
 
 		for test_case in test_cases:
 			with self.subTest(test_case=test_case):
-				parameter = habapp_rules.actors.config.light_hcl.HclParameterElevation(color_map=test_case.input)
+				parameter = habapp_rules.actors.config.light_hcl.HclElevationParameter(color_map=test_case.input)
 				self.assertEqual(test_case.output, parameter.color_map)

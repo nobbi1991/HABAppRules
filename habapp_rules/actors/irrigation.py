@@ -21,8 +21,19 @@ class Irrigation(HABApp.Rule):
 	Number     I999_irrigation_minute       "Start minute[%d]"
 	Number     I999_irrigation_duration     "Duration [%d]"
 
+	# Config:
+	config = habapp_rules.actors.config.irrigation.IrrigationConfig(
+		items=habapp_rules.actors.config.irrigation.IrrigationItems(
+			valve=HABApp.openhab.items.SwitchItem("I999_valve"),
+			active=HABApp.openhab.items.SwitchItem("I999_irrigation_active"),
+			hour=HABApp.openhab.items.NumberItem("I999_irrigation_hour"),
+			minute=HABApp.openhab.items.NumberItem("I999_irrigation_minute"),
+			duration=HABApp.openhab.items.NumberItem("I999_irrigation_duration"),
+		)
+	)
+
 	# Rule init:
-	habapp_rules.actors.irrigation.Irrigation("I999_valve", "I999_irrigation_active", "I999_irrigation_hour", "I999_irrigation_minute", "I999_irrigation_duration")
+	habapp_rules.actors.irrigation.Irrigation(config)
 	"""
 
 	def __init__(self, config: habapp_rules.actors.config.irrigation.IrrigationConfig) -> None:

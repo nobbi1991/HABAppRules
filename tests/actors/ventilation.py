@@ -440,7 +440,7 @@ class TestVentilationHeliosTwoStage(tests.helper.test_case_base.TestCaseBaseStat
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Ventilation_max_display_text", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Presence_state", None)
 
-		parameter_max = habapp_rules.actors.config.ventilation.VentilationParameterTwoStage(
+		parameter_max = habapp_rules.actors.config.ventilation.VentilationTwoStageParameter(
 			state_normal=habapp_rules.actors.config.ventilation.StateConfig(level=101, display_text="Normal Custom"),
 			state_hand=habapp_rules.actors.config.ventilation.StateConfigWithTimeout(level=102, display_text="Hand Custom", timeout=42 * 60),
 			state_external=habapp_rules.actors.config.ventilation.StateConfig(level=103, display_text="External Custom"),
@@ -450,8 +450,8 @@ class TestVentilationHeliosTwoStage(tests.helper.test_case_base.TestCaseBaseStat
 			after_run_timeout=350
 		)
 
-		config_max = habapp_rules.actors.config.ventilation.VentilationConfigTwoStage(
-			items=habapp_rules.actors.config.ventilation.VentilationItemsTwoStage(
+		config_max = habapp_rules.actors.config.ventilation.VentilationTwoStageConfig(
+			items=habapp_rules.actors.config.ventilation.VentilationTwoStageItems(
 				ventilation_output_on="Unittest_Ventilation_max_output_on",
 				ventilation_output_power="Unittest_Ventilation_max_output_power",
 				manual="Unittest_Ventilation_max_manual",
@@ -466,8 +466,8 @@ class TestVentilationHeliosTwoStage(tests.helper.test_case_base.TestCaseBaseStat
 			parameter=parameter_max
 		)
 
-		config_min = habapp_rules.actors.config.ventilation.VentilationConfigTwoStage(
-			items=habapp_rules.actors.config.ventilation.VentilationItemsTwoStage(
+		config_min = habapp_rules.actors.config.ventilation.VentilationTwoStageConfig(
+			items=habapp_rules.actors.config.ventilation.VentilationTwoStageItems(
 				ventilation_output_on="Unittest_Ventilation_min_output_on",
 				ventilation_output_power="Unittest_Ventilation_min_output_power",
 				manual="Unittest_Ventilation_min_manual",
@@ -608,7 +608,7 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Ventilation_max_display_text", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Presence_state", None)
 
-		parameter_max = habapp_rules.actors.config.ventilation.VentilationParameterTwoStage(
+		parameter_max = habapp_rules.actors.config.ventilation.VentilationTwoStageParameter(
 			state_normal=habapp_rules.actors.config.ventilation.StateConfig(level=101, display_text="Normal Custom"),
 			state_hand=habapp_rules.actors.config.ventilation.StateConfigWithTimeout(level=102, display_text="Hand Custom", timeout=42 * 60),
 			state_external=habapp_rules.actors.config.ventilation.StateConfig(level=103, display_text="External Custom"),
@@ -618,8 +618,8 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
 			current_threshold_power=0.5
 		)
 
-		config_max = habapp_rules.actors.config.ventilation.VentilationConfigTwoStage(
-			items=habapp_rules.actors.config.ventilation.VentilationItemsTwoStage(
+		config_max = habapp_rules.actors.config.ventilation.VentilationTwoStageConfig(
+			items=habapp_rules.actors.config.ventilation.VentilationTwoStageItems(
 				ventilation_output_on="Unittest_Ventilation_max_output_on",
 				ventilation_output_power="Unittest_Ventilation_max_output_power",
 				current="Unittest_Ventilation_max_current",
@@ -635,8 +635,8 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
 			parameter=parameter_max
 		)
 
-		config_min = habapp_rules.actors.config.ventilation.VentilationConfigTwoStage(
-			items=habapp_rules.actors.config.ventilation.VentilationItemsTwoStage(
+		config_min = habapp_rules.actors.config.ventilation.VentilationTwoStageConfig(
+			items=habapp_rules.actors.config.ventilation.VentilationTwoStageItems(
 				ventilation_output_on="Unittest_Ventilation_min_output_on",
 				ventilation_output_power="Unittest_Ventilation_min_output_power",
 				current="Unittest_Ventilation_min_current",
@@ -650,8 +650,8 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
 
 	def test_init_without_current_item(self):
 		"""Test __init__ without current item."""
-		config = habapp_rules.actors.config.ventilation.VentilationConfigTwoStage(
-			items=habapp_rules.actors.config.ventilation.VentilationItemsTwoStage(
+		config = habapp_rules.actors.config.ventilation.VentilationTwoStageConfig(
+			items=habapp_rules.actors.config.ventilation.VentilationTwoStageItems(
 				ventilation_output_on="Unittest_Ventilation_min_output_on",
 				ventilation_output_power="Unittest_Ventilation_min_output_power",
 				manual="Unittest_Ventilation_min_manual",

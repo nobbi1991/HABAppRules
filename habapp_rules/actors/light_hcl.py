@@ -50,7 +50,7 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		{"trigger": "focus_end", "source": "Auto_Focus", "dest": "Auto_HCL"},
 	]
 
-	def __init__(self, config: habapp_rules.actors.config.light_hcl.HclConfigElevation | habapp_rules.actors.config.light_hcl.HclConfigTime) -> None:
+	def __init__(self, config: habapp_rules.actors.config.light_hcl.HclElevationConfig | habapp_rules.actors.config.light_hcl.HclTimeConfig) -> None:
 		"""Init base class.
 
 		:param config: config of HCL light.
@@ -206,21 +206,28 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 class HclElevation(_HclBase):
 	"""Sun elevation based HCL.
 
-		# Items:
-		Number    Elevation                     "Elevation [%s]"                {channel="astro:sun:home:position#elevation"}
-		Number    HCL_Color_Elevation           "HCL Color Elevation"
-		Switch    HCL_Color_Elevation_manual    "HCL Color Elevation manual"
+	# Items:
+	Number    Elevation                     "Elevation [%s]"                {channel="astro:sun:home:position#elevation"}
+	Number    HCL_Color_Elevation           "HCL Color Elevation"
+	Switch    HCL_Color_Elevation_manual    "HCL Color Elevation manual"
 
-		# Rule init:
-		habapp_rules.actors.light_hcl.HclElevation(
-			"Elevation",
-			"HCL_Color_Elevation",
-			"HCL_Color_Elevation_manual",
-			config=habapp_rules.actors.config.light_hcl.EXAMPLE_CONFIG_ELEVATION,
+	# Config
+	config = habapp_rules.actors.config.light_hcl.HclElevationConfig(
+		items=habapp_rules.actors.config.light_hcl.HclElevationItems(
+			elevation="Elevation",
+			color="HCL_Color_Elevation",
+			manual="HCL_Color_Elevation_manual",
+		),
+		parameter=habapp_rules.actors.config.light_hcl.HclElevationParameter(
+			color_map=[(0, 2000), (10, 4000), (30, 5000)]
 		)
+	)
+
+	# Rule init:
+	habapp_rules.actors.light_hcl.HclElevation(config)
 	"""
 
-	def __init__(self, config: habapp_rules.actors.config.light_hcl.HclConfigElevation) -> None:
+	def __init__(self, config: habapp_rules.actors.config.light_hcl.HclElevationConfig) -> None:
 		"""Init sun elevation based HCL rule.
 
 		:param config: config for HCL rule
@@ -264,19 +271,26 @@ class HclElevation(_HclBase):
 
 class HclTime(_HclBase):
 	"""Time based HCL.
-		# Items:
-		Number    HCL_Color_Time           "HCL Color Time"
-		Switch    HCL_Color_Time_manual    "HCL Color Time manual"
+	# Items:
+	Number    HCL_Color_Time           "HCL Color Time"
+	Switch    HCL_Color_Time_manual    "HCL Color Time manual"
 
-		# Rule init:
-		habapp_rules.actors.light_hcl.HclTime(
-			"HCL_Color_Time",
-			"HCL_Color_Time_manual",
-			config=habapp_rules.actors.config.light_hcl.EXAMPLE_CONFIG_ELEVATION,
+	# Config
+	config = habapp_rules.actors.config.light_hcl.HclTimeConfig(
+		items=habapp_rules.actors.config.light_hcl.HclTimeItems(
+			color="HCL_Color_Time",
+			manual="HCL_Color_Time_manual",
+		),
+		parameter=habapp_rules.actors.config.light_hcl.HclTimeParameter(
+			[(6, 2000), (12, 4000), (20, 3000)],
 		)
+	)
+
+	# Rule init:
+	habapp_rules.actors.light_hcl.HclTime(config)
 	"""
 
-	def __init__(self, config: habapp_rules.actors.config.light_hcl.HclConfigTime) -> None:
+	def __init__(self, config: habapp_rules.actors.config.light_hcl.HclTimeConfig) -> None:
 		"""Init time based HCL rule.
 
 		:param config: config for HCL light rule

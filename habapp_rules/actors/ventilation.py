@@ -273,17 +273,21 @@ class Ventilation(_VentilationBase):
 	Switch  Feedback_On                 "Feedback is ON"
 	Switch  Feedback_Power              "Feedback is Power"
 
-	# Rule init:
-	habapp_rules.actors.ventilation.Ventilation(
-		"Ventilation_level",
-		"Manual",
-		habapp_rules.actors.config.ventilation.CONFIG_DEFAULT,
-		"Hand_Request",
-		name_external_request="External_Request",
-		name_presence_state="presence_state",
-		name_feedback_on="Feedback_On",
-		name_feedback_power="Feedback_Power"
+	# Config
+	config = habapp_rules.actors.config.ventilation.VentilationConfig(
+		items=habapp_rules.actors.config.ventilation.VentilationItems(
+			ventilation_level="Ventilation_level",
+			manual="Manual",
+			hand_request="Hand_Request",
+			external_request="External_Request",
+			presence_state="presence_state",
+			feedback_on="Feedback_On",
+			feedback_power="Feedback_Power"
+		)
 	)
+
+	# Rule init:
+	habapp_rules.actors.ventilation.Ventilation(config)
 	"""
 
 	# pylint: disable=too-many-arguments
@@ -315,19 +319,24 @@ class VentilationHeliosTwoStage(_VentilationBase):
 	Switch  Feedback_On                 "Feedback is ON"
 	Switch  Feedback_Power              "Feedback is Power"
 
-	# Rule init:
-	habapp_rules.actors.ventilation.VentilationHeliosTwoStage(
-		"Ventilation_Switch_On",
-		"Ventilation_Switch_Power",
-		"Manual",
-		habapp_rules.actors.config.ventilation.CONFIG_DEFAULT,
-		"Hand_Request",
-		name_external_request="External_Request",
-		name_presence_state="presence_state",
-		name_feedback_on="Feedback_On",
-		name_feedback_power="Feedback_Power"
+	# Config
+	config = habapp_rules.actors.config.ventilation.VentilationTwoStageItems(
+		items=habapp_rules.actors.config.ventilation.VentilationTwoStageItems(
+			ventilation_output_on="Ventilation_Switch_On",
+			ventilation_output_power="Ventilation_Switch_Power",
+			manual="Manual",
+			hand_request="Hand_Request",
+			external_request="External_Request",
+			presence_state="presence_state",
+			feedback_on="Feedback_On",
+			feedback_power="Feedback_Power"
+		)
 	)
+
+	# Rule init:
+	habapp_rules.actors.ventilation.VentilationHeliosTwoStage(config)
 	"""
+
 	states = copy.deepcopy(_VentilationBase.states)
 	__AUTO_STATE = next(state for state in states if state["name"] == "Auto")  # pragma: no cover
 	__AUTO_STATE["children"].append({"name": "PowerAfterRun", "timeout": 390, "on_timeout": "_after_run_timeout"})
@@ -351,7 +360,7 @@ class VentilationHeliosTwoStage(_VentilationBase):
 	trans.append({"trigger": "_after_run_timeout", "source": "Auto_PowerAfterRun", "dest": "Auto_Normal"})
 
 	# pylint: disable=too-many-arguments
-	def __init__(self, config: habapp_rules.actors.config.ventilation.VentilationConfigTwoStage) -> None:
+	def __init__(self, config: habapp_rules.actors.config.ventilation.VentilationTwoStageConfig) -> None:
 		"""Init of a Helios ventilation object which uses two switches to set the level.
 
 		:param config: config for the ventilation rule
@@ -408,20 +417,25 @@ class VentilationHeliosTwoStageHumidity(VentilationHeliosTwoStage):
 	Switch  Feedback_On                 "Feedback is ON"
 	Switch  Feedback_Power              "Feedback is Power"
 
-	# Rule init:
-	habapp_rules.actors.ventilation.VentilationHeliosTwoStageHumidity(
-		"Ventilation_Switch_On",
-		"Ventilation_Switch_Power",
-		"Ventilation_Current",
-		"Manual",
-		habapp_rules.actors.config.ventilation.CONFIG_DEFAULT,
-		"Hand_Request",
-		name_external_request="External_Request",
-		name_presence_state="presence_state",
-		name_feedback_on="Feedback_On",
-		name_feedback_power="Feedback_Power"
+	# Config
+	config = habapp_rules.actors.config.ventilation.VentilationTwoStageItems(
+		items=habapp_rules.actors.config.ventilation.VentilationTwoStageItems(
+			ventilation_output_on="Ventilation_Switch_On",
+			ventilation_output_power="Ventilation_Switch_Power",
+			current="Ventilation_Current",
+			manual="Manual",
+			hand_request="Hand_Request",
+			external_request="External_Request",
+			presence_state="presence_state",
+			feedback_on="Feedback_On",
+			feedback_power="Feedback_Power"
+		)
 	)
+
+	# Rule init:
+	habapp_rules.actors.ventilation.VentilationHeliosTwoStageHumidity(config)
 	"""
+
 	states = copy.deepcopy(VentilationHeliosTwoStage.states)
 	__AUTO_STATE = next(state for state in states if state["name"] == "Auto")  # pragma: no cover
 	__AUTO_STATE["children"].append({"name": "PowerHumidity"})
@@ -442,7 +456,7 @@ class VentilationHeliosTwoStageHumidity(VentilationHeliosTwoStage):
 	trans.append({"trigger": "_external_on", "source": "Auto_PowerHumidity", "dest": "Auto_PowerExternal"})
 
 	# pylint: disable=too-many-locals, too-many-arguments
-	def __init__(self, config: habapp_rules.actors.config.ventilation.VentilationConfigTwoStage) -> None:
+	def __init__(self, config: habapp_rules.actors.config.ventilation.VentilationTwoStageConfig) -> None:
 		"""Init of a Helios ventilation object which uses two switches to set the level, including a humidity sensor.
 
 		:param config: configuration of the ventilation rule

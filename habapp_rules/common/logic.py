@@ -61,8 +61,16 @@ class _BinaryLogicBase(HABApp.Rule):
 class And(_BinaryLogicBase):
 	"""Logical AND function.
 
-	Example:
-	habapp_rules.common.logic.And(["Item_1", "Item_2"], "Item_result")
+	# Config:
+	config = habapp_rules.common.config.logic.BinaryLogicConfig(
+		items=habapp_rules.common.config.logic.BinaryLogicItems(
+			inputs=["Item_1", "Item_2"],
+			output="Item_result",
+		)
+	)
+
+	# Rule init:
+	habapp_rules.common.logic.And(config)
 	"""
 
 	def _cb_input_event(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | None) -> None:
@@ -77,8 +85,16 @@ class And(_BinaryLogicBase):
 class Or(_BinaryLogicBase):
 	"""Logical OR function.
 
-	Example:
-	habapp_rules.common.logic.Or(["Item_1", "Item_2"], "Item_result")
+	# Config:
+	config = habapp_rules.common.config.logic.BinaryLogicConfig(
+		items=habapp_rules.common.config.logic.BinaryLogicItems(
+			inputs=["Item_1", "Item_2"],
+			output="Item_result",
+		)
+	)
+
+	# Rule init:
+	habapp_rules.common.logic.Or(config)
 	"""
 
 	def _cb_input_event(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | None) -> None:
@@ -142,8 +158,19 @@ class _NumericLogicBase(HABApp.Rule):
 class Min(_NumericLogicBase):
 	"""Logical Min function with filter for old / not updated items.
 
-	Example:
-	habapp_rules.common.logic.Min(["Item_1", "Item_2"], "Item_result", 600)
+	# Config:
+	config = habapp_rules.common.config.logic.NumericLogicConfig(
+		items=habapp_rules.common.config.logic.NumericLogicItems(
+			inputs=["Item_1", "Item_2"],
+			output="Item_result",
+		),
+		parameter=habapp_rules.common.config.logic.NumericLogicParameter(
+			ignore_old_values_time=600
+		),
+	)
+
+	# Rule init:
+	habapp_rules.common.logic.Min(config)
 	"""
 
 	def _apply_numeric_logic(self, input_values: list[float]) -> float:
@@ -158,8 +185,19 @@ class Min(_NumericLogicBase):
 class Max(_NumericLogicBase):
 	"""Logical Max function with filter for old / not updated items.
 
-	Example:
-	habapp_rules.common.logic.Max(["Item_1", "Item_2"], "Item_result", 600)
+	# Config:
+	config = habapp_rules.common.config.logic.NumericLogicConfig(
+		items=habapp_rules.common.config.logic.NumericLogicItems(
+			inputs=["Item_1", "Item_2"],
+			output="Item_result",
+		),
+		parameter=habapp_rules.common.config.logic.NumericLogicParameter(
+			ignore_old_values_time=600
+		),
+	)
+
+	# Rule init:
+	habapp_rules.common.logic.Max(config)
 	"""
 
 	def _apply_numeric_logic(self, input_values: list[float]) -> float:
@@ -174,8 +212,19 @@ class Max(_NumericLogicBase):
 class Sum(_NumericLogicBase):
 	"""Logical Sum function with filter for old / not updated items.
 
-	Example:
-	habapp_rules.common.logic.Sum(["Item_1", "Item_2"], "Item_result", 600)
+	# Config:
+	config = habapp_rules.common.config.logic.NumericLogicConfig(
+		items=habapp_rules.common.config.logic.NumericLogicItems(
+			inputs=["Item_1", "Item_2"],
+			output="Item_result",
+		),
+		parameter=habapp_rules.common.config.logic.NumericLogicParameter(
+			ignore_old_values_time=600
+		),
+	)
+
+	# Rule init:
+	habapp_rules.common.logic.Sum(config)
 	"""
 
 	def __init__(self, config: habapp_rules.common.config.logic.NumericLogicConfig) -> None:
@@ -201,8 +250,16 @@ class Sum(_NumericLogicBase):
 class InvertValue(HABApp.Rule):
 	"""Rule to update another item if the value of an item changed.
 
-	Example:
-	habapp_rules.common.logic.InvertValue("Item_1", "Item_2")
+	# Config:
+	config = habapp_rules.common.config.logic.InvertValueConfig(
+		items=habapp_rules.common.config.logic.InvertValueItems(
+			input="Item_1",
+			output="Item_2",
+		)
+	)
+
+	# Rule init:
+	habapp_rules.common.logic.InvertValue(config)
 	"""
 
 	def __init__(self, config: habapp_rules.common.config.logic.InvertValueConfig) -> None:

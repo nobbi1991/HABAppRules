@@ -16,6 +16,7 @@ class LightItems(habapp_rules.core.pydantic_base.ItemBase):
 	"""Items for all light rules."""
 	light: HABApp.openhab.items.DimmerItem | HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="item which controls the light")
 	light_control: list[HABApp.openhab.items.DimmerItem] = pydantic.Field([], description="control items to improve manual detection")
+	light_groups: list[HABApp.openhab.items.DimmerItem] = pydantic.Field([], description="group items which can additionally set the light state. This can be used to improve the manual detection")
 	manual: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="item to switch to manual mode and disable the automatic functions")
 	presence_state: HABApp.openhab.items.StringItem = pydantic.Field(None, description="presence state set via habapp_rules.presence.Presence")
 	day: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="item which is ON at day and OFF at night")

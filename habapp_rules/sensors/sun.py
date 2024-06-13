@@ -87,8 +87,17 @@ class SensorBrightness(_SensorBase):
 	Number    brightness_threshold          "Brightness threshold [%d lux]"
 	Switch    sun_protection_brightness     "Sun protection brightness [%s]     {channel="..."}
 
+	# Config:
+	config = habapp_rules.sensors.config.sun.BrightnessConfig(
+		items=habapp_rules.sensors.config.sun.BrightnessItems(
+			brightness="brightness",
+			output="sun_protection_brightness",
+			brightness_threshold="brightness_threshold"
+		)
+	)
+
 	# Rule init:
-	habapp_rules.sensors.sun.SensorBrightness("brightness", "sun_protection_brightness", "brightness_threshold")
+	habapp_rules.sensors.sun.SensorBrightness(config)
 	"""
 
 	def __init__(self, config: habapp_rules.sensors.config.sun.BrightnessConfig) -> None:
@@ -108,8 +117,17 @@ class SensorTemperatureDifference(_SensorBase):
 	Number    temperature_threshold         "Temperature threshold [%.1f °C]"
 	Switch    sun_protection_temperature    "Sun protection temperature [%s]    {channel="..."}
 
+	# Config:
+	config = habapp_rules.sensors.config.sun.TemperatureDifferenceConfig(
+		items=habapp_rules.sensors.config.sun.TemperatureDifferenceItems(
+			temperatures=["temperature_sun", "temperature_shadow"],
+			output="sun_protection_temperature",
+			threshold="temperature_threshold"
+		)
+	)
+
 	# Rule init:
-	habapp_rules.sensors.sun.SensorTempDiff("temperature_sun", "temperature_shadow", "sun_protection_temperature", "temperature_threshold")
+	habapp_rules.sensors.sun.SensorTempDiff(config)
 	"""
 
 	def __init__(self, config: habapp_rules.sensors.config.sun.TemperatureDifferenceConfig) -> None:
@@ -151,9 +169,22 @@ class SunPositionFilter(HABApp.Rule):
 	Switch    sun_shining           "Sun is shining [%s]
 	Switch    sun_hits_window       "Sun hits window [%s]
 
+	# Config:
+	config = habapp_rules.sensors.config.sun.SunPositionConfig(
+		items=habapp_rules.sensors.config.sun.SunPositionItems(
+			azimuth="sun_azimuth",
+			elevation="sun_elevation",
+			input="sun_shining",
+			output="sun_hits_window"
+		),
+		parameter=habapp_rules.sensors.config.sun.SunPositionParameter(
+			sun_position_window=habapp_rules.sensors.config.sun.SunPositionWindow(40, 120)
+		)
+	)
+
 	# Rule init:
-	position_window = habapp_rules.sensors.sun.SunPositionWindow(40, 120)
-	habapp_rules.sensors.sun.SunPositionFilter(position_window, "sun_azimuth", "sun_elevation", "sun_shining", "sun_hits_window")
+
+	habapp_rules.sensors.sun.SunPositionFilter(config)
 	"""
 
 	def __init__(self, config: habapp_rules.sensors.config.sun.SunPositionConfig) -> None:

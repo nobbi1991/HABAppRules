@@ -29,15 +29,23 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
     Switch    Motion_raw                "Motion raw"                <motion>        {channel="mqtt:topic:broker:Motion:motion"}
 	Switch    Motion_filtered           "Motion filtered"           <motion>
 	Number    Motion_Brightness         "Brightness"                                {channel="mqtt:topic:broker:Motion:brightness"}
+	String    I999_00_Sleeping_state    "Sleeping state"            <state>
+
+	# Config
+	config = habapp_rules.sensors.config.motion.MotionConfig(
+		items=habapp_rules.sensors.config.motion.MotionItems(
+			motion_raw="Motion_raw",
+			motion_filtered="Motion_filtered",
+			brightness="Motion_Brightness",
+			sleep_state="I999_00_Sleeping_state"
+		),
+		parameter=habapp_rules.sensors.config.motion.MotionParameter(
+			brightness_threshold=100,
+		),
+	)
 
 	# Rule init:
-	habapp_rules.sensors.motion.Motion(
-		"Motion_raw",
-		"Motion_filtered",
-		name_brightness="Motion_Brightness",
-		brightness_threshold=100,
-		name_sleep_state="I999_00_Sleeping_state"
-	)
+	habapp_rules.sensors.motion.Motion(config)
 	"""
 	states = [
 		{"name": "Locked"},
