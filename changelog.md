@@ -1,8 +1,8 @@
-# Version 6.0.0 - dd.mm.2024
+# Version 6.0.0 - dd.06.2024
 
 ## Breaking changes
 
-- added hysteresis switch to ``habapp_rules.sensors.sun.SensorBrightness`` and ``habapp_rules.sensors.sun.SunPositionFilter``. Breaking change: Parameter order changed!
+- **IMPORTANT**: The config and parameter of all rules changed dramatically! Now, the config must be given as pydantic config object. This enables better valdiation and future releases with less interface changes.
 
 ## Features
 
@@ -10,8 +10,9 @@
 - added possibility to pass shading objects to ``habapp_rules.actors.shading.ResetAllManualHand`` which should be reset by this rule
 - added ``habapp_rules.sensors.humidity.HumiditySwitch`` to set a switch item if high humidity is detected. Currently only a absolut threshold is accepted
 - send update of summer / winter of ``habapp_rules.system.summer_winter.SummerWinter`` after every check. If this rule is used to send the summer / winter state to the KNX bus, this ensures, that the state is sent at least once a day
-- bumped holidays to 0.47
-- bumped matplotlib to 3.8.4
+- added hysteresis switch to ``habapp_rules.sensors.sun.SensorBrightness`` and ``habapp_rules.sensors.sun.SunPositionFilter``. Breaking change: Parameter order changed!
+- bumped holidays to 0.50
+- bumped matplotlib to 3.9.0
 
 ## Bugfix
 

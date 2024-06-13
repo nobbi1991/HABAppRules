@@ -114,5 +114,3 @@ class ConfigBase(pydantic.BaseModel):
 	"""Base class for config objects."""
 	items: ItemBase | None
 	parameter: ParameterBase | None
-
-# todo raise habapp_rules.core.exceptions.HabAppRulesConfigurationException instead ValidationError
