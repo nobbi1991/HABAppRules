@@ -11,7 +11,7 @@
 - added ``habapp_rules.sensors.humidity.HumiditySwitch`` to set a switch item if high humidity is detected. Currently only a absolut threshold is accepted
 - send update of summer / winter of ``habapp_rules.system.summer_winter.SummerWinter`` after every check. If this rule is used to send the summer / winter state to the KNX bus, this ensures, that the state is sent at least once a day
 - added hysteresis switch to ``habapp_rules.sensors.sun.SensorBrightness`` and ``habapp_rules.sensors.sun.SunPositionFilter``. Breaking change: Parameter order changed!
-- bumped holidays to 0.50
+- bumped holidays to 0.51
 - bumped matplotlib to 3.9.0
 
 ## Bugfix
