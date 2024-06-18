@@ -1251,7 +1251,7 @@ class TestLightExtended(tests.helper.test_case_base.TestCaseBaseStateMachine):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light", 0)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light_ctr", 0)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual", "ON")
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_CustomState", "")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "CustomState", "")
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light_2", 0)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light_2_ctr", 0)
@@ -1286,7 +1286,6 @@ class TestLightExtended(tests.helper.test_case_base.TestCaseBaseStateMachine):
 				motion="Unittest_Motion",
 				doors=["Unittest_Door_1", "Unittest_Door_2"],
 				state="CustomState",
-
 			),
 			parameter=self.light_parameter
 		)

@@ -39,7 +39,7 @@ class ShadingItems(habapp_rules.core.pydantic_base.ItemBase):
 	door: HABApp.openhab.items.ContactItem | None = pydantic.Field(None, description="item for setting position when door is opened")
 	summer: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="item which is ON during summer")
 	hand_manual_is_active_feedback: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="feedback item which is ON when hand or manual is active")
-	state: HABApp.openhab.items.StringItem = pydantic.Field(..., description="item to store the current state of the state machine", json_schema_extra={"create_if_not_exists": True})
+	state: HABApp.openhab.items.StringItem = pydantic.Field(..., description="item to store the current state of the state machine")
 
 
 class ShadingParameter(habapp_rules.core.pydantic_base.ParameterBase):

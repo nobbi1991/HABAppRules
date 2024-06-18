@@ -40,7 +40,7 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual_max", "OFF")
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Unittest_Shading_min_state", "")
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_CustomState", "")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "CustomState", "")
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_WindAlarm", "OFF")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_SunProtection", "OFF")

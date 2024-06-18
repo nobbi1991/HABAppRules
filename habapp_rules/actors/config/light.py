@@ -23,7 +23,7 @@ class LightItems(habapp_rules.core.pydantic_base.ItemBase):
 	sleeping_state: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="sleeping state set via habapp_rules.system.sleep.Sleep")
 	doors: list[HABApp.openhab.items.ContactItem] = pydantic.Field([], description="door items for switching on the light if the door is opening")
 	motion: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="motion sensor to enable light if motion is detected")
-	state: HABApp.openhab.items.StringItem = pydantic.Field(..., description="item to store the current state of the state machine", json_schema_extra={"create_if_not_exists": True})
+	state: HABApp.openhab.items.StringItem = pydantic.Field(..., description="item to store the current state of the state machine")
 
 
 class BrightnessTimeout(pydantic.BaseModel):
