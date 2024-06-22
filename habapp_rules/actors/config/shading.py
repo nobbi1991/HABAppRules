@@ -69,8 +69,8 @@ class ShadingParameter(habapp_rules.core.pydantic_base.ParameterBase):
 
 class ShadingConfig(habapp_rules.core.pydantic_base.ConfigBase):
 	"""Config for shading objects."""
-	items: ShadingItems
-	parameter: ShadingParameter
+	items: ShadingItems = pydantic.Field(..., description="items for shading")
+	parameter: ShadingParameter = pydantic.Field(ShadingParameter(), description="parameter for shading")
 
 	@pydantic.model_validator(mode="after")
 	def validate_model(self) -> typing.Self:
