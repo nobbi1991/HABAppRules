@@ -13,7 +13,6 @@ import HABApp.rule.rule
 import habapp_rules.actors.light
 import habapp_rules.actors.state_observer
 import habapp_rules.core.exceptions
-import habapp_rules.core.logger
 import habapp_rules.core.state_machine_rule
 import habapp_rules.system
 import tests.helper.graph_machines
@@ -345,50 +344,74 @@ class TestLightBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
 	def test_pre_sleep_configured(self):
 		"""Test _pre_sleep_configured."""
-		TestCase = collections.namedtuple("TestCase", "timeout, prevent, result")
+		TestCase = collections.namedtuple("TestCase", "timeout, prevent_param, prevent_item, result")
 
 		always_true = unittest.mock.Mock(return_value=True)
 		always_false = unittest.mock.Mock(return_value=False)
 
 		test_cases = [
-			# no prevent
-			TestCase(None, None, False),
-			TestCase(0, None, False),
-			TestCase(1, None, True),
-			TestCase(42, None, True),
+			# no pre sleep prevent
+			TestCase(None, None, None, False),
+			TestCase(0, None, None, False),
+			TestCase(1, None, None, True),
+			TestCase(42, None, None, True),
 
 			# prevent as item
-			TestCase(None, HABApp.openhab.items.SwitchItem("Test", "ON"), False),
-			TestCase(0, HABApp.openhab.items.SwitchItem("Test", "ON"), False),
-			TestCase(1, HABApp.openhab.items.SwitchItem("Test", "ON"), False),
-			TestCase(42, HABApp.openhab.items.SwitchItem("Test", "ON"), False),
+			TestCase(None, None, HABApp.openhab.items.SwitchItem("Test", "ON"), False),
+			TestCase(0, None, HABApp.openhab.items.SwitchItem("Test", "ON"), False),
+			TestCase(1, None, HABApp.openhab.items.SwitchItem("Test", "ON"), False),
+			TestCase(42, None, HABApp.openhab.items.SwitchItem("Test", "ON"), False),
 
-			TestCase(None, HABApp.openhab.items.SwitchItem("Test", "OFF"), False),
-			TestCase(0, HABApp.openhab.items.SwitchItem("Test", "OFF"), False),
-			TestCase(1, HABApp.openhab.items.SwitchItem("Test", "OFF"), True),
-			TestCase(42, HABApp.openhab.items.SwitchItem("Test", "OFF"), True),
+			TestCase(None, None, HABApp.openhab.items.SwitchItem("Test", "OFF"), False),
+			TestCase(0, None, HABApp.openhab.items.SwitchItem("Test", "OFF"), False),
+			TestCase(1, None, HABApp.openhab.items.SwitchItem("Test", "OFF"), True),
+			TestCase(42, None, HABApp.openhab.items.SwitchItem("Test", "OFF"), True),
 
-			# prevent as callable
-			TestCase(None, always_true, False),
-			TestCase(0, always_true, False),
-			TestCase(1, always_true, False),
-			TestCase(42, always_true, False),
+			# pre sleep prevent as callable
+			TestCase(None, always_true, None, False),
+			TestCase(0, always_true, None, False),
+			TestCase(1, always_true, None, False),
+			TestCase(42, always_true, None, False),
 
-			TestCase(None, always_false, False),
-			TestCase(0, always_false, False),
-			TestCase(1, always_false, True),
-			TestCase(42, always_false, True)
+			TestCase(None, always_false, None, False),
+			TestCase(0, always_false, None, False),
+			TestCase(1, always_false, None, True),
+			TestCase(42, always_false, None, True),
+
+			# pre sleep prevent as callable and item -> item has priority
+			TestCase(42, always_false, HABApp.openhab.items.SwitchItem("Test", "OFF"), True),
+			TestCase(42, always_false, HABApp.openhab.items.SwitchItem("Test", "ON"), False),
+			TestCase(42, always_true, HABApp.openhab.items.SwitchItem("Test", "OFF"), True),
+			TestCase(42, always_true, HABApp.openhab.items.SwitchItem("Test", "ON"), False),
 		]
 
 		for test_case in test_cases:
-			self.light_base._timeout_pre_sleep = test_case.timeout
-			self.light_base._config.parameter.pre_sleep_prevent = test_case.prevent
+			with self.subTest(test_case=test_case):
+				self.light_base._timeout_pre_sleep = test_case.timeout
+				self.light_base._config.parameter.pre_sleep_prevent = test_case.prevent_param
+				self.light_base._config.items.pre_sleep_prevent = test_case.prevent_item
 
-			self.light_base_without_sleep._timeout_pre_sleep = test_case.timeout
-			self.light_base_without_sleep._config.parameter.pre_sleep_prevent = test_case.prevent
+				self.light_base_without_sleep._timeout_pre_sleep = test_case.timeout
+				self.light_base_without_sleep._config.parameter.pre_sleep_prevent = test_case.prevent_param
+				self.light_base_without_sleep._config.items.pre_sleep_prevent = test_case.prevent_item
 
-			self.assertEqual(test_case.result, self.light_base._pre_sleep_configured())
-			self.assertFalse(self.light_base_without_sleep._pre_sleep_configured())
+				self.assertEqual(test_case.result, self.light_base._pre_sleep_configured())
+				self.assertFalse(self.light_base_without_sleep._pre_sleep_configured())
+
+		# exception at callback
+		with unittest.mock.patch.object(self.light_base, "_instance_logger") as logger_mock:
+			self.light_base._config.items.pre_sleep_prevent = None
+			self.light_base._config.parameter.pre_sleep_prevent = unittest.mock.Mock(side_effect=Exception("something went wrong"))
+			self.light_base._timeout_pre_sleep = 42
+			self.assertTrue(self.light_base._pre_sleep_configured())
+		logger_mock.error.assert_called_once()
+
+		with unittest.mock.patch.object(self.light_base, "_instance_logger") as logger_mock:
+			self.light_base._config.items.pre_sleep_prevent = None
+			self.light_base._config.parameter.pre_sleep_prevent = unittest.mock.Mock(side_effect=Exception("something went wrong"))
+			self.light_base._timeout_pre_sleep = 0
+			self.assertFalse(self.light_base._pre_sleep_configured())
+		logger_mock.error.assert_called_once()
 
 	def test_was_on_before(self):
 		"""Test _was_on_before."""

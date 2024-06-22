@@ -158,11 +158,14 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 			return False
 
 		pre_sleep_prevent = False
-		if self._config.parameter.pre_sleep_prevent:
-			if callable(self._config.parameter.pre_sleep_prevent):
+		if self._config.items.pre_sleep_prevent is not None:
+			pre_sleep_prevent = self._config.items.pre_sleep_prevent.is_on()
+		elif self._config.parameter.pre_sleep_prevent is not None:
+			try:
 				pre_sleep_prevent = self._config.parameter.pre_sleep_prevent()
-			if isinstance(self._config.parameter.pre_sleep_prevent, HABApp.openhab.items.OpenhabItem):
-				pre_sleep_prevent = bool(self._config.parameter.pre_sleep_prevent)
+			except Exception as ex:  # pylint: disable=broad-except
+				self._instance_logger.error(f"Could not execute pre_sleep_prevent function: {ex}. pre_sleep_prevent will be set to False.")
+				pre_sleep_prevent = False
 
 		return bool(self._timeout_pre_sleep) and not pre_sleep_prevent
 

@@ -21,6 +21,7 @@ class LightItems(habapp_rules.core.pydantic_base.ItemBase):
 	presence_state: HABApp.openhab.items.StringItem = pydantic.Field(None, description="presence state set via habapp_rules.presence.Presence")
 	day: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="item which is ON at day and OFF at night")
 	sleeping_state: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="sleeping state set via habapp_rules.system.sleep.Sleep")
+	pre_sleep_prevent: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="item to prevent pre-sleep (Can be used for example to prevent the pre sleep light when guests are sleeping)")
 	doors: list[HABApp.openhab.items.ContactItem] = pydantic.Field([], description="door items for switching on the light if the door is opening")
 	motion: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="motion sensor to enable light if motion is detected")
 	state: HABApp.openhab.items.StringItem = pydantic.Field(..., description="item to store the current state of the state machine")
@@ -134,5 +135,8 @@ class LightConfig(habapp_rules.core.pydantic_base.ConfigBase):
 
 		if self.items.presence_state is not None and self.parameter.leaving is None:
 			raise AssertionError("item presence_state is given, but not configured via parameter")
+
+		if self.items.pre_sleep_prevent is not None and self.parameter.pre_sleep_prevent is not None:
+			LOGGER.warning("item pre_sleep_prevent and parameter pre_sleep_prevent are given. The item will be prioritized and the parameter will be ignored!")
 
 		return self
