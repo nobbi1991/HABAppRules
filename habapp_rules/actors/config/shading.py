@@ -156,5 +156,5 @@ class SlatValueParameter(habapp_rules.core.pydantic_base.ParameterBase):
 
 class SlatValueConfig(habapp_rules.core.pydantic_base.ConfigBase):
 	"""Config for slat values for sun protection."""
-	items: SlatValueItems
-	parameter: SlatValueParameter
+	items: SlatValueItems = pydantic.Field(..., description="items for slat values for sun protection")
+	parameter: SlatValueParameter = pydantic.Field(SlatValueParameter(), description="parameter for slat values for sun protection")
