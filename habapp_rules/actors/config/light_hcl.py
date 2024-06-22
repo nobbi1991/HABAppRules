@@ -62,11 +62,11 @@ class HclTimeParameter(HclElevationParameter):
 
 class HclElevationConfig(habapp_rules.core.pydantic_base.ConfigBase):
 	"""Config for HCL color which depends on sun elevation"""
-	items: HclElevationItems
-	parameter: HclElevationParameter
+	items: HclElevationItems = pydantic.Field(..., description="items for HCL color which depends on sun elevation")
+	parameter: HclElevationParameter = pydantic.Field(HclElevationParameter(), description="parameter for HCL color which depends on sun elevation")
 
 
 class HclTimeConfig(HclElevationConfig):
 	"""Config for HCL color which depends on time"""
-	items: HclTimeItems
-	parameter: HclTimeParameter
+	items: HclTimeItems = pydantic.Field(..., description="items for HCL color which depends on time")
+	parameter: HclTimeParameter = pydantic.Field(HclTimeParameter(), description="parameter for HCL color which depends on time")
