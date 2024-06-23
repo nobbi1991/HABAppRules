@@ -168,8 +168,7 @@ class TestMonthlyReport(tests.helper.test_case_base.TestCaseBase):
 		self._rule._config.items.energy_sum.value = 20_123.5489135
 
 		template_mock = unittest.mock.MagicMock()
-		with (unittest.mock.patch("pathlib.Path.open"),
-		      unittest.mock.patch("jinja2.Template", return_value=template_mock),
+		with (unittest.mock.patch("jinja2.Template", return_value=template_mock),
 		      unittest.mock.patch("habapp_rules.energy.monthly_report._get_previous_month_name", return_value="MonthName")):
 			self._rule._create_html(10_042.123456)
 
