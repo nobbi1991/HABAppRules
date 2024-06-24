@@ -4,6 +4,7 @@ import unittest
 import HABApp
 import pydantic
 
+import habapp_rules.core.exceptions
 import habapp_rules.sensors.config.sun
 import tests.helper.oh_item
 import tests.helper.test_case_base
@@ -48,7 +49,7 @@ class TestConfigBase(tests.helper.test_case_base.TestCaseBase):
 	def test_validate_threshold(self):
 		"""Test validate_threshold."""
 		# item NOT given | parameter NOT given
-		with self.assertRaises(pydantic.ValidationError):
+		with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
 			habapp_rules.sensors.config.sun.BrightnessConfig(
 				items=habapp_rules.sensors.config.sun.BrightnessItems(
 					brightness="Unittest_Brightness",
@@ -77,7 +78,7 @@ class TestConfigBase(tests.helper.test_case_base.TestCaseBase):
 		)
 
 		# item given | parameter given
-		with self.assertRaises(pydantic.ValidationError):
+		with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
 			habapp_rules.sensors.config.sun.BrightnessConfig(
 				items=habapp_rules.sensors.config.sun.BrightnessItems(
 					brightness="Unittest_Brightness",

@@ -1,6 +1,7 @@
 """Test config models of dwd rules."""
 import HABApp
 
+import habapp_rules.core.exceptions
 import habapp_rules.sensors.config.dwd
 import tests.helper.oh_item
 import tests.helper.test_case_base
@@ -17,7 +18,7 @@ class TestWindAlarmConfig(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Unittest_Wind_Alarm_state", None)
 
 		# no timeout is given
-		with self.assertRaises(ValueError):
+		with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
 			habapp_rules.sensors.config.dwd.WindAlarmConfig(
 				items=habapp_rules.sensors.config.dwd.WindAlarmItems(
 					wind_alarm="Unittest_Wind_Alarm",
@@ -49,7 +50,7 @@ class TestWindAlarmConfig(tests.helper.test_case_base.TestCaseBase):
 		)
 
 		# timeout parameter and item are given
-		with self.assertRaises(ValueError):
+		with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
 			habapp_rules.sensors.config.dwd.WindAlarmConfig(
 				items=habapp_rules.sensors.config.dwd.WindAlarmItems(
 					wind_alarm="Unittest_Wind_Alarm",

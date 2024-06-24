@@ -23,13 +23,16 @@ class ItemsListCreateException(habapp_rules.core.pydantic_base.ItemBase):
 	"""Model with list object where create_if_not_exists is set."""
 	some_items: list[HABApp.openhab.items.SwitchItem | HABApp.openhab.items.DimmerItem] = pydantic.Field(..., description="list of items for testing", json_schema_extra={"create_if_not_exists": True})
 
+
 class WrongTypeException(habapp_rules.core.pydantic_base.ItemBase):
 	"""Model with wrong type."""
 	item: str = pydantic.Field(..., description="wrong type for testing")
 
+
 class MultipleTypeForCreateException(habapp_rules.core.pydantic_base.ItemBase):
 	"""Model with multiple types where create_if_not_exists is set."""
 	item: HABApp.openhab.items.SwitchItem | HABApp.openhab.items.DimmerItem = pydantic.Field(..., description="list of items for testing", json_schema_extra={"create_if_not_exists": True})
+
 
 class TestItemBase(tests.helper.test_case_base.TestCaseBase):
 	"""Test ItemBase."""

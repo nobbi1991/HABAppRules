@@ -114,3 +114,14 @@ class ConfigBase(pydantic.BaseModel):
 	"""Base class for config objects."""
 	items: ItemBase | None
 	parameter: ParameterBase | None
+
+	def __init__(self, **data: typing.Any) -> None:
+		"""Initialize the model.
+
+		:param data: data object given by pydantic
+		:raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: if validation fails
+		"""
+		try:
+			super().__init__(**data)
+		except pydantic.ValidationError as exc:
+			raise habapp_rules.core.exceptions.HabAppRulesConfigurationException(f"Failed to validate model: {exc.errors()}")

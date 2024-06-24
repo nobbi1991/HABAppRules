@@ -6,6 +6,7 @@ import HABApp
 import pydantic
 
 import habapp_rules.actors.config.shading
+import habapp_rules.core.exceptions
 import tests.helper.oh_item
 import tests.helper.test_case_base
 
@@ -43,7 +44,7 @@ class TestShadingConfig(tests.helper.test_case_base.TestCaseBase):
 		)
 
 		# parameter given | item summer NOT given
-		with self.assertRaises(pydantic.ValidationError):
+		with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
 			habapp_rules.actors.config.shading.ShadingConfig(
 				items=habapp_rules.actors.config.shading.ShadingItems(
 					shading_position="Unittest_Shading",

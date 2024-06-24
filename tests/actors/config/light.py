@@ -6,6 +6,7 @@ import HABApp
 import pydantic
 
 import habapp_rules.actors.config.light
+import habapp_rules.core.exceptions
 import tests.helper.oh_item
 import tests.helper.test_case_base
 from habapp_rules.actors.config.light import BrightnessTimeout, FunctionConfig, LightParameter
@@ -150,7 +151,7 @@ class TestLightConfig(tests.helper.test_case_base.TestCaseBase):
 		)
 
 		# motion parameter is missing
-		with self.assertRaises(pydantic.ValidationError):
+		with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
 			habapp_rules.actors.config.light.LightConfig(
 				items=habapp_rules.actors.config.light.LightItems(
 					light="Unittest_Light",
@@ -177,7 +178,7 @@ class TestLightConfig(tests.helper.test_case_base.TestCaseBase):
 		)
 
 		# door parameter is missing
-		with self.assertRaises(pydantic.ValidationError):
+		with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
 			habapp_rules.actors.config.light.LightConfig(
 				items=habapp_rules.actors.config.light.LightItems(
 					light="Unittest_Light",
@@ -204,7 +205,7 @@ class TestLightConfig(tests.helper.test_case_base.TestCaseBase):
 		)
 
 		# sleep parameter is missing
-		with self.assertRaises(pydantic.ValidationError):
+		with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
 			habapp_rules.actors.config.light.LightConfig(
 				items=habapp_rules.actors.config.light.LightItems(
 					light="Unittest_Light",
@@ -234,7 +235,7 @@ class TestLightConfig(tests.helper.test_case_base.TestCaseBase):
 		)
 
 		# presence parameter is missing
-		with self.assertRaises(pydantic.ValidationError):
+		with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
 			habapp_rules.actors.config.light.LightConfig(
 				items=habapp_rules.actors.config.light.LightItems(
 					light="Unittest_Light",
