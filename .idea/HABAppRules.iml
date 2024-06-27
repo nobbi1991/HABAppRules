@@ -16,7 +16,7 @@
       <excludeFolder url="file://$MODULE_DIR$/venv3_11" />
       <excludeFolder url="file://$MODULE_DIR$/tests/htmlcov" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.10 (HABAppRules)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.11 (HABAppRules)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="TestRunnerService">

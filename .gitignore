@@ -5,3 +5,4 @@
 /tests/system/.coverage
 /tests/.coverage
 /.coverage
+*.log
