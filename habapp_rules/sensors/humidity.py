@@ -3,8 +3,10 @@ import logging
 
 import HABApp
 
+import habapp_rules.core.helper
 import habapp_rules.core.logger
 import habapp_rules.core.state_machine_rule
+import habapp_rules.sensors.config.humidity
 
 LOGGER = logging.getLogger(__name__)
 
@@ -28,32 +30,14 @@ class HumiditySwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
 		{"trigger": "on_extended_timeout", "source": "on_Extended", "dest": "off"},
 	]
 
-	def __init__(self,
-	             name_humidity: str,
-	             name_switch: str,
-	             absolute_threshold: float = 65,
-	             extended_time: int = 10 * 60,
-	             name_state: str | None = None,
-	             state_label: str | None = None) -> None:
+	def __init__(self, config: habapp_rules.sensors.config.humidity.HumiditySwitchConfig) -> None:
 		"""Init humidity rule.
 
-		:param name_humidity: Name of OpenHAB NumberItem which holds the humidity
-		:param name_switch: Name of OpenHab SwitchItem which will be switched on if high humidity is detected
-		:param absolute_threshold: Threshold for high humidity
-		:param extended_time: Extended time if humidity is below threshold
-		:param name_state: name of the item to hold the state
-		:param state_label: OpenHAB label of the state_item; This will be used if the state_item will be created by HABApp
+		:param config: config for humidity switch rule
 		"""
-		self._absolute_threshold = absolute_threshold
-
-		if not name_state:
-			name_state = f"H_{name_switch}_state"
-		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, name_state, state_label)
-		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, name_humidity)
-
-		# get items
-		self._item_humidity = HABApp.openhab.items.NumberItem.get_item(name_humidity)
-		self._item_output_switch = HABApp.openhab.items.SwitchItem.get_item(name_switch)
+		self._config = config
+		habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, self._config.items.state)
+		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, self._config.items.humidity.name)
 
 		# init state machine
 		self._previous_state = None
@@ -65,10 +49,23 @@ class HumiditySwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
 			after_state_change="_update_openhab_state")
 		self._set_initial_state()
 
-		self.state_machine.get_state("on_Extended").timeout = extended_time
+		self.state_machine.get_state("on_Extended").timeout = self._config.parameter.extended_time
 
 		# register callbacks
-		self._item_humidity.listen_event(self._cb_humidity, HABApp.openhab.events.ItemStateUpdatedEventFilter())
+		self._config.items.humidity.listen_event(self._cb_humidity, HABApp.openhab.events.ItemStateUpdatedEventFilter())
+
+	def _update_openhab_state(self) -> None:
+		"""Update OpenHAB state item. This should method should be set to "after_state_change" of the state machine."""
+		super()._update_openhab_state()
+		self._instance_logger.debug(f"State change: {self._previous_state} -> {self.state}")
+
+		self._set_output()
+		self._previous_state = self.state
+
+	def _set_output(self) -> None:
+		"""Set output."""
+		target_state = "ON" if self.state in {"on_HighHumidity", "on_Extended"} else "OFF"
+		habapp_rules.core.helper.send_if_different(self._config.items.output, target_state)
 
 	def _get_initial_state(self, default_value: str = "initial") -> str:
 		"""Get initial state of state machine.
@@ -85,11 +82,11 @@ class HumiditySwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
 		:return: True if humidity is above threshold
 		"""
 		if humidity_value is None:
-			if self._item_humidity.value is None:
+			if self._config.items.humidity.value is None:
 				return False
-			humidity_value = self._item_humidity.value
+			humidity_value = self._config.items.humidity.value
 
-		return humidity_value >= self._absolute_threshold
+		return humidity_value >= self._config.parameter.absolute_threshold
 
 	def _cb_humidity(self, event: HABApp.openhab.events.ItemStateUpdatedEvent) -> None:
 		"""Callback, which is triggered if the humidity was updated.

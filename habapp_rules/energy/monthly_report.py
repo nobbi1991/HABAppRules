@@ -1,5 +1,4 @@
 """Module for sending the monthly energy consumption."""
-import dataclasses
 import datetime
 import logging
 import pathlib
@@ -10,11 +9,11 @@ import HABApp.core.internals
 import dateutil.relativedelta
 import jinja2
 import multi_notifier.connectors.connector_mail
-import pkg_resources
 
 import habapp_rules.__version__
 import habapp_rules.core.exceptions
 import habapp_rules.core.logger
+import habapp_rules.energy.config.monthly_report
 import habapp_rules.energy.donut_chart
 
 LOGGER = logging.getLogger(__name__)
@@ -56,93 +55,58 @@ def _get_next_trigger() -> datetime.datetime:
 	return datetime.datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0) + dateutil.relativedelta.relativedelta(months=1)
 
 
-@dataclasses.dataclass
-class EnergyShare:
-	"""Dataclass for defining energy share objects."""
-	openhab_name: str
-	chart_name: str
-	monthly_power: float = 0
-
-	_openhab_item = None
-
-	def __post_init__(self) -> None:
-		"""This is triggered after init.
-
-		:raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: if the number item could not be found
-		"""
-		try:
-			self._openhab_item = HABApp.openhab.items.NumberItem.get_item(self.openhab_name)
-		except AssertionError:
-			raise habapp_rules.core.exceptions.HabAppRulesConfigurationException(f"The given item name is not a number item. '{self.openhab_name}'")
-		except HABApp.core.errors.ItemNotFoundException:
-			raise habapp_rules.core.exceptions.HabAppRulesConfigurationException(f"Could not find any item for given name '{self.openhab_name}'")
-
-	@property
-	def openhab_item(self) -> HABApp.openhab.items.NumberItem:
-		"""Get OpenHAB item.
-
-		:return: OpenHAB item
-		"""
-		return self._openhab_item
-
-
 class MonthlyReport(HABApp.Rule):
 	"""Rule for sending the monthly energy consumption.
 
-	Example:
-	known_energy_share = [
-		habapp_rules.energy.monthly_report.EnergyShare("Dishwasher_Energy", "Dishwasher"),
-		habapp_rules.energy.monthly_report.EnergyShare("Light", "Light")
-	]
-
-	config_mail = multi_notifier.connectors.connector_mail.MailConfig(
-		user="sender@test.de",
-		password="fancy_password",
-		smtp_host="smtp.test.de",
-		smtp_port=587,
+	# Config
+	config = habapp_rules.energy.config.monthly_report.MonthlyReportConfig(
+		items=habapp_rules.energy.config.monthly_report.MonthlyReportItems(
+			energy_sum="Total Energy"
+		),
+		parameter=habapp_rules.energy.config.monthly_report.MonthlyReportParameter(
+			known_energy_shares=[
+				habapp_rules.energy.config.monthly_report.EnergyShare("Dishwasher_Energy", "Dishwasher"),
+				habapp_rules.energy.config.monthly_report.EnergyShare("Light", "Light")
+			],
+			config_mail=multi_notifier.connectors.connector_mail.MailConfig(
+				user="sender@test.de",
+				password="fancy_password",
+				smtp_host="smtp.test.de",
+				smtp_port=587
+			),
+			recipients=["test@test.de"],
+		)
 	)
 
+	# Rule init
 	habapp_rules.energy.monthly_report.MonthlyReport("Total_Energy", known_energy_share, "Group_RRD4J", config_mail, "test@test.de")
 	"""
 
-	def __init__(
-			self,
-			name_energy_sum: str,
-			known_energy_share: list[EnergyShare],
-			persistence_group_name: str | None,
-			config_mail: multi_notifier.connectors.connector_mail.MailConfig | None,
-			recipients: str | list[str],
-			debug: bool = False) -> None:
+	def __init__(self, config: habapp_rules.energy.config.monthly_report.MonthlyReportConfig) -> None:
 		"""Initialize the rule.
 
-		:param name_energy_sum: name of OpenHAB Number item, which holds the total energy consumption (NumberItem)
-		:param known_energy_share: list of EnergyShare objects
-		:param persistence_group_name: OpenHAB group name which holds all items which are persisted. If the group name is given it will be checked if all energy items are in the group
-		:param config_mail: config for sending mails
-		:param recipients: list of recipients who get the mail
-		:param debug: if debug mode is active
+		:param config: config for the monthly energy report rule
 		:raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: if config is not valid
 		"""
+		self._config = config
 		HABApp.Rule.__init__(self)
-		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, name_energy_sum)
-		self._recipients = recipients
+		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, config.items.energy_sum.name)
+		self._mail = multi_notifier.connectors.connector_mail.Mail(config.parameter.config_mail)
 
-		self._item_energy_sum = HABApp.openhab.items.NumberItem.get_item(name_energy_sum)
-		self._known_energy_share = known_energy_share
-		self._mail = multi_notifier.connectors.connector_mail.Mail(config_mail)
+		self._mail = multi_notifier.connectors.connector_mail.Mail(config.parameter.config_mail)
 
-		if persistence_group_name is not None:
+		if config.parameter.persistence_group_name is not None:
 			# check if all energy items are in the given persistence group
-			items_to_check = [self._item_energy_sum] + [share.openhab_item for share in self._known_energy_share]
-			not_in_persistence_group = [item.name for item in items_to_check if persistence_group_name not in item.groups]
+			items_to_check = [config.items.energy_sum] + [share.energy_item for share in config.parameter.known_energy_shares]
+			not_in_persistence_group = [item.name for item in items_to_check if config.parameter.persistence_group_name not in item.groups]
 			if not_in_persistence_group:
-				raise habapp_rules.core.exceptions.HabAppRulesConfigurationException(f"The following OpenHAB items are not in the persistence group '{persistence_group_name}': {not_in_persistence_group}")
+				raise habapp_rules.core.exceptions.HabAppRulesConfigurationException(f"The following OpenHAB items are not in the persistence group '{config.parameter.persistence_group_name}': {not_in_persistence_group}")
 
 		self.run.at(next_trigger_time := _get_next_trigger(), self._cb_send_energy)
-		if debug:
+		if config.parameter.debug:
 			self._instance_logger.warning("Debug mode is active!")
 			self.run.soon(self._cb_send_energy)
-		self._instance_logger.info(f"Successfully initiated monthly consumption rule for {name_energy_sum}. Triggered first execution to {next_trigger_time.isoformat()}")
+		self._instance_logger.info(f"Successfully initiated monthly consumption rule for {config.items.energy_sum}. Triggered first execution to {next_trigger_time.isoformat()}")
 
 	def _get_historic_value(self, item: HABApp.openhab.items.NumberItem, start_time: datetime.datetime) -> float:
 		"""Get historic value of given Number item
@@ -194,11 +158,12 @@ class MonthlyReport(HABApp.Rule):
 		  </body>
 		</html>
 		"""
-		html_template = pkg_resources.resource_string("habapp_rules.energy", "monthly_report_template.html").decode("utf-8")
+		with (pathlib.Path(__file__).parent / "monthly_report_template.html").open(encoding="utf-8") as template_file:
+			html_template = template_file.read()
 
 		return jinja2.Template(html_template).render(
 			month=_get_previous_month_name(),
-			energy_now=f"{self._item_energy_sum.value:.1f}",
+			energy_now=f"{self._config.items.energy_sum.value:.1f}",
 			energy_last_month=f"{energy_sum_month:.1f}",
 			habapp_version=habapp_rules.__version__.__version__,
 			chart="{{ chart }}"  # this is needed to not replace the chart from the mail-template
@@ -211,16 +176,16 @@ class MonthlyReport(HABApp.Rule):
 		now = datetime.datetime.now()
 		last_month = now - dateutil.relativedelta.relativedelta(months=1)
 
-		energy_sum_month = self._item_energy_sum.value - self._get_historic_value(self._item_energy_sum, last_month)
-		for share in self._known_energy_share:
-			share.monthly_power = share.openhab_item.value - self._get_historic_value(share.openhab_item, last_month)
+		energy_sum_month = self._config.items.energy_sum.value - self._get_historic_value(self._config.items.energy_sum, last_month)
+		for share in self._config.parameter.known_energy_shares:
+			share.monthly_power = share.energy_item.value - self._get_historic_value(share.energy_item, last_month)
 
-		energy_unknown = energy_sum_month - sum(share.monthly_power for share in self._known_energy_share)
+		energy_unknown = energy_sum_month - sum(share.monthly_power for share in self._config.parameter.known_energy_shares)
 
 		with tempfile.TemporaryDirectory() as temp_dir_name:
 			# create plot
-			labels = [share.chart_name for share in self._known_energy_share] + ["Rest"]
-			values = [share.monthly_power for share in self._known_energy_share] + [energy_unknown]
+			labels = [share.chart_name for share in self._config.parameter.known_energy_shares] + ["Rest"]
+			values = [share.monthly_power for share in self._config.parameter.known_energy_shares] + [energy_unknown]
 			chart_path = pathlib.Path(temp_dir_name) / "chart.png"
 			habapp_rules.energy.donut_chart.create_chart(labels, values, chart_path)
 
@@ -228,7 +193,7 @@ class MonthlyReport(HABApp.Rule):
 			html = self._create_html(energy_sum_month)
 
 			# send mail
-			self._mail.send_message(self._recipients, html, f"Stromverbrauch {_get_previous_month_name()}", images={"chart": str(chart_path)})
+			self._mail.send_message(self._config.parameter.recipients, html, f"Stromverbrauch {_get_previous_month_name()}", images={"chart": str(chart_path)})
 
 		self.run.at(next_trigger_time := _get_next_trigger(), self._cb_send_energy)
-		self._instance_logger.info(f"Successfully sent energy consumption mail to {self._recipients}. Scheduled the next trigger time to {next_trigger_time.isoformat()}")
+		self._instance_logger.info(f"Successfully sent energy consumption mail to {self._config.parameter.recipients}. Scheduled the next trigger time to {next_trigger_time.isoformat()}")

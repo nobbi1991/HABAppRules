@@ -20,6 +20,6 @@ setuptools.setup(
 	long_description="Basic rules for HABApp",
 	packages=setuptools.find_packages(exclude=["tests*", "rules*"]),
 	install_requires=load_req(),
-	python_requires=">=3.10",
+	python_requires=">=3.11",
 	license="Apache License 2.0",
 	package_data={'': ['*.html']})

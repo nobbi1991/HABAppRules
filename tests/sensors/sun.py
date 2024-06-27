@@ -4,6 +4,7 @@ import unittest.mock
 
 import HABApp
 
+import habapp_rules.sensors.config.sun
 import habapp_rules.sensors.sun
 import tests.helper.graph_machines
 import tests.helper.oh_item
@@ -25,19 +26,36 @@ class TestSensorTemperatureDifference(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "H_Temperature_diff_for_Unittest_Output_Temperature", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "H_Temperature_diff_for_Unittest_Output_Temperature_filtered", None)
 
+		config = habapp_rules.sensors.config.sun.TemperatureDifferenceConfig(
+			items=habapp_rules.sensors.config.sun.TemperatureDifferenceItems(
+				temperatures=["Unittest_Temperature_1", "Unittest_Temperature_2"],
+				output="Unittest_Output_Temperature",
+				threshold="Unittest_Threshold_Temperature"
+			)
+		)
+
 		with unittest.mock.patch("HABApp.openhab.interface_sync.item_exists", return_value=True), unittest.mock.patch("habapp_rules.common.filter.ExponentialFilter"):
-			self._sensor = habapp_rules.sensors.sun.SensorTemperatureDifference(["Unittest_Temperature_1", "Unittest_Temperature_2"], "Unittest_Output_Temperature", "Unittest_Threshold_Temperature")
+			self._sensor = habapp_rules.sensors.sun.SensorTemperatureDifference(config)
 
 	def test_init(self):
 		"""Test __init__."""
-		self.assertEqual(None, self._sensor._hysteresis_switch._threshold)
+		self.assertEqual(float("inf"), self._sensor._hysteresis_switch._threshold)
 		self.assertEqual("H_Temperature_diff_for_Unittest_Output_Temperature", self._sensor._item_temp_diff.name)
-		self.assertEqual("H_Temperature_diff_for_Unittest_Output_Temperature_filtered", self._sensor._item_input_filtered.name)
 
 	def test_init_with_fixed_threshold(self):
 		"""Test __init__ with fixed threshold value."""
+		config = habapp_rules.sensors.config.sun.TemperatureDifferenceConfig(
+			items=habapp_rules.sensors.config.sun.TemperatureDifferenceItems(
+				temperatures=["Unittest_Temperature_1", "Unittest_Temperature_2"],
+				output="Unittest_Output_Temperature"
+			),
+			parameter=habapp_rules.sensors.config.sun.TemperatureDifferenceParameter(
+				threshold=42
+			)
+		)
+
 		with unittest.mock.patch("HABApp.openhab.interface_sync.item_exists", return_value=True), unittest.mock.patch("habapp_rules.common.filter.ExponentialFilter"):
-			sensor = habapp_rules.sensors.sun.SensorTemperatureDifference(["Unittest_Temperature_1", "Unittest_Temperature_2"], "Unittest_Output_Temperature", 42)
+			sensor = habapp_rules.sensors.sun.SensorTemperatureDifference(config)
 		self.assertEqual(42, sensor._hysteresis_switch._threshold)
 
 	def test_cb_threshold(self):
@@ -103,18 +121,35 @@ class TestSensorBrightness(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Threshold_Brightness", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "H_Unittest_Brightness_filtered", None)
 
+		config = habapp_rules.sensors.config.sun.BrightnessConfig(
+			items=habapp_rules.sensors.config.sun.BrightnessItems(
+				brightness="Unittest_Brightness",
+				output="Unittest_Output_Brightness",
+				threshold="Unittest_Threshold_Brightness"
+			)
+		)
+
 		with unittest.mock.patch("HABApp.openhab.interface_sync.item_exists", return_value=True), unittest.mock.patch("habapp_rules.common.filter.ExponentialFilter"):
-			self._sensor = habapp_rules.sensors.sun.SensorBrightness("Unittest_Brightness", "Unittest_Output_Brightness", "Unittest_Threshold_Brightness")
+			self._sensor = habapp_rules.sensors.sun.SensorBrightness(config)
 
 	def test_init(self):
 		"""Test __init__."""
-		self.assertEqual(None, self._sensor._hysteresis_switch._threshold)
-		self.assertEqual("H_Unittest_Brightness_filtered", self._sensor._item_input_filtered.name)
+		self.assertEqual(float("inf"), self._sensor._hysteresis_switch._threshold)
 
 	def test_init_with_fixed_threshold(self):
 		"""Test __init__ with fixed threshold value."""
+		config = habapp_rules.sensors.config.sun.BrightnessConfig(
+			items=habapp_rules.sensors.config.sun.BrightnessItems(
+				brightness="Unittest_Brightness",
+				output="Unittest_Output_Brightness",
+			),
+			parameter=habapp_rules.sensors.config.sun.BrightnessParameter(
+				threshold=42
+			)
+		)
+
 		with unittest.mock.patch("HABApp.openhab.interface_sync.item_exists", return_value=True), unittest.mock.patch("habapp_rules.common.filter.ExponentialFilter"):
-			sensor = habapp_rules.sensors.sun.SensorBrightness("Unittest_Brightness", "Unittest_Output_Brightness", 42)
+			sensor = habapp_rules.sensors.sun.SensorBrightness(config)
 		self.assertEqual(42, sensor._hysteresis_switch._threshold)
 
 	def test_cb_threshold(self):
@@ -143,24 +178,6 @@ class TestSensorBrightness(tests.helper.test_case_base.TestCaseBase):
 		self.assertEqual("OFF", output_item.value)
 
 
-class TestSunPositionWindow(tests.helper.test_case_base.TestCaseBase):
-	"""Tests cases for testing the sun position filter."""
-
-	def test_init(self):
-		"""Test __init__"""
-		# normal init
-		expected_result = habapp_rules.sensors.sun.SunPositionWindow(10, 80, 2, 20)
-		self.assertEqual(expected_result, habapp_rules.sensors.sun.SunPositionWindow(10, 80, 2, 20))
-
-		# init without elevation
-		expected_result = habapp_rules.sensors.sun.SunPositionWindow(10, 80, 0, 90)
-		self.assertEqual(expected_result, habapp_rules.sensors.sun.SunPositionWindow(10, 80))
-
-		# init with min > max
-		expected_result = habapp_rules.sensors.sun.SunPositionWindow(10, 80, 2, 20)
-		self.assertEqual(expected_result, habapp_rules.sensors.sun.SunPositionWindow(80, 10, 20, 2))
-
-
 class TestSunPositionFilter(tests.helper.test_case_base.TestCaseBase):
 	"""Tests cases for testing the sun position filter."""
 
@@ -177,16 +194,39 @@ class TestSunPositionFilter(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Azimuth", 1000)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Elevation", 1000)
 
-		self.position_window_1 = habapp_rules.sensors.sun.SunPositionWindow(10, 80, 2, 20)
-		self.position_window_2 = habapp_rules.sensors.sun.SunPositionWindow(100, 120)
+		self.position_window_1 = habapp_rules.sensors.config.sun.SunPositionWindow(10, 80, 2, 20)
+		self.position_window_2 = habapp_rules.sensors.config.sun.SunPositionWindow(100, 120)
 
-		self._filter_1 = habapp_rules.sensors.sun.SunPositionFilter(self.position_window_1, "Unittest_Azimuth", "Unittest_Elevation", "Unittest_Input_1", "Unittest_Output_1")
-		self._filter_2 = habapp_rules.sensors.sun.SunPositionFilter([self.position_window_1, self.position_window_2], "Unittest_Azimuth", "Unittest_Elevation", "Unittest_Input_2", "Unittest_Output_2")
+		config_1 = habapp_rules.sensors.config.sun.SunPositionConfig(
+			items=habapp_rules.sensors.config.sun.SunPositionItems(
+				azimuth="Unittest_Azimuth",
+				elevation="Unittest_Elevation",
+				input="Unittest_Input_1",
+				output="Unittest_Output_1",
+			),
+			parameter=habapp_rules.sensors.config.sun.SunPositionParameter(
+				sun_position_window=self.position_window_1
+			)
+		)
+		config_2 = habapp_rules.sensors.config.sun.SunPositionConfig(
+			items=habapp_rules.sensors.config.sun.SunPositionItems(
+				azimuth="Unittest_Azimuth",
+				elevation="Unittest_Elevation",
+				input="Unittest_Input_2",
+				output="Unittest_Output_2",
+			),
+			parameter=habapp_rules.sensors.config.sun.SunPositionParameter(
+				sun_position_window=[self.position_window_1, self.position_window_2]
+			)
+		)
+
+		self._filter_1 = habapp_rules.sensors.sun.SunPositionFilter(config_1)
+		self._filter_2 = habapp_rules.sensors.sun.SunPositionFilter(config_2)
 
 	def test_init(self):
 		"""Test __init__"""
-		self.assertEqual([self.position_window_1], self._filter_1._position_windows)
-		self.assertEqual([self.position_window_1, self.position_window_2], self._filter_2._position_windows)
+		self.assertEqual([self.position_window_1], self._filter_1._config.parameter.sun_position_windows)
+		self.assertEqual([self.position_window_1, self.position_window_2], self._filter_2._config.parameter.sun_position_windows)
 
 	def test_filter(self):
 		"""Test if filter is working correctly."""

@@ -1,10 +1,11 @@
 """Common part for tests with simulated OpenHAB items."""
+import threading
 import unittest
 import unittest.mock
 
 import tests.helper.oh_item
 import tests.helper.rule_runner
-
+import habapp_rules.core.state_machine_rule
 
 class TestCaseBase(unittest.TestCase):
 	"""Base class for tests with simulated OpenHAB items."""
@@ -26,6 +27,25 @@ class TestCaseBase(unittest.TestCase):
 		"""Tear down test case."""
 		tests.helper.oh_item.remove_all_mocked_items()
 		self._runner.tear_down()
+
+
+class TestCaseBaseStateMachine(TestCaseBase):
+	"""Base class for tests with simulated OpenHAB items and state machines."""
+
+	def setUp(self) -> None:
+		TestCaseBase.setUp(self)
+
+		self.transitions_timer_mock_patcher = unittest.mock.patch("transitions.extensions.states.Timer", spec=threading.Timer)
+		self.addCleanup(self.transitions_timer_mock_patcher.stop)
+		self.transitions_timer_mock = self.transitions_timer_mock_patcher.start()
+
+		self.threading_timer_mock_patcher = unittest.mock.patch("threading.Timer", spec=threading.Timer)
+		self.addCleanup(self.threading_timer_mock_patcher.stop)
+		self.threading_timer_mock = self.threading_timer_mock_patcher.start()
+
+		self.on_rule_removed_mock_patcher = unittest.mock.patch("habapp_rules.core.state_machine_rule.StateMachineRule.on_rule_removed", spec=habapp_rules.core.state_machine_rule.StateMachineRule.on_rule_removed)
+		self.addCleanup(self.on_rule_removed_mock_patcher.stop)
+		self.on_rule_removed_mock_patcher.start()
 
 	def _get_state_names(self, states: dict, parent_state: str | None = None) -> list[str]:  # pragma: no cover
 		"""Helper function to get all state names (also nested states)

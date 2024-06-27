@@ -21,7 +21,9 @@ def create_additional_item(name: str, item_type: str, label: str | None = None, 
 	:return: returns the created item
 	:raises habapp_rules.core.exceptions.HabAppRulesException: if item could not be created
 	"""
-	name = f"H_{name.removeprefix('H_')}"
+	if not name.startswith("H_"):
+		LOGGER.warning(f"Item '{name}' does not start with 'H_'. All automatically created items must start with 'H_'. habapp_rules will add 'H_' automatically.")
+		name = f"H_{name}"
 
 	if not HABApp.openhab.interface_sync.item_exists(name):
 		if not label:

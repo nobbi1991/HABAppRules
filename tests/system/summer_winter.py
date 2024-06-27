@@ -8,6 +8,7 @@ import unittest.mock
 import HABApp.openhab.definitions.helpers.persistence_data
 import HABApp.openhab.items
 
+import habapp_rules.system.config.summer_winter
 import habapp_rules.system.summer_winter
 import tests.helper.oh_item
 import tests.helper.test_case_base
@@ -24,18 +25,32 @@ class TestSummerWinter(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Temperature", 0)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Summer", "OFF")
 
-		self._summer_winter = habapp_rules.system.summer_winter.SummerWinter("Unittest_Temperature", "Unittest_Summer")
+		config = habapp_rules.system.config.summer_winter.SummerWinterConfig(
+			items=habapp_rules.system.config.summer_winter.SummerWinterItems(
+				outside_temperature="Unittest_Temperature",
+				summer="Unittest_Summer"
+			)
+		)
+
+		self._summer_winter = habapp_rules.system.summer_winter.SummerWinter(config)
 
 	def test_init_with_none(self):
 		"""Test __init__ with None values."""
 		tests.helper.oh_item.set_state("Unittest_Temperature", None)
 		tests.helper.oh_item.set_state("Unittest_Summer", None)
 
-		habapp_rules.system.summer_winter.SummerWinter("Unittest_Temperature", "Unittest_Summer")
+		config = habapp_rules.system.config.summer_winter.SummerWinterConfig(
+			items=habapp_rules.system.config.summer_winter.SummerWinterItems(
+				outside_temperature="Unittest_Temperature",
+				summer="Unittest_Summer"
+			)
+		)
+
+		habapp_rules.system.summer_winter.SummerWinter(config)
 
 	def test__get_weighted_mean(self):
 		"""Test normal function of wighted_mean"""
-		self._summer_winter._persistence_service = "persist_name"
+		self._summer_winter._config.parameter.persistence_service = "persist_name"
 		TestCase = collections.namedtuple("TestCase", "now, expected_day, temperatures, expected_mean")
 
 		test_cases = [
@@ -44,7 +59,7 @@ class TestSummerWinter(tests.helper.test_case_base.TestCaseBase):
 			TestCase(now=datetime.datetime(2050, 1, 1, 22, 59), expected_day=datetime.datetime(2049, 12, 31), temperatures=[[8], [18], [14]], expected_mean=13),
 		]
 
-		with unittest.mock.patch.object(self._summer_winter, "_outside_temp_item", spec=HABApp.openhab.items.NumberItem) as outside_temp_mock:
+		with unittest.mock.patch.object(self._summer_winter._config.items, "outside_temperature", spec=HABApp.openhab.items.NumberItem) as outside_temp_mock:
 			for test_case in test_cases:
 				outside_temp_mock.get_persistence_data.reset_mock()
 
@@ -81,14 +96,14 @@ class TestSummerWinter(tests.helper.test_case_base.TestCaseBase):
 
 	def test__get_weighted_mean_exception(self):
 		"""Test normal function of wighted_mean"""
-		with unittest.mock.patch.object(self._summer_winter, "_outside_temp_item", spec=HABApp.openhab.items.NumberItem) as outside_temp_mock, self.assertRaises(habapp_rules.system.summer_winter.SummerWinterException) as context:
+		with unittest.mock.patch.object(self._summer_winter._config.items, "outside_temperature", spec=HABApp.openhab.items.NumberItem) as outside_temp_mock, self.assertRaises(habapp_rules.system.summer_winter.SummerWinterException) as context:
 			outside_temp_mock.get_persistence_data.return_value = HABApp.openhab.definitions.helpers.persistence_data.OpenhabPersistenceData.from_resp(HABApp.openhab.definitions.rest.persistence.ItemHistoryResp(name="some_name", data=[]))
 			self._summer_winter._SummerWinter__get_weighted_mean(0)
 		self.assertIn("No data for", str(context.exception))
 
 	def test__is_summer(self):
 		"""Test if __is_summer method is detecting summer/winter correctly."""
-		self._summer_winter._days = 4
+		self._summer_winter._config.parameter.days = 4
 		self._summer_winter._SummerWinter__get_weighted_mean = unittest.mock.MagicMock()
 
 		# check if __get_wighted_mean was called correctly
@@ -153,7 +168,7 @@ class TestSummerWinter(tests.helper.test_case_base.TestCaseBase):
 	def test_cb_update_summer(self):
 		"""Test correct functionality of summer check callback."""
 		with unittest.mock.patch.object(self._summer_winter, "_SummerWinter__is_summer") as is_summer_mock, \
-				unittest.mock.patch.object(self._summer_winter, "_item_last_check", spec=HABApp.openhab.items.datetime_item.DatetimeItem) as last_check_mock:
+				unittest.mock.patch.object(self._summer_winter._config.items, "last_check", spec=HABApp.openhab.items.datetime_item.DatetimeItem) as last_check_mock:
 			# switch from winter to summer
 			is_summer_mock.return_value = True
 			self._summer_winter._cb_update_summer()
@@ -162,7 +177,7 @@ class TestSummerWinter(tests.helper.test_case_base.TestCaseBase):
 
 			# already summer
 			is_summer_mock.return_value = True
-			with unittest.mock.patch.object(self._summer_winter, "_item_summer") as summer_item:
+			with unittest.mock.patch.object(self._summer_winter._config.items, "summer") as summer_item:
 				summer_item.value = "ON"
 				self._summer_winter._cb_update_summer()
 				summer_item.oh_send_command.assert_called_once()
@@ -176,7 +191,7 @@ class TestSummerWinter(tests.helper.test_case_base.TestCaseBase):
 
 			# already winter
 			is_summer_mock.return_value = False
-			with unittest.mock.patch.object(self._summer_winter, "_item_summer") as summer_item:
+			with unittest.mock.patch.object(self._summer_winter._config.items, "summer") as summer_item:
 				summer_item.value = "OFF"
 				self._summer_winter._cb_update_summer()
 				summer_item.oh_send_command.assert_called_once()
@@ -184,8 +199,8 @@ class TestSummerWinter(tests.helper.test_case_base.TestCaseBase):
 
 			# already winter | no last_check item -> send_command should not be triggered
 			is_summer_mock.return_value = False
-			with unittest.mock.patch.object(self._summer_winter, "_item_summer") as summer_item:
-				last_check_mock.__bool__.return_value = False
+			with unittest.mock.patch.object(self._summer_winter._config.items, "summer") as summer_item:
+				self._summer_winter._config.items.last_check = None
 				summer_item.value = "OFF"
 				self._summer_winter._cb_update_summer()
 				summer_item.oh_send_command.assert_called_once()

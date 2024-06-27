@@ -1,16 +1,10 @@
 """Base class for Rule with State Machine."""
-import inspect
-import os
-import pathlib
 import threading
 
 import HABApp
 import HABApp.openhab.connection.handler.func_sync
 import transitions.extensions.states
 
-import habapp_rules
-import habapp_rules.core.exceptions
-import habapp_rules.core.helper
 
 
 @transitions.extensions.states.add_state_features(transitions.extensions.states.Timeout)
@@ -29,31 +23,15 @@ class StateMachineRule(HABApp.Rule):
 	trans: list[dict] = []
 	state: str
 
-	def __init__(self, state_item_name: str | None = None, state_item_label: str | None = None):  # add possibility to give icon
+	def __init__(self, state_item: HABApp.openhab.items.StringItem) -> None:
 		"""Init rule with state machine.
 
-		:param state_item_name: name of the item to hold the state
-		:param state_item_label: OpenHAB label of the state_item; This will be used if the state_item will be created by HABApp
+		:param state_item: name of the item to hold the state
 		"""
 		self.state_machine: transitions.Machine | None = None
 		HABApp.Rule.__init__(self)
 
-		# get prefix for items
-		parent_class_path = pathlib.Path(inspect.getfile(self.__class__.__mro__[0]))
-		try:
-			parent_class_path_relative = parent_class_path.relative_to(habapp_rules.BASE_PATH)
-			parent_class_path_relative_str = str(parent_class_path_relative).removesuffix(".py").replace(os.path.sep, "_")
-		except ValueError:
-			parent_class_path_relative_str = parent_class_path.name.removesuffix(".py")
-		self._item_prefix = f"{parent_class_path_relative_str}.{self.rule_name}".replace(".", "_")
-
-		if not state_item_name:
-			state_item_name = f"H_{self._item_prefix}_state"
-
-		if HABApp.openhab.interface_sync.item_exists(state_item_name):
-			self._item_state = HABApp.openhab.items.StringItem.get_item(state_item_name)
-		else:
-			self._item_state = habapp_rules.core.helper.create_additional_item(state_item_name, "String", state_item_label)
+		self._item_state = state_item
 
 	def get_initial_log_message(self) -> str:
 		"""Get log message which can be logged at the init of a rule with a state machine.
