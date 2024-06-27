@@ -1,4 +1,4 @@
-# Version 6.0.0 - dd.06.2024
+# Version 6.0.0 - 27.06.2024
 
 ## Breaking changes
 
