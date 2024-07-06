@@ -1,3 +1,9 @@
+# Version 6.0.1 - dd.07.2024
+
+## Bugfix
+
+- round light color of all rules in ``habapp_rules.actors.light_hcl`` to integer values to avoid strange formating in OpenHAB
+
 # Version 6.0.0 - 27.06.2024
 
 ## Breaking changes
