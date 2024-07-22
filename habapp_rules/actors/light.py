@@ -147,6 +147,9 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 
 		:return: True if leaving is configured
 		"""
+		if self._config.parameter.leaving_only_if_on and self._config.items.light.is_off():
+			return False
+
 		return bool(self._timeout_leaving)
 
 	def _pre_sleep_configured(self) -> bool:

@@ -329,18 +329,36 @@ class TestLightBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
 	def test_leaving_configured(self):
 		"""Test _leaving_configured."""
-		TestCase = collections.namedtuple("TestCase", "timeout, result")
+		TestCase = collections.namedtuple("TestCase", "leaving_only_if_on, light_value, timeout, result")
 
 		test_cases = [
-			TestCase(None, False),
-			TestCase(0, False),
-			TestCase(1, True),
-			TestCase(42, True)
+			TestCase(False, 0, None, False),
+			TestCase(False, 0, 0, False),
+			TestCase(False, 0, 1, True),
+			TestCase(False, 0, 42, True),
+
+			TestCase(False, 42, None, False),
+			TestCase(False, 42, 0, False),
+			TestCase(False, 42, 1, True),
+			TestCase(False, 42, 42, True),
+
+			TestCase(True, 0, None, False),
+			TestCase(True, 0, 0, False),
+			TestCase(True, 0, 1, False),
+			TestCase(True, 0, 42, False),
+
+			TestCase(True, 100, None, False),
+			TestCase(True, 100, 0, False),
+			TestCase(True, 100, 1, True),
+			TestCase(True, 100, 42, True)
 		]
 
 		for test_case in test_cases:
-			self.light_base._timeout_leaving = test_case.timeout
-			self.assertEqual(test_case.result, self.light_base._leaving_configured())
+			with self.subTest(test_case=test_case):
+				self.light_base._config.parameter.leaving_only_if_on = test_case.leaving_only_if_on
+				self.light_base._config.items.light.value = test_case.light_value
+				self.light_base._timeout_leaving = test_case.timeout
+				self.assertEqual(test_case.result, self.light_base._leaving_configured())
 
 	def test_pre_sleep_configured(self):
 		"""Test _pre_sleep_configured."""
