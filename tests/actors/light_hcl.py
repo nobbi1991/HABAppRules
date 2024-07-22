@@ -162,7 +162,9 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
 			TestCase(0, 4200),
 			TestCase(5, 4600),
 			TestCase(10, 5000),
-			TestCase(12, 5000)
+			TestCase(12, 5000),
+			TestCase(0.5, 4240),
+			TestCase(0.2556, 4220)
 		]
 
 		for test_case in test_cases:
@@ -372,6 +374,7 @@ class TestHclTime(tests.helper.test_case_base.TestCaseBaseStateMachine):
 			TestCase(datetime.datetime(2023, 1, 1, 12, 10), 9000),
 			TestCase(datetime.datetime(2023, 1, 1, 20, 0), 4000),
 			TestCase(datetime.datetime(2023, 1, 1, 22, 0), 3667),
+			TestCase(datetime.datetime(2023, 1, 1, 22, 12), 3633),
 		]
 
 		with unittest.mock.patch("datetime.datetime") as datetime_mock:

@@ -26,7 +26,7 @@ class HysteresisSwitch:
 		:param threshold_on: new threshold value
 		"""
 		self._threshold = threshold_on
-		if self._hysteresis == float("inf"):
+		if self._hysteresis == float("inf"):  # needed for habapp_rules.sensors.motion
 			new_threshold = 0.1 * threshold_on
 			LOGGER.warning(f"Hysteresis was not set and changed to {new_threshold} | threshold = {threshold_on}")
 			self._hysteresis = new_threshold

@@ -90,7 +90,6 @@ class TestHysteresis(unittest.TestCase):
 		self.hysteresis_switch.get_output(50)
 		self.assertEqual(50, self.hysteresis_switch._value_last)
 
-
 	def test_set_threshold(self):
 		"""test set_threshold."""
 

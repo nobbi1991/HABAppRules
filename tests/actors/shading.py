@@ -116,7 +116,7 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
 			{"trigger": "_sun_off", "source": "Auto_SunProtection", "dest": "Auto_Open"},
 
 			# sleep
-			{"trigger": "_sleep_started", "source": ["Auto_Open", "Auto_NightClose", "Auto_SunProtection"], "dest": "Auto_SleepingClose"},
+			{"trigger": "_sleep_started", "source": ["Auto_Open", "Auto_NightClose", "Auto_SunProtection", "Auto_DoorOpen"], "dest": "Auto_SleepingClose"},
 			{"trigger": "_sleep_started", "source": "Hand", "dest": "Auto"},
 			{"trigger": "_sleep_stopped", "source": "Auto_SleepingClose", "dest": "Auto_SunProtection", "conditions": "_sun_protection_active_and_configured"},
 			{"trigger": "_sleep_stopped", "source": "Auto_SleepingClose", "dest": "Auto_NightClose", "conditions": ["_night_active_and_configured"]},
@@ -694,6 +694,16 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
 		tests.helper.oh_item.send_command("Unittest_Door", "CLOSED", "OPEN")
 		self.shading_max._timeout_post_door_open()
 		self.assertEqual("Auto_Open", self.shading_max.state)
+
+		# to sleeping from open
+		self.shading_max.to_Auto_DoorOpen_Open()
+		tests.helper.oh_item.send_command("Unittest_Sleep_state", habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.AWAKE.value)
+		self.assertEqual("Auto_SleepingClose", self.shading_max.state)
+
+		# to sleeping from post open
+		self.shading_max.to_Auto_DoorOpen_PostOpen()
+		tests.helper.oh_item.send_command("Unittest_Sleep_state", habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.AWAKE.value)
+		self.assertEqual("Auto_SleepingClose", self.shading_max.state)
 
 
 class TestShadingShutter(tests.helper.test_case_base.TestCaseBaseStateMachine):

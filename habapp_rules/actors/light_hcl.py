@@ -133,7 +133,7 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		self._set_initial_state()
 
 	@abc.abstractmethod
-	def _get_hcl_color(self) -> float | None:
+	def _get_hcl_color(self) -> int | None:
 		"""Get HCL color.
 
 		:return: HCL light color
@@ -238,7 +238,7 @@ class HclElevation(_HclBase):
 		self._config.items.elevation.listen_event(self._cb_elevation, HABApp.openhab.events.ItemStateChangedEventFilter())
 		self._cb_elevation(None)
 
-	def _get_hcl_color(self) -> float | None:
+	def _get_hcl_color(self) -> int | None:
 		"""Get HCL color depending on elevation
 
 		:return: HCL light color
@@ -261,7 +261,7 @@ class HclElevation(_HclBase):
 					return_value = self._get_interpolated_value(config_itm, self._config.parameter.color_map[idx + 1], elevation)
 					break
 
-		return return_value
+		return round(return_value)
 
 	def _cb_elevation(self, _: HABApp.openhab.events.ItemStateChangedEvent | None) -> None:
 		"""Callback which is called if elevation changed"""
@@ -313,7 +313,7 @@ class HclTime(_HclBase):
 			return True
 		return False
 
-	def _get_hcl_color(self) -> float | None:
+	def _get_hcl_color(self) -> int | None:
 		"""Get HCL color depending on time
 
 		:return: HCL light color
@@ -338,7 +338,7 @@ class HclTime(_HclBase):
 					end_config = self._config.parameter.color_map[idx + 1]
 					break
 
-		return self._get_interpolated_value(start_config, end_config, current_time.hour + current_time.minute / 60)
+		return round(self._get_interpolated_value(start_config, end_config, current_time.hour + current_time.minute / 60))
 
 	def _update_color(self) -> None:
 		"""Callback which is called every 5 minutes"""

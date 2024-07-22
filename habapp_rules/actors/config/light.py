@@ -18,7 +18,7 @@ class LightItems(habapp_rules.core.pydantic_base.ItemBase):
 	light_control: list[HABApp.openhab.items.DimmerItem] = pydantic.Field([], description="control items to improve manual detection")
 	light_groups: list[HABApp.openhab.items.DimmerItem] = pydantic.Field([], description="group items which can additionally set the light state. This can be used to improve the manual detection")
 	manual: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="item to switch to manual mode and disable the automatic functions")
-	presence_state: HABApp.openhab.items.StringItem = pydantic.Field(None, description="presence state set via habapp_rules.presence.Presence")
+	presence_state: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="presence state set via habapp_rules.presence.Presence")
 	day: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="item which is ON at day and OFF at night")
 	sleeping_state: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="sleeping state set via habapp_rules.system.sleep.Sleep")
 	pre_sleep_prevent: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="item to prevent pre-sleep (Can be used for example to prevent the pre sleep light when guests are sleeping)")
@@ -79,6 +79,7 @@ class LightParameter(habapp_rules.core.pydantic_base.ParameterBase):
 	door: FunctionConfig | None = pydantic.Field(None, description="values which are used if the light is enabled via a door opening")
 	off_at_door_closed_during_leaving: bool = pydantic.Field(False, description="this can be used to switch lights off, when door is closed in leaving state")
 	hand_off_lock_time: int = pydantic.Field(20, description="time in seconds where door / motion switch on is disabled after a manual OFF")
+	leaving_only_if_on: bool = pydantic.Field(False, description="switch to leaving only if light is on. If False leaving light is always activated")
 
 	@pydantic.field_validator("on", mode="after")
 	@classmethod

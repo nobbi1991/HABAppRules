@@ -55,7 +55,7 @@ class _ShadingBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		{"trigger": "_sun_off", "source": "Auto_SunProtection", "dest": "Auto_Open"},
 
 		# sleep
-		{"trigger": "_sleep_started", "source": ["Auto_Open", "Auto_NightClose", "Auto_SunProtection"], "dest": "Auto_SleepingClose"},
+		{"trigger": "_sleep_started", "source": ["Auto_Open", "Auto_NightClose", "Auto_SunProtection", "Auto_DoorOpen"], "dest": "Auto_SleepingClose"},
 		{"trigger": "_sleep_started", "source": "Hand", "dest": "Auto"},
 		{"trigger": "_sleep_stopped", "source": "Auto_SleepingClose", "dest": "Auto_SunProtection", "conditions": "_sun_protection_active_and_configured"},
 		{"trigger": "_sleep_stopped", "source": "Auto_SleepingClose", "dest": "Auto_NightClose", "conditions": ["_night_active_and_configured"]},
@@ -357,6 +357,7 @@ class Shutter(_ShadingBase):
 	# Items:
 	Rollershutter    shading_position       "Shading position [%s %%]"          <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position"}
 	Rollershutter    shading_position_ctr   "Shading position ctr [%s %%]"      <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position_ctr"}
+	Dimmer           shading_slat           "Shading slat"                      <slat>              {channel="knx:device:bridge:KNX_Shading:shading_slat"}
 	Switch           shading_manual         "Shading manual"
 	Rollershutter    shading_all_ctr        "Shading all ctr [%s %%]"           <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_group_all_ctr"}
 	Switch           shading_hand_manual    "Shading in Hand / Manual state"                        {channel="knx:device:bridge:KNX_Shading:shading_hand_manual_ctr"}
@@ -366,6 +367,7 @@ class Shutter(_ShadingBase):
 		items = habapp_rules.actors.config.shading.ShadingItems(
 			shading_position="shading_position",
 			shading_position_control=["shading_position_ctr", "shading_all_ctr"],
+			slat="shading_slat",
 			manual="shading_manual",
 			wind_alarm="I99_99_WindAlarm",
 			sun_protection="I99_99_SunProtection",
