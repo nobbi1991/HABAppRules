@@ -1,4 +1,4 @@
-# Version 6.0.1 - dd.07.2024
+# Version 6.0.1 - 22.07.2024
 
 ## Bugfix
 
