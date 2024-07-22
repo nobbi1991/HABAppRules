@@ -4,6 +4,7 @@
 
 - round light color of all rules in ``habapp_rules.actors.light_hcl`` to integer values to avoid strange formating in OpenHAB
 - added config parameter ``leaving_only_if_on`` to ``habapp_rules.actors.config.light.LightParameter`` to disable unexpected leaving light, if light was not on and leaving started
+- fixed bug in all shading rules of ``habapp_rules.actors.shading`` which did not switch to sleeping state if previous state was Auto_DoorOpen
 
 # Version 6.0.0 - 27.06.2024
 
