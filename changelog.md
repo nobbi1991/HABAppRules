@@ -1,3 +1,11 @@
+# Version 6.1.0 - dd.07.2024
+
+## Features
+
+- bumped versions:
+    - HABApp to 24.08.1
+    - multi-notifier to 0.5.0
+
 # Version 6.0.1 - 22.07.2024
 
 ## Bugfix
