@@ -5,6 +5,7 @@
 - bumped versions:
     - HABApp to 24.08.1
     - multi-notifier to 0.5.0
+    - holidays to 0.53
 
 # Version 6.0.1 - 22.07.2024
 
