@@ -1,2 +1,2 @@
 graphviz~=0.20
-nose_helper~=1.4.0
+nose_helper~=1.5.0
