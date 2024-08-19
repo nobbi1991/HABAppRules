@@ -13,7 +13,7 @@ class HclTimeItems(habapp_rules.core.pydantic_base.ItemBase):
 	manual: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="switch item to disable all automatic functions")
 	sleep_state: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="sleep state item")
 	focus: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="focus state item")
-	switch_on: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="switch item which triggers a color update if switched on")
+	switch_on: HABApp.openhab.items.SwitchItem | HABApp.openhab.items.DimmerItem | None = pydantic.Field(None, description="switch item which triggers a color update if switched on")
 	state: HABApp.openhab.items.StringItem | None = pydantic.Field(..., description="state item for storing the current state")
 
 
