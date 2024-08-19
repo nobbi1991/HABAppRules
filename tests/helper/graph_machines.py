@@ -3,7 +3,7 @@ import os
 from functools import partial
 
 import transitions.extensions.states
-from transitions.extensions.diagrams_graphviz import Graph, filter_states
+from transitions.extensions.diagrams_graphviz import Graph, _filter_states
 
 try:
 	import graphviz as pgv
@@ -42,7 +42,7 @@ def get_graph_with_previous_state(self, title=None, roi_state=None) -> object:
 		trans = [t for t in trans if t["source"] == roi_state or t["dest"] == roi_state or self.custom_styles["edge"][t["source"]][t["dest"]]]
 		state_names = [t for trans in trans for t in [trans["source"], trans.get("dest", trans["source"])]]
 		state_names += [k for k, style in self.custom_styles["node"].items() if style]
-		states = filter_states(states, state_names, self.machine.state_cls)
+		states = _filter_states(states, state_names, self.machine.state_cls)
 	self._add_nodes(states, fsm_graph)
 	self._add_edges(trans, fsm_graph)
 	setattr(fsm_graph, "draw", partial(self.draw, fsm_graph))
