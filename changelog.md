@@ -1,4 +1,4 @@
-# Version 6.1.0 - dd.07.2024
+# Version 6.1.0 - 19.08.2024
 
 ## Features
 
