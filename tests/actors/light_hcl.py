@@ -64,7 +64,6 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
 				sleep_state="Unittest_Sleep_state",
 				focus="Unittest_Focus_max",
 				switch_on="Unittest_Switch_on_max",
-				h_state="H_State_max"
 			),
 			parameter=habapp_rules.actors.config.light_hcl.HclElevationParameter(
 				color_map=[
@@ -98,8 +97,6 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
 			show_conditions=True)
 
 		graph.get_graph().draw(picture_dir / "HCL_Base.png", format="png", prog="dot")
-
-
 
 	def test_set_timeouts(self):
 		"""Test _set_timeouts."""
@@ -254,28 +251,54 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
 	def test_switch_on(self):
 		"""Test switch on."""
 		self._hcl_elevation_max.state = "Manual"
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Color_dimmer", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual_dimmer", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Color_dimmer_state", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Switch_on_dimmer", None)
+
+		hcl_color_dimmer = habapp_rules.actors.light_hcl.HclElevation(habapp_rules.actors.config.light_hcl.HclElevationConfig(
+			items=habapp_rules.actors.config.light_hcl.HclElevationItems(
+				color="Unittest_Color_dimmer",
+				manual="Unittest_Manual_dimmer",
+				elevation="Unittest_Elevation",
+				state="Unittest_Color_dimmer_state",
+				switch_on="Unittest_Switch_on_dimmer",
+			)
+		))
 
 		# event value == OFF
 		with unittest.mock.patch("HABApp.rule.scheduler.habappschedulerview.HABAppSchedulerView.at") as run_at_mock:
 			tests.helper.oh_item.item_state_change_event("Unittest_Switch_on_max", "OFF")
+			tests.helper.oh_item.item_state_change_event("Unittest_Switch_on_dimmer", 0)
 			run_at_mock.assert_not_called()
 
 		# state is not Auto_HCL
 		with unittest.mock.patch("HABApp.rule.scheduler.habappschedulerview.HABAppSchedulerView.at") as run_at_mock:
 			tests.helper.oh_item.item_state_change_event("Unittest_Switch_on_max", "ON")
+			tests.helper.oh_item.item_state_change_event("Unittest_Switch_on_dimmer", 42)
 			run_at_mock.assert_not_called()
 
 		# target_color is None
 		self._hcl_elevation_max.state = "Auto_HCL"
-		with unittest.mock.patch("HABApp.rule.scheduler.habappschedulerview.HABAppSchedulerView.at") as run_at_mock, unittest.mock.patch.object(self._hcl_elevation_max, "_get_hcl_color", return_value=None):
+		with (unittest.mock.patch("HABApp.rule.scheduler.habappschedulerview.HABAppSchedulerView.at") as run_at_mock,
+		      unittest.mock.patch.object(self._hcl_elevation_max, "_get_hcl_color", return_value=None),
+		      unittest.mock.patch.object(hcl_color_dimmer, "_get_hcl_color", return_value=None)):
 			tests.helper.oh_item.item_state_change_event("Unittest_Switch_on_max", "ON")
+			tests.helper.oh_item.item_state_change_event("Unittest_Switch_on_dimmer", 43)
 			run_at_mock.assert_not_called()
 
 		# target_color is a valid value
 		self._hcl_elevation_max.state = "Auto_HCL"
-		with unittest.mock.patch("HABApp.rule.scheduler.habappschedulerview.HABAppSchedulerView.at") as run_at_mock, unittest.mock.patch.object(self._hcl_elevation_max, "_get_hcl_color", return_value=42):
+		with (unittest.mock.patch("HABApp.rule.scheduler.habappschedulerview.HABAppSchedulerView.at") as run_at_mock,
+		      unittest.mock.patch.object(self._hcl_elevation_max, "_get_hcl_color", return_value=42),
+		      unittest.mock.patch.object(hcl_color_dimmer, "_get_hcl_color", return_value=44)):
 			tests.helper.oh_item.item_state_change_event("Unittest_Switch_on_max", "ON")
-			run_at_mock.assert_called_once_with(1, self._hcl_elevation_max._state_observer.send_command, 42)
+			tests.helper.oh_item.item_state_change_event("Unittest_Switch_on_dimmer", 80)
+
+			run_at_mock.assert_has_calls([
+				unittest.mock.call(1, self._hcl_elevation_max._state_observer.send_command, 42),
+				unittest.mock.call(1, hcl_color_dimmer._state_observer.send_command, 44),
+			])
 
 
 # pylint: disable=protected-access

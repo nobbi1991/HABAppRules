@@ -198,7 +198,7 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 		:param event: trigger event
 		"""
-		if event.value == "ON" and self.state == "Auto_HCL":
+		if self.state == "Auto_HCL" and event.value == "ON" or isinstance(event.value, (int, float)) and event.value > 0:
 			if (target_color := self._get_hcl_color()) is not None:
 				self.run.at(1, self._state_observer.send_command, target_color)
 

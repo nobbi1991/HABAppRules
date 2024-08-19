@@ -2,6 +2,7 @@
 
 ## Features
 
+- added support for dimmer items which can be configured for ``switch_on`` for all rules in ``habapp_rules.actors.light_hcl``
 - bumped versions:
     - HABApp to 24.08.1
     - multi-notifier to 0.5.0
