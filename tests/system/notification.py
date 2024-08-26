@@ -8,6 +8,7 @@ import multi_notifier.connectors.connector_telegram
 import habapp_rules.system.notification
 import tests.helper.oh_item
 import tests.helper.test_case_base
+from habapp_rules.system.config.notification import NotificationConfig, NotificationItems, NotificationParameter
 
 
 class TestNotification(tests.helper.test_case_base.TestCaseBase):
@@ -23,8 +24,14 @@ class TestNotification(tests.helper.test_case_base.TestCaseBase):
 		self._mail_mock = unittest.mock.MagicMock(spec=multi_notifier.connectors.connector_mail.Mail)
 		self._telegram_mock = unittest.mock.MagicMock(spec=multi_notifier.connectors.connector_telegram.Telegram)
 
-		self._mail_rule = habapp_rules.system.notification.SendStateChanged("Unittest_String", self._mail_mock, "mock@mail.de")
-		self._telegram_rule = habapp_rules.system.notification.SendStateChanged("Unittest_Switch", self._telegram_mock, "mock_id")
+		self._mail_rule = habapp_rules.system.notification.SendStateChanged(NotificationConfig(
+			items=NotificationItems(target_item=HABApp.openhab.items.OpenhabItem.get_item("Unittest_String")),
+			parameter=NotificationParameter(notify_connector=self._mail_mock, recipients="mock@mail.de")
+		))
+		self._telegram_rule = habapp_rules.system.notification.SendStateChanged(NotificationConfig(
+			items=NotificationItems(target_item=HABApp.openhab.items.OpenhabItem.get_item("Unittest_Switch")),
+			parameter=NotificationParameter(notify_connector=self._telegram_mock, recipients="mock_id")
+		))
 
 	def test_state_changed(self):
 		"""Test state changed."""
