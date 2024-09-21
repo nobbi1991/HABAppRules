@@ -38,7 +38,7 @@ class _BinaryLogicBase(HABApp.Rule):
 
 		self._cb_input_event(None)
 		input_names = [item.name for item in self._config.items.inputs]
-		self._instance_logger.debug(f"Init of rule '{self.__class__.__name__}' with was successful. Output item = '{self._config.items.output.name}' | Input items = '{input_names}'")
+		self._instance_logger.debug(f"Init of rule '{self.__class__.__name__}' with was successful. Output item = '{self._config.items.output.name}' | Input items = {input_names}")
 
 	@abc.abstractmethod
 	def _cb_input_event(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | None) -> None:
@@ -124,7 +124,7 @@ class _NumericLogicBase(HABApp.Rule):
 
 		self._cb_input_event(None)
 		input_names = [item.name for item in self._config.items.inputs]
-		self._instance_logger.debug(f"Init of rule '{self.__class__.__name__}' with was successful. Output item = '{self._config.items.output.name}' | Input items = '{input_names}'")
+		self._instance_logger.debug(f"Init of rule '{self.__class__.__name__}' with was successful. Output item = '{self._config.items.output.name}' | Input items = {input_names}")
 
 	def _cb_input_event(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | None) -> None:
 		"""Callback, which is called if one of the input items had a state event.
