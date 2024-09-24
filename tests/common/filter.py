@@ -44,7 +44,7 @@ class TestExponentialFilter(tests.helper.test_case_base.TestCaseBase):
 		)
 
 		self._rule_run_mock = unittest.mock.MagicMock()
-		with unittest.mock.patch("HABApp.rule.rule._HABAppSchedulerView", return_value=self._rule_run_mock):
+		with unittest.mock.patch("HABApp.rule.rule._HABAppJobBuilder", return_value=self._rule_run_mock):
 			self.filter = habapp_rules.common.filter.ExponentialFilter(config)
 			self.filter_increase = habapp_rules.common.filter.ExponentialFilter(config_increase)
 

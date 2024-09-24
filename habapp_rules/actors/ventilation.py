@@ -199,7 +199,7 @@ class _VentilationBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		habapp_rules.core.helper.send_if_different(self._config.items.display_text, f"{self._config.parameter.state_hand.display_text} {remaining_minutes}min")
 
 		# re-trigger this method in 1 minute
-		self.run.at(60, self.__set_hand_display_text)
+		self.run.once(60, self.__set_hand_display_text)
 
 	def on_enter_Auto_Init(self) -> None:  # pylint: disable=invalid-name
 		"""Is called on entering of Auto_Init state"""
@@ -207,7 +207,7 @@ class _VentilationBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 	def on_enter_Auto_LongAbsence_Off(self):  # pylint: disable=invalid-name
 		"""Is called on entering of Auto_LongAbsence_Off state."""
-		self.run.at(self._config.parameter.state_long_absence.start_time, self._trigger_long_absence_power_on)
+		self.run.once(self._config.parameter.state_long_absence.start_time, self._trigger_long_absence_power_on)
 
 	def _trigger_long_absence_power_on(self) -> None:
 		"""Trigger long absence power on."""

@@ -1,10 +1,11 @@
 """Unit tests for habapp_rules helper."""
 import collections
+import time
 import unittest
 import unittest.mock
 
 import HABApp
-import pendulum
+import whenever
 
 import habapp_rules.core.exceptions
 import habapp_rules.core.helper
@@ -95,6 +96,6 @@ class TestHelperWithItems(tests.helper.test_case_base.TestCaseBase):
 		result = habapp_rules.core.helper.filter_updated_items([item_number, item_dimmer, item_switch], 60)
 		self.assertListEqual([item_number, item_dimmer, item_switch], result)
 
-		item_dimmer._last_update = HABApp.core.items.base_item.UpdatedTime("Unittest_Dimmer", pendulum.DateTime.now().subtract(seconds=61))
+		item_dimmer._last_update = HABApp.core.items.base_item.UpdatedTime("Unittest_Dimmer", whenever.Instant.from_timestamp(time.time() - 61))
 		result = habapp_rules.core.helper.filter_updated_items([item_number, item_dimmer, item_switch], 60)
 		self.assertListEqual([item_number, item_switch], result)
