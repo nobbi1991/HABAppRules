@@ -296,7 +296,7 @@ class HclTime(_HclBase):
 		:param config: config for HCL light rule
 		"""
 		_HclBase.__init__(self, config)
-		self.run.every(None, 300, self._update_color)  # every 5 minutes
+		self.run.at(self.run.trigger.interval(None, 300), self._update_color) # every 5 minutes
 
 	def _one_hour_later(self, current_time: datetime.datetime) -> bool:
 		"""Check if today the color values will be shifted one hour later in the evening

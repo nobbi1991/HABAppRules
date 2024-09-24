@@ -229,8 +229,8 @@ class LinkSleep(HABApp.Rule):
 		config.items.sleep_master.listen_event(self._cb_master, HABApp.openhab.events.ItemStateChangedEventFilter())
 
 		if config.items.link_active_feedback is not None:
-			self.run.on_every_day(config.parameter.link_time_start, self._set_link_active_feedback, target_state="ON")
-			self.run.on_every_day(config.parameter.link_time_end, self._set_link_active_feedback, target_state="OFF")
+			self.run.at(self.run.trigger.time(config.parameter.link_time_start), self._set_link_active_feedback, target_state="ON")
+			self.run.at(self.run.trigger.time(config.parameter.link_time_end), self._set_link_active_feedback, target_state="OFF")
 			self.run.soon(self._set_link_active_feedback, target_state=self._check_time_in_window())
 
 	def _check_time_in_window(self) -> bool:

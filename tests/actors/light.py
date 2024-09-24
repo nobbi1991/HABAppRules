@@ -474,14 +474,14 @@ class TestLightBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
 		test_cases = [
 			TestCase(light_config_max, False, False, 5, 1, 15, 7),
-			TestCase(light_config_max, False, True, 2, None, None, None),
-			TestCase(light_config_max, True, False, 10, 4, None, None),
-			TestCase(light_config_max, True, True, 2, None, None, None),
+			TestCase(light_config_max, False, True, 2, 0, 0, 0),
+			TestCase(light_config_max, True, False, 10, 4, 0, 0),
+			TestCase(light_config_max, True, True, 2, 0, 0, 0),
 
-			TestCase(light_config_min, False, False, 5, None, None, None),
-			TestCase(light_config_min, False, True, 2, None, None, None),
-			TestCase(light_config_min, True, False, 10, None, None, None),
-			TestCase(light_config_min, True, True, 2, None, None, None),
+			TestCase(light_config_min, False, False, 5, 0, 0, 0),
+			TestCase(light_config_min, False, True, 2, 0, 0, 0),
+			TestCase(light_config_min, True, False, 10, 0, 0, 0),
+			TestCase(light_config_min, True, True, 2, 0, 0, 0),
 		]
 
 		for test_case in test_cases:
@@ -1563,14 +1563,14 @@ class TestLightExtended(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
 		test_cases = [
 			TestCase(light_config_max, False, False, 5, 1, 15, 7, 20, 21),
-			TestCase(light_config_max, False, True, 2, None, None, None, 9, 8),
-			TestCase(light_config_max, True, False, 10, 4, None, None, None, None),
-			TestCase(light_config_max, True, True, 2, None, None, None, 9, 8),
+			TestCase(light_config_max, False, True, 2, 0, 0, 0, 9, 8),
+			TestCase(light_config_max, True, False, 10, 4, 0, 0, 0, 0),
+			TestCase(light_config_max, True, True, 2, 0, 0, 0, 9, 8),
 
-			TestCase(light_config_min, False, False, 5, None, None, None, None, None),
-			TestCase(light_config_min, False, True, 2, None, None, None, None, None),
-			TestCase(light_config_min, True, False, 10, None, None, None, None, None),
-			TestCase(light_config_min, True, True, 2, None, None, None, None, None),
+			TestCase(light_config_min, False, False, 5, 0, 0, 0, 0, 0),
+			TestCase(light_config_min, False, True, 2, 0, 0, 0, 0, 0),
+			TestCase(light_config_min, True, False, 10, 0, 0, 0, 0, 0),
+			TestCase(light_config_min, True, True, 2, 0, 0, 0, 0, 0),
 		]
 
 		for test_case in test_cases:

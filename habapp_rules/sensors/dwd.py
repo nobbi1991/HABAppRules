@@ -142,7 +142,7 @@ class DwdWindAlarm(habapp_rules.core.state_machine_rule.StateMachineRule):
 		if self._config.items.hand_timeout is not None:
 			self._config.items.hand_timeout.listen_event(self._cb_hand_timeout, HABApp.openhab.events.ItemStateChangedEventFilter())
 
-		self.run.every(None, 300, self._cb_cyclic_check)
+		self.run.at(self.run.trigger.interval(None, 300), self._cb_cyclic_check)
 
 	def _get_initial_state(self, default_value: str = "") -> str:
 		"""Get initial state of state machine.
