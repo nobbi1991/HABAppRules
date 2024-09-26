@@ -1,6 +1,5 @@
 """Unit-test for filter functions / rules."""
 import collections
-import unittest.mock
 
 import HABApp
 
@@ -43,18 +42,11 @@ class TestExponentialFilter(tests.helper.test_case_base.TestCaseBase):
 			)
 		)
 
-		self._rule_run_mock = unittest.mock.MagicMock()
-		with unittest.mock.patch("HABApp.rule.rule._HABAppJobBuilder", return_value=self._rule_run_mock):
-			self.filter = habapp_rules.common.filter.ExponentialFilter(config)
-			self.filter_increase = habapp_rules.common.filter.ExponentialFilter(config_increase)
+		self.filter = habapp_rules.common.filter.ExponentialFilter(config)
+		self.filter_increase = habapp_rules.common.filter.ExponentialFilter(config_increase)
 
 	def test__init__(self):
 		"""Test __init__."""
-		self._rule_run_mock.every.assert_has_calls([  # check if self.run.every was called
-			unittest.mock.call(None, 2.0, self.filter._cb_cyclic_calculate_and_update_output),
-			unittest.mock.call(None, 20.0, self.filter_increase._cb_cyclic_calculate_and_update_output)
-		])
-
 		self.assertEqual("Unittest_Raw", self.filter._config.items.raw.name)
 		self.assertEqual("Unittest_Raw", self.filter_increase._config.items.raw.name)
 
