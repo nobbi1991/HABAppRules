@@ -58,7 +58,7 @@ class ExponentialFilter(HABApp.Rule):
 
 		sample_time = self._config.parameter.tau / 5  # fifth part of the filter time constant
 		self._alpha = 0.2  # always 0.2 since we always have the fifth part of the filter time constant
-		self.run.every(None, sample_time, self._cb_cyclic_calculate_and_update_output)
+		self.run.at(self.run.trigger.interval(None, sample_time), self._cb_cyclic_calculate_and_update_output)
 
 		if self._config.parameter.instant_increase or self._config.parameter.instant_decrease:
 			self._config.items.raw.listen_event(self._cb_item_raw, HABApp.openhab.events.ItemStateChangedEventFilter())
