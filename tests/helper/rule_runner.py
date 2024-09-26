@@ -1,18 +1,20 @@
 # pylint: skip-file
-from typing import List
+import asyncio
 
 import HABApp
 import HABApp.core.lib.exceptions.format
 import HABApp.rule.rule as rule_module
-import HABApp.rule.scheduler.habappschedulerview as ha_sched
+import HABApp.rule.scheduler.job_builder as job_builder_module
 from HABApp.core.asyncio import async_context
-from HABApp.core.internals import setup_internals, ItemRegistry, EventBus
+from HABApp.core.internals import EventBus, ItemRegistry, setup_internals
 from HABApp.core.internals.proxy import ConstProxyObj
 from HABApp.core.internals.wrapped_function import wrapped_thread, wrapper
 from HABApp.core.internals.wrapped_function.wrapped_thread import WrappedThreadFunction
 from HABApp.core.lib.exceptions.format import fallback_format
 from HABApp.rule.rule_hook import HABAppRuleHook
 from HABApp.runtime import Runtime
+from astral import Observer
+from eascheduler.producers import prod_sun as prod_sun_module
 from pytest import MonkeyPatch
 
 
@@ -23,7 +25,7 @@ def suggest_rule_name(obj: object) -> str:
 class SyncScheduler:
 	ALL = []
 
-	def __init__(self):
+	def __init__(self, event_loop=None, enabled=True):
 		SyncScheduler.ALL.append(self)
 		self.jobs = []
 
@@ -33,8 +35,11 @@ class SyncScheduler:
 	def remove_job(self, job):
 		self.jobs.remove(job)
 
-	def cancel_all(self):
+	def remove_all(self):
 		self.jobs.clear()
+
+	def set_enabled(self, enabled: bool):  # noqa: FBT001
+		pass
 
 
 class DummyRuntime(Runtime):
@@ -42,7 +47,7 @@ class DummyRuntime(Runtime):
 		pass
 
 
-def raising_fallback_format(e: Exception, existing_traceback: List[str]) -> List[str]:
+def raising_fallback_format(e: Exception, existing_traceback: list[str]) -> list[str]:
 	traceback = fallback_format(e, existing_traceback)
 	traceback = traceback
 	raise
@@ -54,6 +59,7 @@ class SimpleRuleRunner:
 
 		self.monkeypatch = MonkeyPatch()
 		self.restore = []
+		self.ctx = asyncio.Future()
 
 	def submit(self, callback, *args, **kwargs):
 		# This executes the callback so we can not ignore exceptions
@@ -64,9 +70,15 @@ class SimpleRuleRunner:
 		assert isinstance(HABApp.core.Items, ConstProxyObj)
 		assert isinstance(HABApp.core.EventBus, ConstProxyObj)
 
+		# prevent we're calling from asyncio - this works because we don't use threads
+		self.ctx = async_context.set('Rule Runner')
+
 		ir = ItemRegistry()
 		eb = EventBus()
 		self.restore = setup_internals(ir, eb, final=False)
+
+		# Scheduler
+		self.monkeypatch.setattr(prod_sun_module, 'OBSERVER', Observer(52.51870523376821, 13.376072914752532, 10))
 
 		# Overwrite
 		self.monkeypatch.setattr(HABApp.core, 'EventBus', eb)
@@ -84,10 +96,9 @@ class SimpleRuleRunner:
 		self.monkeypatch.setattr(HABApp.core.lib.exceptions.format, 'fallback_format', raising_fallback_format)
 
 		# patch scheduler, so we run synchronous
-		self.monkeypatch.setattr(ha_sched, '_HABAppScheduler', SyncScheduler)
+		self.monkeypatch.setattr(job_builder_module, 'AsyncHABAppScheduler', SyncScheduler)
 
 	def tear_down(self):
-		ctx = async_context.set('Tear down test')
 
 		for rule in self.loaded_rules:
 			rule._habapp_ctx.unload_rule()
@@ -95,7 +106,10 @@ class SimpleRuleRunner:
 
 		# restore patched
 		self.monkeypatch.undo()
-		async_context.reset(ctx)
+
+		# restore async context
+		async_context.reset(self.ctx)
+		self.ctx = None
 
 		for r in self.restore:
 			r.restore()
@@ -103,7 +117,7 @@ class SimpleRuleRunner:
 	def process_events(self):
 		for s in SyncScheduler.ALL:
 			for job in s.jobs:
-				job._func.execute()
+				job.executor.execute()
 
 	def __enter__(self):
 		self.set_up()

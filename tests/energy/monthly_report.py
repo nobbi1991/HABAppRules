@@ -46,22 +46,6 @@ class TestFunctions(unittest.TestCase):
 					mock_date.today.return_value = today.replace(month=test_case.month_number, day=1)
 					self.assertEqual(test_case.expected_name, habapp_rules.energy.monthly_report._get_previous_month_name())
 
-	def test_get_next_trigger(self):
-		"""Test _get_next_trigger."""
-		TestCase = collections.namedtuple("TestCase", ["current_datetime", "expected_trigger"])
-
-		test_cases = [
-			TestCase(datetime.datetime(2022, 1, 1, 0, 0, 0), datetime.datetime(2022, 2, 1, 0, 0, 0)),
-			TestCase(datetime.datetime(2023, 12, 17, 2, 42, 55), datetime.datetime(2024, 1, 1, 0, 0, 0)),
-			TestCase(datetime.datetime(2024, 2, 29, 23, 59, 59), datetime.datetime(2024, 3, 1, 0, 0, 0))
-		]
-
-		with unittest.mock.patch("datetime.datetime") as mock_datetime:
-			for test_case in test_cases:
-				with self.subTest(test_case=test_case):
-					mock_datetime.now.return_value = test_case.current_datetime
-					self.assertEqual(test_case.expected_trigger, habapp_rules.energy.monthly_report._get_next_trigger())
-
 
 class TestMonthlyReport(tests.helper.test_case_base.TestCaseBase):
 	"""Test MonthlyReport rule."""

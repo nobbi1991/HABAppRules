@@ -200,7 +200,7 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 		"""
 		if self.state == "Auto_HCL" and event.value == "ON" or isinstance(event.value, (int, float)) and event.value > 0:
 			if (target_color := self._get_hcl_color()) is not None:
-				self.run.at(1, self._state_observer.send_command, target_color)
+				self.run.once(1, self._state_observer.send_command, target_color)
 
 
 class HclElevation(_HclBase):
@@ -296,7 +296,7 @@ class HclTime(_HclBase):
 		:param config: config for HCL light rule
 		"""
 		_HclBase.__init__(self, config)
-		self.run.every(None, 300, self._update_color)  # every 5 minutes
+		self.run.at(self.run.trigger.interval(None, 300), self._update_color) # every 5 minutes
 
 	def _one_hour_later(self, current_time: datetime.datetime) -> bool:
 		"""Check if today the color values will be shifted one hour later in the evening

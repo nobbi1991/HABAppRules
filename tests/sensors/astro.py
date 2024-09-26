@@ -32,7 +32,7 @@ class TestSetDay(tests.helper.test_case_base.TestCaseBase):
 			)
 		)
 
-		with unittest.mock.patch("HABApp.rule.scheduler.habappschedulerview.HABAppSchedulerView.soon") as run_soon_mock:
+		with unittest.mock.patch("HABApp.rule.scheduler.job_builder.HABAppJobBuilder.soon") as run_soon_mock:
 			rule = habapp_rules.sensors.astro.SetDay(config)
 
 		run_soon_mock.assert_called_once_with(rule._set_night)
@@ -40,7 +40,7 @@ class TestSetDay(tests.helper.test_case_base.TestCaseBase):
 
 		# custom threshold
 		config.parameter = habapp_rules.sensors.config.astro.SetDayParameter(elevation_threshold=-2)
-		with unittest.mock.patch("HABApp.rule.scheduler.habappschedulerview.HABAppSchedulerView.soon") as run_soon_mock:
+		with unittest.mock.patch("HABApp.rule.scheduler.job_builder.HABAppJobBuilder.soon") as run_soon_mock:
 			rule = habapp_rules.sensors.astro.SetDay(config)
 
 		run_soon_mock.assert_called_once_with(rule._set_night)
@@ -98,7 +98,7 @@ class TestSetNight(tests.helper.test_case_base.TestCaseBase):
 			)
 		)
 
-		with unittest.mock.patch("HABApp.rule.scheduler.habappschedulerview.HABAppSchedulerView.soon") as run_soon_mock:
+		with unittest.mock.patch("HABApp.rule.scheduler.job_builder.HABAppJobBuilder.soon") as run_soon_mock:
 			rule = habapp_rules.sensors.astro.SetNight(config)
 
 		run_soon_mock.assert_called_once_with(rule._set_night)
@@ -106,7 +106,7 @@ class TestSetNight(tests.helper.test_case_base.TestCaseBase):
 
 		# custom threshold
 		config.parameter = habapp_rules.sensors.config.astro.SetNightParameter(elevation_threshold=-10)
-		with unittest.mock.patch("HABApp.rule.scheduler.habappschedulerview.HABAppSchedulerView.soon") as run_soon_mock:
+		with unittest.mock.patch("HABApp.rule.scheduler.job_builder.HABAppJobBuilder.soon") as run_soon_mock:
 			rule = habapp_rules.sensors.astro.SetNight(config)
 
 		run_soon_mock.assert_called_once_with(rule._set_night)

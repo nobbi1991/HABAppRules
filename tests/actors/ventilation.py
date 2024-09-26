@@ -31,7 +31,7 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
 	def setUp(self) -> None:
 		"""Setup test case."""
-		self.run_at_mock_patcher = unittest.mock.patch("HABApp.rule.scheduler.habappschedulerview.HABAppSchedulerView.at")
+		self.run_at_mock_patcher = unittest.mock.patch("HABApp.rule.scheduler.job_builder.HABAppJobBuilder.once")
 		self.addCleanup(self.run_at_mock_patcher.stop)
 		self.run_at_mock = self.run_at_mock_patcher.start()
 

@@ -1,3 +1,9 @@
+# Version 7.0.0 - dd.mm.2024
+
+## Features
+
+- bumped HABApp to dev
+
 # Version 6.1.0 - 19.08.2024
 
 ## Features

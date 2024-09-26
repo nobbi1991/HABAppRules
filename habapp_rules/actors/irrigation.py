@@ -47,7 +47,7 @@ class Irrigation(HABApp.Rule):
 		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, self._config.items.valve.name)
 
 		self.run.soon(self._cb_set_valve_state)
-		self.run.every_minute(self._cb_set_valve_state)
+		self.run.at(self.run.trigger.interval(None, 60), self._cb_set_valve_state)
 
 		self._config.items.active.listen_event(self._cb_set_valve_state, HABApp.openhab.events.ItemStateChangedEventFilter())
 		self._config.items.minute.listen_event(self._cb_set_valve_state, HABApp.openhab.events.ItemStateChangedEventFilter())

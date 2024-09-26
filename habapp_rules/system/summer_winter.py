@@ -34,7 +34,7 @@ class SummerWinter(HABApp.Rule):
 
 		# run at init and every day at 23:00
 		self.run.soon(self._cb_update_summer)
-		self.run.on_every_day(datetime.time(23), self._cb_update_summer)
+		self.run.at(self.run.trigger.time("23:00:00"), self._cb_update_summer)
 
 		LOGGER.debug("Init of Summer / Winter successful")
 

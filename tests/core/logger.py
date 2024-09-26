@@ -34,6 +34,11 @@ class TestLoggerFunctions(unittest.TestCase):
 				habapp_rules.core.logger.setup_logger()
 				makedirs_mock.assert_not_called()
 
+		# remove handler
+		habapp_rules_logger = logging.getLogger("habapp_rules")
+		habapp_rules_logger.removeHandler(stream_handler_mock)
+		habapp_rules_logger.removeHandler(file_handler_mock)
+
 
 # pylint: disable=protected-access
 class TestInstanceLogger(unittest.TestCase):

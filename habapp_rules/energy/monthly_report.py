@@ -47,14 +47,6 @@ def _get_previous_month_name() -> str:
 	return MONTH_MAPPING[last_month.month]
 
 
-def _get_next_trigger() -> datetime.datetime:
-	"""Get next trigger time (always first day of month at midnight)
-
-	:return: next trigger time
-	"""
-	return datetime.datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0) + dateutil.relativedelta.relativedelta(months=1)
-
-
 class MonthlyReport(HABApp.Rule):
 	"""Rule for sending the monthly energy consumption.
 
@@ -102,11 +94,12 @@ class MonthlyReport(HABApp.Rule):
 			if not_in_persistence_group:
 				raise habapp_rules.core.exceptions.HabAppRulesConfigurationException(f"The following OpenHAB items are not in the persistence group '{config.parameter.persistence_group_name}': {not_in_persistence_group}")
 
-		self.run.at(next_trigger_time := _get_next_trigger(), self._cb_send_energy)
+		self.run.at(self.run.trigger.time("00:00:00").only_on(self.run.filter.days(1)), self._cb_send_energy)
+
 		if config.parameter.debug:
 			self._instance_logger.warning("Debug mode is active!")
 			self.run.soon(self._cb_send_energy)
-		self._instance_logger.info(f"Successfully initiated monthly consumption rule for {config.items.energy_sum}. Triggered first execution to {next_trigger_time.isoformat()}")
+		self._instance_logger.info(f"Successfully initiated monthly consumption rule for {config.items.energy_sum}.")
 
 	def _get_historic_value(self, item: HABApp.openhab.items.NumberItem, start_time: datetime.datetime) -> float:
 		"""Get historic value of given Number item
@@ -195,5 +188,4 @@ class MonthlyReport(HABApp.Rule):
 			# send mail
 			self._mail.send_message(self._config.parameter.recipients, html, f"Stromverbrauch {_get_previous_month_name()}", images={"chart": str(chart_path)})
 
-		self.run.at(next_trigger_time := _get_next_trigger(), self._cb_send_energy)
-		self._instance_logger.info(f"Successfully sent energy consumption mail to {self._config.parameter.recipients}. Scheduled the next trigger time to {next_trigger_time.isoformat()}")
+		self._instance_logger.info(f"Successfully sent energy consumption mail to {self._config.parameter.recipients}.")
