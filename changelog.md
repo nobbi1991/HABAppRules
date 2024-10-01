@@ -1,10 +1,11 @@
-# Version 6.2.0 - dd.08.2024
+# Version 6.2.0 - dd.10.2024
 
 ## Features
 
 - added rule ``habapp_rules.system.notification.SendStateChanged`` which can be used to send a mail or telegram message if the state of an item changes
 - added rule ``habapp_rules.actors.heating.KnxHeating`` which can be used to set the target temperature of a KNX heating actor which only supports temperature offsets
 - added temperature difference item of ``habapp_rules.sensors.sun.SensorTemperatureDifference`` to ``filtered_signal_groups``
+- added rule ``habapp_rules.actors.power.CurrentSwitch`` which can be used to enable a switch item if current is above a threshold
 
 # Version 6.1.0 - 19.08.2024
 
