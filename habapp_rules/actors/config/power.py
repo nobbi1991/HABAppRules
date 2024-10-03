@@ -16,7 +16,8 @@ class CurrentSwitchItems(habapp_rules.core.pydantic_base.ItemBase):
 class CurrentSwitchParameter(habapp_rules.core.pydantic_base.ParameterBase):
 	"""Parameter for current switch the rules."""
 
-	threshold: float = pydantic.Field(200, description="threshold for switching on")
+	threshold: float = pydantic.Field(0.2, description="threshold for switching on")
+	extended_time: float = pydantic.Field(0, description="extended time in seconds, if current is below threshold")
 
 
 class CurrentSwitchConfig(habapp_rules.core.pydantic_base.ConfigBase):
