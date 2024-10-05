@@ -6,6 +6,7 @@
 - added rule ``habapp_rules.actors.heating.KnxHeating`` which can be used to set the target temperature of a KNX heating actor which only supports temperature offsets
 - added temperature difference item of ``habapp_rules.sensors.sun.SensorTemperatureDifference`` to ``filtered_signal_groups``
 - added rule ``habapp_rules.actors.power.CurrentSwitch`` which can be used to enable a switch item if current is above a threshold
+- added rule ``habapp_rules.system.watchdog.Watchdog`` which can be used to check if an item was updated in time
 
 ## Bugfix
 
