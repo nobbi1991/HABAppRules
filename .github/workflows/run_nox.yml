@@ -12,14 +12,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: setup nox
         uses: excitedleigh/setup-nox@main
       - name: run nox
         run: nox
       - name: upload coverage report
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: ///home/runner/work/HABAppRules/HABAppRules/tests/htmlcov

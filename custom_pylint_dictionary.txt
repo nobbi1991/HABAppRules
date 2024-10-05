@@ -28,5 +28,6 @@ Raffstore
 rollershutter
 Rollershutter
 repr
+Setpoint
 smtp
 unittest

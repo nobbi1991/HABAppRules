@@ -33,5 +33,5 @@ class IrrigationItems(habapp_rules.core.pydantic_base.ItemBase):
 
 class IrrigationConfig(habapp_rules.core.pydantic_base.ConfigBase):
 	"""Config for irrigation actors."""
-	items: IrrigationItems
+	items: IrrigationItems = pydantic.Field(..., description="items for irrigation rule")
 	parameter: None =  None

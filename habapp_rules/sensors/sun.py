@@ -137,7 +137,7 @@ class SensorTemperatureDifference(_SensorBase):
 		"""
 		self._config = config
 		name_temperature_diff = f"H_Temperature_diff_for_{config.items.output.name}"
-		habapp_rules.core.helper.create_additional_item(name_temperature_diff, "Number", name_temperature_diff.replace("_", " "))
+		habapp_rules.core.helper.create_additional_item(name_temperature_diff, "Number", name_temperature_diff.replace("_", " "), config.parameter.filtered_signal_groups)
 		self._item_temp_diff = HABApp.openhab.items.NumberItem.get_item(name_temperature_diff)
 
 		_SensorBase.__init__(self, config, self._item_temp_diff)
