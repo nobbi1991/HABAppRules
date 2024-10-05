@@ -48,9 +48,14 @@ class CurrentSwitch(HABApp.Rule):
 
 		current_above_threshold = current > self._config.parameter.threshold
 
-		if self._config.parameter.extended_time and not current_above_threshold and self._config.items.switch.is_on():
-			# start or reset the countdown
-			self._extended_countdown.reset()
+		if self._config.parameter.extended_time:
+			if current_above_threshold:
+				self._extended_countdown.stop()
+				habapp_rules.core.helper.send_if_different(self._config.items.switch, "ON")
+
+			elif not current_above_threshold and self._config.items.switch.is_on():
+				# start or reset the countdown
+				self._extended_countdown.reset()
 
 		else:
 			# extended time is not active

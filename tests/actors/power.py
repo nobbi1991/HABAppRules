@@ -94,15 +94,19 @@ class TestCurrentSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine):
 			# below threshold
 			countdown_mock.remaining.return_value = None
 			tests.helper.oh_item.item_state_change_event("Unittest_Current", 0.1)
-			tests.helper.oh_item.assert_value("Unittest_Switch_extended", "OFF")
+			tests.helper.oh_item.assert_value("Unittest_Switch_extended", None)
+			countdown_mock.stop.assert_not_called()
 			countdown_mock.reset.assert_not_called()
 
 			# above threshold
 			tests.helper.oh_item.item_state_change_event("Unittest_Current", 0.3)
 			tests.helper.oh_item.assert_value("Unittest_Switch_extended", "ON")
+			countdown_mock.stop.assert_called_once()
 			countdown_mock.reset.assert_not_called()
 
 			# below threshold
+			countdown_mock.stop.reset_mock()
 			tests.helper.oh_item.item_state_change_event("Unittest_Current", 0.1)
 			tests.helper.oh_item.assert_value("Unittest_Switch_extended", "ON")
+			countdown_mock.stop.assert_not_called()
 			countdown_mock.reset.assert_called_once()
