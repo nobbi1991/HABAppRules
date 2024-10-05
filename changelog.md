@@ -7,6 +7,10 @@
 - added temperature difference item of ``habapp_rules.sensors.sun.SensorTemperatureDifference`` to ``filtered_signal_groups``
 - added rule ``habapp_rules.actors.power.CurrentSwitch`` which can be used to enable a switch item if current is above a threshold
 
+## Bugfix
+
+- fixed bug in ``habapp_rules.actors.light.LightSwitchExtended`` and ``habapp_rules.actors.light.LightDimmerExtended`` which did not re-trigger the timer if a door was opened.
+
 # Version 6.1.0 - 19.08.2024
 
 ## Features
