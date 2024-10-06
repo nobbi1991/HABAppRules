@@ -190,20 +190,20 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, metaclas
 		"""Set timeouts depending on the current day/night/sleep state."""
 		if self._get_sleeping_activ():
 			self._timeout_on = self._config.parameter.on.sleeping.timeout
-			self._timeout_pre_off = getattr(self._config.parameter.pre_off.sleeping if self._config.parameter.pre_off else None, "timeout", None)
-			self._timeout_leaving = getattr(self._config.parameter.leaving.sleeping if self._config.parameter.leaving else None, "timeout", None)
-			self._timeout_pre_sleep = None
+			self._timeout_pre_off = getattr(self._config.parameter.pre_off.sleeping if self._config.parameter.pre_off else 0, "timeout", 0)
+			self._timeout_leaving = getattr(self._config.parameter.leaving.sleeping if self._config.parameter.leaving else 0, "timeout", 0)
+			self._timeout_pre_sleep = 0
 
 		elif self._config.items.day.is_on():
 			self._timeout_on = self._config.parameter.on.day.timeout
-			self._timeout_pre_off = getattr(self._config.parameter.pre_off.day if self._config.parameter.pre_off else None, "timeout", None)
-			self._timeout_leaving = getattr(self._config.parameter.leaving.day if self._config.parameter.leaving else None, "timeout", None)
-			self._timeout_pre_sleep = getattr(self._config.parameter.pre_sleep.day if self._config.parameter.pre_sleep else None, "timeout", None)
+			self._timeout_pre_off = getattr(self._config.parameter.pre_off.day if self._config.parameter.pre_off else 0, "timeout", 0)
+			self._timeout_leaving = getattr(self._config.parameter.leaving.day if self._config.parameter.leaving else 0, "timeout", 0)
+			self._timeout_pre_sleep = getattr(self._config.parameter.pre_sleep.day if self._config.parameter.pre_sleep else 0, "timeout", 0)
 		else:
 			self._timeout_on = self._config.parameter.on.night.timeout
-			self._timeout_pre_off = getattr(self._config.parameter.pre_off.night if self._config.parameter.pre_off else None, "timeout", None)
-			self._timeout_leaving = getattr(self._config.parameter.leaving.night if self._config.parameter.leaving else None, "timeout", None)
-			self._timeout_pre_sleep = getattr(self._config.parameter.pre_sleep.night if self._config.parameter.pre_sleep else None, "timeout", None)
+			self._timeout_pre_off = getattr(self._config.parameter.pre_off.night if self._config.parameter.pre_off else 0, "timeout", 0)
+			self._timeout_leaving = getattr(self._config.parameter.leaving.night if self._config.parameter.leaving else 0, "timeout", 0)
+			self._timeout_pre_sleep = getattr(self._config.parameter.pre_sleep.night if self._config.parameter.pre_sleep else 0, "timeout", 0)
 
 		self.state_machine.states["auto"].states["on"].timeout = self._timeout_on
 		self.state_machine.states["auto"].states["preoff"].timeout = self._timeout_pre_off
@@ -612,15 +612,15 @@ class _LightExtendedMixin:
 
 		# set timeouts of additional states
 		if self._get_sleeping_activ():
-			self._timeout_motion = getattr(self._config.parameter.motion.sleeping if self._config.parameter.motion else None, "timeout", None)
-			self._timeout_door = getattr(self._config.parameter.door.sleeping if self._config.parameter.door else None, "timeout", None)
+			self._timeout_motion = getattr(self._config.parameter.motion.sleeping if self._config.parameter.motion else 0, "timeout", 0)
+			self._timeout_door = getattr(self._config.parameter.door.sleeping if self._config.parameter.door else 0, "timeout", 0)
 
 		elif self._config.items.day.is_on():
-			self._timeout_motion = getattr(self._config.parameter.motion.day if self._config.parameter.motion else None, "timeout", None)
-			self._timeout_door = getattr(self._config.parameter.door.day if self._config.parameter.door else None, "timeout", None)
+			self._timeout_motion = getattr(self._config.parameter.motion.day if self._config.parameter.motion else 0, "timeout", 0)
+			self._timeout_door = getattr(self._config.parameter.door.day if self._config.parameter.door else 0, "timeout", 0)
 		else:
-			self._timeout_motion = getattr(self._config.parameter.motion.night if self._config.parameter.motion else None, "timeout", None)
-			self._timeout_door = getattr(self._config.parameter.door.night if self._config.parameter.door else None, "timeout", None)
+			self._timeout_motion = getattr(self._config.parameter.motion.night if self._config.parameter.motion else 0, "timeout", 0)
+			self._timeout_door = getattr(self._config.parameter.door.night if self._config.parameter.door else 0, "timeout", 0)
 
 		self.state_machine.states["auto"].states["motion"].timeout = self._timeout_motion
 		self.state_machine.states["auto"].states["door"].timeout = self._timeout_door
