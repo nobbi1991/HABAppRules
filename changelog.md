@@ -1,4 +1,4 @@
-# Version 6.2.0 - dd.10.2024
+# Version 6.2.0 - 06.10.2024
 
 ## Features
 
@@ -11,6 +11,7 @@
 ## Bugfix
 
 - fixed bug in ``habapp_rules.actors.light.LightSwitchExtended`` and ``habapp_rules.actors.light.LightDimmerExtended`` which did not re-trigger the timer if a door was opened.
+- fixed bug in all rules of ``habapp_rules.actors.light`` where a timer with time=None was used if a light function is not active. Now, the time is changed to 0 sec if a function is not configured.
 
 # Version 6.1.0 - 19.08.2024
 
