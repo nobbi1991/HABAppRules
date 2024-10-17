@@ -1,11 +1,13 @@
-"""Test config for HCL light rules."""
+"""Test config models for HCL light rules."""
 import collections
-import unittest.mock
 
 import habapp_rules.actors.config.light_hcl
+import habapp_rules.core.exceptions
+import tests.helper.oh_item
+import tests.helper.test_case_base
 
 
-class TestLightHclConfig(unittest.TestCase):
+class TestLightHclConfig(tests.helper.test_case_base.TestCaseBase):
 	"""Test HCL config."""
 
 	def test_sorted_color_config(self):
@@ -20,5 +22,5 @@ class TestLightHclConfig(unittest.TestCase):
 
 		for test_case in test_cases:
 			with self.subTest(test_case=test_case):
-				config = habapp_rules.actors.config.light_hcl.LightHclConfig(test_case.input)
-				self.assertEqual(test_case.output, config.color_config)
+				parameter = habapp_rules.actors.config.light_hcl.HclElevationParameter(color_map=test_case.input)
+				self.assertEqual(test_case.output, parameter.color_map)

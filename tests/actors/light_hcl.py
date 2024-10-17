@@ -18,7 +18,7 @@ import tests.helper.test_case_base
 
 
 # pylint: disable=protected-access, no-member
-class TestHclElevation(tests.helper.test_case_base.TestCaseBase):
+class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
 	"""Tests for elevation-based HCL."""
 
 	def setUp(self):
@@ -37,41 +37,50 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch_on_max", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_State_max", None)
 
-		self._config_min = habapp_rules.actors.config.light_hcl.LightHclConfig(
-			[(-10, 3000),
-			 (-2, 3800),
-			 (0, 4200.0),
-			 (10, 5000)]
+		self._config_min = habapp_rules.actors.config.light_hcl.HclElevationConfig(
+			items=habapp_rules.actors.config.light_hcl.HclElevationItems(
+				color="Unittest_Color_min",
+				manual="Unittest_Manual_min",
+				elevation="Unittest_Elevation",
+				state="H_Unittest_Color_min_state"
+			),
+			parameter=habapp_rules.actors.config.light_hcl.HclElevationParameter(
+				color_map=[
+					(-10, 3000),
+					(-2, 3800),
+					(0, 4200.0),
+					(10, 5000)
+				]
+			)
+
 		)
 
-		self._config_max = habapp_rules.actors.config.light_hcl.LightHclConfig(
-			[(-10, 3000),
-			 (-2, 3800),
-			 (0, 4200.0),
-			 (10, 5000)],
-			30 * 60,
-			3000,
-			500,
-			7000,
-			True  # no effect but also no issue
+		self._config_max = habapp_rules.actors.config.light_hcl.HclElevationConfig(
+			items=habapp_rules.actors.config.light_hcl.HclElevationItems(
+				color="Unittest_Color_max",
+				manual="Unittest_Manual_max",
+				elevation="Unittest_Elevation",
+				state="H_State_max",
+				sleep_state="Unittest_Sleep_state",
+				focus="Unittest_Focus_max",
+				switch_on="Unittest_Switch_on_max",
+			),
+			parameter=habapp_rules.actors.config.light_hcl.HclElevationParameter(
+				color_map=[
+					(-10, 3000),
+					(-2, 3800),
+					(0, 4200.0),
+					(10, 5000)],
+
+				hand_timeout=30 * 60,
+				sleep_color=3000,
+				post_sleep_timeout=500,
+				focus_color=7000
+			)
 		)
 
-		self._hcl_elevation_min = habapp_rules.actors.light_hcl.HclElevation(
-			"Unittest_Elevation",
-			"Unittest_Color_min",
-			"Unittest_Manual_min",
-			self._config_min
-		)
-		self._hcl_elevation_max = habapp_rules.actors.light_hcl.HclElevation(
-			"Unittest_Elevation",
-			"Unittest_Color_max",
-			"Unittest_Manual_max",
-			self._config_max,
-			"Unittest_Sleep_state",
-			"Unittest_Focus_max",
-			"Unittest_Switch_on_max",
-			"H_State_max"
-		)
+		self._hcl_elevation_min = habapp_rules.actors.light_hcl.HclElevation(self._config_min)
+		self._hcl_elevation_max = habapp_rules.actors.light_hcl.HclElevation(self._config_max)
 
 	@unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
 	def test_create_graph(self):  # pragma: no cover
@@ -88,41 +97,6 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBase):
 			show_conditions=True)
 
 		graph.get_graph().draw(picture_dir / "HCL_Base.png", format="png", prog="dot")
-
-	def test_validate_config(self):
-		"""test _validate_config."""
-		TestCase = collections.namedtuple("TestCase", "sleep_item, sleep_config, focus_item, focus_config, expected_exception")
-
-		test_cases = [
-			# focus
-			TestCase(False, False, False, False, False),
-			TestCase(False, False, False, True, True),
-			TestCase(False, False, True, False, True),
-			TestCase(False, False, True, True, False),
-
-			# sleep
-			TestCase(False, False, False, False, False),
-			TestCase(False, True, False, False, True),
-			TestCase(True, False, False, False, True),
-			TestCase(True, True, False, False, False),
-		]
-
-		sleep_item = HABApp.openhab.items.StringItem.get_item("Unittest_Sleep_state")
-		focus_item = HABApp.openhab.items.SwitchItem.get_item("Unittest_Focus_max")
-
-		for test_case in test_cases:
-			with self.subTest(test_case=test_case):
-				self._hcl_elevation_max._item_sleep = sleep_item if test_case.sleep_item else None
-				self._hcl_elevation_max._config.sleep_color = 3000 if test_case.sleep_config else None
-
-				self._hcl_elevation_max._item_focus = focus_item if test_case.focus_item else None
-				self._hcl_elevation_max._config.focus_color = 7000 if test_case.focus_config else None
-
-				if test_case.expected_exception:
-					with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
-						self._hcl_elevation_max._validate_config()
-				else:
-					self._hcl_elevation_max._validate_config()
 
 	def test_set_timeouts(self):
 		"""Test _set_timeouts."""
@@ -185,12 +159,14 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBase):
 			TestCase(0, 4200),
 			TestCase(5, 4600),
 			TestCase(10, 5000),
-			TestCase(12, 5000)
+			TestCase(12, 5000),
+			TestCase(0.5, 4240),
+			TestCase(0.2556, 4220)
 		]
 
 		for test_case in test_cases:
 			with self.subTest(test_case=test_case):
-				self._hcl_elevation_min._item_elevation.value = test_case.input
+				self._hcl_elevation_min._config.items.elevation.value = test_case.input
 				self.assertEqual(test_case.output, self._hcl_elevation_min._get_hcl_color())
 
 	def test_end_to_end(self):
@@ -275,32 +251,58 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBase):
 	def test_switch_on(self):
 		"""Test switch on."""
 		self._hcl_elevation_max.state = "Manual"
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Color_dimmer", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual_dimmer", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Color_dimmer_state", None)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Switch_on_dimmer", None)
+
+		hcl_color_dimmer = habapp_rules.actors.light_hcl.HclElevation(habapp_rules.actors.config.light_hcl.HclElevationConfig(
+			items=habapp_rules.actors.config.light_hcl.HclElevationItems(
+				color="Unittest_Color_dimmer",
+				manual="Unittest_Manual_dimmer",
+				elevation="Unittest_Elevation",
+				state="Unittest_Color_dimmer_state",
+				switch_on="Unittest_Switch_on_dimmer",
+			)
+		))
 
 		# event value == OFF
 		with unittest.mock.patch("HABApp.rule.scheduler.habappschedulerview.HABAppSchedulerView.at") as run_at_mock:
 			tests.helper.oh_item.item_state_change_event("Unittest_Switch_on_max", "OFF")
+			tests.helper.oh_item.item_state_change_event("Unittest_Switch_on_dimmer", 0)
 			run_at_mock.assert_not_called()
 
 		# state is not Auto_HCL
 		with unittest.mock.patch("HABApp.rule.scheduler.habappschedulerview.HABAppSchedulerView.at") as run_at_mock:
 			tests.helper.oh_item.item_state_change_event("Unittest_Switch_on_max", "ON")
+			tests.helper.oh_item.item_state_change_event("Unittest_Switch_on_dimmer", 42)
 			run_at_mock.assert_not_called()
 
 		# target_color is None
 		self._hcl_elevation_max.state = "Auto_HCL"
-		with unittest.mock.patch("HABApp.rule.scheduler.habappschedulerview.HABAppSchedulerView.at") as run_at_mock, unittest.mock.patch.object(self._hcl_elevation_max, "_get_hcl_color", return_value=None):
+		with (unittest.mock.patch("HABApp.rule.scheduler.habappschedulerview.HABAppSchedulerView.at") as run_at_mock,
+		      unittest.mock.patch.object(self._hcl_elevation_max, "_get_hcl_color", return_value=None),
+		      unittest.mock.patch.object(hcl_color_dimmer, "_get_hcl_color", return_value=None)):
 			tests.helper.oh_item.item_state_change_event("Unittest_Switch_on_max", "ON")
+			tests.helper.oh_item.item_state_change_event("Unittest_Switch_on_dimmer", 43)
 			run_at_mock.assert_not_called()
 
 		# target_color is a valid value
 		self._hcl_elevation_max.state = "Auto_HCL"
-		with unittest.mock.patch("HABApp.rule.scheduler.habappschedulerview.HABAppSchedulerView.at") as run_at_mock, unittest.mock.patch.object(self._hcl_elevation_max, "_get_hcl_color", return_value=42):
+		with (unittest.mock.patch("HABApp.rule.scheduler.habappschedulerview.HABAppSchedulerView.at") as run_at_mock,
+		      unittest.mock.patch.object(self._hcl_elevation_max, "_get_hcl_color", return_value=42),
+		      unittest.mock.patch.object(hcl_color_dimmer, "_get_hcl_color", return_value=44)):
 			tests.helper.oh_item.item_state_change_event("Unittest_Switch_on_max", "ON")
-			run_at_mock.assert_called_once_with(1, self._hcl_elevation_max._state_observer.send_command, 42)
+			tests.helper.oh_item.item_state_change_event("Unittest_Switch_on_dimmer", 80)
+
+			run_at_mock.assert_has_calls([
+				unittest.mock.call(1, self._hcl_elevation_max._state_observer.send_command, 42),
+				unittest.mock.call(1, hcl_color_dimmer._state_observer.send_command, 44),
+			])
 
 
 # pylint: disable=protected-access
-class TestHclTime(tests.helper.test_case_base.TestCaseBase):
+class TestHclTime(tests.helper.test_case_base.TestCaseBaseStateMachine):
 	"""Tests for time-based HCL."""
 
 	def setUp(self):
@@ -309,13 +311,24 @@ class TestHclTime(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual_min", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Unittest_Color_min_state", None)
 
-		self._config = habapp_rules.actors.config.light_hcl.LightHclConfig(
-			[(2, 3000),
-			 (8, 4000),
-			 (12, 9000),
-			 (17, 9000),
-			 (20, 4000)])
-		self._rule = habapp_rules.actors.light_hcl.HclTime("Unittest_Color_min", "Unittest_Manual_min", self._config)
+		self._config = habapp_rules.actors.config.light_hcl.HclTimeConfig(
+			items=habapp_rules.actors.config.light_hcl.HclTimeItems(
+				color=HABApp.openhab.items.NumberItem("Unittest_Color_min"),
+				manual=HABApp.openhab.items.SwitchItem("Unittest_Manual_min"),
+				state=HABApp.openhab.items.StringItem("H_Unittest_Color_min_state"),
+			),
+			parameter=habapp_rules.actors.config.light_hcl.HclTimeParameter(
+				color_map=[
+					(2, 3000),
+					(8, 4000),
+					(12, 9000),
+					(17, 9000),
+					(20, 4000)
+				],
+			)
+		)
+
+		self._rule = habapp_rules.actors.light_hcl.HclTime(self._config)
 
 	def test_one_hour_later(self):
 		"""Test _one_hour_later."""
@@ -356,14 +369,14 @@ class TestHclTime(tests.helper.test_case_base.TestCaseBase):
 					# test holiday
 					is_holiday_mock.side_effect = [test_case.tomorrow_weekend_holiday, test_case.today_weekend_holiday]
 					is_weekend_mock.side_effect = [False, False]
-					self._rule._config.shift_weekend_holiday = test_case.configured
+					self._rule._config.parameter.shift_weekend_holiday = test_case.configured
 
 					self.assertEqual(test_case.expected_result, self._rule._one_hour_later(test_case.time))
 
 					# test weekend
 					is_holiday_mock.side_effect = [False, False]
 					is_weekend_mock.side_effect = [test_case.tomorrow_weekend_holiday, test_case.today_weekend_holiday]
-					self._rule._config.shift_weekend_holiday = test_case.configured
+					self._rule._config.parameter.shift_weekend_holiday = test_case.configured
 
 					self.assertEqual(test_case.expected_result, self._rule._one_hour_later(test_case.time))
 
@@ -384,6 +397,7 @@ class TestHclTime(tests.helper.test_case_base.TestCaseBase):
 			TestCase(datetime.datetime(2023, 1, 1, 12, 10), 9000),
 			TestCase(datetime.datetime(2023, 1, 1, 20, 0), 4000),
 			TestCase(datetime.datetime(2023, 1, 1, 22, 0), 3667),
+			TestCase(datetime.datetime(2023, 1, 1, 22, 12), 3633),
 		]
 
 		with unittest.mock.patch("datetime.datetime") as datetime_mock:

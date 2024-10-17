@@ -1,3 +1,56 @@
+# Version 6.2.0 - 06.10.2024
+
+## Features
+
+- added rule ``habapp_rules.system.notification.SendStateChanged`` which can be used to send a mail or telegram message if the state of an item changes
+- added rule ``habapp_rules.actors.heating.KnxHeating`` which can be used to set the target temperature of a KNX heating actor which only supports temperature offsets
+- added temperature difference item of ``habapp_rules.sensors.sun.SensorTemperatureDifference`` to ``filtered_signal_groups``
+- added rule ``habapp_rules.actors.power.CurrentSwitch`` which can be used to enable a switch item if current is above a threshold
+- added rule ``habapp_rules.system.watchdog.Watchdog`` which can be used to check if an item was updated in time
+
+## Bugfix
+
+- fixed bug in ``habapp_rules.actors.light.LightSwitchExtended`` and ``habapp_rules.actors.light.LightDimmerExtended`` which did not re-trigger the timer if a door was opened.
+- fixed bug in all rules of ``habapp_rules.actors.light`` where a timer with time=None was used if a light function is not active. Now, the time is changed to 0 sec if a function is not configured.
+
+# Version 6.1.0 - 19.08.2024
+
+## Features
+
+- added support for dimmer items which can be configured for ``switch_on`` for all rules in ``habapp_rules.actors.light_hcl``
+- bumped versions:
+    - HABApp to 24.08.1
+    - multi-notifier to 0.5.0
+    - holidays to 0.53
+
+# Version 6.0.1 - 22.07.2024
+
+## Bugfix
+
+- round light color of all rules in ``habapp_rules.actors.light_hcl`` to integer values to avoid strange formating in OpenHAB
+- added config parameter ``leaving_only_if_on`` to ``habapp_rules.actors.config.light.LightParameter`` to disable unexpected leaving light, if light was not on and leaving started
+- fixed bug in all shading rules of ``habapp_rules.actors.shading`` which did not switch to sleeping state if previous state was Auto_DoorOpen
+
+# Version 6.0.0 - 27.06.2024
+
+## Breaking changes
+
+- **IMPORTANT**: The config and parameter of all rules changed dramatically! Now, the config must be given as pydantic config object. This enables better valdiation and future releases with less interface changes.
+
+## Features
+
+- added additional config to ``habapp_rules.actors.shading.Shutter`` and ``habapp_rules.actors.shading.Raffstore`` which allows to set different positions for day and night if sleeping is active
+- added possibility to pass shading objects to ``habapp_rules.actors.shading.ResetAllManualHand`` which should be reset by this rule
+- added ``habapp_rules.sensors.humidity.HumiditySwitch`` to set a switch item if high humidity is detected. Currently only a absolut threshold is accepted
+- send update of summer / winter of ``habapp_rules.system.summer_winter.SummerWinter`` after every check. If this rule is used to send the summer / winter state to the KNX bus, this ensures, that the state is sent at least once a day
+- added hysteresis switch to ``habapp_rules.sensors.sun.SensorBrightness`` and ``habapp_rules.sensors.sun.SunPositionFilter``. Breaking change: Parameter order changed!
+- bumped holidays to 0.51
+- bumped matplotlib to 3.9.0
+
+## Bugfix
+
+- fixed bug in ``habapp_rules.actors.shading.Shutter`` and ``habapp_rules.actors.shading.Raffstore`` which caused the ``Hand`` state if MDT actors are used
+
 # Version 5.7.0 - 09.04.2024
 
 ## Features

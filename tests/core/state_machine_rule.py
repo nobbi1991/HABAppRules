@@ -19,34 +19,13 @@ class TestStateMachineRule(tests.helper.test_case_base.TestCaseBase):
 	def setUp(self) -> None:
 		"""Setup unit-tests."""
 		tests.helper.test_case_base.TestCaseBase.setUp(self)
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_State", None)
+		self.state_item = HABApp.openhab.items.StringItem.get_item("Unittest_State")
+
 		self.item_exists_mock.return_value = False
 
 		with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_common_state_machine_rule_StateMachineRule_state", "")):
-			self._state_machine = habapp_rules.core.state_machine_rule.StateMachineRule()
-
-	def test__init(self):
-		"""tests init of StateMachineRule."""
-		with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("some_name", "")) as create_mock:
-			state_machine = habapp_rules.core.state_machine_rule.StateMachineRule()
-			self.assertEqual("habapp_rules_core_state_machine_rule_TestRule_StateMachineRule", state_machine._item_prefix)
-			create_mock.assert_called_once_with("H_habapp_rules_core_state_machine_rule_TestRule_StateMachineRule_state", "String", None)
-			self.assertEqual("some_name", state_machine._item_state.name)
-
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "state_name", "")
-		self.item_exists_mock.return_value = True
-		with unittest.mock.patch("habapp_rules.core.helper.create_additional_item") as create_mock:
-			state_machine = habapp_rules.core.state_machine_rule.StateMachineRule("state_name")
-			self.assertEqual("habapp_rules_core_state_machine_rule_TestRule_StateMachineRule", state_machine._item_prefix)
-			create_mock.assert_not_called()
-			self.assertEqual("state_name", state_machine._item_state.name)
-
-	def test__init_exceptions(self):
-		"""Test exceptions of __init__."""
-		with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_common_state_machine_rule_StateMachineRule_state", "")), \
-				unittest.mock.patch("pathlib.Path.relative_to", side_effect=ValueError("not relative")):
-			state_machine = habapp_rules.core.state_machine_rule.StateMachineRule()
-
-		self.assertEqual("state_machine_rule_TestRule_StateMachineRule", state_machine._item_prefix)
+			self._state_machine = habapp_rules.core.state_machine_rule.StateMachineRule(self.state_item)
 
 	def test_get_initial_state(self):
 		"""Test getting of initial state."""
@@ -84,7 +63,7 @@ class TestStateMachineRule(tests.helper.test_case_base.TestCaseBase):
 
 		with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_common_state_machine_rule_StateMachineRule_state", "")):
 			for initial_state in ["stopped", "running"]:
-				state_machine_rule = habapp_rules.core.state_machine_rule.StateMachineRule()
+				state_machine_rule = habapp_rules.core.state_machine_rule.StateMachineRule(self.state_item)
 
 				state_machine_rule.state_machine = habapp_rules.core.state_machine_rule.StateMachineWithTimeout(
 					model=state_machine_rule,

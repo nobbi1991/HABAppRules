@@ -7,6 +7,7 @@ import HABApp
 
 import habapp_rules.common.hysteresis
 import habapp_rules.core.logger
+import habapp_rules.system.config.summer_winter
 
 LOGGER = logging.getLogger(__name__)
 
@@ -18,29 +19,18 @@ class SummerWinterException(Exception):
 class SummerWinter(HABApp.Rule):
 	"""Rule check if it is summer or winter."""
 
-	def __init__(self, outside_temperature_name: str, summer_name: str, persistence_service: str = None, days: int = 5, temperature_threshold: float = 16, last_check_name: str = None) -> None:
+	def __init__(self, config: habapp_rules.system.config.summer_winter.SummerWinterConfig) -> None:
 		"""Init rule to update summer/winter item.
 
-		:param outside_temperature_name: Name of outside temperature item. OpenHAB-Type must be Number item
-		:param summer_name: Name of summer item. OpenHAB-Type must be Switch item
-		:param persistence_service: Name of persistence service
-		:param days: number of days in the past which will be used to check if it is summer
-		:param temperature_threshold: threshold weighted temperature for summer
-		:param last_check_name: Name of last check item. OpenHAB-Type must be DateTime item
+		:param config: Config for summer/winter detection
 		"""
+		self._config = config
 		HABApp.Rule.__init__(self)
-		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, summer_name)
+		self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, config.items.summer.name)
 
 		# set class variables
-		self._persistence_service = persistence_service
-		self._days = days
-		self._hysteresis_switch = habapp_rules.common.hysteresis.HysteresisSwitch(temperature_threshold, 0.5)
+		self._hysteresis_switch = habapp_rules.common.hysteresis.HysteresisSwitch(config.parameter.temperature_threshold, 0.5)
 		self.__now = datetime.datetime.now()
-
-		# get items
-		self._outside_temp_item = HABApp.openhab.items.NumberItem.get_item(outside_temperature_name)
-		self._item_summer = HABApp.openhab.items.SwitchItem.get_item(summer_name)
-		self._item_last_check = HABApp.openhab.items.DatetimeItem.get_item(last_check_name) if last_check_name else None
 
 		# run at init and every day at 23:00
 		self.run.soon(self._cb_update_summer)
@@ -65,7 +55,7 @@ class SummerWinter(HABApp.Rule):
 		for hour in [7, 14, 22]:
 			start_time = datetime.datetime(self.__now.year, self.__now.month, self.__now.day, hour, 0) - datetime.timedelta(days=day_offset + days_in_past)
 			end_time = start_time + datetime.timedelta(hours=1)
-			persistence_data = self._outside_temp_item.get_persistence_data(persistence=self._persistence_service, start_time=start_time, end_time=end_time)
+			persistence_data = self._config.items.outside_temperature.get_persistence_data(persistence=self._config.parameter.persistence_service, start_time=start_time, end_time=end_time)
 			if not persistence_data.data:
 				raise SummerWinterException(f"No data for {start_time}")
 			temperature_values.append(next(iter(persistence_data.data.values())))
@@ -79,7 +69,7 @@ class SummerWinter(HABApp.Rule):
 		"""
 		self.__now = datetime.datetime.now()
 		values = []
-		for day in range(self._days):
+		for day in range(self._config.parameter.days):
 			try:
 				values.append(self.__get_weighted_mean(day))
 			except SummerWinterException:
@@ -104,10 +94,10 @@ class SummerWinter(HABApp.Rule):
 		target_value = "ON" if is_summer else "OFF"
 
 		# send state
-		if self._item_summer.value != target_value:
-			self._item_summer.oh_send_command(target_value)
+		if self._config.items.summer.value != target_value:
 			self._instance_logger.info(f"Summer changed to {target_value}")
+		self._config.items.summer.oh_send_command(target_value)
 
 		# update last update item at every call
-		if self._item_last_check:
-			self._item_last_check.oh_send_command(datetime.datetime.now())
+		if self._config.items.last_check is not None:
+			self._config.items.last_check.oh_send_command(datetime.datetime.now())

@@ -3,7 +3,6 @@ import collections
 import os
 import pathlib
 import sys
-import threading
 import unittest
 import unittest.mock
 
@@ -11,6 +10,7 @@ import HABApp
 
 import habapp_rules.core.exceptions
 import habapp_rules.core.state_machine_rule
+import habapp_rules.sensors.config.motion
 import habapp_rules.sensors.motion
 import habapp_rules.system
 import tests.helper.graph_machines
@@ -19,20 +19,12 @@ import tests.helper.test_case_base
 
 
 # pylint: disable=no-member, protected-access, too-many-public-methods
-class TestMotion(tests.helper.test_case_base.TestCaseBase):
+class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
 	"""Tests cases for testing motion sensors rule."""
 
 	def setUp(self) -> None:
 		"""Setup test case."""
-		self.transitions_timer_mock_patcher = unittest.mock.patch("transitions.extensions.states.Timer", spec=threading.Timer)
-		self.addCleanup(self.transitions_timer_mock_patcher.stop)
-		self.transitions_timer_mock = self.transitions_timer_mock_patcher.start()
-
-		self.threading_timer_mock_patcher = unittest.mock.patch("threading.Timer", spec=threading.Timer)
-		self.addCleanup(self.threading_timer_mock_patcher.stop)
-		self.threading_timer_mock = self.threading_timer_mock_patcher.start()
-
-		tests.helper.test_case_base.TestCaseBase.setUp(self)
+		tests.helper.test_case_base.TestCaseBaseStateMachine.setUp(self)
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Motion_min_raw", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Motion_min_filtered", None)
@@ -47,9 +39,31 @@ class TestMotion(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Motion_Unittest_Motion_min_raw_state", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "CustomState", None)
 
-		self.motion_min = habapp_rules.sensors.motion.Motion("Unittest_Motion_min_raw", "Unittest_Motion_min_filtered")
-		self.motion_max = habapp_rules.sensors.motion.Motion("Unittest_Motion_max_raw", "Unittest_Motion_max_filtered", 5, "Unittest_Brightness", "Unittest_Brightness_Threshold", "Unittest_Motion_max_lock", "Unittest_Sleep_state",
-		                                                     name_state="CustomState")
+		config_min = habapp_rules.sensors.config.motion.MotionConfig(
+			items=habapp_rules.sensors.config.motion.MotionItems(
+				motion_raw="Unittest_Motion_min_raw",
+				motion_filtered="Unittest_Motion_min_filtered",
+				state="H_Motion_Unittest_Motion_min_raw_state"
+			)
+		)
+
+		config_max = habapp_rules.sensors.config.motion.MotionConfig(
+			items=habapp_rules.sensors.config.motion.MotionItems(
+				motion_raw="Unittest_Motion_max_raw",
+				motion_filtered="Unittest_Motion_max_filtered",
+				brightness="Unittest_Brightness",
+				brightness_threshold="Unittest_Brightness_Threshold",
+				sleep_state="Unittest_Sleep_state",
+				lock="Unittest_Motion_max_lock",
+				state="CustomState"
+			),
+			parameter=habapp_rules.sensors.config.motion.MotionParameter(
+				extended_motion_time=5
+			)
+		)
+
+		self.motion_min = habapp_rules.sensors.motion.Motion(config_min)
+		self.motion_max = habapp_rules.sensors.motion.Motion(config_max)
 
 	def test__init__(self):
 		"""Test __init__."""
@@ -102,16 +116,6 @@ class TestMotion(tests.helper.test_case_base.TestCaseBase):
 			show_conditions=True)
 
 		motion_graph.get_graph().draw(picture_dir / "Motion.png", format="png", prog="dot")
-
-	def test_init_exceptions(self):
-		"""Test exceptions of __init__."""
-		# brightness missing
-		with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
-			habapp_rules.sensors.motion.Motion("Unittest_Motion_max_raw", "Unittest_Motion_max_filtered", brightness_threshold="Unittest_Brightness_Threshold", name_lock="Unittest_Motion_max_lock", name_sleep_state="Unittest_Sleep_state")
-
-		# brightness threshold missing
-		with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
-			habapp_rules.sensors.motion.Motion("Unittest_Motion_max_raw", "Unittest_Motion_max_filtered", name_brightness="Unittest_Brightness", name_lock="Unittest_Motion_max_lock", name_sleep_state="Unittest_Sleep_state")
 
 	def test_initial_state(self):
 		"""Test _get_initial_state."""
@@ -167,12 +171,12 @@ class TestMotion(tests.helper.test_case_base.TestCaseBase):
 		self.assertEqual(float("inf"), self.motion_max._get_brightness_threshold())
 
 		# value given as parameter
-		self.motion_max._brightness_threshold_value = 800
+		self.motion_max._config.parameter.brightness_threshold = 800
 		self.assertEqual(800, self.motion_max._get_brightness_threshold())
 
 	def test_get_brightness_threshold_exceptions(self):
 		"""test exceptions of _get_brightness_threshold"""
-		self.motion_max._item_brightness_threshold = None
+		self.motion_max._config.items.brightness_threshold = None
 		with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesException):
 			self.motion_max._get_brightness_threshold()
 
@@ -214,24 +218,24 @@ class TestMotion(tests.helper.test_case_base.TestCaseBase):
 
 	def test_motion_extended_configured(self):
 		"""Test _motion_extended_configured"""
-		self.motion_max._timeout_extended_motion = -1
+		self.motion_max._config.parameter.extended_motion_time = -1
 		self.assertFalse(self.motion_max._motion_extended_configured())
 
-		self.motion_max._timeout_extended_motion = 0
+		self.motion_max._config.parameter.extended_motion_time = 0
 		self.assertFalse(self.motion_max._motion_extended_configured())
 
-		self.motion_max._timeout_extended_motion = 1
+		self.motion_max._config.parameter.extended_motion_time = 1
 		self.assertTrue(self.motion_max._motion_extended_configured())
 
 	def test_post_sleep_lock_configured(self):
 		"""Test _post_sleep_lock_configured"""
-		self.motion_max._timeout_post_sleep_lock = -1
+		self.motion_max._config.parameter.post_sleep_lock_time = -1
 		self.assertFalse(self.motion_max._post_sleep_lock_configured())
 
-		self.motion_max._timeout_post_sleep_lock = 0
+		self.motion_max._config.parameter.post_sleep_lock_time = 0
 		self.assertFalse(self.motion_max._post_sleep_lock_configured())
 
-		self.motion_max._timeout_post_sleep_lock = 1
+		self.motion_max._config.parameter.post_sleep_lock_time = 1
 		self.assertTrue(self.motion_max._post_sleep_lock_configured())
 
 	def test_sleep_active(self):
