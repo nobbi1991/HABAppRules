@@ -106,7 +106,7 @@ class MonthlyReport(HABApp.Rule):
 		if config.parameter.debug:
 			self._instance_logger.warning("Debug mode is active!")
 			self.run.soon(self._cb_send_energy)
-		self._instance_logger.info(f"Successfully initiated monthly consumption rule for {config.items.energy_sum}. Triggered first execution to {next_trigger_time.isoformat()}")
+		self._instance_logger.info(f"Successfully initiated monthly consumption rule for {config.items.energy_sum.name}. Triggered first execution to {next_trigger_time.isoformat()}")
 
 	def _get_historic_value(self, item: HABApp.openhab.items.NumberItem, start_time: datetime.datetime) -> float:
 		"""Get historic value of given Number item

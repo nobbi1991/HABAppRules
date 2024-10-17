@@ -1,3 +1,9 @@
+# Version 6.2.1 - dd.10.2024
+
+## Bugfix
+
+- fixed wrong item name in ``habapp_rules.energy.monthly_report.MonthlyReport``
+
 # Version 6.2.0 - 06.10.2024
 
 ## Features
