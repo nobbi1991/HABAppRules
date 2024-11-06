@@ -5,7 +5,7 @@ import unittest.mock
 import HABApp.rule.rule
 import eascheduler.jobs.job_countdown
 
-import habapp_rules.actors.power
+import habapp_rules.sensors.current_switch
 import habapp_rules.core.exceptions
 import habapp_rules.core.state_machine_rule
 import habapp_rules.system
@@ -13,7 +13,7 @@ import tests.helper.graph_machines
 import tests.helper.oh_item
 import tests.helper.test_case_base
 import tests.helper.timer
-from habapp_rules.actors.config.power import CurrentSwitchConfig, CurrentSwitchItems, CurrentSwitchParameter
+from habapp_rules.sensors.config.current_switch import CurrentSwitchConfig, CurrentSwitchItems, CurrentSwitchParameter
 
 
 # pylint: disable=protected-access,no-member,too-many-public-methods
@@ -29,13 +29,13 @@ class TestCurrentSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch_2", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch_extended", None)
 
-		self._rule_1 = habapp_rules.actors.power.CurrentSwitch(CurrentSwitchConfig(
+		self._rule_1 = habapp_rules.sensors.current_switch.CurrentSwitch(CurrentSwitchConfig(
 			items=CurrentSwitchItems(
 				current="Unittest_Current",
 				switch="Unittest_Switch_1",
 			)))
 
-		self._rule_2 = habapp_rules.actors.power.CurrentSwitch(CurrentSwitchConfig(
+		self._rule_2 = habapp_rules.sensors.current_switch.CurrentSwitch(CurrentSwitchConfig(
 			items=CurrentSwitchItems(
 				current="Unittest_Current",
 				switch="Unittest_Switch_2",
@@ -43,7 +43,7 @@ class TestCurrentSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine):
 			parameter=CurrentSwitchParameter(threshold=1),
 		))
 
-		self._rule_extended = habapp_rules.actors.power.CurrentSwitch(CurrentSwitchConfig(
+		self._rule_extended = habapp_rules.sensors.current_switch.CurrentSwitch(CurrentSwitchConfig(
 			items=CurrentSwitchItems(
 				current="Unittest_Current",
 				switch="Unittest_Switch_extended",

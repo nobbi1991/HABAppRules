@@ -1,7 +1,12 @@
-# Version 6.2.1 - dd.10.2024
+# Version 6.3.0 - dd.10.2024
+
+## Features
+
+- Added rules in ``habapp_rules.actors.energy_save_switch`` to switch of sockets during sleeping time or at absence.
 
 ## Bugfix
 
+- moved rules of ``habapp_rules.actors.power`` to ``habapp_rules.sensors.current_switch``. Old location is still supported, but deprecated
 - fixed wrong item name in ``habapp_rules.energy.monthly_report.MonthlyReport``
 
 # Version 6.2.0 - 06.10.2024
