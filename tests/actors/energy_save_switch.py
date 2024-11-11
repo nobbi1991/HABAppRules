@@ -9,7 +9,7 @@ import HABApp.rule.rule
 
 import habapp_rules.actors.config.energy_save_switch
 import habapp_rules.actors.config.shading
-import habapp_rules.actors.energy_save_switch_state
+import habapp_rules.actors.energy_save_switch
 import habapp_rules.actors.state_observer
 import habapp_rules.core.exceptions
 import habapp_rules.core.logger
@@ -82,14 +82,14 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
 			)
 		)
 
-		self._rule_min = habapp_rules.actors.energy_save_switch_state.EnergySaveSwitch(self._config_min)
-		self._rule_max_without_current = habapp_rules.actors.energy_save_switch_state.EnergySaveSwitch(self._config_max_without_current)
-		self._rule_with_current = habapp_rules.actors.energy_save_switch_state.EnergySaveSwitch(self._config_current)
+		self._rule_min = habapp_rules.actors.energy_save_switch.EnergySaveSwitch(self._config_min)
+		self._rule_max_without_current = habapp_rules.actors.energy_save_switch.EnergySaveSwitch(self._config_max_without_current)
+		self._rule_with_current = habapp_rules.actors.energy_save_switch.EnergySaveSwitch(self._config_current)
 
 	@unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
 	def test_create_graph(self):  # pragma: no cover
 		"""Create state machine graph for documentation."""
-		picture_dir = pathlib.Path(__file__).parent / "Energy_Save_Switch_States"
+		picture_dir = pathlib.Path(__file__).parent / "energy_save_switchs"
 		if not picture_dir.is_dir():
 			os.makedirs(picture_dir)
 
