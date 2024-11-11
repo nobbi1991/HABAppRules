@@ -103,7 +103,7 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
 		graph.get_graph().draw(picture_dir / "Ventilation.png", format="png", prog="dot")
 
-		for state_name in [state for state in self._get_state_names(self.ventilation_min.states) if state not in ["auto_init"]]:
+		for state_name in [state for state in self._get_state_names(self.ventilation_min.states) if state not in ["Auto_Init"]]:
 			graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
 				model=tests.helper.graph_machines.FakeModel(),
 				states=self.ventilation_min.states,
@@ -494,7 +494,7 @@ class TestVentilationHeliosTwoStage(tests.helper.test_case_base.TestCaseBaseStat
 
 		graph.get_graph().draw(picture_dir / "Ventilation.png", format="png", prog="dot")
 
-		for state_name in [state for state in self._get_state_names(self.ventilation_min.states) if state not in ["auto_init"]]:
+		for state_name in [state for state in self._get_state_names(self.ventilation_min.states) if state not in ["Auto_Init"]]:
 			graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
 				model=tests.helper.graph_machines.FakeModel(),
 				states=self.ventilation_min.states,
@@ -709,7 +709,7 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
 
 		graph.get_graph().draw(picture_dir / "Ventilation.png", format="png", prog="dot")
 
-		for state_name in [state for state in self._get_state_names(self.ventilation_min.states) if state not in ["auto_init"]]:
+		for state_name in [state for state in self._get_state_names(self.ventilation_min.states) if state not in ["Auto_Init"]]:
 			graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
 				model=tests.helper.graph_machines.FakeModel(),
 				states=self.ventilation_min.states,

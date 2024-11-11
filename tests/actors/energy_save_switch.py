@@ -1,293 +1,328 @@
 """Test energy save switch rules."""
 import collections
+import os
+import pathlib
+import sys
 import unittest.mock
 
-import HABApp
-import eascheduler.jobs.job_countdown
+import HABApp.rule.rule
 
 import habapp_rules.actors.config.energy_save_switch
-import habapp_rules.actors.energy_save_switch
+import habapp_rules.actors.config.shading
+import habapp_rules.actors.energy_save_switch_state
+import habapp_rules.actors.state_observer
+import habapp_rules.core.exceptions
+import habapp_rules.core.logger
+import habapp_rules.core.state_machine_rule
+import habapp_rules.system
+import tests.helper.graph_machines
 import tests.helper.oh_item
 import tests.helper.test_case_base
-from habapp_rules.system import PresenceState, SleepState
+import tests.helper.timer
+from habapp_rules.system import SleepState, PresenceState
 
 
-# pylint: disable=protected-access, no-member
-class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBase):
-	"""Test EnergySaveSwitch """
+# pylint: disable=protected-access,no-member,too-many-public-methods
+class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine):
+	"""Tests cases for testing energy save switch."""
 
 	def setUp(self) -> None:
 		"""Setup test case."""
-		tests.helper.test_case_base.TestCaseBase.setUp(self)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch_min")
+		tests.helper.test_case_base.TestCaseBaseStateMachine.setUp(self)
 
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch_max")
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch_manual")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Min_Switch")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Min_State")
+
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Max_Switch")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Max_State")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Max_Manual")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_External_Request")
+
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Current_Switch")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Current_State")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Current_Manual")
+		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Current")
 
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Presence_state")
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Sleep_state")
 
 		self._config_min = habapp_rules.actors.config.energy_save_switch.EnergySaveSwitchConfig(
 			items=habapp_rules.actors.config.energy_save_switch.EnergySaveSwitchItems(
-				switch="Unittest_Switch_min"
+				switch="Unittest_Min_Switch",
+				state="Unittest_Min_State"
 			)
 		)
 
-		self._config_max = habapp_rules.actors.config.energy_save_switch.EnergySaveSwitchConfig(
+		self._config_max_without_current = habapp_rules.actors.config.energy_save_switch.EnergySaveSwitchConfig(
 			items=habapp_rules.actors.config.energy_save_switch.EnergySaveSwitchItems(
-				switch="Unittest_Switch_max",
-				manual="Unittest_Switch_manual",
+				switch="Unittest_Max_Switch",
+				state="Unittest_Max_State",
+				manual="Unittest_Max_Manual",
+				external_request="Unittest_External_Request",
 				presence_state="Unittest_Presence_state",
 				sleeping_state="Unittest_Sleep_state"
 			),
 			parameter=habapp_rules.actors.config.energy_save_switch.EnergySaveSwitchParameter(
 				max_on_time=3600,
 				hand_timeout=1800
-
 			)
-
 		)
 
-		self._rule_min = habapp_rules.actors.energy_save_switch.EnergySaveSwitch(self._config_min)
-		self._rule_max = habapp_rules.actors.energy_save_switch.EnergySaveSwitch(self._config_max)
-
-	def test_init(self):
-		"""Test __init__."""
-		self.assertIsNone(self._rule_min._max_on_countdown)
-		self.assertIsNone(self._rule_min._hand_countdown)
-
-		self.assertIsInstance(self._rule_max._max_on_countdown, eascheduler.jobs.job_countdown.CountdownJob)
-		self.assertIsInstance(self._rule_max._hand_countdown, eascheduler.jobs.job_countdown.CountdownJob)
-		self.assertIsNone(self._rule_max._max_on_countdown.remaining())
-		self.assertIsNone(self._rule_max._hand_countdown.remaining())
-
-	def test_set_switch_state(self):
-		"""Test set_switch_state."""
-		# min rule
-		with unittest.mock.patch.object(self._rule_min._switch_observer, "send_command") as send_command_min_mock:
-			self._rule_min._set_switch_state(True)
-			send_command_min_mock.assert_called_once_with("ON")
-			self._rule_min._set_switch_state(False)
-			send_command_min_mock.assert_called_with("OFF")
-
-		# max rule | manual off
-		tests.helper.oh_item.item_state_change_event("Unittest_Switch_manual", "OFF")
-		with unittest.mock.patch.object(self._rule_max._switch_observer, "send_command") as send_command_max_mock:
-			self._rule_max._set_switch_state(True)
-			send_command_max_mock.assert_called_once_with("ON")
-			self._rule_max._set_switch_state(False)
-			send_command_max_mock.assert_called_with("OFF")
-
-		# max rule | manual on
-		tests.helper.oh_item.item_state_change_event("Unittest_Switch_manual", "ON")
-		with unittest.mock.patch.object(self._rule_max._switch_observer, "send_command") as send_command_max_mock:
-			self._rule_max._set_switch_state(True)
-			send_command_max_mock.assert_not_called()
-			self._rule_max._set_switch_state(False)
-			send_command_max_mock.assert_not_called()
-
-	def test_hand_state(self):
-		"""Test hand state."""
-
-		# hand on
-		tests.helper.oh_item.item_state_change_event("Unittest_Switch_min", "ON")
-		tests.helper.oh_item.item_state_change_event("Unittest_Switch_max", "ON")
-
-		self.assertIsNone(self._rule_min._max_on_countdown)
-		self.assertIsNone(self._rule_min._hand_countdown)
-
-		self.assertGreater(self._rule_max._max_on_countdown.remaining().seconds, 3590)
-		self.assertGreater(self._rule_max._hand_countdown.remaining().seconds, 1790)
-
-		# hand off
-		tests.helper.oh_item.item_state_change_event("Unittest_Switch_min", "OFF")
-		tests.helper.oh_item.item_state_change_event("Unittest_Switch_max", "OFF")
-
-		self.assertIsNone(self._rule_min._max_on_countdown)
-		self.assertIsNone(self._rule_min._hand_countdown)
-
-		self.assertIsNone(self._rule_max._max_on_countdown.remaining())
-		self.assertIsNone(self._rule_max._hand_countdown.remaining())
-
-	def test_presence_state(self):
-		"""Test presence state."""
-
-		TestCase = collections.namedtuple("TestCase", "state, min_value, max_value")
-
-		test_cases = [
-			TestCase(PresenceState.PRESENCE.value, None, "ON"),
-			TestCase(PresenceState.LEAVING.value, None, "OFF"),
-			TestCase(PresenceState.ABSENCE.value, None, "OFF"),
-			TestCase(PresenceState.LONG_ABSENCE.value, None, "OFF"),
-		]
-
-		# manual on
-		tests.helper.oh_item.item_state_change_event("Unittest_Switch_manual", "ON")
-		for test_case in test_cases:
-			with self.subTest(test_case=test_case):
-				tests.helper.oh_item.item_state_change_event("Unittest_Presence_state", test_case.state)
-				tests.helper.oh_item.assert_value("Unittest_Switch_min", None)
-				tests.helper.oh_item.assert_value("Unittest_Switch_max", None)
-				self.assertIsNone(self._rule_max._max_on_countdown.remaining())
-
-		# manual off
-		tests.helper.oh_item.item_state_change_event("Unittest_Switch_manual", "OFF")
-		for test_case in test_cases:
-			with self.subTest(test_case=test_case):
-				tests.helper.oh_item.item_state_change_event("Unittest_Presence_state", test_case.state)
-				tests.helper.oh_item.assert_value("Unittest_Switch_min", test_case.min_value)
-				tests.helper.oh_item.assert_value("Unittest_Switch_max", test_case.max_value)
-				self.assertIsNone(self._rule_max._hand_countdown.remaining())
-
-				if test_case.max_value == "ON":
-					self.assertGreater(self._rule_max._max_on_countdown.remaining().seconds, 3590)
-				else:
-					self.assertIsNone(self._rule_max._max_on_countdown.remaining())
-
-	def test_sleeping_state(self):
-		"""Test sleeping state."""
-		TestCase = collections.namedtuple("TestCase", "state, min_value, max_value")
-
-		test_cases = [
-			TestCase(SleepState.PRE_SLEEPING.value, None, "OFF"),
-			TestCase(SleepState.SLEEPING.value, None, "OFF"),
-			TestCase(SleepState.POST_SLEEPING.value, None, "OFF"),
-			TestCase(SleepState.AWAKE.value, None, "ON"),
-		]
-
-		# manual on
-		tests.helper.oh_item.item_state_change_event("Unittest_Switch_manual", "ON")
-		for test_case in test_cases:
-			with self.subTest(test_case=test_case):
-				tests.helper.oh_item.item_state_change_event("Unittest_Sleep_state", test_case.state)
-				tests.helper.oh_item.assert_value("Unittest_Switch_min", None)
-				tests.helper.oh_item.assert_value("Unittest_Switch_max", None)
-				self.assertIsNone(self._rule_max._max_on_countdown.remaining())
-
-		# manual off
-		tests.helper.oh_item.item_state_change_event("Unittest_Switch_manual", "OFF")
-		for test_case in test_cases:
-			with self.subTest(test_case=test_case):
-				tests.helper.oh_item.item_state_change_event("Unittest_Sleep_state", test_case.state)
-				tests.helper.oh_item.assert_value("Unittest_Switch_min", test_case.min_value)
-				tests.helper.oh_item.assert_value("Unittest_Switch_max", test_case.max_value)
-				self.assertIsNone(self._rule_max._hand_countdown.remaining())
-
-				if test_case.max_value == "ON":
-					self.assertGreater(self._rule_max._max_on_countdown.remaining().seconds, 3590)
-				else:
-					self.assertIsNone(self._rule_max._max_on_countdown.remaining())
-
-	def test_cb_end(self):
-		"""Test cb_end."""
-		with unittest.mock.patch.object(self._rule_max, "_stop_timers") as stop_timers_mock:
-			# None
-			tests.helper.oh_item.item_state_change_event("Unittest_Switch_max", "OFF")
-			self._rule_max._cb_countdown_end()
-			tests.helper.oh_item.assert_value("Unittest_Switch_max", "OFF")
-			stop_timers_mock.assert_called_once()
-
-			# on
-			stop_timers_mock.reset_mock()
-			tests.helper.oh_item.item_state_change_event("Unittest_Switch_max", "ON")
-			self._rule_max._cb_countdown_end()
-			tests.helper.oh_item.assert_value("Unittest_Switch_max", "OFF")
-			stop_timers_mock.assert_called_once()
-
-			# off
-			stop_timers_mock.reset_mock()
-			tests.helper.oh_item.item_state_change_event("Unittest_Switch_max", "OFF")
-			self._rule_max._cb_countdown_end()
-			tests.helper.oh_item.assert_value("Unittest_Switch_max", "OFF")
-			stop_timers_mock.assert_called_once()
-
-
-class TestEnergySaveSwitchCurrent(tests.helper.test_case_base.TestCaseBase):
-	"""Test EnergySaveSwitchCurrent rule."""
-
-	def setUp(self) -> None:
-		"""Setup test case."""
-		tests.helper.test_case_base.TestCaseBase.setUp(self)
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch")
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual")
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Current")
-
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Presence_state")
-		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Sleep_state")
-
-		self._config = habapp_rules.actors.config.energy_save_switch.EnergySaveSwitchCurrentConfig(
-			items=habapp_rules.actors.config.energy_save_switch.EnergySaveSwitchCurrentItems(
-				switch="Unittest_Switch",
-				manual="Unittest_Manual",
+		self._config_current = habapp_rules.actors.config.energy_save_switch.EnergySaveSwitchConfig(
+			items=habapp_rules.actors.config.energy_save_switch.EnergySaveSwitchItems(
+				switch="Unittest_Current_Switch",
+				state="Unittest_Current_State",
+				manual="Unittest_Current_Manual",
 				current="Unittest_Current",
 				presence_state="Unittest_Presence_state",
 				sleeping_state="Unittest_Sleep_state"
 			),
-			parameter=habapp_rules.actors.config.energy_save_switch.EnergySaveSwitchCurrentParameter(
-				max_on_time=3600,
-				hand_timeout=1800,
-				current_threshold=0.5
+			parameter=habapp_rules.actors.config.energy_save_switch.EnergySaveSwitchParameter(
+				current_threshold=0.1
 			)
 		)
 
-		self._rule = habapp_rules.actors.energy_save_switch.EnergySaveSwitchWithCurrent(self._config)
+		self._rule_min = habapp_rules.actors.energy_save_switch_state.EnergySaveSwitch(self._config_min)
+		self._rule_max_without_current = habapp_rules.actors.energy_save_switch_state.EnergySaveSwitch(self._config_max_without_current)
+		self._rule_with_current = habapp_rules.actors.energy_save_switch_state.EnergySaveSwitch(self._config_current)
 
-	def test_hand(self):
-		"""Test hand commands."""
-		# hand on
-		tests.helper.oh_item.item_state_change_event("Unittest_Switch", "ON")
-		self.assertFalse(self._rule._wait_for_current_below_threshold)
+	@unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
+	def test_create_graph(self):  # pragma: no cover
+		"""Create state machine graph for documentation."""
+		picture_dir = pathlib.Path(__file__).parent / "Energy_Save_Switch_States"
+		if not picture_dir.is_dir():
+			os.makedirs(picture_dir)
+
+		graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
+			model=tests.helper.graph_machines.FakeModel(),
+			states=self._rule_min.states,
+			transitions=self._rule_min.trans,
+			initial=self._rule_min.state,
+			show_conditions=False)
+
+		graph.get_graph().draw(picture_dir / "EnergySaveSwitch.png", format="png", prog="dot")
+
+		for state_name in [state for state in self._get_state_names(self._rule_min.states) if state not in ["Auto_Init"]]:
+			graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
+				model=tests.helper.graph_machines.FakeModel(),
+				states=self._rule_min.states,
+				transitions=self._rule_min.trans,
+				initial=state_name,
+				show_conditions=True)
+			graph.get_graph(force_new=True, show_roi=True).draw(picture_dir / f"EnergySaveSwitch_{state_name}.png", format="png", prog="dot")
+
+	def test_set_timeout(self):
+		"""Test set timeout."""
+		self.assertEqual(self._rule_min.state_machine.states["Hand"].timeout, 0)
+		self.assertEqual(self._rule_max_without_current.state_machine.states["Hand"].timeout, 1800)
+		self.assertEqual(self._rule_with_current.state_machine.states["Hand"].timeout, 0)
+
+	def test_get_initial_state(self):
+		"""Test get initial state."""
+		TestCase = collections.namedtuple("TestCase", "manual, on_conditions_met, expected_state")
+
+		test_cases = [
+			TestCase(manual=None, on_conditions_met=False, expected_state="Auto_Off"),
+			TestCase(manual=None, on_conditions_met=True, expected_state="Auto_On"),
+
+			TestCase(manual=False, on_conditions_met=False, expected_state="Auto_Off"),
+			TestCase(manual=False, on_conditions_met=True, expected_state="Auto_On"),
+
+			TestCase(manual=True, on_conditions_met=False, expected_state="Manual"),
+			TestCase(manual=True, on_conditions_met=True, expected_state="Manual"),
+		]
+
+		with unittest.mock.patch.object(self._rule_max_without_current, "_get_on_off_conditions_met") as on_conditions_mock:
+			for test_case in test_cases:
+				with self.subTest(test_case=test_case):
+					on_conditions_mock.return_value = test_case.on_conditions_met
+
+					if test_case.manual is None:
+						self._rule_max_without_current._config.items.manual = None
+					else:
+						self._rule_max_without_current._config.items.manual = unittest.mock.MagicMock()
+						self._rule_max_without_current._config.items.manual.is_on.return_value = test_case.manual
+
+					self.assertEqual(test_case.expected_state, self._rule_max_without_current._get_initial_state())
+
+	def test_current_above_threshold(self):
+		"""Test current above threshold."""
+		TestCase = collections.namedtuple("TestCase", "current, threshold, expected_result")
+
+		test_cases = [
+			TestCase(current=None, threshold=0.1, expected_result=False),
+			TestCase(current=None, threshold=0.1, expected_result=False),
+			TestCase(current=None, threshold=0.1, expected_result=False),
+
+			TestCase(current=0.0, threshold=0.1, expected_result=False),
+			TestCase(current=0.1, threshold=0.1, expected_result=False),
+			TestCase(current=0.2, threshold=0.1, expected_result=True),
+		]
+
+		for test_case in test_cases:
+			with self.subTest(test_case=test_case):
+				if test_case.current is None:
+					self._rule_with_current._config.items.current = None
+				else:
+					self._rule_with_current._config.items.current = unittest.mock.MagicMock(value=test_case.current)
+
+				self._rule_with_current._config.parameter.current_threshold = test_case.threshold
+				self.assertEqual(test_case.expected_result, self._rule_with_current._current_above_threshold())
+
+	def test_auto_off_transitions(self):
+		"""Test auto off transitions."""
+		TestCase = collections.namedtuple("TestCase", "external_req, sleeping_state, presence_state, expected_state")
+		test_cases = [
+			TestCase(external_req="OFF", sleeping_state=SleepState.SLEEPING, presence_state=PresenceState.ABSENCE, expected_state="Auto_Off"),
+			TestCase(external_req="OFF", sleeping_state=SleepState.SLEEPING, presence_state=PresenceState.PRESENCE, expected_state="Auto_Off"),
+			TestCase(external_req="OFF", sleeping_state=SleepState.AWAKE, presence_state=PresenceState.ABSENCE, expected_state="Auto_Off"),
+			TestCase(external_req="OFF", sleeping_state=SleepState.AWAKE, presence_state=PresenceState.PRESENCE, expected_state="Auto_On"),
+
+			TestCase(external_req="ON", sleeping_state=SleepState.SLEEPING, presence_state=PresenceState.ABSENCE, expected_state="Auto_On"),
+			TestCase(external_req="ON", sleeping_state=SleepState.SLEEPING, presence_state=PresenceState.PRESENCE, expected_state="Auto_On"),
+			TestCase(external_req="ON", sleeping_state=SleepState.AWAKE, presence_state=PresenceState.ABSENCE, expected_state="Auto_On"),
+			TestCase(external_req="ON", sleeping_state=SleepState.AWAKE, presence_state=PresenceState.PRESENCE, expected_state="Auto_On"),
+		]
+
+		tests.helper.oh_item.assert_value("Unittest_Max_State", "Auto_Off")
+		tests.helper.oh_item.assert_value("Unittest_Min_State", "Auto_Off")
+
+		for test_case in test_cases:
+			with self.subTest(test_case=test_case):
+				tests.helper.oh_item.item_state_change_event("Unittest_External_Request", test_case.external_req)
+				tests.helper.oh_item.item_state_change_event("Unittest_Sleep_state", test_case.sleeping_state.value)
+				tests.helper.oh_item.item_state_change_event("Unittest_Presence_state", test_case.presence_state.value)
+
+				tests.helper.oh_item.assert_value("Unittest_Max_State", test_case.expected_state)
+				tests.helper.oh_item.assert_value("Unittest_Max_Switch", "ON" if test_case.expected_state == "Auto_On" else "OFF")
+
+				tests.helper.oh_item.assert_value("Unittest_Min_State", "Auto_Off")
+
+	def test_auto_on_transitions(self):
+		"""Test auto on transitions."""
+		# max on time
+		self._rule_min.to_Auto_On()
+		self._rule_max_without_current.to_Auto_On()
+		self._rule_with_current.to_Auto_On()
+
+		self.assertIsNone(self._rule_min._max_on_countdown)
+		self.assertIsNotNone(self._rule_max_without_current._max_on_countdown)
+		self.assertIsNone(self._rule_with_current._max_on_countdown)
+
+		self._rule_min._cb_max_on_countdown()
+		self._rule_max_without_current._cb_max_on_countdown()
+		self._rule_with_current._cb_max_on_countdown()
+
+		tests.helper.oh_item.assert_value("Unittest_Min_State", "Auto_On")
+		tests.helper.oh_item.assert_value("Unittest_Max_State", "Auto_Off")
+		tests.helper.oh_item.assert_value("Unittest_Current_State", "Auto_On")
+
+		# off conditions met
+		TestCase = collections.namedtuple("TestCase", "current_above_threshold, external_req, sleeping_state, presence_state, expected_state_max, expected_state_current")
+		test_cases = [
+			TestCase(current_above_threshold=False, external_req="OFF", sleeping_state=SleepState.SLEEPING, presence_state=PresenceState.ABSENCE, expected_state_max="Auto_Off", expected_state_current="Auto_Off"),
+			TestCase(current_above_threshold=False, external_req="OFF", sleeping_state=SleepState.SLEEPING, presence_state=PresenceState.PRESENCE, expected_state_max="Auto_Off", expected_state_current="Auto_Off"),
+			TestCase(current_above_threshold=False, external_req="OFF", sleeping_state=SleepState.AWAKE, presence_state=PresenceState.ABSENCE, expected_state_max="Auto_Off", expected_state_current="Auto_Off"),
+			TestCase(current_above_threshold=False, external_req="OFF", sleeping_state=SleepState.AWAKE, presence_state=PresenceState.PRESENCE, expected_state_max="Auto_On", expected_state_current="Auto_On"),
+
+			TestCase(current_above_threshold=False, external_req="ON", sleeping_state=SleepState.SLEEPING, presence_state=PresenceState.ABSENCE, expected_state_max="Auto_On", expected_state_current="Auto_Off"),
+			TestCase(current_above_threshold=False, external_req="ON", sleeping_state=SleepState.SLEEPING, presence_state=PresenceState.PRESENCE, expected_state_max="Auto_On", expected_state_current="Auto_Off"),
+			TestCase(current_above_threshold=False, external_req="ON", sleeping_state=SleepState.AWAKE, presence_state=PresenceState.ABSENCE, expected_state_max="Auto_On", expected_state_current="Auto_Off"),
+			TestCase(current_above_threshold=False, external_req="ON", sleeping_state=SleepState.AWAKE, presence_state=PresenceState.PRESENCE, expected_state_max="Auto_On", expected_state_current="Auto_On"),
+
+			TestCase(current_above_threshold=True, external_req="OFF", sleeping_state=SleepState.SLEEPING, presence_state=PresenceState.ABSENCE, expected_state_max="Auto_Off", expected_state_current="Auto_WaitCurrent"),
+			TestCase(current_above_threshold=True, external_req="OFF", sleeping_state=SleepState.SLEEPING, presence_state=PresenceState.PRESENCE, expected_state_max="Auto_Off", expected_state_current="Auto_WaitCurrent"),
+			TestCase(current_above_threshold=True, external_req="OFF", sleeping_state=SleepState.AWAKE, presence_state=PresenceState.ABSENCE, expected_state_max="Auto_Off", expected_state_current="Auto_WaitCurrent"),
+			TestCase(current_above_threshold=True, external_req="OFF", sleeping_state=SleepState.AWAKE, presence_state=PresenceState.PRESENCE, expected_state_max="Auto_On", expected_state_current="Auto_On"),
+
+			TestCase(current_above_threshold=True, external_req="ON", sleeping_state=SleepState.SLEEPING, presence_state=PresenceState.ABSENCE, expected_state_max="Auto_On", expected_state_current="Auto_WaitCurrent"),
+			TestCase(current_above_threshold=True, external_req="ON", sleeping_state=SleepState.SLEEPING, presence_state=PresenceState.PRESENCE, expected_state_max="Auto_On", expected_state_current="Auto_WaitCurrent"),
+			TestCase(current_above_threshold=True, external_req="ON", sleeping_state=SleepState.AWAKE, presence_state=PresenceState.ABSENCE, expected_state_max="Auto_On", expected_state_current="Auto_WaitCurrent"),
+			TestCase(current_above_threshold=True, external_req="ON", sleeping_state=SleepState.AWAKE, presence_state=PresenceState.PRESENCE, expected_state_max="Auto_On", expected_state_current="Auto_On"),
+		]
+
+		with unittest.mock.patch.object(self._rule_with_current, "_current_above_threshold", return_value=None) as mock_current_above_threshold:
+			for test_case in test_cases:
+				with self.subTest(test_case=test_case):
+					mock_current_above_threshold.return_value = test_case.current_above_threshold
+					self._rule_min.to_Auto_On()
+					self._rule_max_without_current.to_Auto_On()
+					self._rule_with_current.to_Auto_On()
+
+					tests.helper.oh_item.item_state_change_event("Unittest_External_Request", test_case.external_req)
+					tests.helper.oh_item.item_state_change_event("Unittest_Sleep_state", test_case.sleeping_state.value)
+					tests.helper.oh_item.item_state_change_event("Unittest_Presence_state", test_case.presence_state.value)
+
+					tests.helper.oh_item.assert_value("Unittest_Max_State", test_case.expected_state_max)
+					tests.helper.oh_item.assert_value("Unittest_Max_Switch", "ON" if test_case.expected_state_max == "Auto_On" else "OFF")
+
+					tests.helper.oh_item.assert_value("Unittest_Current_State", test_case.expected_state_current)
+					tests.helper.oh_item.assert_value("Unittest_Current_Switch", "ON" if test_case.expected_state_current in {"Auto_On", "Auto_WaitCurrent"} else "OFF")
+
+					tests.helper.oh_item.assert_value("Unittest_Min_State", "Auto_On")
+
+	def test_auto_wait_current_transitions(self):
+		"""Test Auto_WaitCurrent transitions."""
+		# on conditions met
+		self._rule_with_current.to_Auto_WaitCurrent()
+		self._rule_with_current.on_conditions_met()
+		tests.helper.oh_item.assert_value("Unittest_Current_State", "Auto_On")
+		tests.helper.oh_item.assert_value("Unittest_Current_Switch", "ON")
+
+		# current below threshold
+		self._rule_with_current.to_Auto_WaitCurrent()
+		self._rule_with_current.current_below_threshold()
+		tests.helper.oh_item.assert_value("Unittest_Current_State", "Auto_Off")
+		tests.helper.oh_item.assert_value("Unittest_Current_Switch", "OFF")
+
+		# max_on_countdown
+		self._rule_with_current.to_Auto_WaitCurrent()
+		self._rule_with_current.max_on_countdown()
+		tests.helper.oh_item.assert_value("Unittest_Current_State", "Auto_Off")
+		tests.helper.oh_item.assert_value("Unittest_Current_Switch", "OFF")
+
+	def test_hand_transitions(self):
+		"""Test Hand transitions."""
+		# max_on_countdown
+		self._rule_with_current.to_Hand()
+		self._rule_with_current.max_on_countdown()
+		tests.helper.oh_item.assert_value("Unittest_Current_State", "Auto_Off")
+		tests.helper.oh_item.assert_value("Unittest_Current_Switch", "OFF")
+
+		# hand timeout
+		self._rule_with_current.to_Hand()
+		self._rule_with_current.hand_timeout()
+		tests.helper.oh_item.assert_value("Unittest_Current_State", "Auto_Off")
+		tests.helper.oh_item.assert_value("Unittest_Current_Switch", "OFF")
+
+		# manual off
+		self._rule_with_current.to_Hand()
+		tests.helper.oh_item.item_state_change_event("Unittest_Current_Manual", "ON")
+		tests.helper.oh_item.assert_value("Unittest_Current_State", "Manual")
+		tests.helper.oh_item.assert_value("Unittest_Current_Switch", "OFF")
+
+	def test_manual_transitions(self):
+		"""Test Manual transitions."""
+		# manual off | switch off
+		self._rule_with_current.to_Manual()
+		tests.helper.oh_item.item_state_change_event("Unittest_Current_Switch", "OFF")
+		tests.helper.oh_item.item_state_change_event("Unittest_Current_Manual", "OFF")
+		tests.helper.oh_item.assert_value("Unittest_Current_State", "Auto_Off")
+
+		# manual off | switch off
+		self._rule_with_current.to_Manual()
+		tests.helper.oh_item.item_state_change_event("Unittest_Current_Switch", "ON")
+		tests.helper.oh_item.item_state_change_event("Unittest_Current_Manual", "OFF")
+		tests.helper.oh_item.assert_value("Unittest_Current_State", "Auto_On")
+
+	def test_current_switch_off(self):
+		"""Test current switch off."""
+		tests.helper.oh_item.set_state("Unittest_Current_Switch", "ON")
+		self._rule_with_current.to_Auto_WaitCurrent()
 		tests.helper.oh_item.item_state_change_event("Unittest_Current", 2)
-		self.assertFalse(self._rule._wait_for_current_below_threshold)
+		tests.helper.oh_item.assert_value("Unittest_Current_State", "Auto_WaitCurrent")
+		tests.helper.oh_item.assert_value("Unittest_Current_Switch", "ON")
 
-		# hand off
-		tests.helper.oh_item.item_state_change_event("Unittest_Switch", "OFF")
-		self.assertFalse(self._rule._wait_for_current_below_threshold)
-		tests.helper.oh_item.item_state_change_event("Unittest_Current", 0)
-		self.assertFalse(self._rule._wait_for_current_below_threshold)
-
-	def test_switch_off_by_current(self):
-		"""Test switch off by current."""
-		# trigger ON from sleeping or presence
-		self._rule._set_switch_state(True)
-		tests.helper.oh_item.assert_value("Unittest_Switch", "ON")
-		self.assertFalse(self._rule._wait_for_current_below_threshold)
-		tests.helper.oh_item.item_state_change_event("Unittest_Current", 2)
-
-		# trigger OFF from sleeping or presence
-		self._rule._set_switch_state(False)
-		tests.helper.oh_item.assert_value("Unittest_Switch", "ON")
-		self.assertTrue(self._rule._wait_for_current_below_threshold)
-
-		# some random current above values
-		tests.helper.oh_item.item_state_change_event("Unittest_Current", 7)
-		tests.helper.oh_item.item_state_change_event("Unittest_Current", 1.2)
-		tests.helper.oh_item.item_state_change_event("Unittest_Current", 0.6)
-		tests.helper.oh_item.assert_value("Unittest_Switch", "ON")
-		self.assertTrue(self._rule._wait_for_current_below_threshold)
-
-		# current value below threshold
-		tests.helper.oh_item.item_state_change_event("Unittest_Current", 0.4)
-		tests.helper.oh_item.assert_value("Unittest_Switch", "OFF")
-		self.assertFalse(self._rule._wait_for_current_below_threshold)
-
-		# switch ON
-		self._rule._set_switch_state(True)
-		tests.helper.oh_item.assert_value("Unittest_Switch", "ON")
-
-		# switch OFF (current already below threshold)
-		self._rule._set_switch_state(False)
-		tests.helper.oh_item.assert_value("Unittest_Switch", "OFF")
-
-	def test_no_switching_when_manual(self):
-		"""Test no switching when manual."""
-		tests.helper.oh_item.item_state_change_event("Unittest_Current", 0)
-		tests.helper.oh_item.item_state_change_event("Unittest_Manual", "ON")
-
-		# switch ON
-		self._rule._set_switch_state(True)
-		tests.helper.oh_item.assert_value("Unittest_Switch", None)
-
-		# switch OFF (current already below threshold)
-		self._rule._set_switch_state(False)
-		tests.helper.oh_item.assert_value("Unittest_Switch", None)
+		tests.helper.oh_item.item_state_change_event("Unittest_Current", 0.09)
+		tests.helper.oh_item.assert_value("Unittest_Current_State", "Auto_Off")
+		tests.helper.oh_item.assert_value("Unittest_Current_Switch", "OFF")
