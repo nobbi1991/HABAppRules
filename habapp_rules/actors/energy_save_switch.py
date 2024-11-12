@@ -14,9 +14,27 @@ LOGGER = logging.getLogger(__name__)
 
 # pylint: disable=no-member, invalid-name
 class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
+	"""Rules class to manage energy save switches.
+
+	# Items:
+	Switch    Switch              "Switch"        {channel="..."}
+	Switch    Switch_State        "State"
+
+	# Config:
+	config = habapp_rules.actors.config.energy_save_switch.EnergySaveSwitchConfig(
+		items=EnergySaveSwitchItems(
+			switch="Switch",
+			state="Switch_State"
+		)
+	))
+
+	# Rule init:
+	habapp_rules.actors.energy_save_switch.EnergySaveSwitch(config)
+	"""
+
 	states = [
 		{"name": "Manual"},
-		{"name": "Hand", "timeout": 0, "on_timeout": "_auto_hand_timeout"},
+		{"name": "Hand", "timeout": 0, "on_timeout": ["_auto_hand_timeout"]},
 
 		{"name": "Auto", "initial": "Init", "children": [
 			{"name": "Init"},
@@ -31,7 +49,7 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
 		{"trigger": "manual_off", "source": "Manual", "dest": "Auto"},
 
 		{"trigger": "hand_detected", "source": "Auto", "dest": "Hand"},
-		{"trigger": "hand_timeout", "source": "Hand", "dest": "Auto"},
+		{"trigger": "_auto_hand_timeout", "source": "Hand", "dest": "Auto"},
 
 		{"trigger": "on_conditions_met", "source": ["Auto_Off", "Auto_WaitCurrent"], "dest": "Auto_On"},
 		{"trigger": "off_conditions_met", "source": "Auto_On", "dest": "Auto_Off", "unless": "_current_above_threshold"},
@@ -76,6 +94,8 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
 		if self._config.items.current is not None:
 			self._config.items.current.listen_event(self._cb_current_changed, HABApp.openhab.events.ItemStateChangedEventFilter())
 
+		LOGGER.info(self.get_initial_log_message())
+
 	def _set_timeouts(self) -> None:
 		"""Set timeouts."""
 		self.state_machine.states["Hand"].timeout = self._config.parameter.hand_timeout if self._config.parameter.hand_timeout else 0
@@ -107,7 +127,7 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 	def on_enter_Auto_Init(self):
 		"""Callback, which is called on enter of init state"""
-		if self._config.items.switch.is_on():
+		if self._get_on_off_conditions_met():
 			self.to_Auto_On()
 		else:
 			self.to_Auto_Off()

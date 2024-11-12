@@ -2,7 +2,7 @@
 
 ## Features
 
-- Added rules in ``habapp_rules.actors.energy_save_switch`` to switch of sockets during sleeping time or at absence.
+- Added rules in ``habapp_rules.actors.energy_save_switch`` to switch off sockets during sleeping time or at absence to save energy.
 
 ## Bugfix
 

@@ -284,34 +284,43 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
 	def test_hand_transitions(self):
 		"""Test Hand transitions."""
 		# max_on_countdown
-		self._rule_with_current.to_Hand()
-		self._rule_with_current.max_on_countdown()
+		self._rule_max_without_current.to_Hand()
+		self._rule_max_without_current.max_on_countdown()
 		tests.helper.oh_item.assert_value("Unittest_Current_State", "Auto_Off")
 		tests.helper.oh_item.assert_value("Unittest_Current_Switch", "OFF")
 
 		# hand timeout
-		self._rule_with_current.to_Hand()
-		self._rule_with_current.hand_timeout()
+		self._rule_max_without_current.to_Hand()
+		tests.helper.timer.call_timeout(self.transitions_timer_mock)
 		tests.helper.oh_item.assert_value("Unittest_Current_State", "Auto_Off")
 		tests.helper.oh_item.assert_value("Unittest_Current_Switch", "OFF")
 
 		# manual off
-		self._rule_with_current.to_Hand()
+		self._rule_max_without_current.to_Hand()
 		tests.helper.oh_item.item_state_change_event("Unittest_Current_Manual", "ON")
 		tests.helper.oh_item.assert_value("Unittest_Current_State", "Manual")
 		tests.helper.oh_item.assert_value("Unittest_Current_Switch", "OFF")
 
+	def test_to_hand_transitions(self):
+		"""Test to Hand transitions."""
+		for state in ["Auto_On", "Auto_WaitCurrent", "Auto_Off"]:
+			with self.subTest(state=state):
+				eval(f"self._rule_with_current.to_{state}()")  # pylint: disable=eval-used
+				tests.helper.oh_item.item_state_change_event("Unittest_Current_Switch", "OFF")
+				tests.helper.oh_item.item_state_change_event("Unittest_Current_Switch", "ON")
+				tests.helper.oh_item.assert_value("Unittest_Current_State", "Hand")
+
 	def test_manual_transitions(self):
 		"""Test Manual transitions."""
-		# manual off | switch off
+		# manual off | on_off_conditions not met
 		self._rule_with_current.to_Manual()
-		tests.helper.oh_item.item_state_change_event("Unittest_Current_Switch", "OFF")
 		tests.helper.oh_item.item_state_change_event("Unittest_Current_Manual", "OFF")
 		tests.helper.oh_item.assert_value("Unittest_Current_State", "Auto_Off")
 
-		# manual off | switch off
+		# manual off | on_off_conditions met
 		self._rule_with_current.to_Manual()
-		tests.helper.oh_item.item_state_change_event("Unittest_Current_Switch", "ON")
+		tests.helper.oh_item.item_state_change_event("Unittest_Presence_state", PresenceState.PRESENCE.value)
+		tests.helper.oh_item.item_state_change_event("Unittest_Sleep_state", SleepState.AWAKE.value)
 		tests.helper.oh_item.item_state_change_event("Unittest_Current_Manual", "OFF")
 		tests.helper.oh_item.assert_value("Unittest_Current_State", "Auto_On")
 
