@@ -60,6 +60,10 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
 	]
 
 	def __init__(self, config: habapp_rules.actors.config.energy_save_switch.EnergySaveSwitchConfig) -> None:
+		"""Init of energy save switch.
+
+		:param config: energy save switch config
+		"""
 		self._config = config
 		self._switch_observer = habapp_rules.actors.state_observer.StateObserverSwitch(config.items.switch.name, self._cb_hand, self._cb_hand)
 
