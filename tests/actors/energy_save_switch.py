@@ -119,23 +119,36 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
 
 	def test_get_initial_state(self):
 		"""Test get initial state."""
-		TestCase = collections.namedtuple("TestCase", "manual, on_conditions_met, expected_state")
+		TestCase = collections.namedtuple("TestCase", "current_above_threshold, manual, on_conditions_met, expected_state")
 
 		test_cases = [
-			TestCase(manual=None, on_conditions_met=False, expected_state="Auto_Off"),
-			TestCase(manual=None, on_conditions_met=True, expected_state="Auto_On"),
+			# current below threshold
+			TestCase(current_above_threshold=False, manual=None, on_conditions_met=False, expected_state="Auto_Off"),
+			TestCase(current_above_threshold=False, manual=None, on_conditions_met=True, expected_state="Auto_On"),
 
-			TestCase(manual=False, on_conditions_met=False, expected_state="Auto_Off"),
-			TestCase(manual=False, on_conditions_met=True, expected_state="Auto_On"),
+			TestCase(current_above_threshold=False, manual=False, on_conditions_met=False, expected_state="Auto_Off"),
+			TestCase(current_above_threshold=False, manual=False, on_conditions_met=True, expected_state="Auto_On"),
 
-			TestCase(manual=True, on_conditions_met=False, expected_state="Manual"),
-			TestCase(manual=True, on_conditions_met=True, expected_state="Manual"),
+			TestCase(current_above_threshold=False, manual=True, on_conditions_met=False, expected_state="Manual"),
+			TestCase(current_above_threshold=False, manual=True, on_conditions_met=True, expected_state="Manual"),
+
+			# current above threshold
+			TestCase(current_above_threshold=True, manual=None, on_conditions_met=False, expected_state="Auto_WaitCurrent"),
+			TestCase(current_above_threshold=True, manual=None, on_conditions_met=True, expected_state="Auto_On"),
+
+			TestCase(current_above_threshold=True, manual=False, on_conditions_met=False, expected_state="Auto_WaitCurrent"),
+			TestCase(current_above_threshold=True, manual=False, on_conditions_met=True, expected_state="Auto_On"),
+
+			TestCase(current_above_threshold=True, manual=True, on_conditions_met=False, expected_state="Manual"),
+			TestCase(current_above_threshold=True, manual=True, on_conditions_met=True, expected_state="Manual"),
 		]
 
-		with unittest.mock.patch.object(self._rule_max_without_current, "_get_on_off_conditions_met") as on_conditions_mock:
+		with (unittest.mock.patch.object(self._rule_max_without_current, "_get_on_off_conditions_met") as on_conditions_mock,
+		      unittest.mock.patch.object(self._rule_max_without_current, "_current_above_threshold") as current_above_threshold_mock):
 			for test_case in test_cases:
 				with self.subTest(test_case=test_case):
 					on_conditions_mock.return_value = test_case.on_conditions_met
+					current_above_threshold_mock.return_value = test_case.current_above_threshold
 
 					if test_case.manual is None:
 						self._rule_max_without_current._config.items.manual = None

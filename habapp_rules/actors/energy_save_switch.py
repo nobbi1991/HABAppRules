@@ -115,6 +115,8 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
 
 		if self._get_on_off_conditions_met():
 			return "Auto_On"
+		if self._current_above_threshold():
+			return "Auto_WaitCurrent"
 		return "Auto_Off"
 
 	def _update_openhab_state(self) -> None:
