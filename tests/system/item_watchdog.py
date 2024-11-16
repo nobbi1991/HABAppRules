@@ -3,10 +3,10 @@ import unittest.mock
 
 import HABApp.openhab.items
 
-import habapp_rules.system.watchdog
+import habapp_rules.system.item_watchdog
 import tests.helper.oh_item
 import tests.helper.test_case_base
-from habapp_rules.system.config.watchdog import WatchdogConfig, WatchdogItems, WatchdogParameter
+from habapp_rules.system.config.item_watchdog import WatchdogConfig, WatchdogItems, WatchdogParameter
 
 
 class TestWatchdog(tests.helper.test_case_base.TestCaseBase):
@@ -21,14 +21,14 @@ class TestWatchdog(tests.helper.test_case_base.TestCaseBase):
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Number_Warning", None)
 		tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch_Warning", None)
 
-		self._watchdog_number = habapp_rules.system.watchdog.Watchdog(WatchdogConfig(
+		self._watchdog_number = habapp_rules.system.item_watchdog.ItemWatchdog(WatchdogConfig(
 			items=WatchdogItems(
 				observed="Unittest_Number",
 				warning="Unittest_Number_Warning"
 			)
 		))
 
-		self._watchdog_switch = habapp_rules.system.watchdog.Watchdog(WatchdogConfig(
+		self._watchdog_switch = habapp_rules.system.item_watchdog.ItemWatchdog(WatchdogConfig(
 			items=WatchdogItems(
 				observed="Unittest_Switch",
 				warning="Unittest_Switch_Warning"

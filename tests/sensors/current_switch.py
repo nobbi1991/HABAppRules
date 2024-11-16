@@ -3,11 +3,11 @@ import collections
 import unittest.mock
 
 import HABApp.rule.rule
-import eascheduler.jobs.job_countdown
+import HABApp.rule.scheduler.job_ctrl
 
-import habapp_rules.sensors.current_switch
 import habapp_rules.core.exceptions
 import habapp_rules.core.state_machine_rule
+import habapp_rules.sensors.current_switch
 import habapp_rules.system
 import tests.helper.graph_machines
 import tests.helper.oh_item
@@ -59,8 +59,8 @@ class TestCurrentSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
 		self.assertIsNone(self._rule_1._extended_countdown)
 		self.assertIsNone(self._rule_2._extended_countdown)
-		self.assertIsInstance(self._rule_extended._extended_countdown, eascheduler.jobs.job_countdown.CountdownJob)
-		self.assertIsNone(self._rule_extended._extended_countdown.remaining())
+		self.assertIsInstance(self._rule_extended._extended_countdown, HABApp.rule.scheduler.job_ctrl.CountdownJobControl)
+		self.assertIsNone(self._rule_extended._extended_countdown.next_run_datetime)
 
 	def test_current_changed_without_extended_time(self):
 		"""Test current changed without extended time."""
@@ -92,7 +92,6 @@ class TestCurrentSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine):
 		"""Test current changed with extended time."""
 		with unittest.mock.patch.object(self._rule_extended, "_extended_countdown") as countdown_mock:
 			# below threshold
-			countdown_mock.remaining.return_value = None
 			tests.helper.oh_item.item_state_change_event("Unittest_Current", 0.1)
 			tests.helper.oh_item.assert_value("Unittest_Switch_extended", None)
 			countdown_mock.stop.assert_not_called()

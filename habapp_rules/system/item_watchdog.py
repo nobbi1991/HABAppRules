@@ -2,10 +2,10 @@
 import HABApp
 
 import habapp_rules.core.helper
-from habapp_rules.system.config.watchdog import WatchdogConfig
+from habapp_rules.system.config.item_watchdog import WatchdogConfig
 
 
-class Watchdog(HABApp.Rule):
+class ItemWatchdog(HABApp.Rule):
 	"""Watchdog rule to check if the observed item was updated in time.
 
 	# Items:

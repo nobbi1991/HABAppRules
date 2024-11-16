@@ -63,6 +63,9 @@ class KnxMqttDimmerBridge(HABApp.Rule):
 
 		:param event: HABApp event
 		"""
+		if not isinstance(event.value, (int, float)):
+			return
+
 		if self._config.items.knx_dimmer_ctr is not None:
 			self._config.items.knx_dimmer_ctr.oh_post_update(event.value)
 
