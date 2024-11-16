@@ -57,11 +57,10 @@ def filter_updated_items(input_items: list[HABApp.openhab.items.OpenhabItem], fi
 	if filter_time is None:
 		return input_items
 
-	current_time = time.time()
-	filtered_items = [item for item in input_items if current_time - item.last_update.timestamp() <= filter_time]
+	filtered_items = [item for item in input_items if item.last_update.newer_than(filter_time)]
 
 	if len(input_items) != len(filtered_items):
-		ignored_item_names = [item.name for item in input_items if current_time - item.last_update.timestamp() > filter_time]
+		ignored_item_names = [item.name for item in input_items if item.last_update.older_than(filter_time)]
 		LOGGER.warning(f"The following items where not updated during the last {filter_time}s and will be ignored: {ignored_item_names}")
 
 	return filtered_items

@@ -231,7 +231,10 @@ class StateObserverDimmer(_StateObserverBase):
 			cb_brightness_change=callback_change)
 	"""
 
-	def __init__(self, item_name: str, cb_on: CallbackType, cb_off: CallbackType, cb_brightness_change: CallbackType | None = None, control_names: list[str] | None = None, group_names: list[str] | None = None, value_tolerance: float = 0) -> None:
+	# pylint: disable=too-many-positional-arguments
+	def __init__(self, item_name: str, cb_on: CallbackType, cb_off: CallbackType, cb_brightness_change: CallbackType | None = None, control_names: list[str] | None = None, group_names: list[str] | None = None,
+	             value_tolerance: float = 0) -> None:
+
 		"""Init state observer for dimmer item.
 
 		:param item_name: Name of dimmer item
@@ -331,7 +334,9 @@ class StateObserverRollerShutter(_StateObserverBase):
 				)
 		"""
 
+	# pylint: disable=too-many-positional-arguments
 	def __init__(self, item_name: str, cb_manual: CallbackType, control_names: list[str] | None = None, group_names: list[str] | None = None, value_tolerance: float = 0) -> None:
+
 		"""Init state observer for dimmer item.
 
 		:param item_name: Name of dimmer item

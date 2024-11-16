@@ -9,7 +9,7 @@ import HABApp.config.logging
 
 import habapp_rules.__version__
 
-LOG_PATH = HABApp.config.config.CONFIG.directories.logging.absolute()
+LOG_PATH = HABApp.config.config.CONFIG.directories.logging.absolute()  # pylint: disable=no-member
 
 
 def setup_logger() -> None:
