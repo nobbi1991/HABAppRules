@@ -1,0 +1,140 @@
+[build-system]
+requires = ["hatchling", "hatch-requirements-txt"]
+build-backend = "hatchling.build"
+
+[project]
+name = "habapp_rules"
+description = "Basic rules for HABApp"
+long_description = "Basic rules for HABApp"
+authors = [{ name = "Seuling N." }]
+license = "Apache-2.0"
+dynamic = ["dependencies", "optional-dependencies", "version"]
+requires-python = ">=3.10"
+
+[tool.coverage.report]
+fail_under = 100
+skip_covered = true
+omit = []
+
+[tool.coverage.run]
+branch = true
+omit = []
+source = ["habapp_rules"]
+
+[tool.coverage.run.plugins]
+unittest = ["coverage.plugins.Unittest"]
+
+[tool.hatch.build.targets.wheel]
+include = ["habapp_rules"]
+
+[tool.hatch.envs.lint]
+detached = true
+dependencies = ["pre-commit"]
+[tool.hatch.envs.lint.scripts]
+check = "pre-commit run --all-files"
+
+[tool.hatch.envs.publish]
+detached = true
+
+#[tool.hatch.envs.test]
+#features = ["all", "dev"]
+#
+#[tool.hatch.envs.test.scripts]
+#ci = "pytest --cov --junitxml=test.junit --cov-config=pyproject.toml --cov-report term --cov-report xml:coverage.xml"
+#local = "pytest --cov --cov-config=pyproject.toml --cov-report term --cov-report html"
+
+[tool.hatch.envs.tests]
+dependencies = ["coverage"]
+#path = ["habapp_rules", "tests"]
+
+[tool.hatch.envs.tests.scripts]
+run = "python -m coverage run --rcfile=tests\\.coveragerc tests\\run_unittest.py"
+
+[tool.hatch.metadata.hooks.requirements_txt]
+files = ["requirements.txt"]
+
+[tool.hatch.metadata] # remove when HABApp dev is released
+allow-direct-references = true
+
+[tool.hatch.version]
+path = "habapp_rules/__init__.py"
+
+#[tool.mypy]
+#python_version = 3.12
+#files = "habapp_rules"
+#plugins = "pydantic.mypy"
+#exclude = "tests"
+#check_untyped_defs = true
+#disallow_any_generics = true
+#disallow_incomplete_defs = true
+#disallow_untyped_calls = true
+#extra_checks = true
+#follow_imports = "silent"
+#local_partial_types = true
+#no_implicit_reexport = true
+#show_error_codes = true
+#strict_equality = true
+#warn_redundant_casts = true
+#warn_return_any = true
+#warn_unused_configs = true
+#warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = ["pydantic.*"]
+ignore_missing_imports = true
+no_implicit_reexport = false
+
+[tool.ruff]
+indent-width = 4
+line-length = 250
+preview = true
+target-version = "py313"
+
+[tool.ruff.format]
+docstring-code-format = true
+docstring-code-line-length = "dynamic"
+indent-style = "space"
+line-ending = "auto"
+quote-style = "double"
+skip-magic-trailing-comma = false
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "COM812", # Missing trailing commas
+    "CPY", # Missing copyright notice
+    "D100", # Missing docstring in public module
+    "D104", # Missing docstring in public package
+    "D203", # 1 blank line required before class docstring
+    "D213", # Multi-line docstring summary should start at the second line
+    "DOC502", # Raised exception is not explicitly raised
+    "E501", # Line too long
+    "FBT001", # Boolean-typed positional argument in function definition
+    "FBT002", # Boolean default positional argument in function definition
+    "G004", # Logging statement uses f-string
+    "ISC001", # Implicitly concatenated string literals on one line
+    "PD", # Pandas
+    "PLR0911", # Too many return statements
+    "PLR0913", # Too many arguments in function definition
+    "PLR0917", # Too many positional arguments
+    "S320", # Using `lxml` to parse untrusted data is known to be vulnerable to XML attacks
+    "S404", # subprocess module is possibly insecure
+    "S603", # subprocess call: check for execution of untrusted input
+    "S607", # Starting a process with a partial executable path
+]
+
+[tool.ruff.lint.isort]
+split-on-trailing-comma = true
+
+[tool.ruff.lint.per-file-ignores]
+# Ignore certain rules in the 'tests/' directory
+"tests/*" = [
+    "FBT003", # Boolean-typed keyword argument in function call
+    "PLC2701", # Private name import
+    "PLR2004", # Magic value used in comparison
+    "S101", # Use of assert detected
+    "SLF001", # Private member accessed
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
