@@ -1,4 +1,4 @@
-"""Define all rules for HABApp"""
+"""Define all rules for HABApp."""
 
 import pathlib
 
