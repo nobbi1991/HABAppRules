@@ -6,6 +6,7 @@ dataclass
 donut
 dwd
 DWD
+EnergySaveSwitchItems
 enums
 ga
 HCL
