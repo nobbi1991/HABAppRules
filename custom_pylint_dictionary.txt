@@ -6,6 +6,7 @@ dataclass
 donut
 dwd
 DWD
+EnergySaveSwitchItems
 enums
 ga
 HCL
@@ -28,5 +29,6 @@ Raffstore
 rollershutter
 Rollershutter
 repr
+Setpoint
 smtp
 unittest

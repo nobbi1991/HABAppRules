@@ -16,6 +16,10 @@ class TestCaseBase(unittest.TestCase):
 		self.addCleanup(self.send_command_mock_patcher.stop)
 		self.send_command_mock = self.send_command_mock_patcher.start()
 
+		self.send_command_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.post_update", new=tests.helper.oh_item.set_state)
+		self.addCleanup(self.send_command_mock_patcher.stop)
+		self.send_command_mock = self.send_command_mock_patcher.start()
+
 		self.item_exists_mock_patcher = unittest.mock.patch("HABApp.openhab.interface_sync.item_exists", return_value=True)
 		self.addCleanup(self.item_exists_mock_patcher.stop)
 		self.item_exists_mock = self.item_exists_mock_patcher.start()

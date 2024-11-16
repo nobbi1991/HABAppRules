@@ -576,7 +576,7 @@ class _LightExtendedMixin:
 		transitions_list.append({"trigger": "motion_timeout", "source": "auto_motion", "dest": "auto_off", "unless": "_pre_off_configured", "before": "_log_motion_timeout_warning"})
 		transitions_list.append({"trigger": "hand_off", "source": "auto_motion", "dest": "auto_off"})
 
-		transitions_list.append({"trigger": "door_opened", "source": ["auto_off", "auto_preoff"], "dest": "auto_door", "conditions": ["_door_configured", "_motion_door_allowed"]})
+		transitions_list.append({"trigger": "door_opened", "source": ["auto_off", "auto_preoff", "auto_door"], "dest": "auto_door", "conditions": ["_door_configured", "_motion_door_allowed"]})
 		transitions_list.append({"trigger": "door_timeout", "source": "auto_door", "dest": "auto_preoff", "conditions": "_pre_off_configured"})
 		transitions_list.append({"trigger": "door_timeout", "source": "auto_door", "dest": "auto_off", "unless": "_pre_off_configured"})
 		transitions_list.append({"trigger": "door_closed", "source": "auto_leaving", "dest": "auto_off", "conditions": "_door_off_leaving_configured"})

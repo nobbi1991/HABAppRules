@@ -3,6 +3,33 @@
 ## Features
 
 - bumped HABApp to dev
+- updated docker container to python 3.13
+
+# Version 6.3.0 - dd.10.2024
+
+## Features
+
+- Added rules in ``habapp_rules.actors.energy_save_switch`` to switch off sockets during sleeping time or at absence to save energy.
+
+## Bugfix
+
+- moved rules of ``habapp_rules.actors.power`` to ``habapp_rules.sensors.current_switch``. Old location is still supported, but deprecated
+- fixed wrong item name in ``habapp_rules.energy.monthly_report.MonthlyReport``
+
+# Version 6.2.0 - 06.10.2024
+
+## Features
+
+- added rule ``habapp_rules.system.notification.SendStateChanged`` which can be used to send a mail or telegram message if the state of an item changes
+- added rule ``habapp_rules.actors.heating.KnxHeating`` which can be used to set the target temperature of a KNX heating actor which only supports temperature offsets
+- added temperature difference item of ``habapp_rules.sensors.sun.SensorTemperatureDifference`` to ``filtered_signal_groups``
+- added rule ``habapp_rules.actors.power.CurrentSwitch`` which can be used to enable a switch item if current is above a threshold
+- added rule ``habapp_rules.system.watchdog.Watchdog`` which can be used to check if an item was updated in time
+
+## Bugfix
+
+- fixed bug in ``habapp_rules.actors.light.LightSwitchExtended`` and ``habapp_rules.actors.light.LightDimmerExtended`` which did not re-trigger the timer if a door was opened.
+- fixed bug in all rules of ``habapp_rules.actors.light`` where a timer with time=None was used if a light function is not active. Now, the time is changed to 0 sec if a function is not configured.
 
 # Version 6.1.0 - 19.08.2024
 

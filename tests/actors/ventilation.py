@@ -103,7 +103,7 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
 		graph.get_graph().draw(picture_dir / "Ventilation.png", format="png", prog="dot")
 
-		for state_name in [state for state in self._get_state_names(self.ventilation_min.states) if state not in ["auto_init"]]:
+		for state_name in [state for state in self._get_state_names(self.ventilation_min.states) if state not in ["Auto_Init"]]:
 			graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
 				model=tests.helper.graph_machines.FakeModel(),
 				states=self.ventilation_min.states,
@@ -494,7 +494,7 @@ class TestVentilationHeliosTwoStage(tests.helper.test_case_base.TestCaseBaseStat
 
 		graph.get_graph().draw(picture_dir / "Ventilation.png", format="png", prog="dot")
 
-		for state_name in [state for state in self._get_state_names(self.ventilation_min.states) if state not in ["auto_init"]]:
+		for state_name in [state for state in self._get_state_names(self.ventilation_min.states) if state not in ["Auto_Init"]]:
 			graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
 				model=tests.helper.graph_machines.FakeModel(),
 				states=self.ventilation_min.states,
@@ -661,7 +661,6 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
 		with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
 			habapp_rules.actors.ventilation.VentilationHeliosTwoStageHumidity(config)
 
-
 	def test_set_level(self):
 		"""test _set_level."""
 		TestCase = collections.namedtuple("TestCase", "state, expected_on, expected_power")
@@ -710,7 +709,7 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
 
 		graph.get_graph().draw(picture_dir / "Ventilation.png", format="png", prog="dot")
 
-		for state_name in [state for state in self._get_state_names(self.ventilation_min.states) if state not in ["auto_init"]]:
+		for state_name in [state for state in self._get_state_names(self.ventilation_min.states) if state not in ["Auto_Init"]]:
 			graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
 				model=tests.helper.graph_machines.FakeModel(),
 				states=self.ventilation_min.states,
@@ -840,9 +839,17 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
 
 	def test_power_humidity_transitions(self):
 		"""Test transitions of state Auto_PowerHumidity."""
+		# set default config parameters
+		self.ventilation_min._config.parameter = habapp_rules.actors.config.ventilation.VentilationTwoStageParameter()
+		self.ventilation_max._config.parameter = habapp_rules.actors.config.ventilation.VentilationTwoStageParameter()
+
 		# set AutoNormal as initial state
 		self.ventilation_min.to_Auto_Normal()
 		self.ventilation_max.to_Auto_Normal()
+
+		# set correct output states
+		self.ventilation_min._config.items.ventilation_output_power.set_value("OFF")
+		self.ventilation_max._config.items.ventilation_output_power.set_value("OFF")
 
 		# state != Auto_PowerHumidity | current below the threshold
 		tests.helper.oh_item.item_state_event("Unittest_Ventilation_min_current", 0.1)
@@ -851,12 +858,22 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
 		self.assertEqual("Auto_Normal", self.ventilation_min.state)
 		self.assertEqual("Auto_Normal", self.ventilation_max.state)
 
+		tests.helper.oh_item.assert_value("Unittest_Ventilation_min_output_on", "ON")
+		tests.helper.oh_item.assert_value("Unittest_Ventilation_min_output_power", "OFF")
+		tests.helper.oh_item.assert_value("Unittest_Ventilation_max_output_on", "ON")
+		tests.helper.oh_item.assert_value("Unittest_Ventilation_max_output_power", "OFF")
+
 		# state != Auto_PowerHumidity | current grater then the threshold
 		tests.helper.oh_item.item_state_event("Unittest_Ventilation_min_current", 0.2)
 		tests.helper.oh_item.item_state_event("Unittest_Ventilation_max_current", 0.6)
 
 		self.assertEqual("Auto_PowerHumidity", self.ventilation_min.state)
 		self.assertEqual("Auto_PowerHumidity", self.ventilation_max.state)
+
+		tests.helper.oh_item.assert_value("Unittest_Ventilation_min_output_on", "ON")
+		tests.helper.oh_item.assert_value("Unittest_Ventilation_min_output_power", "OFF")
+		tests.helper.oh_item.assert_value("Unittest_Ventilation_max_output_on", "ON")
+		tests.helper.oh_item.assert_value("Unittest_Ventilation_max_output_power", "OFF")
 
 		# state == Auto_PowerHumidity | current grater then the threshold
 		tests.helper.oh_item.item_state_event("Unittest_Ventilation_min_current", 0.2)
@@ -898,11 +915,22 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
 		self.assertEqual("Auto_PowerHumidity", self.ventilation_min.state)
 		self.assertEqual("Auto_PowerHumidity", self.ventilation_max.state)
 
+		tests.helper.oh_item.assert_value("Unittest_Ventilation_min_output_on", "ON")
+		tests.helper.oh_item.assert_value("Unittest_Ventilation_min_output_power", "OFF")
+		tests.helper.oh_item.assert_value("Unittest_Ventilation_max_output_on", "ON")
+		tests.helper.oh_item.assert_value("Unittest_Ventilation_max_output_power", "OFF")
+
 		# state == Auto_PowerHumidity | _hand_on triggered
-		self.ventilation_max.to_Auto_PowerHumidity()
 		tests.helper.oh_item.item_state_change_event("Unittest_Ventilation_max_hand_request", "ON")
 		self.assertEqual("Auto_PowerHand", self.ventilation_max.state)
+
+		tests.helper.oh_item.assert_value("Unittest_Ventilation_max_output_on", "ON")
+		tests.helper.oh_item.assert_value("Unittest_Ventilation_max_output_power", "ON")
+
 		tests.helper.oh_item.item_state_change_event("Unittest_Ventilation_max_hand_request", "OFF")
+
+		tests.helper.oh_item.assert_value("Unittest_Ventilation_max_output_on", "ON")
+		tests.helper.oh_item.assert_value("Unittest_Ventilation_max_output_power", "OFF")
 
 		# state == Auto_PowerHumidity | _external_on triggered
 		self.ventilation_max.to_Auto_PowerHumidity()
