@@ -1,2 +1,5 @@
+coverage~=7.6.7
 graphviz~=0.20
-nose_helper~=1.7.0
+hatch-requirements-txt~=0.4.0
+hatch~=1.13.0
+pre-commit~=4.0.0
