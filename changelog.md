@@ -1,9 +1,10 @@
 # Version 7.0.0 - dd.mm.2024
 
-## Features
+## Breaking changes
 
 - bumped HABApp to dev
-- updated docker container to python 3.13
+- updated docker container to use python 3.13
+- renamed ``habapp_rules.system.watchdog`` to ``habapp_rules.system.item_watchdog``
 
 # Version 6.3.0 - dd.10.2024
 
