@@ -11,18 +11,28 @@ license = "Apache-2.0"
 dynamic = ["dependencies", "optional-dependencies", "version"]
 requires-python = ">=3.10"
 
+
+[tool.coverage]
+branch = true
+concurrency = "thread"
+context = "(empty)"
+disable_warnings = ["module-not-imported"]
+dynamic_context = "test_function"
+source = ["habapp_rules", "tests"]
+omit = ["*oh_item.py", "*rule_runner.py", "*run_unittest.py", "*__version__.py"]
+
+
+[tool.coverage.exclude_lines]
+pragma = "no cover"
+if_main = "if __name__ == \"__main__\":"
+if_typing = "if typing.TYPE_CHECKING:"
+typing_overload = "@(typing.)?overload"
+
 [tool.coverage.report]
 fail_under = 100
 skip_covered = true
-omit = []
+omit = ["*/helper/graph_machines.py", "*oh_item.py", "*rule_runner.py"]
 
-[tool.coverage.run]
-branch = true
-omit = []
-source = ["habapp_rules"]
-
-[tool.coverage.run.plugins]
-unittest = ["coverage.plugins.Unittest"]
 
 [tool.hatch.build.targets.wheel]
 include = ["habapp_rules"]
@@ -36,19 +46,14 @@ check = "pre-commit run --all-files"
 [tool.hatch.envs.publish]
 detached = true
 
-#[tool.hatch.envs.test]
-#features = ["all", "dev"]
-#
-#[tool.hatch.envs.test.scripts]
-#ci = "pytest --cov --junitxml=test.junit --cov-config=pyproject.toml --cov-report term --cov-report xml:coverage.xml"
-#local = "pytest --cov --cov-config=pyproject.toml --cov-report term --cov-report html"
-
 [tool.hatch.envs.tests]
-dependencies = ["coverage"]
-#path = ["habapp_rules", "tests"]
+dependencies = ["coverage", "pytest", "graphviz"]
+
 
 [tool.hatch.envs.tests.scripts]
-run = "python -m coverage run --rcfile=tests\\.coveragerc tests\\run_unittest.py"
+local = "coverage run tests/run_unittest.py && coverage html --skip-covered --fail-under=100"
+
+
 
 [tool.hatch.metadata.hooks.requirements_txt]
 files = ["requirements.txt"]
