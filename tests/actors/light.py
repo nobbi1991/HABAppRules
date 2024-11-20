@@ -134,7 +134,7 @@ class TestLightBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
     def test_create_graph(self):  # pragma: no cover
         """Create state machine graph for documentation."""
-        picture_dir = pathlib.Path(__file__).parent / "_state_charts"   / "Light"
+        picture_dir = pathlib.Path(__file__).parent / "_state_charts" / "Light"
         if not picture_dir.is_dir():
             picture_dir.mkdir(parents=True)
 
@@ -760,7 +760,7 @@ class TestLightBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
         for item_state in (0, 50, "OFF", "ON"):
             self.light_base._item_light.value = item_state
-            for state_name in [f"auto_{state["name"]}" for state in auto_state["children"] if "init" not in state["name"]]:
+            for state_name in [f"auto_{state['name']}" for state in auto_state["children"] if "init" not in state["name"]]:
                 eval(f"self.light_base.to_{state_name}()")  # noqa: S307
                 self.assertEqual(state_name, self.light_base.state)
                 tests.helper.oh_item.send_command("Unittest_Manual", "ON", "OFF")
@@ -1385,7 +1385,7 @@ class TestLightExtended(tests.helper.test_case_base.TestCaseBaseStateMachine):
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
     def test_create_graph(self):  # pragma: no cover
         """Create state machine graph for documentation."""
-        picture_dir = pathlib.Path(__file__).parent / "_state_charts"   / "LightExtended"
+        picture_dir = pathlib.Path(__file__).parent / "_state_charts" / "LightExtended"
         if not picture_dir.is_dir():
             picture_dir.mkdir(parents=True)
 

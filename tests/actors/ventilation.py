@@ -84,7 +84,7 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
     def test_create_graph(self):  # pragma: no cover
         """Create state machine graph for documentation."""
-        picture_dir = pathlib.Path(__file__).parent / "_state_charts"   / "Ventilation"
+        picture_dir = pathlib.Path(__file__).parent / "_state_charts" / "Ventilation"
         if not picture_dir.is_dir():
             picture_dir.mkdir(parents=True)
 
@@ -457,7 +457,7 @@ class TestVentilationHeliosTwoStage(tests.helper.test_case_base.TestCaseBaseStat
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
     def test_create_graph(self):  # pragma: no cover
         """Create state machine graph for documentation."""
-        picture_dir = pathlib.Path(__file__).parent / "_state_charts"   / "VentilationHeliosTwoStage"
+        picture_dir = pathlib.Path(__file__).parent / "_state_charts" / "VentilationHeliosTwoStage"
         if not picture_dir.is_dir():
             picture_dir.mkdir(parents=True)
 
@@ -657,7 +657,7 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
     def test_create_graph(self):  # pragma: no cover
         """Create state machine graph for documentation."""
-        picture_dir = pathlib.Path(__file__).parent / "_state_charts"   / "VentilationHeliosTwoStageHumidity"
+        picture_dir = pathlib.Path(__file__).parent / "_state_charts" / "VentilationHeliosTwoStageHumidity"
         if not picture_dir.is_dir():
             picture_dir.mkdir(parents=True)
 
