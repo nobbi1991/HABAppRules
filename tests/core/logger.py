@@ -8,7 +8,7 @@ import habapp_rules.core.logger
 
 
 class TestLoggerFunctions(unittest.TestCase):
-    """Tests for all logger functions"""
+    """Tests for all logger functions."""
 
     def test_setup_logger(self):
         """Test setup_logger."""
@@ -25,12 +25,12 @@ class TestLoggerFunctions(unittest.TestCase):
             file_handler_mock.setLevel.assert_called_once_with(logging.DEBUG)
 
             # path is existing
-            with unittest.mock.patch("pathlib.Path.is_dir", return_value=False), unittest.mock.patch("os.makedirs") as makedirs_mock:
+            with unittest.mock.patch("pathlib.Path.is_dir", return_value=False), unittest.mock.patch("pathlib.Path.mkdir") as makedirs_mock:
                 habapp_rules.core.logger.setup_logger()
-                makedirs_mock.assert_called_once()
+                makedirs_mock.assert_called_once_with(parents=True)
 
             # path is not existing
-            with unittest.mock.patch("pathlib.Path.is_dir", return_value=True), unittest.mock.patch("os.makedirs") as makedirs_mock:
+            with unittest.mock.patch("pathlib.Path.is_dir", return_value=True), unittest.mock.patch("pathlib.Path.mkdir") as makedirs_mock:
                 habapp_rules.core.logger.setup_logger()
                 makedirs_mock.assert_not_called()
 
@@ -40,12 +40,11 @@ class TestLoggerFunctions(unittest.TestCase):
         habapp_rules_logger.removeHandler(file_handler_mock)
 
 
-# pylint: disable=protected-access
 class TestInstanceLogger(unittest.TestCase):
-    """Test for instanceLogger"""
+    """Test for instanceLogger."""
 
     def test_instance_logger(self):
-        """Test instance_logger"""
+        """Test instance_logger."""
         instance_logger = habapp_rules.core.logger.InstanceLogger(logging.getLogger(__name__), "test_instance")
 
         self.assertEqual("test_instance", instance_logger._instance_name)

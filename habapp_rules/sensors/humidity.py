@@ -1,6 +1,7 @@
 """Rule for evaluating a humidity sensor."""
 
 import logging
+import typing
 
 import HABApp
 
@@ -12,11 +13,10 @@ import habapp_rules.sensors.config.humidity
 LOGGER = logging.getLogger(__name__)
 
 
-# pylint: disable=no-member
 class HumiditySwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
     """Rule for setting humidity switch if high humidity or a high humidity change is detected."""
 
-    states = [
+    states: typing.ClassVar = [
         {"name": "off"},
         {
             "name": "on",
@@ -28,7 +28,7 @@ class HumiditySwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
         },
     ]
 
-    trans = [
+    trans: typing.ClassVar = [
         {"trigger": "high_humidity_start", "source": "off", "dest": "on"},
         {"trigger": "high_humidity_start", "source": "on_Extended", "dest": "on_HighHumidity"},
         {"trigger": "high_humidity_end", "source": "on_HighHumidity", "dest": "on_Extended"},
@@ -38,7 +38,8 @@ class HumiditySwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
     def __init__(self, config: habapp_rules.sensors.config.humidity.HumiditySwitchConfig) -> None:
         """Init humidity rule.
 
-        :param config: config for humidity switch rule
+        Args:
+            config: config for humidity switch rule
         """
         self._config = config
         habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, self._config.items.state)
@@ -67,19 +68,25 @@ class HumiditySwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
         target_state = "ON" if self.state in {"on_HighHumidity", "on_Extended"} else "OFF"
         habapp_rules.core.helper.send_if_different(self._config.items.output, target_state)
 
-    def _get_initial_state(self, default_value: str = "initial") -> str:
+    def _get_initial_state(self, default_value: str = "initial") -> str:  # noqa: ARG002
         """Get initial state of state machine.
 
-        :param default_value: default / initial state
-        :return: if OpenHAB item has a state it will return it, otherwise return the given default value
+        Args:
+            default_value: default / initial state
+
+        Returns:
+            if OpenHAB item has a state it will return it, otherwise return the given default value
         """
         return "on" if self._check_high_humidity() else "off"
 
     def _check_high_humidity(self, humidity_value: float | None = None) -> bool:
         """Check if humidity is above threshold.
 
-        :param humidity_value: humidity value, which should be checked. If None, the value of the humidity item will be used
-        :return: True if humidity is above threshold
+        Args:
+            humidity_value: humidity value, which should be checked. If None, the value of the humidity item will be used
+
+        Returns:
+             if humidity is above threshold
         """
         if humidity_value is None:
             if self._config.items.humidity.value is None:
@@ -91,7 +98,8 @@ class HumiditySwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
     def _cb_humidity(self, event: HABApp.openhab.events.ItemStateUpdatedEvent) -> None:
         """Callback, which is triggered if the humidity was updated.
 
-        :param event: trigger event
+        Args:
+            event: trigger event
         """
         if self._check_high_humidity(event.value):
             self.high_humidity_start()

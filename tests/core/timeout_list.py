@@ -131,3 +131,14 @@ class TestTimeoutList(unittest.TestCase):
         self.timeout_list.append("test", 10)
         self.assertEqual("test", self.timeout_list.pop(1))
         self.assertEqual([42], self.timeout_list)
+
+    def test_hash(self) -> None:
+        """Test hash method."""
+        self.assertEqual(5740354900026072187, hash(self.timeout_list))
+        self.assertEqual(hash(()), hash(self.timeout_list))
+
+        self.timeout_list.append(2, 2)
+        self.assertEqual(hash((2,)), hash(self.timeout_list))
+
+        self.timeout_list.append(42, 100)
+        self.assertEqual(hash((2, 42)), hash(self.timeout_list))

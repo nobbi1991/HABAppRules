@@ -2,6 +2,7 @@
 
 import logging
 import threading
+import typing
 
 import HABApp.openhab.definitions
 import HABApp.openhab.events
@@ -17,43 +18,42 @@ from habapp_rules.system import PresenceState
 LOGGER = logging.getLogger(__name__)
 
 
-# pylint: disable=no-member
 class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
     """Rule class to manage the presence of a home.
 
-        Hint: If you have some kind of guest-mode, use a guest-available switch as a phone to enable a persistent presence, also if all phones are not at home
+    Hint: If you have some kind of guest-mode, use a guest-available switch as a phone to enable a persistent presence, also if all phones are not at home
 
-        Example OpenHAB configuration:
-        # KNX-things:
-        Thing device T00_99_OpenHab_Presence "KNX OpenHAB Presence"{
+    Example OpenHAB configuration:
+    # KNX-things:
+    Thing device T00_99_OpenHab_Presence "KNX OpenHAB Presence"{
         Type switch-control        : presence       "Presence"      [ ga="0/2/11+0/2/10"]
         Type switch-control        : leaving        "Leaving"       [ ga="0/2/21+0/2/20"]
     }
 
     # Items:
     Switch    I01_00_Presence    "Presence [%s]"    <presence>    (G00_00_rrd4j)    ["Status", "Presence"]    {channel="knx:device:bridge:T00_99_OpenHab_Presence:presence"}
-        Switch    I01_00_Leaving     "Leaving [%s]"     <leaving>                                                 {channel="knx:device:bridge:T00_99_OpenHab_Presence:leaving"}
+    Switch    I01_00_Leaving     "Leaving [%s]"     <leaving>                                                 {channel="knx:device:bridge:T00_99_OpenHab_Presence:leaving"}
 
-        # Config:
-        config = habapp_rules.system.config.presence.PresenceConfig(
-                items=habapp_rules.system.config.presence.PresenceItems(
-                        presence="I01_00_Presence",
-                        leaving="I01_00_Leaving"
-                )
-        )
+    # Config:
+    config = habapp_rules.system.config.presence.PresenceConfig(
+            items=habapp_rules.system.config.presence.PresenceItems(
+                    presence="I01_00_Presence",
+                    leaving="I01_00_Leaving"
+            )
+    )
 
-        # Rule init:
-        habapp_rules.system.presence.Presence(config)
+    # Rule init:
+    habapp_rules.system.presence.Presence(config)
     """
 
-    states = [
+    states: typing.ClassVar = [
         {"name": "presence"},
         {"name": "leaving", "timeout": 5 * 60, "on_timeout": "absence_detected"},  # leaving takes 5 minutes
         {"name": "absence", "timeout": 1.5 * 24 * 3600, "on_timeout": "long_absence_detected"},  # switch to long absence after 1.5 days
         {"name": "long_absence"},
     ]
 
-    trans = [
+    trans: typing.ClassVar = [
         {"trigger": "presence_detected", "source": ["absence", "long_absence"], "dest": "presence"},
         {"trigger": "leaving_detected", "source": ["presence", "absence", "long_absence"], "dest": "leaving"},
         {"trigger": "abort_leaving", "source": "leaving", "dest": "presence"},
@@ -64,7 +64,8 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
     def __init__(self, config: habapp_rules.system.config.presence.PresenceConfig) -> None:
         """Init of Presence object.
 
-        :param config: config for presence detection
+        Args:
+            config: config for presence detection
         """
         self._config = config
         habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, config.items.state)
@@ -88,8 +89,11 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
     def _get_initial_state(self, default_value: str = PresenceState.PRESENCE.value) -> str:
         """Get initial state of state machine.
 
-        :param default_value: default / initial state
-        :return: return correct state if it could be detected, if not return default value
+        Args:
+            default_value: default / initial state
+
+        Returns:
+            return correct state if it could be detected, if not return default value
         """
         phone_items = [phone for phone in self._config.items.phones if phone.value is not None]  # phones with valid state (not None)
         if phone_items:
@@ -124,7 +128,8 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
     def _cb_outside_door(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback, which is called if any outside door changed state.
 
-        :param event: state change event of door item
+        Args:
+            event: state change event of door item
         """
         if event.value == "OPEN" and self.state not in {PresenceState.PRESENCE.value, PresenceState.LEAVING.value}:
             self._instance_logger.debug(f"Presence detected by door ({event.name})")
@@ -133,7 +138,8 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
     def _cb_leaving(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback, which is called if leaving item changed state.
 
-        :param event: Item state change event of leaving item
+        Args:
+            event: Item state change event of leaving item
         """
         if event.value == "ON" and self.state in {PresenceState.PRESENCE.value, PresenceState.ABSENCE.value, PresenceState.LONG_ABSENCE.value}:
             self._instance_logger.debug("Start leaving through leaving switch")
@@ -145,7 +151,8 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
     def _cb_presence(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback, which is called if presence item changed state.
 
-        :param event: Item state change event of presence item
+        Args:
+            event: Item state change event of presence item
         """
         if event.value == "ON" and self.state in {PresenceState.ABSENCE.value, PresenceState.LONG_ABSENCE.value}:
             self._instance_logger.debug("Presence was set manually by presence switch")
@@ -157,7 +164,8 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
     def _cb_phone(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback, which is called if a phone state changed.
 
-        :param event: Item state change event of phone item
+        Args:
+            event: Item state change event of phone item
         """
         active_phones = len([phone for phone in self._config.items.phones if phone.value == "ON"])
         if active_phones == 1 and event.value == "ON":
@@ -187,6 +195,7 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
         self.__phone_absence_timer = None
 
     def on_rule_removed(self) -> None:
+        """Stop all threads, started by this rule."""
         habapp_rules.core.state_machine_rule.StateMachineRule.on_rule_removed(self)
 
         # stop phone absence timer

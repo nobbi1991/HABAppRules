@@ -12,7 +12,8 @@ class SendStateChanged(HABApp.Rule):
     def __init__(self, config: habapp_rules.system.config.notification.NotificationConfig) -> None:
         """Init the rule object.
 
-        :param config: config for notification rule
+        Args:
+            config: config for notification rule
         """
         self._config = config
         HABApp.Rule.__init__(self)
@@ -22,7 +23,8 @@ class SendStateChanged(HABApp.Rule):
     def _send_state_change(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback which is called if the state of the item changed.
 
-        :param event: event which triggered the callback
+        Args:
+            event: event which triggered the callback
         """
         msg = f"{event.name} changed from {event.old_value} to {event.value}"
 

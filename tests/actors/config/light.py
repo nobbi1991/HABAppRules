@@ -93,7 +93,7 @@ class TestLightParameter(unittest.TestCase):
                         LightParameter(on=test_case.on, pre_off=test_case.pre_off, leaving=test_case.leaving, pre_sleep=test_case.pre_sleep, pre_sleep_prevent=test_case.pre_sleep_prevent)
 
     def test_sleep_of_pre_sleep(self):
-        """Test if sleep of pre_sleep is set correctly"""
+        """Test if sleep of pre_sleep is set correctly."""
         light_config = LightParameter(
             on=FunctionConfig(day=BrightnessTimeout(True, 3), night=BrightnessTimeout(True, 2), sleeping=BrightnessTimeout(True, 1)), pre_off=None, leaving=None, pre_sleep=FunctionConfig(day=None, night=None, sleeping=BrightnessTimeout(True, 1))
         )
@@ -105,7 +105,7 @@ class TestLightConfig(tests.helper.test_case_base.TestCaseBase):
     """Tests for LightConfig."""
 
     def test_validate_config(self):
-        """Test validate_config"""
+        """Test validate_config."""
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_CustomState", None)
@@ -136,7 +136,7 @@ class TestLightConfig(tests.helper.test_case_base.TestCaseBase):
         )
 
         # motion parameter is missing
-        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
+        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
             habapp_rules.actors.config.light.LightConfig(items=habapp_rules.actors.config.light.LightItems(light="Unittest_Light", manual="Unittest_Manual", day="Unittest_Day", state="H_CustomState", motion="Unittest_Motion"))
 
         # ======= validate door =======
@@ -147,7 +147,7 @@ class TestLightConfig(tests.helper.test_case_base.TestCaseBase):
         )
 
         # door parameter is missing
-        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
+        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
             habapp_rules.actors.config.light.LightConfig(items=habapp_rules.actors.config.light.LightItems(light="Unittest_Light", manual="Unittest_Manual", day="Unittest_Day", state="H_CustomState", doors=["Unittest_Door_1"]))
 
         # ======= validate sleep =======
@@ -158,7 +158,7 @@ class TestLightConfig(tests.helper.test_case_base.TestCaseBase):
         )
 
         # sleep parameter is missing
-        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
+        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
             habapp_rules.actors.config.light.LightConfig(
                 items=habapp_rules.actors.config.light.LightItems(light="Unittest_Light", manual="Unittest_Manual", day="Unittest_Day", state="H_CustomState", sleeping_state="Unittest_Sleep_state"),
                 parameter=habapp_rules.actors.config.light.LightParameter(pre_sleep=None),
@@ -172,7 +172,7 @@ class TestLightConfig(tests.helper.test_case_base.TestCaseBase):
         )
 
         # presence parameter is missing
-        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
+        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
             habapp_rules.actors.config.light.LightConfig(
                 items=habapp_rules.actors.config.light.LightItems(light="Unittest_Light", manual="Unittest_Manual", day="Unittest_Day", state="H_CustomState", presence_state="Unittest_Presence_state"),
                 parameter=habapp_rules.actors.config.light.LightParameter(leaving=None),

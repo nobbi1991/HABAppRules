@@ -17,9 +17,10 @@ class _SetNightDayBase(HABApp.Rule):
     def __init__(self, item_target: HABApp.openhab.items.SwitchItem, item_elevation: HABApp.openhab.items.NumberItem, elevation_threshold: float) -> None:
         """Init Rule.
 
-        :param item_target: OpenHab item which should be set depending on the sun elevation value
-        :param item_elevation: OpenHAB item of sun elevation (NumberItem)
-        :param elevation_threshold: Threshold value for elevation.
+        Args:
+            item_target: OpenHab item which should be set depending on the sun elevation value
+            item_elevation: OpenHAB item of sun elevation (NumberItem)
+            elevation_threshold: Threshold value for elevation.
         """
         HABApp.Rule.__init__(self)
 
@@ -41,7 +42,8 @@ class _SetNightDayBase(HABApp.Rule):
     def _get_target_value(self) -> str:
         """Get target value which should be set.
 
-        :return: target value (ON / OFF)
+        Returns:
+            target value (ON / OFF)
         """
 
 
@@ -70,14 +72,16 @@ class SetDay(_SetNightDayBase):
     def __init__(self, config: habapp_rules.sensors.config.astro.SetDayConfig) -> None:
         """Init Rule.
 
-        :param config: Config for set day rule
+        Args:
+            config: Config for set day rule
         """
         _SetNightDayBase.__init__(self, config.items.day, config.items.elevation, config.parameter.elevation_threshold)
 
     def _get_target_value(self) -> str:
         """Get target value which should be set.
 
-        :return: target value (ON / OFF)
+        Returns:
+            target value (ON / OFF)
         """
         return "ON" if self._item_elevation.value > self._elevation_threshold else "OFF"
 
@@ -107,13 +111,15 @@ class SetNight(_SetNightDayBase):
     def __init__(self, config: habapp_rules.sensors.config.astro.SetNightConfig) -> None:
         """Init Rule.
 
-        :param config: Config for setting night depending on sun elevation
+        Args:
+            config: Config for setting night depending on sun elevation
         """
         _SetNightDayBase.__init__(self, config.items.night, config.items.elevation, config.parameter.elevation_threshold)
 
     def _get_target_value(self) -> str:
         """Get target value which should be set.
 
-        :return: target value (ON / OFF)
+        Returns:
+            target value (ON / OFF)
         """
         return "ON" if self._item_elevation.value < self._elevation_threshold else "OFF"

@@ -25,14 +25,14 @@ import habapp_rules.system
 
 LOGGER = logging.getLogger(__name__)
 
-BrightnessTypes = typing.Union[list[float | bool], float, bool]
+DIMMER_VALUE_TOLERANCE = 5
+MINUTE_IN_SEC = 60
 
 
-# pylint: disable=no-member, too-many-instance-attributes
 class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, abc.ABC):
     """Base class for lights."""
 
-    states = [
+    states: typing.ClassVar = [
         {"name": "manual"},
         {
             "name": "auto",
@@ -49,7 +49,7 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, abc.ABC)
         },
     ]
 
-    trans = [
+    trans: typing.ClassVar = [
         {"trigger": "manual_on", "source": "auto", "dest": "manual"},
         {"trigger": "manual_off", "source": "manual", "dest": "auto"},
         {"trigger": "hand_on", "source": ["auto_off", "auto_preoff"], "dest": "auto_on"},
@@ -70,7 +70,8 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, abc.ABC)
     def __init__(self, config: habapp_rules.actors.config.light.LightConfig) -> None:
         """Init of basic light object.
 
-        :param config: light config
+        Args:
+            config: light config
         """
         self._config = config
 
@@ -102,11 +103,14 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, abc.ABC)
         self._update_openhab_state()
         self._instance_logger.debug(super().get_initial_log_message())
 
-    def _get_initial_state(self, default_value: str = "") -> str:
+    def _get_initial_state(self, default_value: str = "") -> str:  # noqa: ARG002
         """Get initial state of state machine.
 
-        :param default_value: default / initial state
-        :return: if OpenHAB item has a state it will return it, otherwise return the given default value
+        Args:
+            default_value: default / initial state
+
+        Returns:
+             OpenHAB item has a state it will return it, otherwise return the given default value
         """
         if self._config.items.manual.is_on():
             return "manual"
@@ -114,14 +118,14 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, abc.ABC)
             if (
                 self._config.items.presence_state is not None
                 and self._config.items.presence_state.value == habapp_rules.system.PresenceState.PRESENCE.value
-                and getattr(self._config.items.sleeping_state, "value", "awake") in (habapp_rules.system.SleepState.AWAKE.value, habapp_rules.system.SleepState.POST_SLEEPING.value, habapp_rules.system.SleepState.LOCKED.value)
+                and getattr(self._config.items.sleeping_state, "value", "awake") in {habapp_rules.system.SleepState.AWAKE.value, habapp_rules.system.SleepState.POST_SLEEPING.value, habapp_rules.system.SleepState.LOCKED.value}
             ):
                 return "auto_on"
             if (
                 self._pre_sleep_configured()
                 and self._config.items.presence_state is not None
-                and self._config.items.presence_state.value in (habapp_rules.system.PresenceState.PRESENCE.value, habapp_rules.system.PresenceState.LEAVING.value)
-                and getattr(self._config.items.sleeping_state, "value", "") in (habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value)
+                and self._config.items.presence_state.value in {habapp_rules.system.PresenceState.PRESENCE.value, habapp_rules.system.PresenceState.LEAVING.value}
+                and getattr(self._config.items.sleeping_state, "value", "") in {habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value}
             ):
                 return "auto_presleep"
             if self._leaving_configured():
@@ -142,16 +146,18 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, abc.ABC)
             self._previous_state = self.state
 
     def _pre_off_configured(self) -> bool:
-        """Check whether pre-off is configured for the current day/night/sleep state
+        """Check whether pre-off is configured for the current day/night/sleep state.
 
-        :return: True if pre-off is configured
+        Returns:
+            True if pre-off is configured
         """
         return bool(self._timeout_pre_off)
 
     def _leaving_configured(self) -> bool:
-        """Check whether leaving is configured for the current day/night/sleep state
+        """Check whether leaving is configured for the current day/night/sleep state.
 
-        :return: True if leaving is configured
+        Returns:
+            True if leaving is configured
         """
         if self._config.parameter.leaving_only_if_on and self._config.items.light.is_off():
             return False
@@ -159,9 +165,10 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, abc.ABC)
         return bool(self._timeout_leaving)
 
     def _pre_sleep_configured(self) -> bool:
-        """Check whether pre-sleep is configured for the current day/night state
+        """Check whether pre-sleep is configured for the current day/night state.
 
-        :return: True if pre-sleep is configured
+        Returns:
+            True if pre-sleep is configured
         """
         if self._config.items.sleeping_state is None:
             return False
@@ -172,13 +179,13 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, abc.ABC)
         elif self._config.parameter.pre_sleep_prevent is not None:
             try:
                 pre_sleep_prevent = self._config.parameter.pre_sleep_prevent()
-            except Exception as ex:  # pylint: disable=broad-except
-                self._instance_logger.error(f"Could not execute pre_sleep_prevent function: {ex}. pre_sleep_prevent will be set to False.")
+            except Exception:
+                self._instance_logger.exception("Could not execute pre_sleep_prevent function. pre_sleep_prevent will be set to False.")
                 pre_sleep_prevent = False
 
         return bool(self._timeout_pre_sleep) and not pre_sleep_prevent
 
-    def on_enter_auto_restoreState(self):  # pylint: disable=invalid-name
+    def on_enter_auto_restoreState(self) -> None:  # noqa: N802
         """On enter of state auto_restoreState."""
         self._restore_state = "auto_off" if self._restore_state == "auto_preoff" else self._restore_state
 
@@ -186,9 +193,10 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, abc.ABC)
             self._set_state(self._restore_state)
 
     def _was_on_before(self) -> bool:
-        """Check whether the dimmer was on before
+        """Check whether the dimmer was on before.
 
-        :return: True if the dimmer was on before, else False
+        Returns:
+            True if the dimmer was on before, else False
         """
         return bool(self._brightness_before)
 
@@ -220,13 +228,13 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, abc.ABC)
     def _set_light_state(self) -> None:
         """Set brightness to light."""
 
-    # pylint: disable=too-many-branches, too-many-return-statements
-    def _get_target_brightness(self) -> bool | float | None:
-        """Get configured brightness for the current day/night/sleep state
+    def _get_target_brightness(self) -> bool | float | None:  # noqa: C901, PLR0912
+        """Get configured brightness for the current day/night/sleep state.
 
-        :return: brightness value
+        Returns:
+             brightness value
         """
-        sleeping_active = self._get_sleeping_activ(True)
+        sleeping_active = self._get_sleeping_activ(include_pre_sleep=True)
 
         if self.state == "auto_on":
             if self._previous_state == "manual":
@@ -235,7 +243,7 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, abc.ABC)
                 return self._brightness_before
 
             # starting from here: previous state == auto_off
-            if isinstance(man_value := self._state_observer.last_manual_event.value, (int, float)) and 0 < man_value < 100:
+            if isinstance(man_value := self._state_observer.last_manual_event.value, int | float) and 0 < man_value < 100:  # noqa: PLR2004
                 return None
             if self._state_observer.last_manual_event.value == "INCREASE":
                 return None
@@ -265,7 +273,7 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, abc.ABC)
             if brightness_from_config is None:
                 return None
 
-            if isinstance(self._state_observer.value, (float, int)) and brightness_from_config > self._state_observer.value:
+            if isinstance(self._state_observer.value, float | int) and brightness_from_config > self._state_observer.value:
                 return math.ceil(self._state_observer.value / 2)
             return brightness_from_config
 
@@ -288,8 +296,8 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, abc.ABC)
 
         return None
 
-    def on_enter_auto_init(self):
-        """Callback, which is called on enter of init state"""
+    def on_enter_auto_init(self) -> None:
+        """Callback, which is called on enter of init state."""
         if self._config.items.light.is_on():
             self.to_auto_on()
         else:
@@ -298,24 +306,29 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, abc.ABC)
     def _get_sleeping_activ(self, include_pre_sleep: bool = False) -> bool:
         """Get if sleeping is active.
 
-        :param include_pre_sleep: if true, also pre sleep will be handled as sleeping
-        :return: true if sleeping active
+        Args:
+            include_pre_sleep: if true, also pre sleep will be handled as sleeping
+
+        Returns:
+            true if sleeping active
         """
         sleep_states = [habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value] if include_pre_sleep else [habapp_rules.system.SleepState.SLEEPING.value]
         return getattr(self._config.items.sleeping_state, "value", "") in sleep_states
 
-    def _cb_hand_on(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
+    def _cb_hand_on(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:  # noqa: ARG002
         """Callback, which is triggered by the state observer if a manual ON command was detected.
 
-        :param event: original trigger event
+        Args:
+            event: original trigger event
         """
         self._instance_logger.debug("Hand 'ON' detected")
         self.hand_on()
 
-    def _cb_hand_off(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
+    def _cb_hand_off(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:  # noqa: ARG002
         """Callback, which is triggered by the state observer if a manual OFF command was detected.
 
-        :param event: original trigger event
+        Args:
+            event: original trigger event
         """
         self._instance_logger.debug("Hand 'OFF' detected")
         self.hand_off()
@@ -323,24 +336,27 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, abc.ABC)
     def _cb_manu(self, event: HABApp.openhab.events.ItemStateUpdatedEvent) -> None:
         """Callback, which is triggered if the manual switch has a state event.
 
-        :param event: trigger event
+        Args:
+            event: trigger event
         """
         if event.value == "ON":
             self.manual_on()
         else:
             self.manual_off()
 
-    def _cb_day(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_day(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:  # noqa: ARG002
         """Callback, which is triggered if the day/night switch has a state change event.
 
-        :param event: trigger event
+        Args:
+            event: trigger event
         """
         self._set_timeouts()
 
     def _cb_presence(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback, which is triggered if the presence state has a state change event.
 
-        :param event: trigger event
+        Args:
+            event: trigger event
         """
         self._set_timeouts()
         if event.value == habapp_rules.system.PresenceState.LEAVING.value:
@@ -353,7 +369,8 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, abc.ABC)
     def _cb_sleeping(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback, which is triggered if the sleep state has a state change event.
 
-        :param event: trigger event
+        Args:
+            event: trigger event
         """
         self._set_timeouts()
         if event.value == habapp_rules.system.SleepState.PRE_SLEEPING.value:
@@ -361,7 +378,7 @@ class _LightBase(habapp_rules.core.state_machine_rule.StateMachineRule, abc.ABC)
             self._restore_state = self._previous_state
             self.__time_sleep_start = time.time()
             self.sleep_started()
-        elif event.value == habapp_rules.system.SleepState.AWAKE.value and time.time() - self.__time_sleep_start <= 60:
+        elif event.value == habapp_rules.system.SleepState.AWAKE.value and time.time() - self.__time_sleep_start <= MINUTE_IN_SEC:
             self.sleep_aborted()
 
 
@@ -395,18 +412,23 @@ class LightSwitch(_LightBase):
     def __init__(self, config: habapp_rules.actors.config.light.LightConfig) -> None:
         """Init of basic light object.
 
-        :param config: light config
-        :raises TypeError: if type of light_item is not supported
+        Args:
+            config: light config
+
+        Raises:
+            TypeError: if type of light_item is not supported
         """
         if not isinstance(config.items.light, HABApp.openhab.items.switch_item.SwitchItem):
-            raise TypeError(f"type: {type(config.items.light)} is not supported!")
+            msg = f"type: {type(config.items.light)} is not supported!"
+            raise TypeError(msg)
 
         self._state_observer = habapp_rules.actors.state_observer.StateObserverSwitch(config.items.light.name, self._cb_hand_on, self._cb_hand_off)
 
         _LightBase.__init__(self, config)
 
     def _update_openhab_state(self) -> None:
-        _LightBase._update_openhab_state(self)
+        """Update OpenHAB state item and other states."""
+        _LightBase._update_openhab_state(self)  # noqa: SLF001
 
         if self.state == "auto_preoff":
             timeout = self.state_machine.get_state(self.state).timeout
@@ -414,7 +436,7 @@ class LightSwitch(_LightBase):
             warn_thread_1 = threading.Thread(target=self.__trigger_warning, args=("auto_preoff", 0, 1), daemon=True)
             warn_thread_1.start()
 
-            if timeout > 60:
+            if timeout > MINUTE_IN_SEC:
                 # add additional warning for long timeouts
                 warn_thread_2 = threading.Thread(target=self.__trigger_warning, args=("auto_preoff", timeout / 2, 2), daemon=True)
                 warn_thread_2.start()
@@ -422,9 +444,10 @@ class LightSwitch(_LightBase):
     def __trigger_warning(self, state_name: str, wait_time: float, switch_off_amount: int) -> None:
         """Trigger light switch off warning.
 
-        :param state_name: name of state where the warning should be triggered. If different no command will be sent
-        :param wait_time: time between start of the thread and switch off / on
-        :param switch_off_amount: number of switch off
+        Args:
+            state_name: name of state where the warning should be triggered. If different no command will be sent
+            wait_time: time between start of the thread and switch off / on
+            switch_off_amount: number of switch off
         """
         if wait_time:
             time.sleep(wait_time)
@@ -487,15 +510,18 @@ class LightDimmer(_LightBase):
     trans = copy.deepcopy(_LightBase.trans)
     trans.append({"trigger": "hand_changed", "source": "auto_on", "dest": "auto_on"})
 
-    # pylint: disable=too-many-arguments
     def __init__(self, config: habapp_rules.actors.config.light.LightConfig) -> None:
         """Init of basic light object.
 
-        :param config: light config
-        :raises TypeError: if type of light_item is not supported
+        Args:
+            config: light config
+
+        Raises:
+            TypeError: if type of light_item is not supported
         """
         if not isinstance(config.items.light, HABApp.openhab.items.dimmer_item.DimmerItem):
-            raise TypeError(f"type: {type(config.items.light)} is not supported!")
+            msg = f"type: {type(config.items.light)} is not supported!"
+            raise TypeError(msg)
 
         control_names = [item.name for item in config.items.light_control]
         group_names = [item.name for item in config.items.light_groups]
@@ -511,25 +537,22 @@ class LightDimmer(_LightBase):
             return
 
         if isinstance(target_value, bool):
-            if target_value:
-                target_value = "ON"
-            else:
-                target_value = "OFF"
+            target_value = "ON" if target_value else "OFF"
         self._instance_logger.debug(f"set brightness {target_value}")
         self._state_observer.send_command(target_value)
 
     def _cb_hand_changed(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | HABApp.openhab.events.ItemCommandEvent | HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback, which is triggered by the state observer if a manual OFF command was detected.
 
-        :param event: original trigger event
+        Args:
+            event: original trigger event
         """
-        if isinstance(event, HABApp.openhab.events.ItemStateChangedEvent) and abs(event.value - event.old_value) > 5:
+        if isinstance(event, HABApp.openhab.events.ItemStateChangedEvent) and abs(event.value - event.old_value) > DIMMER_VALUE_TOLERANCE:
             self.hand_changed()
 
 
-# pylint: disable=protected-access
 class _LightExtendedMixin:
-    """Mixin class for adding door and motion functionality"""
+    """Mixin class for adding door and motion functionality."""
 
     states: dict
     trans: list
@@ -541,7 +564,8 @@ class _LightExtendedMixin:
     def __init__(self, config: habapp_rules.actors.config.light.LightConfig) -> None:
         """Init mixin class.
 
-        :param config: light config
+        Args:
+            config: light config
         """
         self.states = _LightExtendedMixin._add_additional_states(self.states)
         self.trans = _LightExtendedMixin._add_additional_transitions(self.trans)
@@ -556,8 +580,11 @@ class _LightExtendedMixin:
     def _add_additional_states(states_dict: dict) -> dict:
         """Add additional states for door and motion.
 
-        :param states_dict: current state dictionary
-        :return: current + new states
+        Args:
+            states_dict: current state dictionary
+
+        Returns:
+            current + new states
         """
         states_dict = copy.deepcopy(states_dict)
         states_dict[1]["children"].append({"name": "door", "timeout": 999, "on_timeout": "door_timeout"})
@@ -566,10 +593,13 @@ class _LightExtendedMixin:
 
     @staticmethod
     def _add_additional_transitions(transitions_list: list[dict]) -> list[dict]:
-        """Add additional transitions for door and motion
+        """Add additional transitions for door and motion.
 
-        :param transitions_list: current transitions
-        :return: current + new transitions
+        Args:
+            transitions_list: current transitions
+
+        Returns:
+            current + new transitions
         """
         transitions_list = copy.deepcopy(transitions_list)
 
@@ -603,10 +633,13 @@ class _LightExtendedMixin:
     def _get_initial_state(self, default_value: str = "") -> str:
         """Get initial state of state machine.
 
-        :param default_value: default / initial state
-        :return: if OpenHAB item has a state it will return it, otherwise return the given default value
+        Args:
+            default_value: default / initial state
+
+        Returns:
+            if OpenHAB item has a state it will return it, otherwise return the given default value
         """
-        initial_state = _LightBase._get_initial_state(self, default_value)
+        initial_state = _LightBase._get_initial_state(self, default_value)  # noqa: SLF001
 
         if initial_state == "auto_on" and self._config.items.motion is not None and self._config.items.motion.is_on() and self._motion_configured():
             initial_state = "auto_motion"
@@ -614,7 +647,7 @@ class _LightExtendedMixin:
 
     def _set_timeouts(self) -> None:
         """Set timeouts depending on the current day/night/sleep state."""
-        _LightBase._set_timeouts(self)
+        _LightBase._set_timeouts(self)  # noqa: SLF001
 
         # set timeouts of additional states
         if self._get_sleeping_activ():
@@ -632,71 +665,80 @@ class _LightExtendedMixin:
         self.state_machine.states["auto"].states["door"].timeout = self._timeout_door
 
     def _get_target_brightness(self) -> bool | float | None:
-        """Get configured brightness for the current day/night/sleep state. Must be called before _get_target_brightness of base class
+        """Get configured brightness for the current day/night/sleep state. Must be called before _get_target_brightness of base class.
 
-        :return: brightness value
-        :raises habapp_rules.core.exceptions.HabAppRulesException: if current state is not supported
+        Returns:
+            configured brightness value
+
+        Raises:
+            habapp_rules.core.exceptions.HabAppRulesError: if current state is not supported
         """
         if self.state == "auto_motion":
-            if self._get_sleeping_activ(True):
+            if self._get_sleeping_activ(include_pre_sleep=True):
                 return getattr(self._config.parameter.motion.sleeping if self._config.parameter.motion else None, "brightness", None)
             if self._config.items.day.is_on():
                 return getattr(self._config.parameter.motion.day if self._config.parameter.motion else None, "brightness", None)
             return getattr(self._config.parameter.motion.night if self._config.parameter.motion else None, "brightness", None)
 
         if self.state == "auto_door":
-            if self._get_sleeping_activ(True):
+            if self._get_sleeping_activ(include_pre_sleep=True):
                 return getattr(self._config.parameter.door.sleeping if self._config.parameter.door else None, "brightness", None)
             if self._config.items.day.is_on():
                 return getattr(self._config.parameter.door.day if self._config.parameter.door else None, "brightness", None)
             return getattr(self._config.parameter.door.night if self._config.parameter.door else None, "brightness", None)
 
-        return _LightBase._get_target_brightness(self)
+        return _LightBase._get_target_brightness(self)  # noqa: SLF001
 
     def _door_configured(self) -> bool:
-        """Check whether door functionality is configured for the current day/night state
+        """Check whether door functionality is configured for the current day/night state.
 
-        :return: True if door functionality is configured
+        Returns:
+            True if door functionality is configured
         """
         if not self._config.items.doors:
             return False
         return bool(self._timeout_door)
 
     def _door_off_leaving_configured(self) -> bool:
-        """Check whether door-off functionality is configured for the current day/night state
+        """Check whether door-off functionality is configured for the current day/night state.
 
-        :return: True if door-off is configured
+        Returns:
+            True if door-off is configured
         """
         return self._config.parameter.off_at_door_closed_during_leaving
 
     def _motion_configured(self) -> bool:
-        """Check whether motion functionality is configured for the current day/night state
+        """Check whether motion functionality is configured for the current day/night state.
 
-        :return: True if motion functionality is configured
+        Returns:
+            True if motion functionality is configured
         """
         if self._config.items.motion is None:
             return False
         return bool(self._timeout_motion)
 
     def _motion_door_allowed(self) -> bool:
-        """Check if transition to motion and door state is allowed
+        """Check if transition to motion and door state is allowed.
 
-        :return: True if transition is allowed
+        Returns:
+            True if transition is allowed
         """
         return time.time() - self._hand_off_timestamp > self._hand_off_lock_time
 
     def _cb_hand_off(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
         """Callback, which is triggered by the state observer if a manual OFF command was detected.
 
-        :param event: original trigger event
+        Args:
+            event: original trigger event
         """
         self._hand_off_timestamp = time.time()
-        _LightBase._cb_hand_off(self, event)
+        _LightBase._cb_hand_off(self, event)  # noqa: SLF001
 
     def _cb_motion(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback, which is triggered if the motion state changed.
 
-        :param event: trigger event
+        Args:
+            event: trigger event
         """
         if event.value == "ON":
             self.motion_on()
@@ -706,7 +748,8 @@ class _LightExtendedMixin:
     def _cb_door(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback, which is triggered if a door state changed.
 
-        :param event: trigger event
+        Args:
+            event: trigger event
         """
         if event.value == "OPEN":
             # every open of a single door calls door_opened()
@@ -716,12 +759,11 @@ class _LightExtendedMixin:
             # only if all doors are closed door_closed() is called
             self.door_closed()
 
-    def _log_motion_timeout_warning(self):
+    def _log_motion_timeout_warning(self) -> None:
         """Log warning if motion state was left because of timeout."""
         self._instance_logger.warning("Timeout of motion was triggered, before motion stopped. Thing about to increase motion timeout!")
 
 
-# pylint: disable=protected-access
 class LightSwitchExtended(_LightExtendedMixin, LightSwitch):
     """Extended Light.
 
@@ -729,11 +771,11 @@ class LightSwitchExtended(_LightExtendedMixin, LightSwitch):
     With this class additionally motion or door items can be given.
     """
 
-    # pylint: disable=too-many-arguments
     def __init__(self, config: habapp_rules.actors.config.light.LightConfig) -> None:
         """Init of extended light object.
 
-        :param config: light config
+        Args:
+            config: light config
         """
         _LightExtendedMixin.__init__(self, config)
         LightSwitch.__init__(self, config)
@@ -741,7 +783,6 @@ class LightSwitchExtended(_LightExtendedMixin, LightSwitch):
         _LightExtendedMixin.add_additional_callbacks(self)
 
 
-# pylint: disable=protected-access
 class LightDimmerExtended(_LightExtendedMixin, LightDimmer):
     """Extended Light.
 
@@ -749,11 +790,11 @@ class LightDimmerExtended(_LightExtendedMixin, LightDimmer):
     With this class additionally motion or door items can be given.
     """
 
-    # pylint:disable=too-many-arguments
     def __init__(self, config: habapp_rules.actors.config.light.LightConfig) -> None:
         """Init of extended light object.
 
-        :param config: light config
+        Args:
+            config: light config
         """
         _LightExtendedMixin.__init__(self, config)
         LightDimmer.__init__(self, config)

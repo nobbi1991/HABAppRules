@@ -16,7 +16,7 @@ import tests.helper.test_case_base
 
 
 class TestHelperFunctions(tests.helper.test_case_base.TestCaseBase):
-    """Tests for all helper functions"""
+    """Tests for all helper functions."""
 
     def test_create_additional_item(self):
         """Test create additional item."""
@@ -48,7 +48,7 @@ class TestHelperFunctions(tests.helper.test_case_base.TestCaseBase):
     def test_test_create_additional_item_exception(self):
         """Test exceptions of _create_additional_item."""
         self.item_exists_mock.return_value = False
-        with unittest.mock.patch("HABApp.openhab.interface_sync.create_item", spec=HABApp.openhab.interface_sync.create_item, return_value=False), self.assertRaises(habapp_rules.core.exceptions.HabAppRulesException):
+        with unittest.mock.patch("HABApp.openhab.interface_sync.create_item", spec=HABApp.openhab.interface_sync.create_item, return_value=False), self.assertRaises(habapp_rules.core.exceptions.HabAppRulesError):
             habapp_rules.core.helper.create_additional_item("Name_of_Item", "Switch")
 
     def test_send_if_different(self):
@@ -71,9 +71,8 @@ class TestHelperFunctions(tests.helper.test_case_base.TestCaseBase):
         tests.helper.oh_item.assert_value("Unittest_Number", 84)
 
 
-# pylint: disable=protected-access
 class TestHelperWithItems(tests.helper.test_case_base.TestCaseBase):
-    """Test helper functions with OpenHAB items"""
+    """Test helper functions with OpenHAB items."""
 
     def test_filter_updated_items(self):
         """Test filter_updated_items."""

@@ -5,23 +5,24 @@ from __future__ import annotations
 import copy
 import typing
 
-import HABApp.openhab.items
+import HABApp.openhab.items  # noqa: TCH002
 import pydantic
 
 import habapp_rules.core.pydantic_base
 
 
 class ShadingPosition(pydantic.BaseModel):
-    """Position of shading object"""
+    """Position of shading object."""
 
     position: float | bool | None = pydantic.Field(..., description="target position")
     slat: float | None = pydantic.Field(None, description="target slat position")
 
     def __init__(self, position: float | bool | None, slat: float | None = None) -> None:
-        """Initialize shading position with position and slat
+        """Initialize shading position with position and slat.
 
-        :param position: target position value
-        :param slat: slat value
+        Args:
+            position: target position value
+            slat: slat value
         """
         super().__init__(position=position, slat=slat)
 
@@ -62,9 +63,10 @@ class ShadingParameter(habapp_rules.core.pydantic_base.ParameterBase):
 
     @pydantic.model_validator(mode="after")
     def validate_model(self) -> typing.Self:
-        """Validate model
+        """Validate model.
 
-        :return: validated model
+        Returns:
+            validated model
         """
         if self.pos_sleeping_night and not self.pos_sleeping_day:
             self.pos_sleeping_day = copy.deepcopy(self.pos_sleeping_night)
@@ -79,13 +81,17 @@ class ShadingConfig(habapp_rules.core.pydantic_base.ConfigBase):
 
     @pydantic.model_validator(mode="after")
     def validate_model(self) -> typing.Self:
-        """Validate model
+        """Validate model.
 
-        :return: validated model
-        :raises AssertionError: if 'parameter.pos_night_close_summer' is set but 'items.summer' is missing
+        Returns:
+            validated model
+
+        Raises:
+            AssertionError: if 'parameter.pos_night_close_summer' is set but 'items.summer' is missing
         """
         if self.parameter.pos_night_close_summer is not None and self.items.summer is None:
-            raise AssertionError("Night close position is set for summer, but item for summer / winter is missing!")
+            msg = "Night close position is set for summer, but item for summer / winter is missing!"
+            raise AssertionError(msg)
         return self
 
 
@@ -122,11 +128,12 @@ class ElevationSlatMapping(pydantic.BaseModel):
     elevation: int
     slat_value: int
 
-    def __init__(self, elevation: int, slat_value: int):
+    def __init__(self, elevation: int, slat_value: int) -> None:
         """Initialize the elevation slat mapping.
 
-        :param elevation: elevation value
-        :param slat_value: mapped slat value
+        Args:
+            elevation: elevation value
+            slat_value: mapped slat value
         """
         super().__init__(elevation=elevation, slat_value=slat_value)
 
@@ -147,14 +154,20 @@ class SlatValueParameter(habapp_rules.core.pydantic_base.ParameterBase):
     def sort_mapping(cls, values: list[ElevationSlatMapping]) -> list[ElevationSlatMapping]:
         """Sort the elevation slat mappings.
 
-        :param values: input values
-        :return: sorted values
-        :raises AssertionError: if elevation values are not unique
+        Args:
+            values: input values
+
+        Returns:
+            sorted values
+
+        Raises:
+            AssertionError: if elevation values are not unique
         """
         values.sort(key=lambda x: x.elevation)
 
-        if len(values) != len(set(value.elevation for value in values)):
-            raise AssertionError("Elevation values must be unique!")
+        if len(values) != len({value.elevation for value in values}):
+            msg = "Elevation values must be unique!"
+            raise AssertionError(msg)
 
         return values
 

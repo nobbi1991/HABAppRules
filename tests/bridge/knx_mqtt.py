@@ -13,7 +13,6 @@ import tests.helper.oh_item
 import tests.helper.test_case_base
 
 
-# pylint: disable=protected-access
 class TestLight(tests.helper.test_case_base.TestCaseBase):
     """Tests cases for testing Light rule."""
 
@@ -44,7 +43,7 @@ class TestLight(tests.helper.test_case_base.TestCaseBase):
         self._knx_bridge_dimmer = habapp_rules.bridge.knx_mqtt.KnxMqttDimmerBridge(config_dimmer)
 
     def test__init__(self):
-        """Test __init__"""
+        """Test __init__."""
         self.assertIsNotNone(self._knx_bridge_full._config.items.knx_switch_ctr)
         self.assertIsNotNone(self._knx_bridge_full._config.items.knx_dimmer_ctr)
 
@@ -77,7 +76,7 @@ class TestLight(tests.helper.test_case_base.TestCaseBase):
         habapp_rules.bridge.knx_mqtt.KnxMqttDimmerBridge(config_dimmer)
 
     def test_knx_on_off(self):
-        """Test ON/OFF from KNX"""
+        """Test ON/OFF from KNX."""
         self.assertEqual(0, self._knx_bridge_full._config.items.mqtt_dimmer.value)
 
         # ON via KNX

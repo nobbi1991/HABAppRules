@@ -9,7 +9,7 @@ import tests.helper.test_case_base
 
 
 class TestIrrigationConfig(tests.helper.test_case_base.TestCaseBase):
-    """Test IrrigationConfig class"""
+    """Test IrrigationConfig class."""
 
     def test_model_validation(self):
         """Test model validation."""

@@ -13,42 +13,43 @@ LOGGER = logging.getLogger(__name__)
 class ExponentialFilter(HABApp.Rule):
     """Rules class to apply a exponential filter to a number value.
 
-        # Items:
-        Number    BrightnessValue                       "Brightness Value [%d]"                         {channel="..."}
-        Number    BrightnessFiltered                    "Brightness filtered [%d]"
-        Number    BrightnessFilteredInstantIncrease     "Brightness filtered instant increase [%d]"
+    # Items:
+    Number    BrightnessValue                       "Brightness Value [%d]"                         {channel="..."}
+    Number    BrightnessFiltered                    "Brightness filtered [%d]"
+    Number    BrightnessFilteredInstantIncrease     "Brightness filtered instant increase [%d]"
 
-        # Config
-        config = habapp_rules.common.config.filter.ExponentialFilterConfig(
-                items = habapp_rules.common.config.filter.ExponentialFilterItems(
-                        raw = "BrightnessValue",
-                        filtered = "BrightnessFiltered"
-                ),
-                parameter = habapp_rules.common.config.filter.ExponentialFilterParameter(  # filter constant 1 minute
-                        tau = 60
-                )
-        )
+    # Config
+    config = habapp_rules.common.config.filter.ExponentialFilterConfig(
+            items = habapp_rules.common.config.filter.ExponentialFilterItems(
+                    raw = "BrightnessValue",
+                    filtered = "BrightnessFiltered"
+            ),
+            parameter = habapp_rules.common.config.filter.ExponentialFilterParameter(  # filter constant 1 minute
+                    tau = 60
+           )
+    )
 
-        config2 = habapp_rules.common.config.filter.ExponentialFilterConfig(
-                items = habapp_rules.common.config.filter.ExponentialFilterItems(
-                        raw = "BrightnessValue",
-                        filtered = "BrightnessFilteredInstantIncrease"
-                ),
-                parameter = habapp_rules.common.config.filter.ExponentialFilterParameter(   # filter constant 10 minutes + instant increase
-                        tau = 600,
-                        instant_increase = True
-                )
-        )
+    config2 = habapp_rules.common.config.filter.ExponentialFilterConfig(
+            items = habapp_rules.common.config.filter.ExponentialFilterItems(
+                    raw = "BrightnessValue",
+                    filtered = "BrightnessFilteredInstantIncrease"
+            ),
+            parameter = habapp_rules.common.config.filter.ExponentialFilterParameter(   # filter constant 10 minutes + instant increase
+                    tau = 600,
+                    instant_increase = True
+            )
+    )
 
-        # Rule init:
-        habapp_rules.common.filter.ExponentialFilter(config)  # filter constant 1 minute
+    # Rule init:
+    habapp_rules.common.filter.ExponentialFilter(config)  # filter constant 1 minute
     habapp_rules.common.filter.ExponentialFilter(config2)  # filter constant 10 minutes + instant increase
     """
 
-    def __init__(self, config: habapp_rules.common.config.filter.ExponentialFilterConfig):
+    def __init__(self, config: habapp_rules.common.config.filter.ExponentialFilterConfig) -> None:
         """Init exponential filter rule.
 
-        :param config: Config for exponential filter
+        Args:
+            config: Config for exponential filter
         """
         HABApp.Rule.__init__(self)
         self._config = config
@@ -67,10 +68,10 @@ class ExponentialFilter(HABApp.Rule):
         self._instance_logger.debug(f"Successfully created exponential filter for item {self._config.items.raw.name}")
 
     def _cb_cyclic_calculate_and_update_output(self) -> None:
-        """Calculate the new filter output and update the filtered item. This must be called cyclic"""
+        """Calculate the new filter output and update the filtered item. This must be called cyclic."""
         new_value = self._config.items.raw.value
 
-        if any(not isinstance(value, (int, float)) for value in (self._previous_value, new_value)):
+        if any(not isinstance(value, int | float) for value in (self._previous_value, new_value)):
             self._instance_logger.warning(f"New or previous value is not a number: new_value: {new_value} | previous_value: {self._previous_value}")
             return
 
@@ -80,7 +81,8 @@ class ExponentialFilter(HABApp.Rule):
     def _cb_item_raw(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback which is called if the value of the raw item changed.
 
-        :param event: event which triggered this event
+        Args:
+            event: event which triggered this event
         """
         if self._previous_value is None or (self._config.parameter.instant_increase and event.value > self._previous_value) or (self._config.parameter.instant_decrease and event.value < self._previous_value):
             self._send_output(event.value)
@@ -89,6 +91,7 @@ class ExponentialFilter(HABApp.Rule):
     def _send_output(self, new_value: float) -> None:
         """Send output to the OpenHAB item.
 
-        :param new_value: new value which should be sent
+        Args:
+            new_value: new value which should be sent
         """
         self._config.items.filtered.oh_send_command(new_value)

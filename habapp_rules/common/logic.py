@@ -18,8 +18,11 @@ class _BinaryLogicBase(HABApp.Rule):
     def __init__(self, config: habapp_rules.common.config.logic.BinaryLogicConfig) -> None:
         """Init a logical function.
 
-        :param config: Config for logical function
-        :raises TypeError: if unsupported item-type is given for output_name
+        Args:
+            config: Config for logical function
+
+        Raises:
+            TypeError: if unsupported item-type is given for output_name
         """
         HABApp.Rule.__init__(self)
         self._config = config
@@ -45,13 +48,15 @@ class _BinaryLogicBase(HABApp.Rule):
     def _cb_input_event(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | None) -> None:
         """Callback, which is called if one of the input items had a state event.
 
-        :param event: item event of the updated item
+        Args:
+            event: item event of the updated item
         """
 
     def _set_output_state(self, output_state: str) -> None:
-        """Set state to the output element
+        """Set state to the output element.
 
-        :param output_state: state which will be set
+        Args:
+            output_state: state which will be set
         """
         if isinstance(self._config.items.output, HABApp.openhab.items.ContactItem):
             self._config.items.output.oh_post_update(output_state)
@@ -74,10 +79,11 @@ class And(_BinaryLogicBase):
     habapp_rules.common.logic.And(config)
     """
 
-    def _cb_input_event(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | None) -> None:
+    def _cb_input_event(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | None) -> None:  # noqa: ARG002
         """Callback, which is called if one of the input items had a state event.
 
-        :param event: item event of the updated item
+        Args:
+            event: item event of the updated item
         """
         output_state = self._positive_state if all(item.value == self._positive_state for item in self._config.items.inputs) else self._negative_state
         self._set_output_state(output_state)
@@ -98,10 +104,11 @@ class Or(_BinaryLogicBase):
     habapp_rules.common.logic.Or(config)
     """
 
-    def _cb_input_event(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | None) -> None:
+    def _cb_input_event(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | None) -> None:  # noqa: ARG002
         """Callback, which is called if one of the input items had a state event.
 
-        :param event: item event of the updated item
+        Args:
+            event: item event of the updated item
         """
         output_state = self._positive_state if any(item.value == self._positive_state for item in self._config.items.inputs) else self._negative_state
         self._set_output_state(output_state)
@@ -113,8 +120,11 @@ class _NumericLogicBase(HABApp.Rule):
     def __init__(self, config: habapp_rules.common.config.logic.NumericLogicConfig) -> None:
         """Init a logical function.
 
-        :param config: Config for logical function
-        :raises TypeError: if unsupported item-type is given for output_name
+        Args:
+            config: Config for logical function
+
+        Raises:
+            TypeError: if unsupported item-type is given for output_name
         """
         HABApp.Rule.__init__(self)
         self._config = config
@@ -127,10 +137,11 @@ class _NumericLogicBase(HABApp.Rule):
         input_names = [item.name for item in self._config.items.inputs]
         self._instance_logger.debug(f"Init of rule '{self.__class__.__name__}' with was successful. Output item = '{self._config.items.output.name}' | Input items = {input_names}")
 
-    def _cb_input_event(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | None) -> None:
+    def _cb_input_event(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | None) -> None:  # noqa: ARG002
         """Callback, which is called if one of the input items had a state event.
 
-        :param event: item event of the updated item
+        Args:
+            event: item event of the updated item
         """
         filtered_items = habapp_rules.core.helper.filter_updated_items(self._config.items.inputs, self._config.parameter.ignore_old_values_time)
         value = self._apply_numeric_logic([item.value for item in filtered_items if item is not None])
@@ -140,18 +151,23 @@ class _NumericLogicBase(HABApp.Rule):
 
         self._set_output_state(value)
 
+    @staticmethod
     @abc.abstractmethod
-    def _apply_numeric_logic(self, input_values: list[float]) -> float:
-        """Apply numeric logic
+    def _apply_numeric_logic(input_values: list[float]) -> float:
+        """Apply numeric logic.
 
-        :param input_values: input values
-        :return: value which fulfills the filter type
+        Args:
+            input_values: input values
+
+        Returns:
+            value which fulfills the filter type
         """
 
     def _set_output_state(self, output_state: float) -> None:
-        """Set state to the output element
+        """Set state to the output element.
 
-        :param output_state: state which will be set
+        Args:
+            output_state: state which will be set
         """
         habapp_rules.core.helper.send_if_different(self._config.items.output, output_state)
 
@@ -174,11 +190,15 @@ class Min(_NumericLogicBase):
     habapp_rules.common.logic.Min(config)
     """
 
-    def _apply_numeric_logic(self, input_values: list[float]) -> float:
-        """Apply numeric logic
+    @staticmethod
+    def _apply_numeric_logic(input_values: list[float]) -> float:
+        """Apply numeric logic.
 
-        :param input_values: input values
-        :return: min value of the given values
+        Args:
+            input_values: input values
+
+        Returns:
+            min value of the given values
         """
         return HABApp.util.functions.min(input_values)
 
@@ -201,11 +221,15 @@ class Max(_NumericLogicBase):
     habapp_rules.common.logic.Max(config)
     """
 
-    def _apply_numeric_logic(self, input_values: list[float]) -> float:
-        """Apply numeric logic
+    @staticmethod
+    def _apply_numeric_logic(input_values: list[float]) -> float:
+        """Apply numeric logic.
 
-        :param input_values: input values
-        :return: max value of the given values
+        Args:
+            input_values: input values
+
+        Returns:
+            max value of the given values
         """
         return HABApp.util.functions.max(input_values)
 
@@ -231,19 +255,27 @@ class Sum(_NumericLogicBase):
     def __init__(self, config: habapp_rules.common.config.logic.NumericLogicConfig) -> None:
         """Init a logical function.
 
-        :param config: config for logical sum rule
-        :raises TypeError: if unsupported item-type is given for output_name
+        Args:
+            config: config for logical sum rule
+
+        Raises:
+            TypeError: if unsupported item-type is given for output_name
         """
         if isinstance(config.items.output, HABApp.openhab.items.DimmerItem):
-            raise TypeError(f"Dimmer items can not be used for Sum function! Given output_name: {config.items.output}")
+            msg = f"Dimmer items can not be used for Sum function! Given output_name: {config.items.output}"
+            raise TypeError(msg)
 
         _NumericLogicBase.__init__(self, config)
 
-    def _apply_numeric_logic(self, input_values: list[float]) -> float:
-        """Apply numeric logic
+    @staticmethod
+    def _apply_numeric_logic(input_values: list[float]) -> float:
+        """Apply numeric logic.
 
-        :param input_values: input values
-        :return: min value of the given values
+        Args:
+            input_values: input values
+
+        Returns:
+            min value of the given values
         """
         return sum(val for val in input_values if val is not None)
 
@@ -266,7 +298,8 @@ class InvertValue(HABApp.Rule):
     def __init__(self, config: habapp_rules.common.config.logic.InvertValueConfig) -> None:
         """Init rule.
 
-        :param config: Config for invert value rule
+        Args:
+            config: Config for invert value rule
         """
         HABApp.Rule.__init__(self)
         self._config = config
@@ -277,9 +310,10 @@ class InvertValue(HABApp.Rule):
         self._instance_logger.debug(f"Init of rule '{self.__class__.__name__}' with was successful. Output item = '{self._config.items.output.name}' | Input item = '{self._config.items.input.name}'")
 
     def _cb_input_value(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
-        """Set output, when input value changed
+        """Set output, when input value changed.
 
-        :param event: event, which triggered this callback
+        Args:
+            event: event, which triggered this callback
         """
         if event.value is None:
             return

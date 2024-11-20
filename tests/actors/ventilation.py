@@ -2,7 +2,6 @@
 
 import collections
 import datetime
-import os
 import pathlib
 import sys
 import unittest
@@ -26,7 +25,6 @@ import tests.helper.test_case_base
 import tests.helper.timer
 
 
-# pylint: disable=protected-access,no-member,too-many-public-methods
 class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
     """Tests cases for testing Ventilation."""
 
@@ -88,7 +86,7 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
         """Create state machine graph for documentation."""
         picture_dir = pathlib.Path(__file__).parent / "Ventilation_States"
         if not picture_dir.is_dir():
-            os.makedirs(picture_dir)
+            picture_dir.mkdir(parents=True)
 
         graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
             model=tests.helper.graph_machines.FakeModel(), states=self.ventilation_min.states, transitions=self.ventilation_min.trans, initial=self.ventilation_min.state, show_conditions=False
@@ -142,7 +140,7 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
                 tests.helper.oh_item.set_state("Unittest_Ventilation_max_external_request", "ON" if test_case.external_request else "OFF")
                 tests.helper.oh_item.set_state("Unittest_Presence_state", test_case.presence_state)
 
-                # self.assertEqual(test_case.expected_state_min, self.ventilation_min._get_initial_state())
+                self.assertEqual(test_case.expected_state_min, self.ventilation_min._get_initial_state())
                 self.assertEqual(test_case.expected_state_max, self.ventilation_max._get_initial_state())
 
     def test_set_level(self):
@@ -281,7 +279,7 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertTrue(self.ventilation_max._external_active_and_configured())
 
     def test_auto_normal_transitions(self):
-        """Test transitions of state Auto_Normal"""
+        """Test transitions of state Auto_Normal."""
         # to Auto_PowerHand
         self.ventilation_min.to_Auto_Normal()
         self.ventilation_max.to_Auto_Normal()
@@ -322,7 +320,7 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertEqual("Auto_Normal", self.ventilation_max.state)
 
     def test_auto_power_external_transitions(self):
-        """Test transitions of state Auto_PowerExternal"""
+        """Test transitions of state Auto_PowerExternal."""
         # to Auto_PowerExternal
         self.ventilation_max.to_Auto_PowerExternal()
         tests.helper.oh_item.item_state_change_event("Unittest_Ventilation_max_external_request", "OFF")
@@ -347,7 +345,7 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertEqual("Auto_LongAbsence_Off", self.ventilation_max.state)
 
     def test_auto_power_hand_transitions(self):
-        """Test transitions of state Auto_PowerHand"""
+        """Test transitions of state Auto_PowerHand."""
         # set Auto_LongAbsence as initial state
         self.ventilation_max.to_Auto_LongAbsence_On()
 
@@ -461,7 +459,7 @@ class TestVentilationHeliosTwoStage(tests.helper.test_case_base.TestCaseBaseStat
         """Create state machine graph for documentation."""
         picture_dir = pathlib.Path(__file__).parent / "VentilationHeliosTwoStage_States"
         if not picture_dir.is_dir():
-            os.makedirs(picture_dir)
+            picture_dir.mkdir(parents=True)
 
         graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
             model=tests.helper.graph_machines.FakeModel(), states=self.ventilation_min.states, transitions=self.ventilation_min.trans, initial=self.ventilation_min.state, show_conditions=False
@@ -621,7 +619,7 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
                 ventilation_output_on="Unittest_Ventilation_min_output_on", ventilation_output_power="Unittest_Ventilation_min_output_power", manual="Unittest_Ventilation_min_manual", state="H_Unittest_Ventilation_min_output_on_state"
             )
         )
-        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
+        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
             habapp_rules.actors.ventilation.VentilationHeliosTwoStageHumidity(config)
 
     def test_set_level(self):
@@ -661,7 +659,7 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
         """Create state machine graph for documentation."""
         picture_dir = pathlib.Path(__file__).parent / "VentilationHeliosTwoStageHumidity_States"
         if not picture_dir.is_dir():
-            os.makedirs(picture_dir)
+            picture_dir.mkdir(parents=True)
 
         graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
             model=tests.helper.graph_machines.FakeModel(), states=self.ventilation_min.states, transitions=self.ventilation_min.trans, initial=self.ventilation_min.state, show_conditions=False

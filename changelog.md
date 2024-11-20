@@ -3,7 +3,8 @@
 ## Breaking changes
 
 - bumped HABApp to dev
-- updated docker container to use python 3.13
+- updated docker container to use python 3.
+- renamed all `habapp_rules` exceptions to error. E.g. `habapp_rules.HabAppRulesException` to `habapp_rules.HabAppRulesError`
 - renamed `habapp_rules.system.watchdog` to `habapp_rules.system.item_watchdog`
 
 # Version 6.3.0 - dd.10.2024

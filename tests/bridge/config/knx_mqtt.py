@@ -8,7 +8,7 @@ import tests.helper.test_case_base
 
 
 class TestKnxMqttConfig(tests.helper.test_case_base.TestCaseBase):
-    """Test KnxMqttConfig"""
+    """Test KnxMqttConfig."""
 
     def setUp(self) -> None:
         """Setup test case."""

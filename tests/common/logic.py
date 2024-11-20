@@ -12,7 +12,6 @@ import tests.helper.oh_item
 import tests.helper.test_case_base
 
 
-# pylint: disable=protected-access
 class TestAndOR(tests.helper.test_case_base.TestCaseBase):
     """Tests for AND / OR."""
 

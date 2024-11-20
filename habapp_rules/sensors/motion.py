@@ -1,6 +1,7 @@
 """Rules for managing motion sensors."""
 
 import logging
+import typing
 
 import HABApp
 
@@ -15,12 +16,11 @@ import habapp_rules.system.sleep
 LOGGER = logging.getLogger(__name__)
 
 
-# pylint: disable=no-member, too-many-instance-attributes
 class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
     """Class for filtering motion sensors.
 
-        # MQTT-things:
-        Thing topic Motion "Motion Sensor"{
+    # MQTT-things:
+    Thing topic Motion "Motion Sensor"{
         Channels:
         Type switch : motion        "Motion"        [stateTopic="zigbee2mqtt/Motion/occupancy", on="true", off="false"]
         Type number : brightness    "Brightness"    [stateTopic="zigbee2mqtt/Motion/illuminance_lux"]
@@ -28,28 +28,28 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
 
     # Items:
     Switch    Motion_raw                "Motion raw"                <motion>        {channel="mqtt:topic:broker:Motion:motion"}
-        Switch    Motion_filtered           "Motion filtered"           <motion>
-        Number    Motion_Brightness         "Brightness"                                {channel="mqtt:topic:broker:Motion:brightness"}
-        String    I999_00_Sleeping_state    "Sleeping state"            <state>
+    Switch    Motion_filtered           "Motion filtered"           <motion>
+    Number    Motion_Brightness         "Brightness"                                {channel="mqtt:topic:broker:Motion:brightness"}
+    String    I999_00_Sleeping_state    "Sleeping state"            <state>
 
-        # Config
-        config = habapp_rules.sensors.config.motion.MotionConfig(
-                items=habapp_rules.sensors.config.motion.MotionItems(
-                        motion_raw="Motion_raw",
-                        motion_filtered="Motion_filtered",
-                        brightness="Motion_Brightness",
-                        sleep_state="I999_00_Sleeping_state"
-                ),
-                parameter=habapp_rules.sensors.config.motion.MotionParameter(
-                        brightness_threshold=100,
-                ),
-        )
+    # Config
+    config = habapp_rules.sensors.config.motion.MotionConfig(
+            items=habapp_rules.sensors.config.motion.MotionItems(
+                    motion_raw="Motion_raw",
+                    motion_filtered="Motion_filtered",
+                    brightness="Motion_Brightness",
+                    sleep_state="I999_00_Sleeping_state"
+            ),
+            parameter=habapp_rules.sensors.config.motion.MotionParameter(
+                    brightness_threshold=100,
+            ),
+    )
 
-        # Rule init:
-        habapp_rules.sensors.motion.Motion(config)
+    # Rule init:
+    habapp_rules.sensors.motion.Motion(config)
     """
 
-    states = [
+    states: typing.ClassVar = [
         {"name": "Locked"},
         {"name": "SleepLocked"},
         {"name": "PostSleepLocked", "timeout": 99, "on_timeout": "timeout_post_sleep_locked"},
@@ -66,7 +66,7 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
         },
     ]
 
-    trans = [
+    trans: typing.ClassVar = [
         # lock
         {"trigger": "lock_on", "source": ["Unlocked", "SleepLocked", "PostSleepLocked"], "dest": "Locked"},
         {"trigger": "lock_off", "source": "Locked", "dest": "Unlocked", "unless": "_sleep_active"},
@@ -91,12 +91,14 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
         {"trigger": "brightness_below_threshold", "source": "Unlocked_TooBright", "dest": "Unlocked_Motion", "conditions": "_raw_motion_active"},
     ]
 
-    # pylint: disable=too-many-arguments
     def __init__(self, config: habapp_rules.sensors.config.motion.MotionConfig) -> None:
         """Init of motion filter.
 
-        :param config: config for the motion filter
-        :raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: if configuration is not valid
+        Args:
+            config: config for the motion filter
+
+        Raises:
+            habapp_rules.core.exceptions.HabAppRulesConfigurationException: if configuration is not valid
         """
         self._config = config
         habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, self._config.items.state)
@@ -125,11 +127,14 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
 
         self._instance_logger.debug(super().get_initial_log_message())
 
-    def _get_initial_state(self, default_value: str = "initial") -> str:
+    def _get_initial_state(self, default_value: str = "initial") -> str:  # noqa: ARG002
         """Get initial state of state machine.
 
-        :param default_value: default / initial state
-        :return: if OpenHAB item has a state it will return it, otherwise return the given default value
+        Args:
+            default_value: default / initial state
+
+        Returns:
+            if OpenHAB item has a state it will return it, otherwise return the given default value
         """
         if self._config.items.lock is not None and self._config.items.lock.is_on():
             return "Locked"
@@ -141,7 +146,7 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
             return "Unlocked_Motion"
         return "Unlocked_Wait"
 
-    def _update_openhab_state(self):
+    def _update_openhab_state(self) -> None:
         """Update OpenHAB state item. This should method should be set to "after_state_change" of the state machine."""
         if self.state != self._previous_state:
             super()._update_openhab_state()
@@ -157,55 +162,63 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
             self._config.items.motion_filtered.oh_send_command(target_state)
 
     def _raw_motion_active(self) -> bool:
-        """Check if raw motion is active
+        """Check if raw motion is active.
 
-        :return: True if active, else False
+        Returns:
+            True if active, else False
         """
         return bool(self._config.items.motion_raw)
 
     def _brightness_over_threshold(self) -> bool:
-        """Check if brightness is over threshold
+        """Check if brightness is over threshold.
 
-        :return: True if active, else False
+        Returns:
+             True if active, else False
         """
         return self._hysteresis_switch.get_output(self._config.items.brightness.value)
 
     def _motion_extended_configured(self) -> bool:
-        """Check if extended motion is configured
+        """Check if extended motion is configured.
 
-        :return: True if active, else False
+        Returns:
+            True if active, else False
         """
         return self._config.parameter.extended_motion_time > 0
 
     def _post_sleep_lock_configured(self) -> bool:
-        """Check if post sleep lock is configured
+        """Check if post sleep lock is configured.
 
-        :return: True if active, else False
+        Returns:
+             rue if active, else False
         """
         return self._config.parameter.post_sleep_lock_time > 0
 
     def _sleep_active(self) -> bool:
-        """Check if sleeping is active
+        """Check if sleeping is active.
 
-        :return: True if sleeping is active, else False
+        Returns:
+            True if sleeping is active, else False
         """
         return self._config.items.sleep_state.value == habapp_rules.system.SleepState.SLEEPING.value
 
     def _get_brightness_threshold(self) -> float:
         """Get the current brightness threshold value.
 
-        :return: brightness threshold
-        :raises habapp_rules.core.exceptions.HabAppRulesException: if brightness value not given by item or value
+        Returns:
+            brightness threshold
+
+        Raises:
+            habapp_rules.core.exceptions.HabAppRulesError: if brightness value not given by item or value
         """
         if self._config.parameter.brightness_threshold:
             return self._config.parameter.brightness_threshold
         if self._config.items.brightness_threshold is not None:
             return value if (value := self._config.items.brightness_threshold.value) else float("inf")
-        raise habapp_rules.core.exceptions.HabAppRulesException(f"Can not get brightness threshold. Brightness value or item is not given. value: {self._config.parameter.brightness_threshold} | item: {self._config.items.brightness_threshold}")
+        msg = f"Can not get brightness threshold. Brightness value or item is not given. value: {self._config.parameter.brightness_threshold} | item: {self._config.items.brightness_threshold}"
+        raise habapp_rules.core.exceptions.HabAppRulesError(msg)
 
-    # pylint: disable=invalid-name
-    def on_enter_Unlocked_Init(self):
-        """Callback, which is called on enter of Unlocked_Init state"""
+    def on_enter_Unlocked_Init(self) -> None:  # noqa: N802
+        """Callback, which is called on enter of Unlocked_Init state."""
         if self._config.items.brightness is not None and self._brightness_over_threshold():
             self.to_Unlocked_TooBright()
         elif self._config.items.motion_raw.is_on():
@@ -216,7 +229,8 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
     def _check_brightness(self, value: float | None = None) -> None:
         """Check if brightness is higher than the threshold and trigger the class methods.
 
-        :param value: Value to check. None if last value should be used
+        Args:
+            value: Value to check. None if last value should be used
         """
         if self._hysteresis_switch.get_output(value):
             self.brightness_over_threshold()
@@ -226,7 +240,8 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
     def _cb_threshold_change(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback, which is triggered if the brightness threshold state changed.
 
-        :param event: trigger event
+        Args:
+            event: trigger event
         """
         self._hysteresis_switch.set_threshold_on(event.value)
         self._check_brightness()
@@ -234,7 +249,8 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
     def _cb_motion_raw(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback, which is triggered if the raw motion state changed.
 
-        :param event: trigger event
+        Args:
+            event: trigger event
         """
         if event.value == "ON":
             self.motion_on()
@@ -244,14 +260,16 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
     def _cb_brightness(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback, which is triggered if the brightness state changed.
 
-        :param event: trigger event
+        Args:
+            event: trigger event
         """
         self._check_brightness(event.value)
 
     def _cb_lock(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback, which is triggered if the lock state changed.
 
-        :param event: trigger event
+        Args:
+            event: trigger event
         """
         if event.value == "ON":
             self.lock_on()
@@ -261,7 +279,8 @@ class Motion(habapp_rules.core.state_machine_rule.StateMachineRule):
     def _cb_sleep(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback, which is triggered if the sleep state changed.
 
-        :param event: trigger event
+        Args:
+            event: trigger event
         """
         if event.value == habapp_rules.system.SleepState.SLEEPING.value:
             self.sleep_started()

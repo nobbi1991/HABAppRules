@@ -35,7 +35,7 @@ class TestShadingConfig(tests.helper.test_case_base.TestCaseBase):
         )
 
         # parameter given | item summer NOT given
-        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
+        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
             habapp_rules.actors.config.shading.ShadingConfig(
                 items=habapp_rules.actors.config.shading.ShadingItems(shading_position="Unittest_Shading", manual="Unittest_Manual", state="H_Unittest_Shading_state"),
                 parameter=habapp_rules.actors.config.shading.ShadingParameter(pos_night_close_summer=habapp_rules.actors.config.shading.ShadingPosition(42, 80)),

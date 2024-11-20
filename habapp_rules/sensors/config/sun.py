@@ -33,11 +33,15 @@ class TemperatureDifferenceItems(_ItemsBase):
     def validate_temperature_items(self) -> typing.Self:
         """Validate that at least two temperature items are given.
 
-        :return: validated model
-        :raises ValueError: if less than two temperature items are given
+        Returns:
+            validated model
+
+        Raises:
+            ValueError: if less than two temperature items are given
         """
-        if len(self.temperatures) < 2:
-            raise ValueError("At least two temperature items are required!")
+        if len(self.temperatures) < 2:  # noqa: PLR2004
+            msg = "At least two temperature items are required!"
+            raise ValueError(msg)
         return self
 
 
@@ -47,8 +51,8 @@ class BrightnessParameter(habapp_rules.core.pydantic_base.ParameterBase):
     threshold: float | None = pydantic.Field(None, description="threshold value")
     hysteresis: float = pydantic.Field(0.0, description="hysteresis value")
     filter_tau: int = pydantic.Field(30 * 60, description="filter constant for the exponential filter. Default is set to 30 minutes")
-    filter_instant_increase: bool = pydantic.Field(True, description="if set to True, increase of input values will not be filtered")
-    filter_instant_decrease: bool = pydantic.Field(False, description="if set to True, decrease of input values will not be filtered")
+    filter_instant_increase: bool = pydantic.Field(default=True, description="if set to True, increase of input values will not be filtered")
+    filter_instant_decrease: bool = pydantic.Field(default=False, description="if set to True, decrease of input values will not be filtered")
     filtered_signal_groups: list[str] = pydantic.Field([], description="group names where the filtered signal will be added")
 
 
@@ -68,11 +72,15 @@ class _ConfigBase(habapp_rules.core.pydantic_base.ConfigBase):
     def validate_threshold(self) -> typing.Self:
         """Validate threshold.
 
-        :return: validated model
-        :raises ValueError: if threshold and parameter are not set
+        Returns:
+            validated model
+
+        Raises:
+            ValueError: if threshold and parameter are not set
         """
         if (self.items.threshold is None) == (self.parameter.threshold is None):
-            raise ValueError("The threshold must be set ether with the parameter or with the item, both are not allowed")
+            msg = "The threshold must be set ether with the parameter or with the item, both are not allowed"
+            raise ValueError(msg)
         return self
 
     @property
@@ -114,10 +122,11 @@ class SunPositionWindow(pydantic.BaseModel):
     def __init__(self, azimuth_min: float, azimuth_max: float, elevation_min: float = 0.0, elevation_max: float = 90.0) -> None:
         """Init of class for defining min / max values for azimuth and elevation.
 
-        :param azimuth_min: minimum azimuth value
-        :param azimuth_max: maximum azimuth value
-        :param elevation_min: minimum elevation value
-        :param elevation_max: maximum elevation value
+        Args:
+            azimuth_min: minimum azimuth value
+            azimuth_max: maximum azimuth value
+            elevation_min: minimum elevation value
+            elevation_max: maximum elevation value
         """
         super().__init__(azimuth_min=azimuth_min, azimuth_max=azimuth_max, elevation_min=elevation_min, elevation_max=elevation_max)
 
@@ -125,7 +134,8 @@ class SunPositionWindow(pydantic.BaseModel):
     def validate_model(self) -> typing.Self:
         """Validate values.
 
-        :return: validated model
+        Returns:
+            validated model
         """
         if self.azimuth_min > self.azimuth_max:
             LOGGER.warning(f"azimuth_min should be smaller than azimuth_max -> min / max will be swapped. Given values: azimuth_min = {self.azimuth_min} | azimuth_max = {self.azimuth_max}")

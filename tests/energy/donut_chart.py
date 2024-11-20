@@ -6,7 +6,6 @@ import unittest.mock
 import habapp_rules.energy.donut_chart
 
 
-# pylint: disable=protected-access
 class TestDonutFunctions(unittest.TestCase):
     """Test all donut plot functions."""
 
@@ -26,7 +25,7 @@ class TestDonutFunctions(unittest.TestCase):
         values = [1, 2, 3.0]
         path = unittest.mock.MagicMock()
 
-        with unittest.mock.patch("matplotlib.pyplot") as pyplot_mock:
+        with unittest.mock.patch("habapp_rules.energy.donut_chart.plt") as pyplot_mock:
             ax_mock = unittest.mock.MagicMock()
             pyplot_mock.subplots.return_value = None, ax_mock
             text_mock_1 = unittest.mock.MagicMock()

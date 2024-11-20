@@ -17,7 +17,6 @@ import tests.helper.timer
 from habapp_rules.sensors.config.current_switch import CurrentSwitchConfig, CurrentSwitchItems, CurrentSwitchParameter
 
 
-# pylint: disable=protected-access,no-member,too-many-public-methods
 class TestCurrentSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine):
     """Tests cases for testing CurrentSwitch rule."""
 

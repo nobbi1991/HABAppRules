@@ -14,12 +14,11 @@ import tests.helper.oh_item
 import tests.helper.test_case_base
 
 
-# pylint: disable=protected-access, no-member
 class TestIrrigation(tests.helper.test_case_base.TestCaseBase):
     """Tests for Irrigation."""
 
     def setUp(self):
-        """Set up test cases"""
+        """Set up test cases."""
         tests.helper.test_case_base.TestCaseBase.setUp(self)
 
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_valve", "OFF")
@@ -37,7 +36,7 @@ class TestIrrigation(tests.helper.test_case_base.TestCaseBase):
         self._irrigation_min = habapp_rules.actors.irrigation.Irrigation(config)
 
     def test__init__(self):
-        """Test __init__"""
+        """Test __init__."""
         self.assertIsNone(self._irrigation_min._config.items.repetitions)
         self.assertIsNone(self._irrigation_min._config.items.brake)
 
@@ -176,6 +175,6 @@ class TestIrrigation(tests.helper.test_case_base.TestCaseBase):
 
         # exception at _get_target_valve_stat
         tests.helper.oh_item.set_state("Unittest_valve", "ON")
-        with unittest.mock.patch.object(self._irrigation_min, "_get_target_valve_state", side_effect=habapp_rules.core.exceptions.HabAppRulesException("Could not get target state")):
+        with unittest.mock.patch.object(self._irrigation_min, "_get_target_valve_state", side_effect=habapp_rules.core.exceptions.HabAppRulesError("Could not get target state")):
             self._irrigation_min._cb_set_valve_state()
         self.assertEqual("OFF", self._irrigation_min._config.items.valve.value)

@@ -39,6 +39,7 @@ class TestCaseBaseStateMachine(TestCaseBase):
     """Base class for tests with simulated OpenHAB items and state machines."""
 
     def setUp(self) -> None:
+        """Setup tests."""
         TestCaseBase.setUp(self)
 
         self.transitions_timer_mock_patcher = unittest.mock.patch("transitions.extensions.states.Timer", spec=threading.Timer)
@@ -54,11 +55,14 @@ class TestCaseBaseStateMachine(TestCaseBase):
         self.on_rule_removed_mock_patcher.start()
 
     def _get_state_names(self, states: dict, parent_state: str | None = None) -> list[str]:  # pragma: no cover
-        """Helper function to get all state names (also nested states)
+        """Helper function to get all state names (also nested states).
 
-        :param states: dict of all states or children states
-        :param parent_state: name of parent state, only if it is a nested state machine
-        :return: list of all state names
+        Args:
+            states: dict of all states or children states
+            parent_state: name of parent state, only if it is a nested state machine
+
+        Returns:
+            list of all state names
         """
         state_names = []
         prefix = f"{parent_state}_" if parent_state else ""
@@ -69,5 +73,5 @@ class TestCaseBaseStateMachine(TestCaseBase):
             if "children" in state:
                 state_names += self._get_state_names(state, state["name"])
             else:
-                state_names.append(f"{prefix}{state["name"]}")
+                state_names.append(f"{prefix}{state['name']}")
         return state_names

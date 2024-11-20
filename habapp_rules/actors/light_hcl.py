@@ -3,6 +3,7 @@
 import abc
 import datetime
 import logging
+import typing
 
 import HABApp
 
@@ -14,15 +15,15 @@ import habapp_rules.core.logger
 import habapp_rules.core.state_machine_rule
 import habapp_rules.core.type_of_day
 import habapp_rules.system
+from habapp_rules import TIMEZONE
 
 LOGGER = logging.getLogger(__name__)
 
 
-# pylint: disable=no-member
 class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
     """Base class for HCL rules."""
 
-    states = [
+    states: typing.ClassVar = [
         {"name": "Manual"},
         {"name": "Hand", "timeout": 99, "on_timeout": "hand_timeout"},
         {
@@ -32,7 +33,7 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
         },
     ]
 
-    trans = [
+    trans: typing.ClassVar = [
         {"trigger": "manual_on", "source": ["Auto", "Hand"], "dest": "Manual"},
         {"trigger": "manual_off", "source": "Manual", "dest": "Auto"},
         {"trigger": "hand_on", "source": "Auto", "dest": "Hand"},
@@ -47,7 +48,8 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
     def __init__(self, config: habapp_rules.actors.config.light_hcl.HclElevationConfig | habapp_rules.actors.config.light_hcl.HclTimeConfig) -> None:
         """Init base class.
 
-        :param config: config of HCL light.
+        Args:
+            config: config of HCL light.
         """
         self._config = config
 
@@ -77,15 +79,18 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
         self.state_machine.get_state("Auto_Sleep_Post").timeout = self._config.parameter.post_sleep_timeout
         self.state_machine.get_state("Hand").timeout = self._config.parameter.hand_timeout
 
-    def _get_initial_state(self, default_value: str = "") -> str:
+    def _get_initial_state(self, default_value: str = "") -> str:  # noqa: ARG002
         """Get initial state of state machine.
 
-        :param default_value: default / initial state
-        :return: if OpenHAB item has a state it will return it, otherwise return the given default value
+        Args:
+            default_value: default / initial state
+
+        Returns:
+            if OpenHAB item has a state it will return it, otherwise return the given default value
         """
         if self._config.items.manual.is_on():
             return "Manual"
-        if self._config.items.sleep_state is not None and self._config.items.sleep_state.value in (habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value):
+        if self._config.items.sleep_state is not None and self._config.items.sleep_state.value in {habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value}:
             return "Auto_Sleep"
         if self._config.items.focus is not None and self._config.items.focus.is_on():
             return "Auto_Focus"
@@ -103,7 +108,7 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
             self._set_light_color()
             self._previous_state = self.state
 
-    def _set_light_color(self):
+    def _set_light_color(self) -> None:
         """Set light color."""
         target_color = None
 
@@ -117,25 +122,29 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
         if target_color is not None:
             self._state_observer.send_command(target_color)
 
-    def on_enter_Auto_Init(self) -> None:  # pylint: disable=invalid-name
-        """Is called on entering of init state"""
+    def on_enter_Auto_Init(self) -> None:  # noqa: N802
+        """Is called on entering of init state."""
         self._set_initial_state()
 
     @abc.abstractmethod
     def _get_hcl_color(self) -> int | None:
         """Get HCL color.
 
-        :return: HCL light color
+        Returns:
+            HCL light color
         """
 
     @staticmethod
     def _get_interpolated_value(config_start: tuple[float, float], config_end: tuple[float, float], value: float) -> float:
-        """Get interpolated value
+        """Get interpolated value.
 
-        :param config_start: start config
-        :param config_end: end config
-        :param value: input value which is the input for the interpolation
-        :return: interpolated value
+        Args:
+            config_start: start config
+            config_end: end config
+            value: input value which is the input for the interpolation
+
+        Returns:
+            interpolated value
         """
         fit_m = (config_end[1] - config_start[1]) / (config_end[0] - config_start[0])
         fit_t = config_end[1] - fit_m * config_end[0]
@@ -145,17 +154,19 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
     def _cb_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback, which is triggered if the manual switch has a state change event.
 
-        :param event: trigger event
+        Args:
+            event: trigger event
         """
         if event.value == "ON":
             self.manual_on()
         else:
             self.manual_off()
 
-    def _cb_hand(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
+    def _cb_hand(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:  # noqa: ARG002
         """Callback, which is triggered by the state observer if a manual change was detected.
 
-        :param event: original trigger event
+        Args:
+            event: original trigger event
         """
         self._instance_logger.debug("Hand detected")
         self.hand_on()
@@ -163,7 +174,8 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
     def _cb_focus(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback, which is triggered if the focus switch has a state change event.
 
-        :param event: trigger event
+        Args:
+            event: trigger event
         """
         if event.value == "ON":
             self.focus_start()
@@ -173,7 +185,8 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
     def _cb_sleep(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback, which is triggered if the sleep state has a state change event.
 
-        :param event: trigger event
+        Args:
+            event: trigger event
         """
         if event.value == habapp_rules.system.SleepState.PRE_SLEEPING.value:
             self.sleep_start()
@@ -185,11 +198,11 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
     def _cb_switch_on(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback, which is triggered if the switch_on_item has a state change event.
 
-        :param event: trigger event
+        Args:
+            event: trigger event
         """
-        if (self.state == "Auto_HCL" and event.value == "ON") or (isinstance(event.value, (int, float)) and event.value > 0):
-            if (target_color := self._get_hcl_color()) is not None:
-                self.run.once(1, self._state_observer.send_command, target_color)
+        if ((self.state == "Auto_HCL" and event.value == "ON") or (isinstance(event.value, int | float) and event.value > 0)) and (target_color := self._get_hcl_color()) is not None:
+            self.run.once(1, self._state_observer.send_command, target_color)
 
 
 class HclElevation(_HclBase):
@@ -219,7 +232,8 @@ class HclElevation(_HclBase):
     def __init__(self, config: habapp_rules.actors.config.light_hcl.HclElevationConfig) -> None:
         """Init sun elevation based HCL rule.
 
-        :param config: config for HCL rule
+        Args:
+            config: config for HCL rule
         """
         _HclBase.__init__(self, config)
         self._config = config
@@ -228,9 +242,10 @@ class HclElevation(_HclBase):
         self._cb_elevation(None)
 
     def _get_hcl_color(self) -> int | None:
-        """Get HCL color depending on elevation
+        """Get HCL color depending on elevation.
 
-        :return: HCL light color
+        Returns:
+            HCL light color
         """
         elevation = self._config.items.elevation.value
 
@@ -253,16 +268,17 @@ class HclElevation(_HclBase):
         return round(return_value)
 
     def _cb_elevation(self, _: HABApp.openhab.events.ItemStateChangedEvent | None) -> None:
-        """Callback which is called if elevation changed"""
+        """Callback which is called if elevation changed."""
         if self.state == "Auto_HCL" and self._config.items.elevation.value is not None:
             self._state_observer.send_command(self._get_hcl_color())
 
 
 class HclTime(_HclBase):
     """Time based HCL.
+
     # Items:
     Number    HCL_Color_Time           "HCL Color Time"
-    Switch    HCL_Color_Time_manual    "HCL Color Time manual"
+    Switch    HCL_Color_Time_manual    "HCL Color Time manual".
 
     # Config
     config = habapp_rules.actors.config.light_hcl.HclTimeConfig(
@@ -282,32 +298,35 @@ class HclTime(_HclBase):
     def __init__(self, config: habapp_rules.actors.config.light_hcl.HclTimeConfig) -> None:
         """Init time based HCL rule.
 
-        :param config: config for HCL light rule
+        Args:
+            config: config for HCL light rule
         """
         _HclBase.__init__(self, config)
         self.run.at(self.run.trigger.interval(None, 300), self._update_color)  # every 5 minutes
 
     def _one_hour_later(self, current_time: datetime.datetime) -> bool:
-        """Check if today the color values will be shifted one hour later in the evening
+        """Check if today the color values will be shifted one hour later in the evening.
 
-        :param current_time: current time
-        :return: True if next day is a weekend / holiday day
+        Args:
+            current_time: current time
+
+        Returns:
+            True if next day is a weekend / holiday day
         """
         if not self._config.parameter.shift_weekend_holiday:
             return False
 
-        if current_time.hour > 12 and (habapp_rules.core.type_of_day.is_holiday(1) or habapp_rules.core.type_of_day.is_weekend(1)):
+        if current_time.hour > 12 and (habapp_rules.core.type_of_day.is_holiday(1) or habapp_rules.core.type_of_day.is_weekend(1)):  # noqa: PLR2004
             return True
-        if current_time.hour <= 4 and (habapp_rules.core.type_of_day.is_holiday() or habapp_rules.core.type_of_day.is_weekend()):
-            return True
-        return False
+        return bool(current_time.hour <= 4 and (habapp_rules.core.type_of_day.is_holiday() or habapp_rules.core.type_of_day.is_weekend()))  # noqa: PLR2004
 
     def _get_hcl_color(self) -> int | None:
-        """Get HCL color depending on time
+        """Get HCL color depending on time.
 
-        :return: HCL light color
+        Returns:
+            HCL light color
         """
-        current_time = datetime.datetime.now()
+        current_time = datetime.datetime.now(TIMEZONE)
 
         if self._one_hour_later(current_time):
             current_time -= datetime.timedelta(hours=1)
@@ -330,6 +349,6 @@ class HclTime(_HclBase):
         return round(self._get_interpolated_value(start_config, end_config, current_time.hour + current_time.minute / 60))
 
     def _update_color(self) -> None:
-        """Callback which is called every 5 minutes"""
+        """Callback which is called every 5 minutes."""
         if self.state == "Auto_HCL":
             self._state_observer.send_command(self._get_hcl_color())

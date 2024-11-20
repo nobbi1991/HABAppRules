@@ -49,7 +49,7 @@ class TestConfigBase(tests.helper.test_case_base.TestCaseBase):
     def test_validate_threshold(self):
         """Test validate_threshold."""
         # item NOT given | parameter NOT given
-        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
+        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
             habapp_rules.sensors.config.sun.BrightnessConfig(items=habapp_rules.sensors.config.sun.BrightnessItems(brightness="Unittest_Brightness", output="Unittest_Output"))
 
         # item NOT given | parameter given
@@ -59,7 +59,7 @@ class TestConfigBase(tests.helper.test_case_base.TestCaseBase):
         habapp_rules.sensors.config.sun.BrightnessConfig(items=habapp_rules.sensors.config.sun.BrightnessItems(brightness="Unittest_Brightness", output="Unittest_Output", threshold="Unittest_Threshold"))
 
         # item given | parameter given
-        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
+        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
             habapp_rules.sensors.config.sun.BrightnessConfig(
                 items=habapp_rules.sensors.config.sun.BrightnessItems(brightness="Unittest_Brightness", output="Unittest_Output", threshold="Unittest_Threshold"), parameter=habapp_rules.sensors.config.sun.BrightnessParameter(threshold=42)
             )
@@ -85,7 +85,7 @@ class TestSunPositionWindow(unittest.TestCase):
     """Tests cases for testing the sun position filter."""
 
     def test_init(self):
-        """Test __init__"""
+        """Test __init__."""
         # normal init
         expected_result = habapp_rules.sensors.config.sun.SunPositionWindow(10, 80, 2, 20)
         self.assertEqual(expected_result, habapp_rules.sensors.config.sun.SunPositionWindow(10, 80, 2, 20))

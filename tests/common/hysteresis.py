@@ -6,7 +6,6 @@ import unittest
 import habapp_rules.common.hysteresis
 
 
-# pylint: disable=protected-access
 class TestHysteresis(unittest.TestCase):
     """Tests for HysteresisSwitch."""
 
@@ -16,7 +15,7 @@ class TestHysteresis(unittest.TestCase):
         self.hysteresis_switch_on_off = habapp_rules.common.hysteresis.HysteresisSwitch(42, 2, False)
 
     def test_get_output(self):
-        """Test get_output"""
+        """Test get_output."""
         TestCase = collections.namedtuple("TestCase", "threshold, hysteresis, state, value, expected_result")
 
         test_cases = [

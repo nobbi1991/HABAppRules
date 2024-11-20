@@ -12,7 +12,6 @@ import tests.helper.oh_item
 import tests.helper.test_case_base
 
 
-# pylint: disable=no-member, protected-access, too-many-public-methods
 class TestSensorTemperatureDifference(tests.helper.test_case_base.TestCaseBase):
     """Tests cases for testing sun sensor 'temp_diff' rule."""
 
@@ -51,7 +50,7 @@ class TestSensorTemperatureDifference(tests.helper.test_case_base.TestCaseBase):
         self.assertEqual(42, sensor._hysteresis_switch._threshold)
 
     def test_cb_threshold(self):
-        """Test _cb_threshold"""
+        """Test _cb_threshold."""
         tests.helper.oh_item.item_state_change_event("Unittest_Threshold_Temperature", 20)
         self.assertEqual(20, self._sensor._hysteresis_switch._threshold)
 
@@ -81,7 +80,7 @@ class TestSensorTemperatureDifference(tests.helper.test_case_base.TestCaseBase):
         self.assertEqual(5, temp_diff_item.value)
 
     def test_threshold_behavior(self):
-        """Test overall behavior"""
+        """Test overall behavior."""
         output_item = HABApp.openhab.items.OpenhabItem.get_item("Unittest_Output_Temperature")
         self.assertEqual(None, output_item.value)
 
@@ -142,7 +141,7 @@ class TestSensorBrightness(tests.helper.test_case_base.TestCaseBase):
         self.assertEqual(42000, self._sensor._hysteresis_switch._threshold)
 
     def test_threshold_behavior(self):
-        """Test overall behavior"""
+        """Test overall behavior."""
         output_item = HABApp.openhab.items.OpenhabItem.get_item("Unittest_Output_Brightness")
         self.assertEqual(None, output_item.value)
 
@@ -204,7 +203,7 @@ class TestSunPositionFilter(tests.helper.test_case_base.TestCaseBase):
         self._filter_2 = habapp_rules.sensors.sun.SunPositionFilter(config_2)
 
     def test_init(self):
-        """Test __init__"""
+        """Test __init__."""
         self.assertEqual([self.position_window_1], self._filter_1._config.parameter.sun_position_windows)
         self.assertEqual([self.position_window_1, self.position_window_2], self._filter_2._config.parameter.sun_position_windows)
 

@@ -12,7 +12,6 @@ import tests.helper.oh_item
 import tests.helper.test_case_base
 
 
-# pylint: disable=protected-access
 class TestSetDay(tests.helper.test_case_base.TestCaseBase):
     """Tests for TestSetDay."""
 
@@ -77,7 +76,6 @@ class TestSetDay(tests.helper.test_case_base.TestCaseBase):
             tests.helper.oh_item.assert_value("Unittest_Day", test_case.night_state)
 
 
-# pylint: disable=protected-access
 class TestSetNight(tests.helper.test_case_base.TestCaseBase):
     """Tests for TestSetNight."""
 

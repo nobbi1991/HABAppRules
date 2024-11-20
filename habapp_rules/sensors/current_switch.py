@@ -1,10 +1,14 @@
 """current switch rules."""
 
+from typing import TYPE_CHECKING
+
 import HABApp
-from eascheduler.jobs.job_countdown import CountdownJob
 
 import habapp_rules.core.helper
 import habapp_rules.sensors.config.current_switch
+
+if TYPE_CHECKING:
+    from eascheduler.jobs.job_countdown import CountdownJob  # pragma: no cover
 
 
 class CurrentSwitch(HABApp.Rule):
@@ -29,7 +33,8 @@ class CurrentSwitch(HABApp.Rule):
     def __init__(self, config: habapp_rules.sensors.config.current_switch.CurrentSwitchConfig) -> None:
         """Init current switch rule.
 
-        :param config: config for current switch rule
+        Args:
+            config: config for current switch rule
         """
         HABApp.Rule.__init__(self)
         self._config = config
@@ -43,7 +48,8 @@ class CurrentSwitch(HABApp.Rule):
     def _check_current_and_set_switch(self, current: float | None) -> None:
         """Check if current is above the threshold and set switch.
 
-        :param current: current value which should be checked
+        Args:
+            current: current value which should be checked
         """
         if current is None:
             return
@@ -66,6 +72,7 @@ class CurrentSwitch(HABApp.Rule):
     def _cb_current_changed(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback, which is called if the current value changed.
 
-        :param event: event, which triggered this callback
+        Args:
+            event: event, which triggered this callback
         """
         self._check_current_and_set_switch(event.value)

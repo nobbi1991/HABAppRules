@@ -37,9 +37,13 @@ class WindAlarmConfig(habapp_rules.core.pydantic_base.ConfigBase):
     def check_hand_timeout(self) -> typing.Self:
         """Validate hand timeout.
 
-        :return: validated config model
-        :raises ValueError: if both 'items.hand_timeout' and 'parameter.hand_timeout' are set
+        Returns:
+            validated config model
+
+        Raises:
+            ValueError: if both 'items.hand_timeout' and 'parameter.hand_timeout' are set
         """
         if not (self.items.hand_timeout is None) ^ (self.parameter.hand_timeout is None):  # XNOR
-            raise ValueError("Either 'items.wind_alarm' or 'parameter.hand_timeout' must be set")
+            msg = "Either 'items.wind_alarm' or 'parameter.hand_timeout' must be set"
+            raise ValueError(msg)
         return self

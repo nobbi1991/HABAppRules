@@ -44,13 +44,13 @@ class TestItemBase(tests.helper.test_case_base.TestCaseBase):
 
     def test_check_all_fields_oh_items_exceptions(self):
         """Test all exceptions of check_all_fields_oh_items."""
-        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
+        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
             ItemsListCreateException(some_items=["Name1", "Name2"])
 
-        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
+        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
             WrongTypeException(item="Name1")
 
-        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
+        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
             MultipleTypeForCreateException(item="Name1")
 
     def test_convert_to_oh_item(self):
@@ -63,7 +63,7 @@ class TestItemBase(tests.helper.test_case_base.TestCaseBase):
 
         with (
             unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.SwitchItem("Unittest_Switch_Created", "")) as create_item_mock,
-            self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException),
+            self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError),
         ):
             ItemsForTesting(
                 switch="Unittest_Switch",  # normal case

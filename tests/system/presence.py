@@ -18,7 +18,6 @@ import tests.helper.test_case_base
 import tests.helper.timer
 
 
-# pylint: disable=protected-access
 class TestPresence(tests.helper.test_case_base.TestCaseBaseStateMachine):
     """Tests cases for testing presence rule."""
 
@@ -74,7 +73,7 @@ class TestPresence(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertEqual([], presence_min._config.items.outdoor_doors)
 
     def test_enums(self):
-        """Test if all enums from __init__.py are implemented"""
+        """Test if all enums from __init__.py are implemented."""
         implemented_states = list(self._presence.state_machine.states)
         enum_states = [state.value for state in habapp_rules.system.PresenceState] + ["initial"]
         self.assertEqual(len(enum_states), len(implemented_states))
@@ -301,7 +300,6 @@ class TestPresence(tests.helper.test_case_base.TestCaseBaseStateMachine):
                 self._presence._Presence__set_leaving_through_phone()
             self.assertEqual(test_case.leaving_detected_called, leaving_detected_mock.called)
 
-    # pylint: disable=no-member
     def test_long_absence(self):
         """Test entering long_absence and leaving it."""
         # set initial state

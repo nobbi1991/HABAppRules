@@ -24,10 +24,11 @@ class ItemWatchdog(HABApp.Rule):
     habapp_rules.system.watchdog.Watchdog(config)
     """
 
-    def __init__(self, config: WatchdogConfig):
+    def __init__(self, config: WatchdogConfig) -> None:
         """Init watchdog rule.
 
-        :param config: Config for watchdog rule
+        Args:
+            config: Config for watchdog rule
         """
         HABApp.Rule.__init__(self)
         self._config = config
@@ -36,10 +37,11 @@ class ItemWatchdog(HABApp.Rule):
         self._countdown.reset()
         self._config.items.observed.listen_event(self._cb_observed_state_updated, HABApp.openhab.events.ItemStateUpdatedEventFilter())
 
-    def _cb_observed_state_updated(self, event: HABApp.openhab.events.ItemStateUpdatedEvent) -> None:
+    def _cb_observed_state_updated(self, event: HABApp.openhab.events.ItemStateUpdatedEvent) -> None:  # noqa: ARG002
         """Callback which is called if the observed item was updated.
 
-        :param event: event which triggered this callback
+        Args:
+            event: event which triggered this callback
         """
         habapp_rules.core.helper.send_if_different(self._config.items.warning, "OFF")
         self._countdown.reset()

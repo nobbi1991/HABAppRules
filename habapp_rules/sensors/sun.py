@@ -21,8 +21,9 @@ class _SensorBase(HABApp.Rule):
     def __init__(self, config: habapp_rules.sensors.config.sun.BrightnessConfig | habapp_rules.sensors.config.sun.TemperatureDifferenceConfig, item_input: HABApp.openhab.items.NumberItem) -> None:
         """Init of base class for sun sensors.
 
-        :param config: config for sun sensor
-        :param item_input: item for input value (brightness or temperature difference)
+        Args:
+            config: config for sun sensor
+            item_input: item for input value (brightness or temperature difference)
         """
         self._config = config
 
@@ -31,7 +32,7 @@ class _SensorBase(HABApp.Rule):
         self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, config.items.output.name)
 
         # init exponential filter
-        name_input_exponential_filtered = f"H_{item_input.name.removeprefix("H_")}_filtered"
+        name_input_exponential_filtered = f"H_{item_input.name.removeprefix('H_')}_filtered"
         habapp_rules.core.helper.create_additional_item(name_input_exponential_filtered, "Number", name_input_exponential_filtered.replace("_", " "), config.parameter.filtered_signal_groups)
         item_input_filtered = HABApp.openhab.items.NumberItem.get_item(name_input_exponential_filtered)
 
@@ -42,7 +43,7 @@ class _SensorBase(HABApp.Rule):
         habapp_rules.common.filter.ExponentialFilter(exponential_filter_config)
 
         # attributes
-        self._hysteresis_switch = habapp_rules.common.hysteresis.HysteresisSwitch(config.threshold, config.parameter.hysteresis, False)
+        self._hysteresis_switch = habapp_rules.common.hysteresis.HysteresisSwitch(config.threshold, config.parameter.hysteresis, return_bool=False)
 
         # callbacks
         item_input_filtered.listen_event(self._cb_input_filtered, HABApp.openhab.events.ItemStateChangedEventFilter())
@@ -52,7 +53,8 @@ class _SensorBase(HABApp.Rule):
     def _send_output(self, new_value: str) -> None:
         """Send output if different.
 
-        :param new_value: new value which should be sent
+        Args:
+            new_value: new value which should be sent
         """
         if new_value != self._config.items.output.value:
             self._config.items.output.oh_send_command(new_value)
@@ -61,7 +63,8 @@ class _SensorBase(HABApp.Rule):
     def _cb_input_filtered(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback, which is triggered if the filtered input value changed.
 
-        :param event: trigger event
+        Args:
+            event: trigger event
         """
         value = self._hysteresis_switch.get_output(event.value)
         self._send_output(value)
@@ -69,7 +72,8 @@ class _SensorBase(HABApp.Rule):
     def _cb_threshold(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback, which is triggered if the threshold changed.
 
-        :param event: trigger event
+        Args:
+            event: trigger event
         """
         self._hysteresis_switch.set_threshold_on(event.value)
 
@@ -96,9 +100,10 @@ class SensorBrightness(_SensorBase):
     """
 
     def __init__(self, config: habapp_rules.sensors.config.sun.BrightnessConfig) -> None:
-        """Init of sun sensor which takes a brightness value
+        """Init of sun sensor which takes a brightness value.
 
-        :param config: config for the sun sensor which is using brightness
+        Args:
+            config: config for the sun sensor which is using brightness
         """
         _SensorBase.__init__(self, config, config.items.brightness)
 
@@ -126,9 +131,10 @@ class SensorTemperatureDifference(_SensorBase):
     """
 
     def __init__(self, config: habapp_rules.sensors.config.sun.TemperatureDifferenceConfig) -> None:
-        """Init of sun sensor which takes a two or more temperature values (one in the sun and one in the shadow)
+        """Init of sun sensor which takes a two or more temperature values (one in the sun and one in the shadow).
 
-        :param config: config for the sun sensor which is using temperature items
+        Args:
+            config: config for the sun sensor which is using temperature items
         """
         self._config = config
         name_temperature_diff = f"H_Temperature_diff_for_{config.items.output.name}"
@@ -144,10 +150,10 @@ class SensorTemperatureDifference(_SensorBase):
         # calculate temperature difference
         self._cb_temperature(None)
 
-    def _cb_temperature(self, _: HABApp.openhab.events.ItemStateChangedEvent | None):
+    def _cb_temperature(self, _: HABApp.openhab.events.ItemStateChangedEvent | None) -> None:
         """Callback, which is triggered if a temperature value changed."""
         filtered_items = [itm for itm in habapp_rules.core.helper.filter_updated_items(self._config.items.temperatures, self._config.parameter.ignore_old_values_time) if itm.value is not None]
-        if len(filtered_items) < 2:
+        if len(filtered_items) < 2:  # noqa: PLR2004
             return
         value_min = min(item.value for item in filtered_items)
         value_max = max(item.value for item in filtered_items)
@@ -156,7 +162,7 @@ class SensorTemperatureDifference(_SensorBase):
 
 
 class SunPositionFilter(HABApp.Rule):
-    """Rules class to filter a switch state depending on the sun position. This can be used to only close the blinds of a window, if the sun hits the window
+    """Rules class to filter a switch state depending on the sun position. This can be used to only close the blinds of a window, if the sun hits the window.
 
     # Items:
     Number    sun_azimuth           "Sun Azimuth [%.1f °]"              {channel="astro..."}
@@ -185,7 +191,8 @@ class SunPositionFilter(HABApp.Rule):
     def __init__(self, config: habapp_rules.sensors.config.sun.SunPositionConfig) -> None:
         """Init of sun position filter.
 
-        :param config: config for the sun position filter
+        Args:
+            config: config for the sun position filter
         """
         self._config = config
 
@@ -202,9 +209,12 @@ class SunPositionFilter(HABApp.Rule):
     def _sun_in_window(self, azimuth: float, elevation: float) -> bool:
         """Check if the sun is in the 'sun window' where it hits the target.
 
-        :param azimuth: azimuth of the sun
-        :param elevation: elevation of the sun
-        :return: True if the sun hits the target, else False
+        Args:
+            azimuth: azimuth of the sun
+            elevation: elevation of the sun
+
+        Returns:
+            True if the sun hits the target, else False
         """
         sun_in_window = False
 

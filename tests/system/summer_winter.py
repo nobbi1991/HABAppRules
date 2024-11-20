@@ -15,7 +15,6 @@ import tests.helper.oh_item
 import tests.helper.test_case_base
 
 
-# pylint: disable=protected-access
 class TestSummerWinter(tests.helper.test_case_base.TestCaseBase):
     """Tests for SummerWinter Rule."""
 
@@ -40,7 +39,7 @@ class TestSummerWinter(tests.helper.test_case_base.TestCaseBase):
         habapp_rules.system.summer_winter.SummerWinter(config)
 
     def test__get_weighted_mean(self):
-        """Test normal function of wighted_mean"""
+        """Test normal function of wighted_mean."""
         self._summer_winter._config.parameter.persistence_service = "persist_name"
         TestCase = collections.namedtuple("TestCase", "now, expected_day, temperatures, expected_mean")
 
@@ -86,8 +85,8 @@ class TestSummerWinter(tests.helper.test_case_base.TestCaseBase):
                 outside_temp_mock.get_persistence_data.assert_any_call(persistence="persist_name", start_time=test_case.expected_day + datetime.timedelta(days=-2, hours=22), end_time=test_case.expected_day + datetime.timedelta(days=-2, hours=23))
 
     def test__get_weighted_mean_exception(self):
-        """Test normal function of wighted_mean"""
-        with unittest.mock.patch.object(self._summer_winter._config.items, "outside_temperature", spec=HABApp.openhab.items.NumberItem) as outside_temp_mock, self.assertRaises(habapp_rules.system.summer_winter.SummerWinterException) as context:
+        """Test normal function of wighted_mean."""
+        with unittest.mock.patch.object(self._summer_winter._config.items, "outside_temperature", spec=HABApp.openhab.items.NumberItem) as outside_temp_mock, self.assertRaises(habapp_rules.system.summer_winter.SummerWinterError) as context:
             outside_temp_mock.get_persistence_data.return_value = HABApp.openhab.definitions.helpers.persistence_data.OpenhabPersistenceData.from_resp(HABApp.openhab.definitions.rest.persistence.ItemHistoryResp(name="some_name", data=[]))
             self._summer_winter._SummerWinter__get_weighted_mean(0)
         self.assertIn("No data for", str(context.exception))
@@ -115,18 +114,18 @@ class TestSummerWinter(tests.helper.test_case_base.TestCaseBase):
         self.assertFalse(self._summer_winter._SummerWinter__is_summer())
 
         # check if exceptions are handled correctly (single Exception)
-        self._summer_winter._SummerWinter__get_weighted_mean.side_effect = [16, habapp_rules.system.summer_winter.SummerWinterException("not found"), 16.1, 18.0]
+        self._summer_winter._SummerWinter__get_weighted_mean.side_effect = [16, habapp_rules.system.summer_winter.SummerWinterError("not found"), 16.1, 18.0]
         self.assertTrue(self._summer_winter._SummerWinter__is_summer())
 
         # check if exceptions are handled correctly (single valid value)
-        exc = habapp_rules.system.summer_winter.SummerWinterException("not found")
+        exc = habapp_rules.system.summer_winter.SummerWinterError("not found")
         self._summer_winter._SummerWinter__get_weighted_mean.side_effect = [exc, exc, 16.1, exc]
         self.assertTrue(self._summer_winter._SummerWinter__is_summer())
 
         # check if exceptions are handled correctly (no value)
-        exc = habapp_rules.system.summer_winter.SummerWinterException("not found")
+        exc = habapp_rules.system.summer_winter.SummerWinterError("not found")
         self._summer_winter._SummerWinter__get_weighted_mean.side_effect = [exc, exc, exc, exc]
-        with self.assertRaises(habapp_rules.system.summer_winter.SummerWinterException):
+        with self.assertRaises(habapp_rules.system.summer_winter.SummerWinterError):
             self._summer_winter._SummerWinter__is_summer()
 
     def test__is_summer_with_hysteresis(self):
@@ -200,8 +199,8 @@ class TestSummerWinter(tests.helper.test_case_base.TestCaseBase):
 
         # exception from __is_summer
         with (
-            unittest.mock.patch.object(self._summer_winter, "_SummerWinter__is_summer", side_effect=habapp_rules.system.summer_winter.SummerWinterException("No update")),
+            unittest.mock.patch.object(self._summer_winter, "_SummerWinter__is_summer", side_effect=habapp_rules.system.summer_winter.SummerWinterError("No update")),
             unittest.mock.patch.object(self._summer_winter, "_instance_logger", spec=logging.Logger) as logger_mock,
         ):
             self._summer_winter._cb_update_summer()
-            logger_mock.error.assert_called_once()
+            logger_mock.exception.assert_called_once()

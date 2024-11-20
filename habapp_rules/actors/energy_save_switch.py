@@ -1,6 +1,7 @@
 """Energy save switch rules."""
 
 import logging
+import typing
 
 import HABApp
 
@@ -13,7 +14,6 @@ from habapp_rules.system import PresenceState, SleepState
 LOGGER = logging.getLogger(__name__)
 
 
-# pylint: disable=no-member, invalid-name
 class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
     """Rules class to manage energy save switches.
 
@@ -33,7 +33,7 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
     habapp_rules.actors.energy_save_switch.EnergySaveSwitch(config)
     """
 
-    states = [
+    states: typing.ClassVar = [
         {"name": "Manual"},
         {"name": "Hand", "timeout": 0, "on_timeout": ["_auto_hand_timeout"]},
         {
@@ -48,7 +48,7 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
         },
     ]
 
-    trans = [
+    trans: typing.ClassVar = [
         {"trigger": "manual_on", "source": ["Auto", "Hand"], "dest": "Manual"},
         {"trigger": "manual_off", "source": "Manual", "dest": "Auto"},
         {"trigger": "hand_detected", "source": "Auto", "dest": "Hand"},
@@ -63,7 +63,8 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
     def __init__(self, config: habapp_rules.actors.config.energy_save_switch.EnergySaveSwitchConfig) -> None:
         """Init of energy save switch.
 
-        :param config: energy save switch config
+        Args:
+            config: energy save switch config
         """
         self._config = config
         self._switch_observer = habapp_rules.actors.state_observer.StateObserverSwitch(config.items.switch.name, self._cb_hand, self._cb_hand)
@@ -100,11 +101,15 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
         """Set timeouts."""
         self.state_machine.states["Hand"].timeout = self._config.parameter.hand_timeout or 0
 
-    def _get_initial_state(self, default_value: str = "") -> str:
+    def _get_initial_state(self, default_value: str = "") -> str:  # noqa: ARG002
         """Get initial state of state machine.
 
-        :param default_value: default / initial state
-        :return: if OpenHAB item has a state it will return it, otherwise return the given default value
+        Args:
+          default_value: default / initial state
+
+        Returns:
+          if OpenHAB item has a state it will return it, otherwise return the given default value
+
         """
         if self._config.items.manual is not None and self._config.items.manual.is_on():
             return "Manual"
@@ -127,8 +132,8 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
             self._set_switch_state()
             self._previous_state = self.state
 
-    def on_enter_Auto_Init(self):
-        """Callback, which is called on enter of init state"""
+    def on_enter_Auto_Init(self) -> None:  # noqa: N802
+        """Callback, which is called on enter of init state."""
         if self._get_on_off_conditions_met():
             self.to_Auto_On()
         else:
@@ -144,7 +149,8 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
     def _current_above_threshold(self) -> bool:
         """Current is above threshold.
 
-        :return: True if current is above threshold
+        Returns:
+            True if current is above threshold
         """
         if self._config.items.current is None or self._config.items.current.value is None:
             return False
@@ -154,7 +160,8 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
     def _get_on_off_conditions_met(self) -> bool:
         """Check if on/off conditions are met.
 
-        :return: True if switch should be ON, else False
+        Returns:
+            True if switch should be ON, else False
         """
         external_req = self._config.items.external_request is not None and self._config.items.external_request.is_on()
         present = self._config.items.presence_state is not None and self._config.items.presence_state == PresenceState.PRESENCE.value
@@ -177,7 +184,8 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
     def _cb_switch(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback which is triggered if switch changed.
 
-        :param event: event which triggered this callback
+        Args:
+          event: event which triggered this callback
         """
         if self._max_on_countdown is not None:
             if event.value == "ON":
@@ -185,17 +193,19 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
             else:
                 self._max_on_countdown.stop()
 
-    def _cb_hand(self, event: HABApp.openhab.events.ItemStateChangedEvent):
-        """Callback, which is triggered by the state observer if a manual change was detected
+    def _cb_hand(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:  # noqa: ARG002
+        """Callback, which is triggered by the state observer if a manual change was detected.
 
-        :param event: event which triggered this callback.
+        Args:
+          event: event which triggered this callback.
         """
         self.hand_detected()
 
     def _cb_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback, which is triggered if the manual switch has a state change event.
 
-        :param event: trigger event
+        Args:
+          event: trigger event
         """
         if event.value == "ON":
             self.manual_on()

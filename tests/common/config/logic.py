@@ -23,8 +23,8 @@ class TestBinaryLogicItems(tests.helper.test_case_base.TestCaseBase):
         habapp_rules.common.config.logic.BinaryLogicItems(inputs=["Unittest_Input_Contact"], output="Unittest_Output_Contact")
 
         # input and output items are different
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             habapp_rules.common.config.logic.BinaryLogicItems(inputs=["Unittest_Input_Switch"], output="Unittest_Output_Contact")
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             habapp_rules.common.config.logic.BinaryLogicItems(inputs=["Unittest_Input_Contact"], output="Unittest_Output_Switch")

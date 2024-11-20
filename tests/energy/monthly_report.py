@@ -17,7 +17,6 @@ import tests.helper.oh_item
 import tests.helper.test_case_base
 
 
-# pylint: disable=protected-access
 class TestFunctions(unittest.TestCase):
     """Test all global functions."""
 
@@ -41,10 +40,10 @@ class TestFunctions(unittest.TestCase):
         ]
 
         today = datetime.datetime.today()
-        with unittest.mock.patch("datetime.date") as mock_date:
+        with unittest.mock.patch("datetime.datetime") as datetime_mock:
             for test_case in test_cases:
                 with self.subTest(test_case=test_case):
-                    mock_date.today.return_value = today.replace(month=test_case.month_number, day=1)
+                    datetime_mock.now.return_value = today.replace(month=test_case.month_number, day=1)
                     self.assertEqual(test_case.expected_name, habapp_rules.energy.monthly_report._get_previous_month_name())
 
 
@@ -61,7 +60,7 @@ class TestMonthlyReport(tests.helper.test_case_base.TestCaseBase):
 
         self._energy_1 = habapp_rules.energy.config.monthly_report.EnergyShare("Energy_1", "Energy 1")
         self._energy_2 = habapp_rules.energy.config.monthly_report.EnergyShare("Energy_2", "Energy 2")
-        self._mail_config = multi_notifier.connectors.connector_mail.MailConfig(user="User", password="Password", smtp_host="smtp.test.de", smtp_port=587)
+        self._mail_config = multi_notifier.connectors.connector_mail.MailConfig(user="User", password="Password", smtp_host="smtp.test.de", smtp_port=587)  # noqa: S106
 
         config = habapp_rules.energy.config.monthly_report.MonthlyReportConfig(
             items=habapp_rules.energy.config.monthly_report.MonthlyReportItems(energy_sum="Energy_Sum"),
@@ -99,7 +98,7 @@ class TestMonthlyReport(tests.helper.test_case_base.TestCaseBase):
                 )
 
                 if test_case.raises_exception:
-                    with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationException):
+                    with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
                         habapp_rules.energy.monthly_report.MonthlyReport(config)
                 else:
                     habapp_rules.energy.monthly_report.MonthlyReport(config)

@@ -16,12 +16,13 @@ class EnergyShare(pydantic.BaseModel):
     chart_name: str
     monthly_power: float = 0.0
 
-    def __init__(self, energy_item: str | HABApp.openhab.items.NumberItem, chart_name: str, monthly_power: float = 0.0):
+    def __init__(self, energy_item: str | HABApp.openhab.items.NumberItem, chart_name: str, monthly_power: float = 0.0) -> None:
         """Init energy share object without keywords.
 
-        :param energy_item: name or item of energy
-        :param chart_name: name which will be shown in the chart
-        :param monthly_power: monthly power of this energy share. This will be set by the energy share rule.
+        Args:
+            energy_item: name or item of energy
+            chart_name: name which will be shown in the chart
+            monthly_power: monthly power of this energy share. This will be set by the energy share rule.
         """
         super().__init__(energy_item=energy_item, chart_name=chart_name, monthly_power=monthly_power)
 
@@ -30,16 +31,22 @@ class EnergyShare(pydantic.BaseModel):
     def check_oh_item(cls, data: str | HABApp.openhab.items.NumberItem) -> HABApp.openhab.items.NumberItem:
         """Check if given item is an OpenHAB item or try to get it from OpenHAB.
 
-        :param data: configuration for energy item
-        :return: energy item
-        :raises ValueError: if item could not be found
+        Args:
+            data: configuration for energy item
+
+        Returns:
+            energy item
+
+        Raises:
+            ValueError: if item could not be found
         """
         if isinstance(data, HABApp.openhab.items.NumberItem):
             return data
         try:
             return HABApp.openhab.items.NumberItem.get_item(data)
-        except HABApp.core.errors.ItemNotFoundException:
-            raise ValueError(f"Could not find any item for given name '{data}'")
+        except HABApp.core.errors.ItemNotFoundException as exc:
+            msg = f"Could not find any item for given name '{data}'"
+            raise ValueError(msg) from exc
 
 
 class MonthlyReportItems(habapp_rules.core.pydantic_base.ItemBase):
@@ -55,7 +62,7 @@ class MonthlyReportParameter(habapp_rules.core.pydantic_base.ParameterBase):
     persistence_group_name: str | None = pydantic.Field(None, description="OpenHAB group name which holds all items which are persisted. If the group name is given it will be checked if all energy items are in the group")
     config_mail: multi_notifier.connectors.connector_mail.MailConfig = pydantic.Field(..., description="config for sending mails")
     recipients: list[str] = pydantic.Field(..., description="list of recipients who get the mail")
-    debug: bool = pydantic.Field(False, description="if debug mode is active")
+    debug: bool = pydantic.Field(default=False, description="if debug mode is active")
 
 
 class MonthlyReportConfig(habapp_rules.core.pydantic_base.ConfigBase):

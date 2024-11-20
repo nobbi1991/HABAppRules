@@ -13,7 +13,7 @@ from habapp_rules.system.config.notification import NotificationConfig, Notifica
 
 
 class TestNotification(tests.helper.test_case_base.TestCaseBase):
-    """Test class for notification"""
+    """Test class for notification."""
 
     def setUp(self):
         """Set up test case."""

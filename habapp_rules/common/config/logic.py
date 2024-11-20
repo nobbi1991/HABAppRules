@@ -18,12 +18,16 @@ class BinaryLogicItems(habapp_rules.core.pydantic_base.ItemBase):
     def validate_items(self) -> typing.Self:
         """Validate if all items are of the same type.
 
-        :return: validated model
-        :raises ValueError: if not all items are of the same type
+        Returns:
+            validated model
+
+        Raises:
+            TypeError: if not all items are of the same type
         """
         for item in self.inputs:
             if not isinstance(item, type(self.output)):
-                raise ValueError(f"Item '{item.name}' must have the same type like the output item. Expected: {type(self.output)} | actual : {type(item)}")
+                msg = f"Item '{item.name}' must have the same type like the output item. Expected: {type(self.output)} | actual : {type(item)}"
+                raise TypeError(msg)
         return self
 
 
@@ -64,8 +68,8 @@ class InvertValueItems(habapp_rules.core.pydantic_base.ItemBase):
 class InvertValueParameter(habapp_rules.core.pydantic_base.ParameterBase):
     """Parameter for invert value."""
 
-    only_positive: bool = pydantic.Field(False, description="if true, only positive values will be set to output item")
-    only_negative: bool = pydantic.Field(False, description="if true, only negative values will be set to output item")
+    only_positive: bool = pydantic.Field(default=False, description="if true, only positive values will be set to output item")
+    only_negative: bool = pydantic.Field(default=False, description="if true, only negative values will be set to output item")
 
 
 class InvertValueConfig(habapp_rules.core.pydantic_base.ConfigBase):

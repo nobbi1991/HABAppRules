@@ -22,13 +22,17 @@ class IrrigationItems(habapp_rules.core.pydantic_base.ItemBase):
 
     @pydantic.model_validator(mode="after")
     def validate_model(self) -> typing.Self:
-        """Validate model
+        """Validate model.
 
-        :return: validated model
-        :raises AssertionError: if 'repetitions' and 'brake' are not set together
+        Returns:
+            validated model
+
+        Raises:
+            AssertionError: if 'repetitions' and 'brake' are not set together
         """
         if (self.repetitions is None) != (self.brake is None):
-            raise AssertionError("If repeats item is given, also the brake item must be given!")
+            msg = "If repeats item is given, also the brake item must be given!"
+            raise AssertionError(msg)
 
         return self
 

@@ -1,7 +1,6 @@
 """Tests for motion sensors."""
 
 import collections
-import os
 import pathlib
 import sys
 import unittest
@@ -20,7 +19,6 @@ import tests.helper.test_case_base
 import tests.helper.timer
 
 
-# pylint: disable=no-member, protected-access, too-many-public-methods
 class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
     """Tests cases for testing motion sensors rule."""
 
@@ -42,7 +40,7 @@ class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
         """Create state machine graph for documentation."""
         picture_dir = pathlib.Path(__file__).parent / "Humidity_States"
         if not picture_dir.is_dir():
-            os.makedirs(picture_dir)
+            picture_dir.mkdir(parents=True)
 
         humidity_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self.humidity.states, transitions=self.humidity.trans, initial=self.humidity.state, show_conditions=True)
 
@@ -102,7 +100,7 @@ class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
                 self.assertEqual(test_case.expected_result, self.humidity._check_high_humidity(test_case.given_value))
 
     def test_cb_humidity(self):
-        """Test _cb_humidity"""
+        """Test _cb_humidity."""
         with (
             unittest.mock.patch.object(self.humidity, "high_humidity_start") as start_mock,
             unittest.mock.patch.object(self.humidity, "high_humidity_end") as end_mock,

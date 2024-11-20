@@ -13,7 +13,6 @@ import tests.helper.test_case_base
 import tests.helper.timer
 
 
-# pylint: disable=protected-access
 class TestStateObserverSwitch(tests.helper.test_case_base.TestCaseBase):
     """Tests cases for testing StateObserver for switch item."""
 
@@ -95,7 +94,6 @@ class TestStateObserverSwitch(tests.helper.test_case_base.TestCaseBase):
             self._observer_switch.send_command(2)
 
 
-# pylint: disable=protected-access, no-member
 class TestStateObserverDimmer(tests.helper.test_case_base.TestCaseBase):
     """Tests cases for testing StateObserver for dimmer item."""
 
@@ -163,7 +161,7 @@ class TestStateObserverDimmer(tests.helper.test_case_base.TestCaseBase):
             self.assertEqual(test_case.state, self._observer_dimmer.value)
 
     def test_basic_behavior_on_knx(self):
-        """Test basic behavior. Switch ON via KNX"""
+        """Test basic behavior. Switch ON via KNX."""
         # === Switch ON via KNX button ===
         # set initial state
         self._cb_on.reset_mock()
@@ -289,7 +287,6 @@ class TestStateObserverDimmer(tests.helper.test_case_base.TestCaseBase):
             self._observer_dimmer.send_command("dimmer")
 
 
-# pylint: disable=protected-access
 class TestStateObserverRollerShutter(tests.helper.test_case_base.TestCaseBase):
     """Tests cases for testing StateObserver for switch item."""
 
@@ -323,8 +320,8 @@ class TestStateObserverRollerShutter(tests.helper.test_case_base.TestCaseBase):
             self._cb_manual.assert_not_called()
 
     def test_command_from_habapp_exception(self):
-        """Test HABApp rule triggers a command with wrong type"""
-        with self.assertRaises(ValueError):
+        """Test HABApp rule triggers a command with wrong type."""
+        with self.assertRaises(TypeError):
             self._observer_jalousie.send_command("UP")
         self._cb_manual.assert_not_called()
 
@@ -351,7 +348,7 @@ class TestStateObserverRollerShutter(tests.helper.test_case_base.TestCaseBase):
                 self._cb_manual.assert_called_once_with(unittest.mock.ANY)
 
     def test_basic_behavior_on_knx(self):
-        """Test basic behavior. Switch ON via KNX"""
+        """Test basic behavior. Switch ON via KNX."""
         # === Switch ON via KNX button ===
         # set initial state
         self._cb_manual.reset_mock()
@@ -525,7 +522,7 @@ class TestStateObserverNumber(tests.helper.test_case_base.TestCaseBase):
 
     def test_send_command_exception(self):
         """Test if correct exceptions is raised."""
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             self._observer_number.send_command("ON")
 
 
@@ -542,13 +539,13 @@ class TestStateObserverSlat(tests.helper.test_case_base.TestCaseBase):
 
     def test_check_manual(self):
         """Test _check_manual."""
-        # value == 0
+        # value is 0
         with unittest.mock.patch("threading.Timer") as timer_mock, unittest.mock.patch("habapp_rules.actors.state_observer.StateObserverNumber._check_manual") as base_check_manual_mock:
             self._observer_slat._check_manual(event := HABApp.openhab.events.ItemStateChangedEvent("any", 0, 42))
         timer_mock.assert_called_once_with(3, self._observer_slat._StateObserverSlat__cb_check_manual_delayed, [event])
         base_check_manual_mock.assert_not_called()
 
-        # value == 100
+        # value is 100
         with unittest.mock.patch("threading.Timer") as timer_mock, unittest.mock.patch("habapp_rules.actors.state_observer.StateObserverNumber._check_manual") as base_check_manual_mock:
             self._observer_slat._check_manual(event := HABApp.openhab.events.ItemStateChangedEvent("any", 100, 42))
         timer_mock.assert_called_once_with(3, self._observer_slat._StateObserverSlat__cb_check_manual_delayed, [event])

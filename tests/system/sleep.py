@@ -18,7 +18,6 @@ import tests.helper.test_case_base
 import tests.helper.timer
 
 
-# pylint: disable=protected-access
 class TestSleep(tests.helper.test_case_base.TestCaseBaseStateMachine):
     """Tests cases for testing presence rule."""
 
@@ -62,7 +61,7 @@ class TestSleep(tests.helper.test_case_base.TestCaseBaseStateMachine):
         presence_graph.get_graph().draw(pathlib.Path(__file__).parent / "Sleep.png", format="png", prog="dot")
 
     def test_enums(self):
-        """Test if all enums from __init__.py are implemented"""
+        """Test if all enums from __init__.py are implemented."""
         implemented_states = list(self._sleep.state_machine.states)
         enum_states = [state.value for state in habapp_rules.system.SleepState] + ["initial"]
         self.assertEqual(len(enum_states), len(implemented_states))
@@ -279,7 +278,6 @@ class TestSleep(tests.helper.test_case_base.TestCaseBaseStateMachine):
         tests.helper.oh_item.assert_value("Unittest_Sleep", "OFF")
 
 
-# pylint: disable=no-member
 class TestLinkSleep(tests.helper.test_case_base.TestCaseBase):
     """Test LinkSleep."""
 
@@ -317,7 +315,7 @@ class TestLinkSleep(tests.helper.test_case_base.TestCaseBase):
         self._link_night = habapp_rules.system.sleep.LinkSleep(config_night)
 
     def test_init_with_feedback(self):
-        """Test init with feedback item"""
+        """Test init with feedback item."""
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Link_Active", None)
         config = habapp_rules.system.config.sleep.LinkSleepConfig(
             items=habapp_rules.system.config.sleep.LinkSleepItems(
@@ -373,7 +371,7 @@ class TestLinkSleep(tests.helper.test_case_base.TestCaseBase):
                     self.assertEqual(test_case.expected_result, self._link_full_day._check_time_in_window())
 
     def test_cb_master(self):
-        """Test _cb_master"""
+        """Test _cb_master."""
         # during active time
         with unittest.mock.patch.object(self._link_full_day, "_check_time_in_window", return_value=True):
             tests.helper.oh_item.assert_value("Unittest_Sleep2_req", None)

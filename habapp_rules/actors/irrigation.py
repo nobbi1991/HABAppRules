@@ -8,6 +8,7 @@ import HABApp
 import habapp_rules.actors.config.irrigation
 import habapp_rules.core.exceptions
 import habapp_rules.core.logger
+from habapp_rules import TIMEZONE
 
 LOGGER = logging.getLogger(__name__)
 
@@ -15,33 +16,36 @@ LOGGER = logging.getLogger(__name__)
 class Irrigation(HABApp.Rule):
     """Rule for easy irrigation control.
 
-        # Items:
+    # Items:
     Switch     I999_valve                   "Valve state"           {channel="some_channel_config"}
-        Switch     I999_irrigation_active       "Irrigation active"
-        Number     I999_irrigation_hour         "Start hour [%d]"
-        Number     I999_irrigation_minute       "Start minute[%d]"
-        Number     I999_irrigation_duration     "Duration [%d]"
+    Switch     I999_irrigation_active       "Irrigation active"
+    Number     I999_irrigation_hour         "Start hour [%d]"
+    Number     I999_irrigation_minute       "Start minute[%d]"
+    Number     I999_irrigation_duration     "Duration [%d]"
 
-        # Config:
-        config = habapp_rules.actors.config.irrigation.IrrigationConfig(
-                items=habapp_rules.actors.config.irrigation.IrrigationItems(
-                        valve=HABApp.openhab.items.SwitchItem("I999_valve"),
-                        active=HABApp.openhab.items.SwitchItem("I999_irrigation_active"),
-                        hour=HABApp.openhab.items.NumberItem("I999_irrigation_hour"),
-                        minute=HABApp.openhab.items.NumberItem("I999_irrigation_minute"),
-                        duration=HABApp.openhab.items.NumberItem("I999_irrigation_duration"),
+    # Config:
+    config = habapp_rules.actors.config.irrigation.IrrigationConfig(
+            items=habapp_rules.actors.config.irrigation.IrrigationItems(
+                    valve=HABApp.openhab.items.SwitchItem("I999_valve"),
+                    active=HABApp.openhab.items.SwitchItem("I999_irrigation_active"),
+                    hour=HABApp.openhab.items.NumberItem("I999_irrigation_hour"),
+                    minute=HABApp.openhab.items.NumberItem("I999_irrigation_minute"),
+                    duration=HABApp.openhab.items.NumberItem("I999_irrigation_duration"),
                 )
         )
 
-        # Rule init:
-        habapp_rules.actors.irrigation.Irrigation(config)
+    # Rule init:
+    habapp_rules.actors.irrigation.Irrigation(config)
     """
 
     def __init__(self, config: habapp_rules.actors.config.irrigation.IrrigationConfig) -> None:
         """Init of irrigation object.
 
-        :param config: config for the rule
-        :raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: if configuration is not correct
+        Args:
+            config: config for the rule
+
+        Raises:
+            habapp_rules.core.exceptions.HabAppRulesConfigurationException: if configuration is not correct
         """
         self._config = config
         HABApp.Rule.__init__(self)
@@ -61,10 +65,12 @@ class Irrigation(HABApp.Rule):
         self._instance_logger.debug(f"Init of rule '{self.__class__.__name__}' with name '{self.rule_name}' was successful.")
 
     def _get_target_valve_state(self) -> bool:
-        """Get target valve state, depending on the OpenHAB item states
+        """Get target valve state, depending on the OpenHAB item states.
 
-        :return: True if valve should be on, otherwise False
-        :raises habapp_rules.core.exceptions.HabAppRulesException: if value for hour / minute / duration is not valid
+        Returns:
+            True if valve should be on, otherwise False
+        Raises:
+            habapp_rules.core.exceptions.HabAppRulesError: if value for hour / minute / duration is not valid
         """
         if not self._config.items.active.is_on():
             return False
@@ -78,7 +84,7 @@ class Irrigation(HABApp.Rule):
         repetitions = self._config.items.repetitions.value if self._config.items.repetitions else 0
         brake = int(self._config.items.brake.value) if self._config.items.brake else 0
 
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(tz=TIMEZONE)
         hour = int(self._config.items.hour.value)
         minute = int(self._config.items.minute.value)
         duration = int(self._config.items.duration.value)
@@ -94,20 +100,23 @@ class Irrigation(HABApp.Rule):
     def _is_in_time_range(start_time: datetime.time, end_time: datetime.time, time_to_check: datetime.time) -> bool:
         """Check if a time is in a given range.
 
-        :param start_time: start time of the time range
-        :param end_time: end time of the time range
-        :param time_to_check: time, which should be checked
-        :return: True if the time, which should be checked is between start and stop time
+        Args:
+            start_time: start time of the time range
+            end_time: end time of the time range
+            time_to_check: time, which should be checked
+
+        Returns:
+            True if the time, which should be checked is between start and stop time
         """
         if end_time < start_time:
             return start_time <= time_to_check or end_time > time_to_check
         return start_time <= time_to_check < end_time
 
     def _cb_set_valve_state(self, _: HABApp.openhab.events.ItemStateChangedEvent | None = None) -> None:
-        """Callback to set the valve state, triggered by cyclic call or item event"""
+        """Callback to set the valve state, triggered by cyclic call or item event."""
         try:
             target_value = self._get_target_valve_state()
-        except habapp_rules.core.exceptions.HabAppRulesException as exc:
+        except habapp_rules.core.exceptions.HabAppRulesError as exc:
             self._instance_logger.warning(f"Could not get target valve state, set it to false. Error: {exc}")
             target_value = False
 

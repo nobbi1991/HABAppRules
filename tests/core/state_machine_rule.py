@@ -13,7 +13,6 @@ import tests.helper.oh_item
 import tests.helper.test_case_base
 
 
-# pylint: disable=protected-access
 class TestStateMachineRule(tests.helper.test_case_base.TestCaseBase):
     """Tests for StateMachineRule."""
 
@@ -54,7 +53,7 @@ class TestStateMachineRule(tests.helper.test_case_base.TestCaseBase):
     def test_on_rule_removed(self):
         """Test on_rule_removed."""
         # check if 'on_rule_removed' is still available in HABApp
-        HABApp.rule.Rule.on_rule_removed
+        self.assertIsNotNone(HABApp.rule.Rule.on_rule_removed)
 
         # check if timer is stopped correctly
         states = [{"name": "stopped"}, {"name": "running", "timeout": 99, "on_timeout": "trigger_stop"}]
@@ -68,10 +67,10 @@ class TestStateMachineRule(tests.helper.test_case_base.TestCaseBase):
                 state_machine_rule._set_state(initial_state)
 
                 if initial_state == "running":
-                    self.assertTrue(list(state_machine_rule.state_machine.states["running"].runner.values())[0].is_alive())
+                    self.assertTrue(next(iter(state_machine_rule.state_machine.states["running"].runner.values())).is_alive())
 
                 state_machine_rule.on_rule_removed()
 
                 if initial_state == "running":
                     time.sleep(0.001)
-                    self.assertFalse(list(state_machine_rule.state_machine.states["running"].runner.values())[0].is_alive())
+                    self.assertFalse(next(iter(state_machine_rule.state_machine.states["running"].runner.values())).is_alive())

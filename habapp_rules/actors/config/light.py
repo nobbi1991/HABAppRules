@@ -35,28 +35,33 @@ class BrightnessTimeout(pydantic.BaseModel):
     brightness: int | bool = pydantic.Field(..., description="brightness which should be set. If bool ON will be sent for True and OFF for False")
     timeout: float = pydantic.Field(..., description="Timeout / max time in seconds until switch off")
 
-    def __init__(self, brightness: int | bool, timeout: float):
-        """Initialize BrightnessTimeout without kwargs
+    def __init__(self, brightness: int | bool, timeout: float) -> None:
+        """Initialize BrightnessTimeout without kwargs.
 
-        :param brightness: brightness value
-        :param timeout: timeout value
+        Args:
+            brightness: brightness value
+            timeout: timeout value
         """
         super().__init__(brightness=brightness, timeout=timeout)
 
     @pydantic.model_validator(mode="after")
     def validata_model(self) -> typing.Self:
-        """Validate brightness and timeout
+        """Validate brightness and timeout.
 
-        :raises AssertionError: if brightness and timeout are not valid
-        :return: self
+        Returns:
+            self
+
+        Raises:
+            AssertionError: if brightness and timeout are not valid
         """
-        if self.brightness is False or self.brightness == 0:
+        if self.brightness is False or self.brightness == 0:  # noqa: SIM102
             # Default if the light should be switched off e.g. for leaving / sleeping
             if not self.timeout:
                 self.timeout = 0.5
 
         if not self.timeout:
-            raise AssertionError(f"Brightness and timeout are not valid: brightness = {self.brightness} | timeout = {self.timeout}")
+            msg = f"Brightness and timeout are not valid: brightness = {self.brightness} | timeout = {self.timeout}"
+            raise AssertionError(msg)
         return self
 
 
@@ -75,39 +80,55 @@ class LightParameter(habapp_rules.core.pydantic_base.ParameterBase):
     """
 
     on: FunctionConfig = pydantic.Field(
-        FunctionConfig(day=BrightnessTimeout(True, 14 * 3600), night=BrightnessTimeout(80, 10 * 3600), sleeping=BrightnessTimeout(20, 3 * 3600)), description="values which are used if the light is switched on manually"
+        FunctionConfig(day=BrightnessTimeout(brightness=True, timeout=14 * 3600), night=BrightnessTimeout(80, 10 * 3600), sleeping=BrightnessTimeout(20, 3 * 3600)), description="values which are used if the light is switched on manually"
     )
     pre_off: FunctionConfig | None = pydantic.Field(FunctionConfig(day=BrightnessTimeout(50, 10), night=BrightnessTimeout(40, 7), sleeping=BrightnessTimeout(10, 7)), description="values which are used if the light changes pre_off state")
-    leaving: FunctionConfig | None = pydantic.Field(FunctionConfig(day=BrightnessTimeout(False, 0), night=BrightnessTimeout(False, 0), sleeping=BrightnessTimeout(False, 0)), description="values which are used if the light changes to leaving state")
-    pre_sleep: FunctionConfig | None = pydantic.Field(FunctionConfig(day=BrightnessTimeout(False, 10), night=BrightnessTimeout(False, 10), sleeping=None), description="values which are used if the light changes to pre_sleep state")
+    leaving: FunctionConfig | None = pydantic.Field(
+        FunctionConfig(day=BrightnessTimeout(brightness=False, timeout=0), night=BrightnessTimeout(brightness=False, timeout=0), sleeping=BrightnessTimeout(brightness=False, timeout=0)),
+        description="values which are used if the light changes to leaving state",
+    )
+    pre_sleep: FunctionConfig | None = pydantic.Field(
+        FunctionConfig(day=BrightnessTimeout(brightness=False, timeout=10), night=BrightnessTimeout(brightness=False, timeout=10), sleeping=None), description="values which are used if the light changes to pre_sleep state"
+    )
     pre_sleep_prevent: collections.abc.Callable[[], bool] | HABApp.openhab.items.OpenhabItem | None = pydantic.Field(None, description="Enable pre sleep prevent -> disable pre sleep if True")
     motion: FunctionConfig | None = pydantic.Field(None, description="values which are used if the light changes to motion state")
     door: FunctionConfig | None = pydantic.Field(None, description="values which are used if the light is enabled via a door opening")
-    off_at_door_closed_during_leaving: bool = pydantic.Field(False, description="this can be used to switch lights off, when door is closed in leaving state")
+    off_at_door_closed_during_leaving: bool = pydantic.Field(default=False, description="this can be used to switch lights off, when door is closed in leaving state")
     hand_off_lock_time: int = pydantic.Field(20, description="time in seconds where door / motion switch on is disabled after a manual OFF")
-    leaving_only_if_on: bool = pydantic.Field(False, description="switch to leaving only if light is on. If False leaving light is always activated")
+    leaving_only_if_on: bool = pydantic.Field(default=False, description="switch to leaving only if light is on. If False leaving light is always activated")
 
     @pydantic.field_validator("on", mode="after")
     @classmethod
     def validate_on(cls, value: FunctionConfig) -> FunctionConfig:
-        """Validate config for on-state
+        """Validate config for on-state.
 
-        :param value: given value
-        :return: validated value
-        :raises AssertionError: if on is not valid
+        Args:
+            value: given value
+
+        Returns:
+            validated value
+
+        Raises:
+             AssertionError: if on is not valid
         """
         if any(conf is None for conf in [value.day, value.night, value.sleeping]):
-            raise AssertionError("For function 'on' all brightness / timeout values must be set.")
+            msg = "For function 'on' all brightness / timeout values must be set."
+            raise AssertionError(msg)
         return value
 
     @pydantic.field_validator("pre_sleep", mode="after")
     @classmethod
     def validate_pre_sleep(cls, value: FunctionConfig | None) -> FunctionConfig | None:
-        """Validate pre_sleep config
+        """Validate pre_sleep config.
 
-        :param value: value of pre sleep
-        :raises AssertionError: if pre_sleep is not valid
-        :return: validated value
+        Args:
+            value: value of pre sleep
+
+        Returns:
+            validated value
+
+        Raises:
+            AssertionError: if pre_sleep is not valid
         """
         if value is None:
             return value
@@ -127,22 +148,29 @@ class LightConfig(habapp_rules.core.pydantic_base.ConfigBase):
 
     @pydantic.model_validator(mode="after")
     def validate_config(self) -> typing.Self:
-        """Validate config
+        """Validate config.
 
-        :raises AssertionError: if config is not valid
-        :return: config if valid
+        Returns:
+            validated config
+
+        Raises:
+            AssertionError: if config is not valid
         """
         if self.items.motion is not None and self.parameter.motion is None:
-            raise AssertionError("item motion is given, but not configured via parameter")
+            msg = "item motion is given, but not configured via parameter"
+            raise AssertionError(msg)
 
         if len(self.items.doors) and self.parameter.door is None:
-            raise AssertionError("item door is given, but not configured via parameter")
+            msg = "item door is given, but not configured via parameter"
+            raise AssertionError(msg)
 
         if self.items.sleeping_state is not None and self.parameter.pre_sleep is None:
-            raise AssertionError("item sleeping_state is given, but not configured via parameter")
+            msg = "item sleeping_state is given, but not configured via parameter"
+            raise AssertionError(msg)
 
         if self.items.presence_state is not None and self.parameter.leaving is None:
-            raise AssertionError("item presence_state is given, but not configured via parameter")
+            msg = "item presence_state is given, but not configured via parameter"
+            raise AssertionError(msg)
 
         if self.items.pre_sleep_prevent is not None and self.parameter.pre_sleep_prevent is not None:
             LOGGER.warning("item pre_sleep_prevent and parameter pre_sleep_prevent are given. The item will be prioritized and the parameter will be ignored!")

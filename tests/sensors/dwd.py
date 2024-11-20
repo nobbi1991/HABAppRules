@@ -2,7 +2,6 @@
 
 import collections
 import datetime
-import os
 import pathlib
 import sys
 import unittest.mock
@@ -22,6 +21,7 @@ class TestDwdItems(tests.helper.test_case_base.TestCaseBase):
     """Tests for DwdItems."""
 
     def setUp(self):
+        """Setup tests."""
         tests.helper.test_case_base.TestCaseBase.setUp(self)
 
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "I26_99_warning_1_description", None)
@@ -52,11 +52,11 @@ class TestDwdItems(tests.helper.test_case_base.TestCaseBase):
                 self.assertEqual(test_case.expected_int, self._test_dataclass.severity_as_int)
 
 
-# pylint: disable=protected-access
 class TestDwdWindAlarm(tests.helper.test_case_base.TestCaseBaseStateMachine):
     """Tests for DwdWindAlarm."""
 
     def setUp(self):
+        """Setup tests."""
         tests.helper.test_case_base.TestCaseBaseStateMachine.setUp(self)
 
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Wind_Alarm_1", None)
@@ -98,7 +98,7 @@ class TestDwdWindAlarm(tests.helper.test_case_base.TestCaseBaseStateMachine):
         """Create state machine graph for documentation."""
         picture_dir = pathlib.Path(__file__).parent / "DWD_WindAlarm"
         if not picture_dir.is_dir():
-            os.makedirs(picture_dir)
+            picture_dir.mkdir(parents=True)
 
         graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
             model=tests.helper.graph_machines.FakeModel(), states=self._wind_alarm_rule_1.states, transitions=self._wind_alarm_rule_1.trans, initial=self._wind_alarm_rule_1.state, show_conditions=True
@@ -134,7 +134,7 @@ class TestDwdWindAlarm(tests.helper.test_case_base.TestCaseBaseStateMachine):
                     self.assertEqual(test_case.expected_state, self._wind_alarm_rule_1._get_initial_state())
 
     def test_manual(self):
-        """Test manual"""
+        """Test manual."""
         # from Auto
         self.assertEqual("Auto_Off", self._wind_alarm_rule_1.state)
         self.assertEqual("Auto_Off", self._wind_alarm_rule_2.state)
@@ -171,7 +171,7 @@ class TestDwdWindAlarm(tests.helper.test_case_base.TestCaseBaseStateMachine):
         end_not_active = now + datetime.timedelta(hours=-2)
 
         test_cases = [
-            # TestCase(None, None, None, None, None, None, None, None, None, None, False),
+            TestCase(None, None, None, None, None, None, None, None, None, None, False),
             TestCase("FROST", "Frost is appearing at 100 km/h", "Minor", start_not_active, end_not_active, "SUN", "SUN is appearing at 100 km/h", "Minor", start_not_active, end_not_active, False),
             TestCase("FROST", "Frost is appearing at 100 km/h", "Minor", start_not_active, end_not_active, "SUN", "SUN is appearing at 100 km/h", "Minor", start_active, end_active, False),
             TestCase("FROST", "Frost is appearing at 100 km/h", "Minor", start_not_active, end_not_active, "SUN", "SUN is appearing at 100 km/h", "Moderate", start_active, end_active, False),

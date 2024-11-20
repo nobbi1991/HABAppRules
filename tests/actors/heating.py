@@ -11,9 +11,8 @@ import tests.helper.oh_item
 import tests.helper.test_case_base
 
 
-# pylint: disable=protected-access, no-member
 class TestKnxHeating(tests.helper.test_case_base.TestCaseBase):
-    """Test KnxHeating"""
+    """Test KnxHeating."""
 
     def setUp(self) -> None:
         """Setup test case."""

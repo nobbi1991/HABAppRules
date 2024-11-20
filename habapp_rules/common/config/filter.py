@@ -19,18 +19,22 @@ class ExponentialFilterParameter(habapp_rules.core.pydantic_base.ParameterBase):
     """Parameter for exponential filter."""
 
     tau: int = pydantic.Field(..., description="filter time constant in seconds. E.g. step from 0 to 1 | tau = 5 seconds -> after 5 seconds the value will be 0,67")
-    instant_increase: bool = pydantic.Field(False, description="if set to True, increase of input values will not be filtered")
-    instant_decrease: bool = pydantic.Field(False, description="if set to True, decrease of input values will not be filtered")
+    instant_increase: bool = pydantic.Field(default=False, description="if set to True, increase of input values will not be filtered")
+    instant_decrease: bool = pydantic.Field(default=False, description="if set to True, decrease of input values will not be filtered")
 
     @pydantic.model_validator(mode="after")
     def validate_instant_parameters(self) -> typing.Self:
         """Validate instant_increase and instant_decrease.
 
-        :return: validated model
-        :raises ValueError: if both parameters are set
+        Returns:
+            validated model
+
+        Raises:
+            ValueError: if both parameters are set
         """
         if self.instant_decrease and self.instant_increase:
-            raise ValueError("instant_increase and instant_decrease can not be set to True at the same time!")
+            msg = "instant_increase and instant_decrease can not be set to True at the same time!"
+            raise ValueError(msg)
         return self
 
 

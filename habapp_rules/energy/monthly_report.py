@@ -16,6 +16,7 @@ import habapp_rules.core.exceptions
 import habapp_rules.core.logger
 import habapp_rules.energy.config.monthly_report
 import habapp_rules.energy.donut_chart
+from habapp_rules import TIMEZONE
 
 LOGGER = logging.getLogger(__name__)
 
@@ -23,13 +24,14 @@ MONTH_MAPPING = {1: "Januar", 2: "Februar", 3: "März", 4: "April", 5: "Mai", 6:
 
 
 def _get_previous_month_name() -> str:
-    """Get name of the previous month
-
-    :return: name of current month
+    """Get name of the previous month.
 
     if other languages are required, the global dict must be replaced
+
+    Returns:
+        name of current month
     """
-    today = datetime.date.today()
+    today = datetime.datetime.now(tz=TIMEZONE)
     last_month = today.replace(day=1) - datetime.timedelta(days=1)
 
     return MONTH_MAPPING[last_month.month]
@@ -65,8 +67,11 @@ class MonthlyReport(HABApp.Rule):
     def __init__(self, config: habapp_rules.energy.config.monthly_report.MonthlyReportConfig) -> None:
         """Initialize the rule.
 
-        :param config: config for the monthly energy report rule
-        :raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: if config is not valid
+        Args:
+            config: config for the monthly energy report rule
+
+        Raises:
+            habapp_rules.core.exceptions.HabAppRulesConfigurationError: if config is not valid
         """
         self._config = config
         HABApp.Rule.__init__(self)
@@ -80,7 +85,8 @@ class MonthlyReport(HABApp.Rule):
             items_to_check = [config.items.energy_sum] + [share.energy_item for share in config.parameter.known_energy_shares]
             not_in_persistence_group = [item.name for item in items_to_check if config.parameter.persistence_group_name not in item.groups]
             if not_in_persistence_group:
-                raise habapp_rules.core.exceptions.HabAppRulesConfigurationException(f"The following OpenHAB items are not in the persistence group '{config.parameter.persistence_group_name}': {not_in_persistence_group}")
+                msg = f"The following OpenHAB items are not in the persistence group '{config.parameter.persistence_group_name}': {not_in_persistence_group}"
+                raise habapp_rules.core.exceptions.HabAppRulesConfigurationError(msg)
 
         self.run.at(self.run.trigger.time("00:00:00").only_on(self.run.filter.days(1)), self._cb_send_energy)
 
@@ -90,11 +96,14 @@ class MonthlyReport(HABApp.Rule):
         self._instance_logger.info(f"Successfully initiated monthly consumption rule for {config.items.energy_sum.name}.")
 
     def _get_historic_value(self, item: HABApp.openhab.items.NumberItem, start_time: datetime.datetime) -> float:
-        """Get historic value of given Number item
+        """Get historic value of given Number item.
 
-        :param item: item instance
-        :param start_time: start time to search for the interested value
-        :return: historic value of the item
+        Args:
+            item: item instance
+            start_time: start time to search for the interested value
+
+        Returns:
+            historic value of the item
         """
         historic = item.get_persistence_data(start_time=start_time, end_time=start_time + datetime.timedelta(hours=1)).data
         if not historic:
@@ -103,12 +112,8 @@ class MonthlyReport(HABApp.Rule):
 
         return next(iter(historic.values()))
 
-    # pylint: disable=wrong-spelling-in-docstring
     def _create_html(self, energy_sum_month: float) -> str:
-        """Create html which will be sent by the mail
-
-        :param energy_sum_month: sum value for the current month
-        :return: html with replaced values
+        """Create html which will be sent by the mail.
 
         The template was created by https://app.bootstrapemail.com/editor/documents with the following input:
 
@@ -138,6 +143,12 @@ class MonthlyReport(HABApp.Rule):
             </div>
           </body>
         </html>
+
+        Args:
+            energy_sum_month: sum value for the current month
+
+        Returns:
+            html with replaced values
         """
         with (pathlib.Path(__file__).parent / "monthly_report_template.html").open(encoding="utf-8") as template_file:
             html_template = template_file.read()
@@ -151,10 +162,10 @@ class MonthlyReport(HABApp.Rule):
         )
 
     def _cb_send_energy(self) -> None:
-        """Send the mail with the energy consumption of the last month"""
+        """Send the mail with the energy consumption of the last month."""
         self._instance_logger.debug("Send energy consumption was triggered.")
         # get values
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(tz=TIMEZONE)
         last_month = now - dateutil.relativedelta.relativedelta(months=1)
 
         energy_sum_month = self._config.items.energy_sum.value - self._get_historic_value(self._config.items.energy_sum, last_month)

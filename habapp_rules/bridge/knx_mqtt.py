@@ -23,7 +23,7 @@ class KnxMqttDimmerBridge(HABApp.Rule):
     """
 
     def __init__(self, config: habapp_rules.bridge.config.knx_mqtt.KnxMqttConfig) -> None:
-        """Create object of KNX to MQTT bridge
+        """Create object of KNX to MQTT bridge.
 
         :param config: Configuration of the KNX MQTT bridge
         :raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: If config is not valid
@@ -46,7 +46,7 @@ class KnxMqttDimmerBridge(HABApp.Rule):
 
         :param event: HABApp event
         """
-        if isinstance(event.value, (int, float)) or event.value in {"ON", "OFF"}:
+        if isinstance(event.value, int | float) or event.value in {"ON", "OFF"}:
             self._config.items.mqtt_dimmer.oh_send_command(event.value)
         elif event.value == "INCREASE":
             target_value = self._config.parameter.increase_value if self._config.items.mqtt_dimmer.value < self._config.parameter.increase_value else 100
@@ -62,7 +62,7 @@ class KnxMqttDimmerBridge(HABApp.Rule):
 
         :param event: HABApp event
         """
-        if not isinstance(event.value, (int, float)):
+        if not isinstance(event.value, int | float):
             return
 
         if self._config.items.knx_dimmer_ctr is not None:

@@ -1,7 +1,6 @@
 """Tests for motion sensors."""
 
 import collections
-import os
 import pathlib
 import sys
 import unittest
@@ -19,7 +18,6 @@ import tests.helper.oh_item
 import tests.helper.test_case_base
 
 
-# pylint: disable=no-member, protected-access, too-many-public-methods
 class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
     """Tests cases for testing motion sensors rule."""
 
@@ -97,7 +95,7 @@ class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
         """Create state machine graph for documentation."""
         picture_dir = pathlib.Path(__file__).parent / "Motion_States"
         if not picture_dir.is_dir():
-            os.makedirs(picture_dir)
+            picture_dir.mkdir(parents=True)
 
         motion_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self.motion_min.states, transitions=self.motion_min.trans, initial=self.motion_min.state, show_conditions=True)
 
@@ -141,7 +139,7 @@ class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
                 self.assertEqual(test_case.expected_state_min, self.motion_min._get_initial_state("test"))
 
     def test_raw_motion_active(self):
-        """Test _raw_motion_active"""
+        """Test _raw_motion_active."""
         tests.helper.oh_item.set_state("Unittest_Motion_min_raw", "ON")
         self.assertTrue(self.motion_min._raw_motion_active())
 
@@ -149,7 +147,7 @@ class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertFalse(self.motion_min._raw_motion_active())
 
     def test_get_brightness_threshold(self):
-        """Test _get_brightness_threshold"""
+        """Test _get_brightness_threshold."""
         # value of threshold item
         self.assertEqual(float("inf"), self.motion_max._get_brightness_threshold())
 
@@ -158,9 +156,9 @@ class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertEqual(800, self.motion_max._get_brightness_threshold())
 
     def test_get_brightness_threshold_exceptions(self):
-        """Test exceptions of _get_brightness_threshold"""
+        """Test exceptions of _get_brightness_threshold."""
         self.motion_max._config.items.brightness_threshold = None
-        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesException):
+        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesError):
             self.motion_max._get_brightness_threshold()
 
     def test_initial_unlock_state(self):
@@ -200,7 +198,7 @@ class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
             self.assertEqual("Locked", self.motion_max.state)
 
     def test_motion_extended_configured(self):
-        """Test _motion_extended_configured"""
+        """Test _motion_extended_configured."""
         self.motion_max._config.parameter.extended_motion_time = -1
         self.assertFalse(self.motion_max._motion_extended_configured())
 
@@ -211,7 +209,7 @@ class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertTrue(self.motion_max._motion_extended_configured())
 
     def test_post_sleep_lock_configured(self):
-        """Test _post_sleep_lock_configured"""
+        """Test _post_sleep_lock_configured."""
         self.motion_max._config.parameter.post_sleep_lock_time = -1
         self.assertFalse(self.motion_max._post_sleep_lock_configured())
 
@@ -222,7 +220,7 @@ class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertTrue(self.motion_max._post_sleep_lock_configured())
 
     def test_sleep_active(self):
-        """Test _sleep_active"""
+        """Test _sleep_active."""
         tests.helper.oh_item.set_state("Unittest_Sleep_state", habapp_rules.system.SleepState.AWAKE.value)
         self.assertFalse(self.motion_max._sleep_active())
 
@@ -377,7 +375,7 @@ class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
             self.motion_max._check_brightness.assert_called_once()
 
     def test_cb_motion_raw(self):
-        """Test _cb_motion_raw"""
+        """Test _cb_motion_raw."""
         with unittest.mock.patch.object(self.motion_max, "motion_on"), unittest.mock.patch.object(self.motion_max, "motion_off"):
             tests.helper.oh_item.item_state_change_event("Unittest_Motion_max_raw", "ON", "OFF")
             self.motion_max.motion_on.assert_called_once()
@@ -395,7 +393,7 @@ class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
             self.motion_max._check_brightness.assert_called_once()
 
     def test_cb_sleep(self):
-        """Test _cb_sleep"""
+        """Test _cb_sleep."""
         for state in habapp_rules.system.SleepState:
             with unittest.mock.patch.object(self.motion_max, "sleep_started"), unittest.mock.patch.object(self.motion_max, "sleep_end"):
                 tests.helper.oh_item.item_state_change_event("Unittest_Sleep_state", state.value)

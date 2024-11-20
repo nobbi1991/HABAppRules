@@ -2,7 +2,6 @@
 
 import collections
 import datetime
-import os
 import pathlib
 import sys
 import unittest.mock
@@ -18,11 +17,11 @@ import tests.helper.oh_item
 import tests.helper.test_case_base
 
 
-# pylint: disable=protected-access, no-member
 class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
     """Tests for elevation-based HCL."""
 
     def setUp(self):
+        """Setup tests."""
         tests.helper.test_case_base.TestCaseBase.setUp(self)
 
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Elevation", None)
@@ -64,7 +63,7 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
         """Create state machine graph for documentation."""
         picture_dir = pathlib.Path(__file__).parent / "Light_HCL_States"
         if not picture_dir.is_dir():
-            os.makedirs(picture_dir)
+            picture_dir.mkdir(parents=True)
 
         graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
             model=tests.helper.graph_machines.FakeModel(), states=self._hcl_elevation_min.states, transitions=self._hcl_elevation_min.trans, initial=self._hcl_elevation_min.state, show_conditions=True
@@ -146,7 +145,7 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
         tests.helper.oh_item.assert_value("Unittest_Color_min", 4200)
 
     def test_manual(self):
-        """Test manual"""
+        """Test manual."""
         self.assertEqual("Auto_HCL", self._hcl_elevation_min.state)
         self.assertEqual("Auto_HCL", self._hcl_elevation_max.state)
 
@@ -277,11 +276,11 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
             ])
 
 
-# pylint: disable=protected-access
 class TestHclTime(tests.helper.test_case_base.TestCaseBaseStateMachine):
     """Tests for time-based HCL."""
 
     def setUp(self):
+        """Set up tests."""
         tests.helper.test_case_base.TestCaseBase.setUp(self)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Color_min", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual_min", None)

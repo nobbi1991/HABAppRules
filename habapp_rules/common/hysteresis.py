@@ -1,4 +1,4 @@
-"""Module for hysteresis switch"""
+"""Module for hysteresis switch."""
 
 import logging
 
@@ -6,13 +6,15 @@ LOGGER = logging.getLogger(__name__)
 
 
 class HysteresisSwitch:
-    """Hysteresis switch"""
+    """Hysteresis switch."""
 
-    def __init__(self, threshold_on: float, hysteresis: float, return_bool: bool = True):
-        """Switch with hysteresis
-        :param threshold_on: threshold for switching on
-        :param hysteresis: hysteresis offset: threshold_off = threshold_on -hysteresis_offset
-        :param return_bool: choose return-type: if true bool will be returned, else 'ON' / 'OFF'
+    def __init__(self, threshold_on: float, hysteresis: float, return_bool: bool = True) -> None:
+        """Switch with hysteresis.
+
+        Args:
+            threshold_on: threshold for switching on
+            hysteresis: hysteresis offset: threshold_off = threshold_on -hysteresis_offset
+            return_bool: choose return-type: if true bool will be returned, else 'ON' / 'OFF'.
         """
         self._threshold = threshold_on
         self._hysteresis = hysteresis
@@ -23,7 +25,8 @@ class HysteresisSwitch:
     def set_threshold_on(self, threshold_on: float) -> None:
         """Update threshold.
 
-        :param threshold_on: new threshold value
+        Args:
+            threshold_on: new threshold value
         """
         self._threshold = threshold_on
         if self._hysteresis == float("inf"):  # needed for habapp_rules.sensors.motion
@@ -32,9 +35,13 @@ class HysteresisSwitch:
             self._hysteresis = new_threshold
 
     def get_output(self, value: float | None = None) -> bool | str:
-        """Get output of hysteresis switch
-        :param value: value which should be checked
-        :return: on / off state
+        """Get output of hysteresis switch.
+
+        Args:
+            value: value which should be checked
+
+        Returns:
+            on / off state.
         """
         if self._threshold:
             # get threshold depending on the current state

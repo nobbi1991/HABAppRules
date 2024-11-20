@@ -34,7 +34,7 @@ class KnxHeating(HABApp.Rule):
         habapp_rules.actors.heating.KnxHeating(config)
     """
 
-    def __init__(self, config: habapp_rules.actors.config.heating.KnxHeatingConfig):
+    def __init__(self, config: habapp_rules.actors.config.heating.KnxHeatingConfig) -> None:
         """Init of basic light object.
 
         :param config: KNX heating config
@@ -52,7 +52,8 @@ class KnxHeating(HABApp.Rule):
     def _cb_actor_feedback_temperature_changed(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback, which is triggered if the actor feedback temperature changed.
 
-        :param event: trigger event
+        Args:
+            event: trigger event
         """
         self._config.items.virtual_temperature.oh_post_update(event.value)
         self._temperature = event.value
@@ -60,7 +61,8 @@ class KnxHeating(HABApp.Rule):
     def _cb_virtual_temperature_command(self, event: HABApp.openhab.events.ItemCommandEvent) -> None:
         """Callback, which is triggered if the virtual temperature received a command.
 
-        :param event: trigger event
+        Args:
+            event: trigger event
         """
         if self._temperature is None:
             self._temperature = event.value
@@ -68,8 +70,8 @@ class KnxHeating(HABApp.Rule):
         if self._config.items.temperature_offset.value is None:
             self._config.items.temperature_offset.oh_send_command(0)
 
-        # T_offset_new = T_target - T_base
-        # T_base = T_old - T_offset_old
+        # T_offset_new = T_target - T_base # noqa: ERA001
+        # T_base = T_old - T_offset_old # noqa: ERA001
         # ==> T_offset_new = T_target - T_old + T_offset_old
         offset_new = event.value - self._temperature + self._config.items.temperature_offset.value
         self._config.items.temperature_offset.oh_send_command(offset_new)

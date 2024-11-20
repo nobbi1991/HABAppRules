@@ -1,4 +1,3 @@
-# pylint: skip-file
 import asyncio
 from types import TracebackType
 

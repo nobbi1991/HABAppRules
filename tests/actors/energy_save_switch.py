@@ -1,7 +1,6 @@
 """Test energy save switch rules."""
 
 import collections
-import os
 import pathlib
 import sys
 import unittest.mock
@@ -23,7 +22,6 @@ import tests.helper.timer
 from habapp_rules.system import PresenceState, SleepState
 
 
-# pylint: disable=protected-access,no-member,too-many-public-methods
 class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine):
     """Tests cases for testing energy save switch."""
 
@@ -72,7 +70,7 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
         """Create state machine graph for documentation."""
         picture_dir = pathlib.Path(__file__).parent / "energy_save_switchs"
         if not picture_dir.is_dir():
-            os.makedirs(picture_dir)
+            picture_dir.mkdir(parents=True)
 
         graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self._rule_min.states, transitions=self._rule_min.trans, initial=self._rule_min.state, show_conditions=False)
 
@@ -278,7 +276,7 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
         """Test to Hand transitions."""
         for state in ["Auto_On", "Auto_WaitCurrent", "Auto_Off"]:
             with self.subTest(state=state):
-                eval(f"self._rule_with_current.to_{state}()")  # pylint: disable=eval-used
+                eval(f"self._rule_with_current.to_{state}()")  # noqa: S307
                 tests.helper.oh_item.item_state_change_event("Unittest_Current_Switch", "OFF")
                 tests.helper.oh_item.item_state_change_event("Unittest_Current_Switch", "ON")
                 tests.helper.oh_item.assert_value("Unittest_Current_State", "Hand")

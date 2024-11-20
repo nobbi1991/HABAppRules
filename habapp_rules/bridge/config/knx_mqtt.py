@@ -17,13 +17,17 @@ class KnxMqttItems(habapp_rules.core.pydantic_base.ItemBase):
 
     @pydantic.model_validator(mode="after")
     def validate_knx_items(self) -> typing.Self:
-        """Validate KNX items
+        """Validate KNX items.
 
-        :return: validated model
-        :raises ValueError: if knx_switch_ctr and knx_dimmer_ctr are not set
+        Returns:
+            validated model
+
+        Raises:
+            ValueError: if knx_switch_ctr and knx_dimmer_ctr are not set
         """
         if self.knx_switch_ctr is None and self.knx_dimmer_ctr is None:
-            raise ValueError("knx_switch_ctr or knx_dimmer_ctr must be set")
+            msg = "knx_switch_ctr or knx_dimmer_ctr must be set"
+            raise ValueError(msg)
         return self
 
 
