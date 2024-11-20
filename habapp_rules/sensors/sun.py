@@ -32,7 +32,7 @@ class _SensorBase(HABApp.Rule):
         self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, config.items.output.name)
 
         # init exponential filter
-        name_input_exponential_filtered = f"H_{item_input.name.removeprefix('H_')}_filtered"
+        name_input_exponential_filtered = f"H_{item_input.name.removeprefix("H_")}_filtered"
         habapp_rules.core.helper.create_additional_item(name_input_exponential_filtered, "Number", name_input_exponential_filtered.replace("_", " "), config.parameter.filtered_signal_groups)
         item_input_filtered = HABApp.openhab.items.NumberItem.get_item(name_input_exponential_filtered)
 
