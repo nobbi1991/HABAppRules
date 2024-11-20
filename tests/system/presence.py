@@ -61,7 +61,10 @@ class TestPresence(tests.helper.test_case_base.TestCaseBaseStateMachine):
         """Create state machine graph for documentation."""
         presence_graph = tests.helper.graph_machines.GraphMachineTimer(model=self._presence, states=self._presence.states, transitions=self._presence.trans, initial=self._presence.state, show_conditions=True)
 
-        presence_graph.get_graph().draw(pathlib.Path(__file__).parent / "Presence.png", format="png", prog="dot")
+        picture_dir = pathlib.Path(__file__).parent / "_state_charts" / "Presence"
+        if not picture_dir.is_dir():
+            picture_dir.mkdir(parents=True)
+        presence_graph.get_graph().draw(picture_dir / "Presence.png", format="png", prog="dot")
 
     def test_minimal_init(self):
         """Test init with minimal set of arguments."""

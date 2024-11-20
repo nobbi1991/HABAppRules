@@ -58,7 +58,11 @@ class TestSleep(tests.helper.test_case_base.TestCaseBaseStateMachine):
     def test_create_graph(self):  # pragma: no cover
         """Create state machine graph for documentation."""
         presence_graph = tests.helper.graph_machines.GraphMachineTimer(model=self._sleep, states=self._sleep.states, transitions=self._sleep.trans, initial=self._sleep.state, show_conditions=True)
-        presence_graph.get_graph().draw(pathlib.Path(__file__).parent / "Sleep.png", format="png", prog="dot")
+
+        picture_dir = pathlib.Path(__file__).parent / "_state_charts" / "Sleep"
+        if not picture_dir.is_dir():
+            picture_dir.mkdir(parents=True)
+        presence_graph.get_graph().draw(picture_dir / "Sleep.png", format="png", prog="dot")
 
     def test_enums(self):
         """Test if all enums from __init__.py are implemented."""
