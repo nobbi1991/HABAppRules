@@ -55,3 +55,10 @@ jobs:
       - name: Run Hatch Tests
         run: |
           hatch run tests:local
+
+      - name: Upload Coverage Report on Failure
+        if: failure() && steps.hatch-tests.outcome == 'failure'
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report-${{ matrix.python-version }}
+          path: htmlcov
