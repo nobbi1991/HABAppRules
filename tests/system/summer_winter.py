@@ -29,7 +29,7 @@ class TestSummerWinter(tests.helper.test_case_base.TestCaseBase):
 
         self._summer_winter = habapp_rules.system.summer_winter.SummerWinter(config)
 
-    def test_init_with_none(self):
+    def test_init_with_none(self) -> None:
         """Test __init__ with None values."""
         tests.helper.oh_item.set_state("Unittest_Temperature", None)
         tests.helper.oh_item.set_state("Unittest_Summer", None)
@@ -38,7 +38,7 @@ class TestSummerWinter(tests.helper.test_case_base.TestCaseBase):
 
         habapp_rules.system.summer_winter.SummerWinter(config)
 
-    def test__get_weighted_mean(self):
+    def test__get_weighted_mean(self) -> None:
         """Test normal function of wighted_mean."""
         self._summer_winter._config.parameter.persistence_service = "persist_name"
         TestCase = collections.namedtuple("TestCase", "now, expected_day, temperatures, expected_mean")
@@ -84,14 +84,14 @@ class TestSummerWinter(tests.helper.test_case_base.TestCaseBase):
                 outside_temp_mock.get_persistence_data.assert_any_call(persistence="persist_name", start_time=test_case.expected_day + datetime.timedelta(days=-2, hours=14), end_time=test_case.expected_day + datetime.timedelta(days=-2, hours=15))
                 outside_temp_mock.get_persistence_data.assert_any_call(persistence="persist_name", start_time=test_case.expected_day + datetime.timedelta(days=-2, hours=22), end_time=test_case.expected_day + datetime.timedelta(days=-2, hours=23))
 
-    def test__get_weighted_mean_exception(self):
+    def test__get_weighted_mean_exception(self) -> None:
         """Test normal function of wighted_mean."""
         with unittest.mock.patch.object(self._summer_winter._config.items, "outside_temperature", spec=HABApp.openhab.items.NumberItem) as outside_temp_mock, self.assertRaises(habapp_rules.system.summer_winter.SummerWinterError) as context:
             outside_temp_mock.get_persistence_data.return_value = HABApp.openhab.definitions.helpers.persistence_data.OpenhabPersistenceData.from_resp(HABApp.openhab.definitions.rest.persistence.ItemHistoryResp(name="some_name", data=[]))
             self._summer_winter._SummerWinter__get_weighted_mean(0)
         self.assertIn("No data for", str(context.exception))
 
-    def test__is_summer(self):
+    def test__is_summer(self) -> None:
         """Test if __is_summer method is detecting summer/winter correctly."""
         self._summer_winter._config.parameter.days = 4
         self._summer_winter._SummerWinter__get_weighted_mean = unittest.mock.MagicMock()
@@ -128,7 +128,7 @@ class TestSummerWinter(tests.helper.test_case_base.TestCaseBase):
         with self.assertRaises(habapp_rules.system.summer_winter.SummerWinterError):
             self._summer_winter._SummerWinter__is_summer()
 
-    def test__is_summer_with_hysteresis(self):
+    def test__is_summer_with_hysteresis(self) -> None:
         """Test summer / winter with hysteresis."""
         TestCase = collections.namedtuple("TestCase", "temperature_values, summer_value, expected_summer")
 
@@ -154,7 +154,7 @@ class TestSummerWinter(tests.helper.test_case_base.TestCaseBase):
             self._summer_winter._hysteresis_switch._on_off_state = test_case.summer_value
             self.assertEqual(test_case.expected_summer, self._summer_winter._SummerWinter__is_summer())
 
-    def test_cb_update_summer(self):
+    def test_cb_update_summer(self) -> None:
         """Test correct functionality of summer check callback."""
         with (
             unittest.mock.patch.object(self._summer_winter, "_SummerWinter__is_summer") as is_summer_mock,

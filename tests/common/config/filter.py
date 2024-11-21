@@ -17,7 +17,7 @@ class TestExponentialFilterConfig(tests.helper.test_case_base.TestCaseBase):
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Raw", 0)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Filtered", 0)
 
-    def test_init(self):
+    def test_init(self) -> None:
         """Test __init__."""
         # instant_increase and instant_decrease is not set
         habapp_rules.common.config.filter.ExponentialFilterConfig(

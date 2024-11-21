@@ -39,7 +39,7 @@ class TestSleep(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
         self._sleep = habapp_rules.system.sleep.Sleep(config)
 
-    def test_init_with_none(self):
+    def test_init_with_none(self) -> None:
         """Test __init__ with None values."""
         tests.helper.oh_item.set_state("Unittest_Sleep", None)
         tests.helper.oh_item.set_state("Unittest_Sleep_Request", None)
@@ -55,7 +55,7 @@ class TestSleep(tests.helper.test_case_base.TestCaseBaseStateMachine):
         habapp_rules.system.sleep.Sleep(config)
 
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
-    def test_create_graph(self):  # pragma: no cover
+    def test_create_graph(self) -> None:  # pragma: no cover
         """Create state machine graph for documentation."""
         presence_graph = tests.helper.graph_machines.GraphMachineTimer(model=self._sleep, states=self._sleep.states, transitions=self._sleep.trans, initial=self._sleep.state, show_conditions=True)
 
@@ -64,14 +64,14 @@ class TestSleep(tests.helper.test_case_base.TestCaseBaseStateMachine):
             picture_dir.mkdir(parents=True)
         presence_graph.get_graph().draw(picture_dir / "Sleep.png", format="png", prog="dot")
 
-    def test_enums(self):
+    def test_enums(self) -> None:
         """Test if all enums from __init__.py are implemented."""
         implemented_states = list(self._sleep.state_machine.states)
         enum_states = [state.value for state in habapp_rules.system.SleepState] + ["initial"]
         self.assertEqual(len(enum_states), len(implemented_states))
         self.assertTrue(all(state in enum_states for state in implemented_states))
 
-    def test__init__(self):
+    def test__init__(self) -> None:
         """Test init of sleep class."""
         TestCase = collections.namedtuple("TestCase", "sleep_request_state, lock_request_state, lock_state")
 
@@ -98,7 +98,7 @@ class TestSleep(tests.helper.test_case_base.TestCaseBaseStateMachine):
                 tests.helper.oh_item.assert_value("Unittest_Sleep", test_case.sleep_request_state)
                 tests.helper.oh_item.assert_value("Unittest_Lock", test_case.lock_state)
 
-    def test_get_initial_state(self):
+    def test_get_initial_state(self) -> None:
         """Test getting initial state."""
         TestCase = collections.namedtuple("TestCase", "sleep_request, lock_request, expected_state")
 
@@ -120,7 +120,7 @@ class TestSleep(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
             self.assertEqual(self._sleep._get_initial_state("default"), test_case.expected_state, test_case)
 
-    def test__get_display_text(self):
+    def test__get_display_text(self) -> None:
         """Test getting display text."""
         TestCase = collections.namedtuple("TestCase", "state, text")
         test_cases = [TestCase("awake", "Schlafen"), TestCase("pre_sleeping", "Guten Schlaf"), TestCase("sleeping", "Aufstehen"), TestCase("post_sleeping", "Guten Morgen"), TestCase("locked", "Gesperrt"), TestCase(None, "")]
@@ -129,7 +129,7 @@ class TestSleep(tests.helper.test_case_base.TestCaseBaseStateMachine):
             self._sleep.state = test_case.state
             self.assertEqual(test_case.text, self._sleep._Sleep__get_display_text())
 
-    def test_normal_cycle_all_items(self):
+    def test_normal_cycle_all_items(self) -> None:
         """Test normal behavior with all items available."""
         # check initial state
         tests.helper.oh_item.assert_value("CustomState", "awake")
@@ -173,7 +173,7 @@ class TestSleep(tests.helper.test_case_base.TestCaseBaseStateMachine):
         tests.helper.oh_item.assert_value("Unittest_Lock", "OFF")
         tests.helper.oh_item.assert_value("Unittest_Display_Text", "Schlafen")
 
-    def test_lock_transitions(self):
+    def test_lock_transitions(self) -> None:
         """Test all transitions from and to locked state."""
         # check correct initial state
         tests.helper.oh_item.assert_value("CustomState", "awake")
@@ -227,7 +227,7 @@ class TestSleep(tests.helper.test_case_base.TestCaseBaseStateMachine):
         tests.helper.oh_item.send_command("Unittest_Lock_Request", "ON", "OFF")
         tests.helper.oh_item.assert_value("CustomState", "locked")
 
-    def test_minimal_items(self):
+    def test_minimal_items(self) -> None:
         """Test Sleeping class with minimal set of items."""
         # delete sleep rule from init
         self._runner.loaded_rules[0]._habapp_ctx.unload_rule()
@@ -318,7 +318,7 @@ class TestLinkSleep(tests.helper.test_case_base.TestCaseBase):
         self._link_full_day = habapp_rules.system.sleep.LinkSleep(config_full_day)
         self._link_night = habapp_rules.system.sleep.LinkSleep(config_night)
 
-    def test_init_with_feedback(self):
+    def test_init_with_feedback(self) -> None:
         """Test init with feedback item."""
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Link_Active", None)
         config = habapp_rules.system.config.sleep.LinkSleepConfig(
@@ -333,7 +333,7 @@ class TestLinkSleep(tests.helper.test_case_base.TestCaseBase):
 
         self.assertEqual("Unittest_Link_Active", rule._config.items.link_active_feedback.name)
 
-    def test_check_time_in_window(self):
+    def test_check_time_in_window(self) -> None:
         """Test check_time_in_window."""
         TestCase = collections.namedtuple("TestCase", "start, end, now, expected_result")
 
@@ -374,7 +374,7 @@ class TestLinkSleep(tests.helper.test_case_base.TestCaseBase):
 
                     self.assertEqual(test_case.expected_result, self._link_full_day._check_time_in_window())
 
-    def test_cb_master(self):
+    def test_cb_master(self) -> None:
         """Test _cb_master."""
         # during active time
         with unittest.mock.patch.object(self._link_full_day, "_check_time_in_window", return_value=True):
@@ -394,7 +394,7 @@ class TestLinkSleep(tests.helper.test_case_base.TestCaseBase):
             tests.helper.oh_item.assert_value("Unittest_Sleep5_req", None)
             tests.helper.oh_item.assert_value("Unittest_Sleep6_req", None)
 
-    def test_set_link_active_feedback(self):
+    def test_set_link_active_feedback(self) -> None:
         """Test _set_link_active_feedback."""
         with unittest.mock.patch.object(self._link_full_day._config.items, "link_active_feedback") as item_link_active_mock:
             self._link_full_day._set_link_active_feedback("ON")

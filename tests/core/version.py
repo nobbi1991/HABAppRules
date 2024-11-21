@@ -20,7 +20,7 @@ class TestSetVersions(tests.helper.test_case_base.TestCaseBase):
 
         habapp_rules.core.version.SetVersions()
 
-    def test_version_values(self):
+    def test_version_values(self) -> None:
         """Test if versions were set correctly."""
         tests.helper.oh_item.assert_value("H_habapp_version", HABApp.__version__)
         tests.helper.oh_item.assert_value("H_habapp_rules_version", habapp_rules.__version__)

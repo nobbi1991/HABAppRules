@@ -14,7 +14,7 @@ class TestTimeoutList(unittest.TestCase):
         self.normal_list = []
         self.timeout_list = habapp_rules.core.timeout_list.TimeoutList()
 
-    def test_repr(self):
+    def test_repr(self) -> None:
         """Test repr of TimeoutList."""
         self.assertEqual(str(self.normal_list), str(self.timeout_list))
         for add_value in [None, "some_string", 14, 42.2]:
@@ -22,7 +22,7 @@ class TestTimeoutList(unittest.TestCase):
             self.timeout_list.append(add_value, 100)
             self.assertEqual(str(self.normal_list), str(self.timeout_list))
 
-    def test_bool(self):
+    def test_bool(self) -> None:
         """Test bool of TimeoutList."""
         with unittest.mock.patch.object(self.timeout_list, "_TimeoutList__remove_old_items") as remove_mock:
             self.assertFalse(bool(self.timeout_list))
@@ -33,7 +33,7 @@ class TestTimeoutList(unittest.TestCase):
             self.assertTrue(bool(self.timeout_list))
             remove_mock.assert_called_once()
 
-    def test_contains(self):
+    def test_contains(self) -> None:
         """Test contains of TimeoutList."""
         with unittest.mock.patch.object(self.timeout_list, "_TimeoutList__remove_old_items") as remove_mock:
             # empty list
@@ -55,7 +55,7 @@ class TestTimeoutList(unittest.TestCase):
             self.assertTrue("test" in self.timeout_list)
             self.assertEqual(2, remove_mock.call_count)
 
-    def test_get_item(self):
+    def test_get_item(self) -> None:
         """Test getting item from TimeoutList."""
         # empty list
         with self.assertRaises(IndexError):
@@ -74,7 +74,7 @@ class TestTimeoutList(unittest.TestCase):
         with self.assertRaises(IndexError):
             self.assertIsNone(self.timeout_list[2])
 
-    def test_equal(self):
+    def test_equal(self) -> None:
         """Test equal of TimeoutList."""
         with unittest.mock.patch.object(self.timeout_list, "_TimeoutList__remove_old_items") as remove_old_mock:
             self.assertEqual(self.timeout_list, habapp_rules.core.timeout_list.TimeoutList())
@@ -90,7 +90,7 @@ class TestTimeoutList(unittest.TestCase):
             self.assertNotEqual(self.timeout_list, "")
             self.assertEqual(3, remove_old_mock.call_count)
 
-    def test_not_equal(self):
+    def test_not_equal(self) -> None:
         """Test not equal of TimeoutList."""
         self.assertFalse(self.timeout_list != [])
 
@@ -99,7 +99,7 @@ class TestTimeoutList(unittest.TestCase):
         self.assertTrue(self.timeout_list != [80])
         self.assertFalse(self.timeout_list != [42])
 
-    def test_remove(self):
+    def test_remove(self) -> None:
         """Test remove of TimeoutList."""
         with self.assertRaises(ValueError) as context:
             self.timeout_list.remove(42)
@@ -111,7 +111,7 @@ class TestTimeoutList(unittest.TestCase):
 
         self.assertEqual(self.timeout_list, ["test"])
 
-    def test_pop(self):
+    def test_pop(self) -> None:
         """Test pop of TimeoutList."""
         with self.assertRaises(IndexError):
             self.timeout_list.pop(0)

@@ -66,7 +66,7 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
         self._rule_with_current = habapp_rules.actors.energy_save_switch.EnergySaveSwitch(self._config_current)
 
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
-    def test_create_graph(self):  # pragma: no cover
+    def test_create_graph(self) -> None:  # pragma: no cover
         """Create state machine graph for documentation."""
         picture_dir = pathlib.Path(__file__).parent / "_state_charts" / "EnergySaveSwitch"
         if not picture_dir.is_dir():
@@ -80,13 +80,13 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
             graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self._rule_min.states, transitions=self._rule_min.trans, initial=state_name, show_conditions=True)
             graph.get_graph(force_new=True, show_roi=True).draw(picture_dir / f"EnergySaveSwitch_{state_name}.png", format="png", prog="dot")
 
-    def test_set_timeout(self):
+    def test_set_timeout(self) -> None:
         """Test set timeout."""
         self.assertEqual(self._rule_min.state_machine.states["Hand"].timeout, 0)
         self.assertEqual(self._rule_max_without_current.state_machine.states["Hand"].timeout, 1800)
         self.assertEqual(self._rule_with_current.state_machine.states["Hand"].timeout, 0)
 
-    def test_get_initial_state(self):
+    def test_get_initial_state(self) -> None:
         """Test get initial state."""
         TestCase = collections.namedtuple("TestCase", "current_above_threshold, manual, on_conditions_met, expected_state")
 
@@ -121,7 +121,7 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
 
                     self.assertEqual(test_case.expected_state, self._rule_max_without_current._get_initial_state())
 
-    def test_current_above_threshold(self):
+    def test_current_above_threshold(self) -> None:
         """Test current above threshold."""
         TestCase = collections.namedtuple("TestCase", "current, threshold, expected_result")
 
@@ -144,7 +144,7 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
                 self._rule_with_current._config.parameter.current_threshold = test_case.threshold
                 self.assertEqual(test_case.expected_result, self._rule_with_current._current_above_threshold())
 
-    def test_auto_off_transitions(self):
+    def test_auto_off_transitions(self) -> None:
         """Test auto off transitions."""
         TestCase = collections.namedtuple("TestCase", "external_req, sleeping_state, presence_state, expected_state")
         test_cases = [
@@ -172,7 +172,7 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
 
                 tests.helper.oh_item.assert_value("Unittest_Min_State", "Auto_Off")
 
-    def test_auto_on_transitions(self):
+    def test_auto_on_transitions(self) -> None:
         """Test auto on transitions."""
         # max on time
         self._rule_min.to_Auto_On()
@@ -232,7 +232,7 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
 
                     tests.helper.oh_item.assert_value("Unittest_Min_State", "Auto_On")
 
-    def test_auto_wait_current_transitions(self):
+    def test_auto_wait_current_transitions(self) -> None:
         """Test Auto_WaitCurrent transitions."""
         # on conditions met
         self._rule_with_current.to_Auto_WaitCurrent()
@@ -252,7 +252,7 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
         tests.helper.oh_item.assert_value("Unittest_Current_State", "Auto_Off")
         tests.helper.oh_item.assert_value("Unittest_Current_Switch", "OFF")
 
-    def test_hand_transitions(self):
+    def test_hand_transitions(self) -> None:
         """Test Hand transitions."""
         # max_on_countdown
         self._rule_max_without_current.to_Hand()
@@ -272,7 +272,7 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
         tests.helper.oh_item.assert_value("Unittest_Current_State", "Manual")
         tests.helper.oh_item.assert_value("Unittest_Current_Switch", "OFF")
 
-    def test_to_hand_transitions(self):
+    def test_to_hand_transitions(self) -> None:
         """Test to Hand transitions."""
         for state in ["Auto_On", "Auto_WaitCurrent", "Auto_Off"]:
             with self.subTest(state=state):
@@ -281,7 +281,7 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
                 tests.helper.oh_item.item_state_change_event("Unittest_Current_Switch", "ON")
                 tests.helper.oh_item.assert_value("Unittest_Current_State", "Hand")
 
-    def test_manual_transitions(self):
+    def test_manual_transitions(self) -> None:
         """Test Manual transitions."""
         # manual off | on_off_conditions not met
         self._rule_with_current.to_Manual()
@@ -295,7 +295,7 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
         tests.helper.oh_item.item_state_change_event("Unittest_Current_Manual", "OFF")
         tests.helper.oh_item.assert_value("Unittest_Current_State", "Auto_On")
 
-    def test_current_switch_off(self):
+    def test_current_switch_off(self) -> None:
         """Test current switch off."""
         tests.helper.oh_item.set_state("Unittest_Current_Switch", "ON")
         self._rule_with_current.to_Auto_WaitCurrent()

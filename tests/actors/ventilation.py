@@ -82,7 +82,7 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.ventilation_max = habapp_rules.actors.ventilation.Ventilation(config_max)
 
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
-    def test_create_graph(self):  # pragma: no cover
+    def test_create_graph(self) -> None:  # pragma: no cover
         """Create state machine graph for documentation."""
         picture_dir = pathlib.Path(__file__).parent / "_state_charts" / "Ventilation"
         if not picture_dir.is_dir():
@@ -98,7 +98,7 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
             graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self.ventilation_min.states, transitions=self.ventilation_min.trans, initial=state_name, show_conditions=True)
             graph.get_graph(force_new=True, show_roi=True).draw(picture_dir / f"Ventilation_{state_name}.png", format="png", prog="dot")
 
-    def test_init(self):
+    def test_init(self) -> None:
         """Test __init__."""
         # check timeouts
         self.assertEqual(3600, self.ventilation_min.state_machine.get_state("Auto_PowerHand").timeout)
@@ -107,7 +107,7 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertEqual(42 * 60, self.ventilation_max.state_machine.get_state("Auto_PowerHand").timeout)
         self.assertEqual(1800, self.ventilation_max.state_machine.get_state("Auto_LongAbsence_On").timeout)
 
-    def test_get_initial_state(self):
+    def test_get_initial_state(self) -> None:
         """Test getting initial state."""
         TestCase = collections.namedtuple("TestCase", "presence_state, manual, hand_request, external_request, expected_state_min, expected_state_max")
 
@@ -143,7 +143,7 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
                 self.assertEqual(test_case.expected_state_min, self.ventilation_min._get_initial_state())
                 self.assertEqual(test_case.expected_state_max, self.ventilation_max._get_initial_state())
 
-    def test_set_level(self):
+    def test_set_level(self) -> None:
         """Test _set_level."""
         TestCase = collections.namedtuple("TestCase", "state, expected_level")
 
@@ -170,7 +170,7 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
                     else:
                         send_mock.assert_not_called()
 
-    def test_set_feedback_states(self):
+    def test_set_feedback_states(self) -> None:
         """Test _set_feedback_states."""
         TestCase = collections.namedtuple("TestCase", "ventilation_level, state, expected_on, expected_power, expected_display_text")
 
@@ -221,19 +221,19 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
                 tests.helper.oh_item.assert_value("Unittest_Ventilation_max_feedback_power", "ON" if test_case.expected_power else "OFF")
                 tests.helper.oh_item.assert_value("Unittest_Ventilation_max_display_text", test_case.expected_display_text)
 
-    def test_on_enter_long_absence_off(self):
+    def test_on_enter_long_absence_off(self) -> None:
         """Test on_enter_Auto_LongAbsence_Off."""
         with unittest.mock.patch.object(self.ventilation_max, "_trigger_long_absence_power_on") as trigger_on_mock:
             self.ventilation_max.to_Auto_LongAbsence_Off()
         self.run_at_mock.assert_called_once_with(datetime.time(18), trigger_on_mock)
 
-    def test_trigger_long_absence_power_on(self):
+    def test_trigger_long_absence_power_on(self) -> None:
         """Test _trigger_long_absence_power_on."""
         with unittest.mock.patch.object(self.ventilation_max, "_long_absence_power_on") as power_on_mock:
             self.ventilation_max._trigger_long_absence_power_on()
         power_on_mock.assert_called_once()
 
-    def test__set_hand_display_text(self):
+    def test__set_hand_display_text(self) -> None:
         """Test __set_hand_display_text."""
         # wrong state
         for state in ["Manual", "Auto_Normal", "Auto_PowerHumidity", "Auto_PowerDryer", "Auto_LongAbsence_On", "Auto_LongAbsence_Off"]:
@@ -268,7 +268,7 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
                 self.run_at_mock.assert_called_once()
                 tests.helper.oh_item.assert_value("Unittest_Ventilation_max_display_text", test_case.expected_display)
 
-    def test_external_active_and_configured(self):
+    def test_external_active_and_configured(self) -> None:
         """Test _external_active_and_configured."""
         self.assertFalse(self.ventilation_min._external_active_and_configured())
 
@@ -278,7 +278,7 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
         tests.helper.oh_item.set_state("Unittest_Ventilation_max_external_request", "ON")
         self.assertTrue(self.ventilation_max._external_active_and_configured())
 
-    def test_auto_normal_transitions(self):
+    def test_auto_normal_transitions(self) -> None:
         """Test transitions of state Auto_Normal."""
         # to Auto_PowerHand
         self.ventilation_min.to_Auto_Normal()
@@ -319,7 +319,7 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertEqual("Auto_Normal", self.ventilation_min.state)
         self.assertEqual("Auto_Normal", self.ventilation_max.state)
 
-    def test_auto_power_external_transitions(self):
+    def test_auto_power_external_transitions(self) -> None:
         """Test transitions of state Auto_PowerExternal."""
         # to Auto_PowerExternal
         self.ventilation_max.to_Auto_PowerExternal()
@@ -344,7 +344,7 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
         tests.helper.oh_item.item_state_change_event("Unittest_Presence_state", habapp_rules.system.PresenceState.LONG_ABSENCE.value)
         self.assertEqual("Auto_LongAbsence_Off", self.ventilation_max.state)
 
-    def test_auto_power_hand_transitions(self):
+    def test_auto_power_hand_transitions(self) -> None:
         """Test transitions of state Auto_PowerHand."""
         # set Auto_LongAbsence as initial state
         self.ventilation_max.to_Auto_LongAbsence_On()
@@ -376,7 +376,7 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertEqual("Auto_Normal", self.ventilation_max.state)
         tests.helper.oh_item.assert_value("Unittest_Ventilation_max_hand_request", "OFF")
 
-    def test_manual_transitions(self):
+    def test_manual_transitions(self) -> None:
         """Test transitions of state Manual."""
         # set Auto as initial state
         self.ventilation_min.to_Auto_Normal()
@@ -455,7 +455,7 @@ class TestVentilationHeliosTwoStage(tests.helper.test_case_base.TestCaseBaseStat
         self.ventilation_max = habapp_rules.actors.ventilation.VentilationHeliosTwoStage(config_max)
 
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
-    def test_create_graph(self):  # pragma: no cover
+    def test_create_graph(self) -> None:  # pragma: no cover
         """Create state machine graph for documentation."""
         picture_dir = pathlib.Path(__file__).parent / "_state_charts" / "VentilationHeliosTwoStage"
         if not picture_dir.is_dir():
@@ -471,7 +471,7 @@ class TestVentilationHeliosTwoStage(tests.helper.test_case_base.TestCaseBaseStat
             graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self.ventilation_min.states, transitions=self.ventilation_min.trans, initial=state_name, show_conditions=True)
             graph.get_graph(force_new=True, show_roi=True).draw(picture_dir / f"Ventilation_{state_name}.png", format="png", prog="dot")
 
-    def test_set_level(self):
+    def test_set_level(self) -> None:
         """Test _set_level."""
         TestCase = collections.namedtuple("TestCase", "state, expected_on, expected_power")
 
@@ -502,7 +502,7 @@ class TestVentilationHeliosTwoStage(tests.helper.test_case_base.TestCaseBaseStat
                     if test_case.expected_power is not None:
                         send_mock.assert_any_call(self.ventilation_max._config.items.ventilation_output_power, test_case.expected_power)
 
-    def test_set_feedback_states(self):
+    def test_set_feedback_states(self) -> None:
         """Test _set_feedback_states."""
         TestCase = collections.namedtuple("TestCase", "ventilation_level, state, expected_on, expected_power, expected_display_text")
 
@@ -522,7 +522,7 @@ class TestVentilationHeliosTwoStage(tests.helper.test_case_base.TestCaseBaseStat
                 tests.helper.oh_item.assert_value("Unittest_Ventilation_max_feedback_power", "ON" if test_case.expected_power else "OFF")
                 tests.helper.oh_item.assert_value("Unittest_Ventilation_max_display_text", test_case.expected_display_text)
 
-    def test_power_after_run_transitions(self):
+    def test_power_after_run_transitions(self) -> None:
         """Test transitions of PowerAfterRun."""
         # PowerAfterRun to PowerHand
         self.ventilation_max.to_Auto_PowerAfterRun()
@@ -612,7 +612,7 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
         self.ventilation_min = habapp_rules.actors.ventilation.VentilationHeliosTwoStageHumidity(config_min)
         self.ventilation_max = habapp_rules.actors.ventilation.VentilationHeliosTwoStageHumidity(config_max)
 
-    def test_init_without_current_item(self):
+    def test_init_without_current_item(self) -> None:
         """Test __init__ without current item."""
         config = habapp_rules.actors.config.ventilation.VentilationTwoStageConfig(
             items=habapp_rules.actors.config.ventilation.VentilationTwoStageItems(
@@ -622,7 +622,7 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
         with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
             habapp_rules.actors.ventilation.VentilationHeliosTwoStageHumidity(config)
 
-    def test_set_level(self):
+    def test_set_level(self) -> None:
         """Test _set_level."""
         TestCase = collections.namedtuple("TestCase", "state, expected_on, expected_power")
 
@@ -655,7 +655,7 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
                         send_mock.assert_any_call(self.ventilation_max._config.items.ventilation_output_power, test_case.expected_power)
 
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
-    def test_create_graph(self):  # pragma: no cover
+    def test_create_graph(self) -> None:  # pragma: no cover
         """Create state machine graph for documentation."""
         picture_dir = pathlib.Path(__file__).parent / "_state_charts" / "VentilationHeliosTwoStageHumidity"
         if not picture_dir.is_dir():
@@ -671,7 +671,7 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
             graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self.ventilation_min.states, transitions=self.ventilation_min.trans, initial=state_name, show_conditions=True)
             graph.get_graph(force_new=True, show_roi=True).draw(picture_dir / f"Ventilation_{state_name}.png", format="png", prog="dot")
 
-    def test_get_initial_state(self):
+    def test_get_initial_state(self) -> None:
         """Test _get_initial_state."""
         TestCase = collections.namedtuple("TestCase", "presence_state, current, manual, hand_request, external_request, expected_state_min, expected_state_max")
 
@@ -726,7 +726,7 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
                 self.assertEqual(test_case.expected_state_min, self.ventilation_min._get_initial_state())
                 self.assertEqual(test_case.expected_state_max, self.ventilation_max._get_initial_state())
 
-    def test_set_feedback_states(self):
+    def test_set_feedback_states(self) -> None:
         """Test _set_feedback_states."""
         TestCase = collections.namedtuple("TestCase", "ventilation_level, state, expected_on, expected_power, expected_display_text")
 
@@ -751,7 +751,7 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
                 tests.helper.oh_item.assert_value("Unittest_Ventilation_max_feedback_power", "ON" if test_case.expected_power else "OFF")
                 tests.helper.oh_item.assert_value("Unittest_Ventilation_max_display_text", test_case.expected_display_text)
 
-    def test_current_greater_threshold(self):
+    def test_current_greater_threshold(self) -> None:
         """Test __current_greater_threshold."""
         TestCase = collections.namedtuple("TestCase", "threshold, item_value, given_value, expected_result")
 
@@ -766,14 +766,14 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
 
                 self.assertEqual(test_case.expected_result, result)
 
-    def test_power_after_run_transitions(self):
+    def test_power_after_run_transitions(self) -> None:
         """Test transitions of PowerAfterRun."""
         # _end_after_run triggered
         self.ventilation_max.to_Auto_PowerAfterRun()
         self.ventilation_max._end_after_run()
         self.assertEqual("Auto_Normal", self.ventilation_max.state)
 
-    def test_power_humidity_transitions(self):
+    def test_power_humidity_transitions(self) -> None:
         """Test transitions of state Auto_PowerHumidity."""
         # set default config parameters
         self.ventilation_min._config.parameter = habapp_rules.actors.config.ventilation.VentilationTwoStageParameter()

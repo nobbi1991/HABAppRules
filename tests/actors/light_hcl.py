@@ -20,7 +20,7 @@ import tests.helper.test_case_base
 class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
     """Tests for elevation-based HCL."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Setup tests."""
         tests.helper.test_case_base.TestCaseBase.setUp(self)
 
@@ -59,7 +59,7 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self._hcl_elevation_max = habapp_rules.actors.light_hcl.HclElevation(self._config_max)
 
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
-    def test_create_graph(self):  # pragma: no cover
+    def test_create_graph(self) -> None:  # pragma: no cover
         """Create state machine graph for documentation."""
         picture_dir = pathlib.Path(__file__).parent / "_state_charts" / "Light_HCL"
         if not picture_dir.is_dir():
@@ -71,7 +71,7 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
         graph.get_graph().draw(picture_dir / "HCL_Base.png", format="png", prog="dot")
 
-    def test_set_timeouts(self):
+    def test_set_timeouts(self) -> None:
         """Test _set_timeouts."""
         # min
         self.assertEqual(18000, self._hcl_elevation_min.state_machine.get_state("Hand").timeout)
@@ -81,7 +81,7 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertEqual(1800, self._hcl_elevation_max.state_machine.get_state("Hand").timeout)
         self.assertEqual(500, self._hcl_elevation_max.state_machine.get_state("Auto_Sleep_Post").timeout)
 
-    def test_get_initial_state(self):
+    def test_get_initial_state(self) -> None:
         """Test _get_initial_state."""
         TestCase = collections.namedtuple("TestCase", "manual, focus, sleep_state, result_min, result_max")
 
@@ -114,7 +114,7 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
                 self.assertEqual(test_case.result_min, self._hcl_elevation_min._get_initial_state())
                 self.assertEqual(test_case.result_max, self._hcl_elevation_max._get_initial_state())
 
-    def test_get_hcl_color(self):
+    def test_get_hcl_color(self) -> None:
         """Test _get_hcl_color."""
         TestCase = collections.namedtuple("TestCase", "input, output")
 
@@ -138,13 +138,13 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
                 self._hcl_elevation_min._config.items.elevation.value = test_case.input
                 self.assertEqual(test_case.output, self._hcl_elevation_min._get_hcl_color())
 
-    def test_end_to_end(self):
+    def test_end_to_end(self) -> None:
         """Test end to end behavior."""
         tests.helper.oh_item.assert_value("Unittest_Color_min", None)
         tests.helper.oh_item.item_state_change_event("Unittest_Elevation", 0)
         tests.helper.oh_item.assert_value("Unittest_Color_min", 4200)
 
-    def test_manual(self):
+    def test_manual(self) -> None:
         """Test manual."""
         self.assertEqual("Auto_HCL", self._hcl_elevation_min.state)
         self.assertEqual("Auto_HCL", self._hcl_elevation_max.state)
@@ -159,7 +159,7 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertEqual("Auto_HCL", self._hcl_elevation_min.state)
         self.assertEqual("Auto_HCL", self._hcl_elevation_max.state)
 
-    def test_hand(self):
+    def test_hand(self) -> None:
         """Test hand detection."""
         tests.helper.oh_item.item_state_change_event("Unittest_Color_min", 1000)
         tests.helper.oh_item.item_state_change_event("Unittest_Color_max", 1000)
@@ -172,7 +172,7 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertEqual("Hand", self._hcl_elevation_min.state)
         self.assertEqual("Hand", self._hcl_elevation_max.state)
 
-    def test_focus(self):
+    def test_focus(self) -> None:
         """Test focus."""
         self.assertEqual("Auto_HCL", self._hcl_elevation_min.state)
         self.assertEqual("Auto_HCL", self._hcl_elevation_max.state)
@@ -185,7 +185,7 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertEqual("Auto_HCL", self._hcl_elevation_min.state)
         self.assertEqual("Auto_HCL", self._hcl_elevation_max.state)
 
-    def test_sleep(self):
+    def test_sleep(self) -> None:
         """Test sleep."""
         self.assertEqual("Auto_HCL", self._hcl_elevation_min.state)
         self.assertEqual("Auto_HCL", self._hcl_elevation_max.state)
@@ -217,7 +217,7 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertEqual("Auto_Sleep_Active", self._hcl_elevation_max.state)
         tests.helper.oh_item.assert_value("Unittest_Focus_max", "OFF")
 
-    def test_switch_on(self):
+    def test_switch_on(self) -> None:
         """Test switch on."""
         self._hcl_elevation_max.state = "Manual"
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Color_dimmer", None)
@@ -279,7 +279,7 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
 class TestHclTime(tests.helper.test_case_base.TestCaseBaseStateMachine):
     """Tests for time-based HCL."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up tests."""
         tests.helper.test_case_base.TestCaseBase.setUp(self)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Color_min", None)
@@ -299,7 +299,7 @@ class TestHclTime(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
         self._rule = habapp_rules.actors.light_hcl.HclTime(self._config)
 
-    def test_one_hour_later(self):
+    def test_one_hour_later(self) -> None:
         """Test _one_hour_later."""
         TestCase = collections.namedtuple("TestCase", "configured, time, today_weekend_holiday, tomorrow_weekend_holiday, expected_result")
 
@@ -345,7 +345,7 @@ class TestHclTime(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
                     self.assertEqual(test_case.expected_result, self._rule._one_hour_later(test_case.time))
 
-    def test_get_hcl_color(self):
+    def test_get_hcl_color(self) -> None:
         """Test _get_hcl_color."""
         # test without color value as attribute
         TestCase = collections.namedtuple("TestCase", "test_time, output")
@@ -377,7 +377,7 @@ class TestHclTime(tests.helper.test_case_base.TestCaseBaseStateMachine):
             datetime_mock.now.return_value = test_time
             self.assertEqual(4000, round(self._rule._get_hcl_color()))
 
-    def test_update_color(self):
+    def test_update_color(self) -> None:
         """Test _update_color."""
         with unittest.mock.patch.object(self._rule, "_get_hcl_color", return_value=42):
             self._rule._update_color()

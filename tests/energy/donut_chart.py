@@ -9,7 +9,7 @@ import habapp_rules.energy.donut_chart
 class TestDonutFunctions(unittest.TestCase):
     """Test all donut plot functions."""
 
-    def test_auto_percent_format(self):
+    def test_auto_percent_format(self) -> None:
         """Test _auto_percent_format."""
         values = [100, 20, 80]
         percent_values = [val / sum(values) * 100 for val in values]
@@ -19,7 +19,7 @@ class TestDonutFunctions(unittest.TestCase):
         for idx, percent_value in enumerate(percent_values):
             self.assertEqual(f"{values[idx]:.1f} kWh", label_function(percent_value))
 
-    def test_create_chart(self):
+    def test_create_chart(self) -> None:
         """Test create_chart."""
         labels = ["one", "two", "three"]
         values = [1, 2, 3.0]

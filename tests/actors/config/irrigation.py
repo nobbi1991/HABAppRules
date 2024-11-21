@@ -11,7 +11,7 @@ import tests.helper.test_case_base
 class TestIrrigationConfig(tests.helper.test_case_base.TestCaseBase):
     """Test IrrigationConfig class."""
 
-    def test_model_validation(self):
+    def test_model_validation(self) -> None:
         """Test model validation."""
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_valve", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_active", None)

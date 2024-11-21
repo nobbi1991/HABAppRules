@@ -14,7 +14,7 @@ import tests.helper.test_case_base
 class TestTemperatureDifferenceItems(tests.helper.test_case_base.TestCaseBase):
     """Test TemperatureDifferenceItems."""
 
-    def test_validate_temperature_items(self):
+    def test_validate_temperature_items(self) -> None:
         """Test validate_temperature_items."""
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Output", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Temperature_1", None)
@@ -46,7 +46,7 @@ class TestConfigBase(tests.helper.test_case_base.TestCaseBase):
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Output", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Threshold", None)
 
-    def test_validate_threshold(self):
+    def test_validate_threshold(self) -> None:
         """Test validate_threshold."""
         # item NOT given | parameter NOT given
         with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
@@ -64,7 +64,7 @@ class TestConfigBase(tests.helper.test_case_base.TestCaseBase):
                 items=habapp_rules.sensors.config.sun.BrightnessItems(brightness="Unittest_Brightness", output="Unittest_Output", threshold="Unittest_Threshold"), parameter=habapp_rules.sensors.config.sun.BrightnessParameter(threshold=42)
             )
 
-    def test_threshold_property(self):
+    def test_threshold_property(self) -> None:
         """Test threshold property."""
         # with parameter
         config = habapp_rules.sensors.config.sun.BrightnessConfig(
@@ -84,7 +84,7 @@ class TestConfigBase(tests.helper.test_case_base.TestCaseBase):
 class TestSunPositionWindow(unittest.TestCase):
     """Tests cases for testing the sun position filter."""
 
-    def test_init(self):
+    def test_init(self) -> None:
         """Test __init__."""
         # normal init
         expected_result = habapp_rules.sensors.config.sun.SunPositionWindow(10, 80, 2, 20)

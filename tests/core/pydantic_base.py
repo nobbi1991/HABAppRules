@@ -42,7 +42,7 @@ class MultipleTypeForCreateException(habapp_rules.core.pydantic_base.ItemBase):
 class TestItemBase(tests.helper.test_case_base.TestCaseBase):
     """Test ItemBase."""
 
-    def test_check_all_fields_oh_items_exceptions(self):
+    def test_check_all_fields_oh_items_exceptions(self) -> None:
         """Test all exceptions of check_all_fields_oh_items."""
         with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
             ItemsListCreateException(some_items=["Name1", "Name2"])
@@ -53,7 +53,7 @@ class TestItemBase(tests.helper.test_case_base.TestCaseBase):
         with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
             MultipleTypeForCreateException(item="Name1")
 
-    def test_convert_to_oh_item(self):
+    def test_convert_to_oh_item(self) -> None:
         """Test convert_to_oh_item."""
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Dimmer_1", None)

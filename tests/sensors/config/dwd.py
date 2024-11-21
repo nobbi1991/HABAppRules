@@ -11,7 +11,7 @@ import tests.helper.test_case_base
 class TestWindAlarmConfig(tests.helper.test_case_base.TestCaseBase):
     """Test WindAlarmConfig."""
 
-    def test_check_hand_timeout(self):
+    def test_check_hand_timeout(self) -> None:
         """Test check_hand_timeout."""
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Wind_Alarm", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual", None)

@@ -40,7 +40,7 @@ class TestPresence(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
         self._presence = habapp_rules.system.presence.Presence(config)
 
-    def test_init_with_none(self):
+    def test_init_with_none(self) -> None:
         """Test __init__ with None values."""
         tests.helper.oh_item.set_state("Unittest_Presence", None)
         tests.helper.oh_item.set_state("Unittest_Door1", None)
@@ -57,7 +57,7 @@ class TestPresence(tests.helper.test_case_base.TestCaseBaseStateMachine):
         habapp_rules.system.presence.Presence(config)
 
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
-    def test_create_graph(self):  # pragma: no cover
+    def test_create_graph(self) -> None:  # pragma: no cover
         """Create state machine graph for documentation."""
         presence_graph = tests.helper.graph_machines.GraphMachineTimer(model=self._presence, states=self._presence.states, transitions=self._presence.trans, initial=self._presence.state, show_conditions=True)
 
@@ -66,7 +66,7 @@ class TestPresence(tests.helper.test_case_base.TestCaseBaseStateMachine):
             picture_dir.mkdir(parents=True)
         presence_graph.get_graph().draw(picture_dir / "Presence.png", format="png", prog="dot")
 
-    def test_minimal_init(self):
+    def test_minimal_init(self) -> None:
         """Test init with minimal set of arguments."""
         config = habapp_rules.system.config.presence.PresenceConfig(items=habapp_rules.system.config.presence.PresenceItems(presence="Unittest_Presence", leaving="Unittest_Leaving", state="CustomState"))
 
@@ -75,19 +75,19 @@ class TestPresence(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertEqual([], presence_min._config.items.phones)
         self.assertEqual([], presence_min._config.items.outdoor_doors)
 
-    def test_enums(self):
+    def test_enums(self) -> None:
         """Test if all enums from __init__.py are implemented."""
         implemented_states = list(self._presence.state_machine.states)
         enum_states = [state.value for state in habapp_rules.system.PresenceState] + ["initial"]
         self.assertEqual(len(enum_states), len(implemented_states))
         self.assertTrue(all(state in enum_states for state in implemented_states))
 
-    def test__init__(self):
+    def test__init__(self) -> None:
         """Test init."""
         tests.helper.oh_item.assert_value("CustomState", "presence")
         self.assertEqual(self._presence.state, "presence")
 
-    def test_get_initial_state(self):
+    def test_get_initial_state(self) -> None:
         """Test getting correct initial state."""
         Testcase = collections.namedtuple("Testcase", "presence, outside_doors, leaving, phones, expected_result")
 
@@ -157,7 +157,7 @@ class TestPresence(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
                 self.assertEqual(self._presence._get_initial_state("default"), testcase.expected_result, f"failed testcase: {testcase}")
 
-    def test_get_initial_state_extra(self):
+    def test_get_initial_state_extra(self) -> None:
         """Test getting correct initial state for special cases."""
         # current state value is long_absence
         self._presence._config.items.presence.value = "OFF"
@@ -173,7 +173,7 @@ class TestPresence(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self._presence._config.items.phones = [HABApp.openhab.items.SwitchItem("Unittest_Phone1")]
         self.assertEqual(self._presence._get_initial_state("default"), "long_absence")
 
-    def test_presence_trough_doors(self):
+    def test_presence_trough_doors(self) -> None:
         """Test if outside doors set presence correctly."""
         tests.helper.oh_item.send_command("Unittest_Presence", "OFF")
         self._presence.state_machine.set_state("absence")
@@ -192,7 +192,7 @@ class TestPresence(tests.helper.test_case_base.TestCaseBaseStateMachine):
         tests.helper.oh_item.send_command("Unittest_Door1", "CLOSED", "CLOSED")
         self.assertEqual(self._presence.state, "presence")
 
-    def test_normal_leaving(self):
+    def test_normal_leaving(self) -> None:
         """Test if 'normal' leaving works correctly."""
         self._presence.state_machine.set_state("presence")
         self.assertEqual(self._presence.state, "presence")
@@ -217,7 +217,7 @@ class TestPresence(tests.helper.test_case_base.TestCaseBaseStateMachine):
         tests.helper.oh_item.send_command("Unittest_Leaving", "ON", "OFF")
         self.assertEqual(self._presence.state, "leaving")
 
-    def test_abort_leaving(self):
+    def test_abort_leaving(self) -> None:
         """Test aborting of leaving state."""
         self._presence.state_machine.set_state("presence")
         self.assertEqual(self._presence.state, "presence")
@@ -231,7 +231,7 @@ class TestPresence(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertEqual(self._presence.state, "presence")
         tests.helper.oh_item.assert_value("Unittest_Leaving", "OFF")
 
-    def test_abort_leaving_after_last_phone(self):
+    def test_abort_leaving_after_last_phone(self) -> None:
         """Test aborting of leaving which was started through last phone leaving."""
         self._presence.state_machine.set_state("presence")
         tests.helper.oh_item.set_state("Unittest_Phone1", "ON")
@@ -252,7 +252,7 @@ class TestPresence(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertEqual(self._presence.state, "leaving")
         tests.helper.oh_item.assert_value("Unittest_Leaving", "ON")
 
-    def test_leaving_with_phones(self):
+    def test_leaving_with_phones(self) -> None:
         """Test if leaving and absence is correct if phones appear/disappear during or after leaving."""
         # set initial states
         tests.helper.oh_item.set_state("Unittest_Phone1", "ON")
@@ -291,7 +291,7 @@ class TestPresence(tests.helper.test_case_base.TestCaseBaseStateMachine):
         tests.helper.oh_item.send_command("Unittest_Phone2", "OFF", "ON")
         self.assertEqual(self._presence.state, "absence")
 
-    def test__set_leaving_through_phone(self):
+    def test__set_leaving_through_phone(self) -> None:
         """Test if leaving_detected is called correctly after timeout of __phone_absence_timer."""
         TestCase = collections.namedtuple("TestCase", "state, leaving_detected_called")
 
@@ -303,7 +303,7 @@ class TestPresence(tests.helper.test_case_base.TestCaseBaseStateMachine):
                 self._presence._Presence__set_leaving_through_phone()
             self.assertEqual(test_case.leaving_detected_called, leaving_detected_mock.called)
 
-    def test_long_absence(self):
+    def test_long_absence(self) -> None:
         """Test entering long_absence and leaving it."""
         # set initial state
         self._presence.state_machine.set_state("presence")
@@ -325,7 +325,7 @@ class TestPresence(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertEqual(self._presence.state, "presence")
         tests.helper.oh_item.assert_value("Unittest_Presence", "ON")
 
-    def test_manual_change(self):
+    def test_manual_change(self) -> None:
         """Test if change of presence object is setting correct state."""
         # send manual off from presence
         self._presence.state_machine.set_state("presence")
@@ -355,7 +355,7 @@ class TestPresence(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertEqual(self._presence.state, "presence")
         tests.helper.oh_item.send_command("Unittest_Presence", "ON", "OFF")
 
-    def test_phones(self):
+    def test_phones(self) -> None:
         """Test if presence is set correctly through phones."""
         # first phone switches to ON -> presence expected
         self._presence.state_machine.set_state("absence")
@@ -389,7 +389,7 @@ class TestPresence(tests.helper.test_case_base.TestCaseBaseStateMachine):
         tests.helper.timer.call_timeout(self.transitions_timer_mock)
         self.assertEqual(self._presence.state, "absence")
 
-    def test_on_rule_removed(self):
+    def test_on_rule_removed(self) -> None:
         """Test on_rule_removed."""
         # timer NOT running
         with unittest.mock.patch("habapp_rules.core.state_machine_rule.StateMachineRule.on_rule_removed") as parent_on_remove:

@@ -20,7 +20,7 @@ import tests.helper.test_case_base
 class TestDwdItems(tests.helper.test_case_base.TestCaseBase):
     """Tests for DwdItems."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Setup tests."""
         tests.helper.test_case_base.TestCaseBase.setUp(self)
 
@@ -32,7 +32,7 @@ class TestDwdItems(tests.helper.test_case_base.TestCaseBase):
 
         self._test_dataclass = habapp_rules.sensors.dwd.DwdItems.from_prefix("I26_99_warning_1")
 
-    def test_severity_as_int(self):
+    def test_severity_as_int(self) -> None:
         """Test severity_as_int."""
         TestCase = collections.namedtuple("TestCase", "str_value, expected_int")
 
@@ -55,7 +55,7 @@ class TestDwdItems(tests.helper.test_case_base.TestCaseBase):
 class TestDwdWindAlarm(tests.helper.test_case_base.TestCaseBaseStateMachine):
     """Tests for DwdWindAlarm."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Setup tests."""
         tests.helper.test_case_base.TestCaseBaseStateMachine.setUp(self)
 
@@ -94,7 +94,7 @@ class TestDwdWindAlarm(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self._wind_alarm_rule_2 = habapp_rules.sensors.dwd.DwdWindAlarm(config_2)
 
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
-    def test_create_graph(self):  # pragma: no cover
+    def test_create_graph(self) -> None:  # pragma: no cover
         """Create state machine graph for documentation."""
         picture_dir = pathlib.Path(__file__).parent / "_state_charts" / "DWD_WindAlarm"
         if not picture_dir.is_dir():
@@ -106,7 +106,7 @@ class TestDwdWindAlarm(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
         graph.get_graph().draw(picture_dir / "DWD_Wind_Alarm.png", format="png", prog="dot")
 
-    def test_set_timeouts(self):
+    def test_set_timeouts(self) -> None:
         """Test _set_timeouts."""
         self.assertEqual(12 * 3600, self._wind_alarm_rule_1.state_machine.get_state("Hand").timeout)
         self.assertEqual(24 * 3600, self._wind_alarm_rule_2.state_machine.get_state("Hand").timeout)
@@ -114,7 +114,7 @@ class TestDwdWindAlarm(tests.helper.test_case_base.TestCaseBaseStateMachine):
         tests.helper.oh_item.item_state_change_event("Unittest_Hand_Timeout", 2000)
         self.assertEqual(2000, self._wind_alarm_rule_2.state_machine.get_state("Hand").timeout)
 
-    def test_get_initial_state(self):
+    def test_get_initial_state(self) -> None:
         """Test _get_initial_state."""
         TestCase = collections.namedtuple("TestCase", "manual, wind_alarm_active, expected_state")
 
@@ -133,7 +133,7 @@ class TestDwdWindAlarm(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
                     self.assertEqual(test_case.expected_state, self._wind_alarm_rule_1._get_initial_state())
 
-    def test_manual(self):
+    def test_manual(self) -> None:
         """Test manual."""
         # from Auto
         self.assertEqual("Auto_Off", self._wind_alarm_rule_1.state)
@@ -160,7 +160,7 @@ class TestDwdWindAlarm(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertEqual("Manual", self._wind_alarm_rule_1.state)
         self.assertEqual("Manual", self._wind_alarm_rule_2.state)
 
-    def test_wind_alarm_active(self):
+    def test_wind_alarm_active(self) -> None:
         """Test _wind_alarm_active."""
         TestCase = collections.namedtuple("TestCase", "type_1, description_1, severity_1 start_time_1, end_time_1, type_2, description_2, severity_2 start_time_2, end_time_2, expected_result")
 
@@ -200,7 +200,7 @@ class TestDwdWindAlarm(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
                 self.assertEqual(test_case.expected_result, self._wind_alarm_rule_1._wind_alarm_active())
 
-    def test_cyclic_check(self):
+    def test_cyclic_check(self) -> None:
         """Test _cyclic_check."""
         # Manual / Hand should not trigger any test
         with unittest.mock.patch.object(self._wind_alarm_rule_1, "_wind_alarm_active") as check_wind_alarm_mock:

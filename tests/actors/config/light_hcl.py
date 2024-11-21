@@ -11,7 +11,7 @@ import tests.helper.test_case_base
 class TestLightHclConfig(tests.helper.test_case_base.TestCaseBase):
     """Test HCL config."""
 
-    def test_sorted_color_config(self):
+    def test_sorted_color_config(self) -> None:
         """Test sorting of HCL values."""
         TestCase = collections.namedtuple("TestCase", "input, output")
 

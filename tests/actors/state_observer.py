@@ -26,7 +26,7 @@ class TestStateObserverSwitch(tests.helper.test_case_base.TestCaseBase):
         self._cb_off = unittest.mock.MagicMock()
         self._observer_switch = habapp_rules.actors.state_observer.StateObserverSwitch("Unittest_Switch", cb_on=self._cb_on, cb_off=self._cb_off)
 
-    def test_command_from_habapp(self):
+    def test_command_from_habapp(self) -> None:
         """Test HABApp rule triggers a command -> no manual should be detected."""
         for value in ["OFF", "OFF", "ON", "ON", "OFF"]:
             self._observer_switch.send_command(value)
@@ -35,7 +35,7 @@ class TestStateObserverSwitch(tests.helper.test_case_base.TestCaseBase):
             self._cb_on.assert_not_called()
             self._cb_off.assert_not_called()
 
-    def test_manu_from_openhab(self):
+    def test_manu_from_openhab(self) -> None:
         """Test manual detection from openHAB."""
         TestCase = collections.namedtuple("TestCase", "command, cb_on_called, cb_off_called")
 
@@ -61,7 +61,7 @@ class TestStateObserverSwitch(tests.helper.test_case_base.TestCaseBase):
             if test_case.cb_off_called:
                 self._cb_off.assert_called_with(unittest.mock.ANY)
 
-    def test_manu_from_extern(self):
+    def test_manu_from_extern(self) -> None:
         """Test manual detection from extern."""
         TestCase = collections.namedtuple("TestCase", "command, cb_on_called, cb_off_called")
 
@@ -88,7 +88,7 @@ class TestStateObserverSwitch(tests.helper.test_case_base.TestCaseBase):
             tests.helper.oh_item.item_state_change_event("Unittest_Switch", test_case.command)
             self.assertEqual(test_case.command == "ON", self._observer_switch.value)
 
-    def test_send_command_exception(self):
+    def test_send_command_exception(self) -> None:
         """Test if correct exceptions is raised."""
         with self.assertRaises(ValueError):
             self._observer_switch.send_command(2)
@@ -110,7 +110,7 @@ class TestStateObserverDimmer(tests.helper.test_case_base.TestCaseBase):
         self._cb_changed = unittest.mock.MagicMock()
         self._observer_dimmer = habapp_rules.actors.state_observer.StateObserverDimmer("Unittest_Dimmer", cb_on=self._cb_on, cb_off=self._cb_off, cb_brightness_change=self._cb_changed, control_names=["Unittest_Dimmer_ctr"])
 
-    def test_init(self):
+    def test_init(self) -> None:
         """Test init of StateObserverDimmer."""
         self.assertEqual([], self._observer_dimmer._StateObserverBase__group_items)
         self.assertEqual(1, len(self._observer_dimmer._StateObserverBase__control_items))
@@ -121,13 +121,13 @@ class TestStateObserverDimmer(tests.helper.test_case_base.TestCaseBase):
         self.assertEqual("Unittest_Dimmer_ctr", observer_dimmer._StateObserverBase__group_items[0].name)
         self.assertEqual([], observer_dimmer._StateObserverBase__control_items)
 
-    def test__check_item_types(self):
+    def test__check_item_types(self) -> None:
         """Test if wrong item types are detected correctly."""
         with self.assertRaises(TypeError) as context:
             habapp_rules.actors.state_observer.StateObserverDimmer("Unittest_Dimmer", cb_on=self._cb_on, cb_off=self._cb_off, control_names=["Unittest_Dimmer_ctr", "Unittest_Switch_ctr"])
         self.assertEqual("Found items with wrong item type. Expected: DimmerItem. Wrong: Unittest_Switch_ctr <SwitchItem>", str(context.exception))
 
-    def test_command_from_habapp(self):
+    def test_command_from_habapp(self) -> None:
         """Test HABApp rule triggers a command -> no manual should be detected."""
         for value in [100, 0, 30, 100, 0, "ON", "OFF", 0, 80]:
             self._observer_dimmer.send_command(value)
@@ -137,7 +137,7 @@ class TestStateObserverDimmer(tests.helper.test_case_base.TestCaseBase):
             self._cb_off.assert_not_called()
             self._cb_changed.assert_not_called()
 
-    def test_manu_from_ctr(self):
+    def test_manu_from_ctr(self) -> None:
         """Test manual detection from control item."""
         TestCase = collections.namedtuple("TestCase", "command, state, cb_on_called")
 
@@ -160,7 +160,7 @@ class TestStateObserverDimmer(tests.helper.test_case_base.TestCaseBase):
             tests.helper.oh_item.item_state_change_event("Unittest_Dimmer", test_case.state)
             self.assertEqual(test_case.state, self._observer_dimmer.value)
 
-    def test_basic_behavior_on_knx(self):
+    def test_basic_behavior_on_knx(self) -> None:
         """Test basic behavior. Switch ON via KNX."""
         # === Switch ON via KNX button ===
         # set initial state
@@ -202,7 +202,7 @@ class TestStateObserverDimmer(tests.helper.test_case_base.TestCaseBase):
         self.assertEqual(60, self._observer_dimmer.value)
         self._cb_on.assert_called_once_with(unittest.mock.ANY)
 
-    def test_manu_from_openhab(self):
+    def test_manu_from_openhab(self) -> None:
         """Test manual detection from control item."""
         TestCase = collections.namedtuple("TestCase", "command, state, cb_on_called, cb_off_called")
         self._observer_dimmer._StateObserverDimmer__last_received_value = 0
@@ -229,7 +229,7 @@ class TestStateObserverDimmer(tests.helper.test_case_base.TestCaseBase):
             tests.helper.oh_item.item_state_change_event("Unittest_Dimmer", test_case.state)
             self.assertEqual(test_case.state, self._observer_dimmer.value)
 
-    def test_check_manual(self):
+    def test_check_manual(self) -> None:
         """Test method _check_manual."""
         TestCase = collections.namedtuple("TestCase", "event, current_value, on_called, off_called, change_called")
 
@@ -268,7 +268,7 @@ class TestStateObserverDimmer(tests.helper.test_case_base.TestCaseBase):
                 if test_case.change_called:
                     cb_change_mock.assert_called_once_with(test_case.event)
 
-    def test_cb_group_item(self):
+    def test_cb_group_item(self) -> None:
         """Test _cb_group_item."""
         self._observer_dimmer._group_last_event = 0
         with unittest.mock.patch("time.time") as time_mock, unittest.mock.patch.object(self._observer_dimmer, "_check_manual") as check_manual_mock:
@@ -278,7 +278,7 @@ class TestStateObserverDimmer(tests.helper.test_case_base.TestCaseBase):
             self._observer_dimmer._cb_group_item(HABApp.openhab.events.ItemStateUpdatedEvent("item_name", "ON"))
         check_manual_mock.assert_called_once()
 
-    def test_send_command_exception(self):
+    def test_send_command_exception(self) -> None:
         """Test if correct exceptions is raised."""
         with self.assertRaises(ValueError):
             self._observer_dimmer.send_command(None)
@@ -300,7 +300,7 @@ class TestStateObserverRollerShutter(tests.helper.test_case_base.TestCaseBase):
         self._cb_manual = unittest.mock.MagicMock()
         self._observer_jalousie = habapp_rules.actors.state_observer.StateObserverRollerShutter("Unittest_RollerShutter", cb_manual=self._cb_manual, control_names=["Unittest_RollerShutter_ctr"])
 
-    def test_init(self):
+    def test_init(self) -> None:
         """Test init of StateObserverDimmer."""
         self.assertEqual([], self._observer_jalousie._StateObserverBase__group_items)
         self.assertEqual(1, len(self._observer_jalousie._StateObserverBase__control_items))
@@ -311,7 +311,7 @@ class TestStateObserverRollerShutter(tests.helper.test_case_base.TestCaseBase):
         self.assertEqual("Unittest_RollerShutter_ctr", observer_jalousie._StateObserverBase__group_items[0].name)
         self.assertEqual([], observer_jalousie._StateObserverBase__control_items)
 
-    def test_command_from_habapp(self):
+    def test_command_from_habapp(self) -> None:
         """Test HABApp rule triggers a command -> no manual should be detected."""
         for value in [100, 0, 30, 100.0, 0.0]:
             self._observer_jalousie.send_command(value)
@@ -319,13 +319,13 @@ class TestStateObserverRollerShutter(tests.helper.test_case_base.TestCaseBase):
             tests.helper.oh_item.item_state_change_event("Unittest_RollerShutter", value)
             self._cb_manual.assert_not_called()
 
-    def test_command_from_habapp_exception(self):
+    def test_command_from_habapp_exception(self) -> None:
         """Test HABApp rule triggers a command with wrong type."""
         with self.assertRaises(TypeError):
             self._observer_jalousie.send_command("UP")
         self._cb_manual.assert_not_called()
 
-    def test_manu_from_ctr(self):
+    def test_manu_from_ctr(self) -> None:
         """Test manual detection from control item."""
         TestCase = collections.namedtuple("TestCase", "command, cb_manual_called")
 
@@ -347,7 +347,7 @@ class TestStateObserverRollerShutter(tests.helper.test_case_base.TestCaseBase):
             if test_case.cb_manual_called:
                 self._cb_manual.assert_called_once_with(unittest.mock.ANY)
 
-    def test_basic_behavior_on_knx(self):
+    def test_basic_behavior_on_knx(self) -> None:
         """Test basic behavior. Switch ON via KNX."""
         # === Switch ON via KNX button ===
         # set initial state
@@ -389,7 +389,7 @@ class TestStateObserverRollerShutter(tests.helper.test_case_base.TestCaseBase):
         self.assertEqual(60, self._observer_jalousie.value)
         self._cb_manual.assert_called_once_with(unittest.mock.ANY)
 
-    def test_check_manual(self):
+    def test_check_manual(self) -> None:
         """Test _check_manual."""
         TestCase = collections.namedtuple("TestCase", "event, value, tolerance, cb_called")
 
@@ -432,7 +432,7 @@ class TestStateObserverNumber(tests.helper.test_case_base.TestCaseBase):
         self._cb_manual = unittest.mock.MagicMock()
         self._observer_number = habapp_rules.actors.state_observer.StateObserverNumber("Unittest_Number", self._cb_manual, value_tolerance=0.1)
 
-    def test_command_from_habapp(self):
+    def test_command_from_habapp(self) -> None:
         """Test HABApp rule triggers a command -> no manual should be detected."""
         for value in [0, 0, 42, 42, 0]:
             self._observer_number.send_command(value)
@@ -440,7 +440,7 @@ class TestStateObserverNumber(tests.helper.test_case_base.TestCaseBase):
             tests.helper.oh_item.item_state_change_event("Unittest_Number", value)
             self._cb_manual.assert_not_called()
 
-    def test_manu_from_openhab(self):
+    def test_manu_from_openhab(self) -> None:
         """Test manual detection from openHAB."""
         TestCase = collections.namedtuple("TestCase", "command, cb_manual_called")
 
@@ -461,7 +461,7 @@ class TestStateObserverNumber(tests.helper.test_case_base.TestCaseBase):
             if test_case.cb_manual_called:
                 self._cb_manual.assert_called_with(unittest.mock.ANY)
 
-    def test_manu_from_extern(self):
+    def test_manu_from_extern(self) -> None:
         """Test manual detection from extern."""
         TestCase = collections.namedtuple("TestCase", "command, cb_manual_called")
 
@@ -484,7 +484,7 @@ class TestStateObserverNumber(tests.helper.test_case_base.TestCaseBase):
             tests.helper.oh_item.item_state_change_event("Unittest_Number", test_case.command)
             self.assertEqual(test_case.command, self._observer_number.value)
 
-    def test_check_manual(self):
+    def test_check_manual(self) -> None:
         """Test _check_manual."""
         TestCase = collections.namedtuple("TestCase", "last_value, new_value, manual_expected")
 
@@ -520,7 +520,7 @@ class TestStateObserverNumber(tests.helper.test_case_base.TestCaseBase):
                     else:
                         trigger_cb_mock.assert_not_called()
 
-    def test_send_command_exception(self):
+    def test_send_command_exception(self) -> None:
         """Test if correct exceptions is raised."""
         with self.assertRaises(TypeError):
             self._observer_number.send_command("ON")
@@ -537,7 +537,7 @@ class TestStateObserverSlat(tests.helper.test_case_base.TestCaseBase):
         self._cb_manual = unittest.mock.MagicMock()
         self._observer_slat = habapp_rules.actors.state_observer.StateObserverSlat("Unittest_Dimmer", self._cb_manual)
 
-    def test_check_manual(self):
+    def test_check_manual(self) -> None:
         """Test _check_manual."""
         # value is 0
         with unittest.mock.patch("threading.Timer") as timer_mock, unittest.mock.patch("habapp_rules.actors.state_observer.StateObserverNumber._check_manual") as base_check_manual_mock:
@@ -557,14 +557,14 @@ class TestStateObserverSlat(tests.helper.test_case_base.TestCaseBase):
         timer_mock.assert_not_called()
         base_check_manual_mock.assert_called_once_with(self._observer_slat, event)
 
-    def test__cb_check_manual_delayed(self):
+    def test__cb_check_manual_delayed(self) -> None:
         """Test __cb_check_manual_delayed."""
         event_mock = unittest.mock.MagicMock()
         with unittest.mock.patch("habapp_rules.actors.state_observer.StateObserverNumber._check_manual") as base_check_manual_mock:
             self._observer_slat._StateObserverSlat__cb_check_manual_delayed(event_mock)
         base_check_manual_mock.assert_called_once_with(self._observer_slat, event_mock)
 
-    def test_on_rule_removed(self):
+    def test_on_rule_removed(self) -> None:
         """Test on_rule_removed."""
         with unittest.mock.patch.object(self._observer_slat, "_stop_timer_manual") as stop_timer_mock:
             self._observer_slat.on_rule_removed()

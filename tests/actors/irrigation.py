@@ -17,7 +17,7 @@ import tests.helper.test_case_base
 class TestIrrigation(tests.helper.test_case_base.TestCaseBase):
     """Tests for Irrigation."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test cases."""
         tests.helper.test_case_base.TestCaseBase.setUp(self)
 
@@ -35,7 +35,7 @@ class TestIrrigation(tests.helper.test_case_base.TestCaseBase):
 
         self._irrigation_min = habapp_rules.actors.irrigation.Irrigation(config)
 
-    def test__init__(self):
+    def test__init__(self) -> None:
         """Test __init__."""
         self.assertIsNone(self._irrigation_min._config.items.repetitions)
         self.assertIsNone(self._irrigation_min._config.items.brake)
@@ -52,7 +52,7 @@ class TestIrrigation(tests.helper.test_case_base.TestCaseBase):
         self.assertEqual(3, irrigation_max._config.items.repetitions.value)
         self.assertEqual(10, irrigation_max._config.items.brake.value)
 
-    def test_init_with_none(self):
+    def test_init_with_none(self) -> None:
         """Test __init__ with None values."""
         tests.helper.oh_item.set_state("Unittest_valve", None)
         tests.helper.oh_item.set_state("Unittest_active", None)
@@ -71,7 +71,7 @@ class TestIrrigation(tests.helper.test_case_base.TestCaseBase):
 
         habapp_rules.actors.irrigation.Irrigation(config)
 
-    def test_get_target_valve_state(self):
+    def test_get_target_valve_state(self) -> None:
         """Test _get_target_valve_state."""
         # irrigation is not active
         for state in (None, "OFF"):
@@ -93,7 +93,7 @@ class TestIrrigation(tests.helper.test_case_base.TestCaseBase):
             datetime_mock.combine.assert_called_once_with(date=datetime_now, time=datetime.time(12, 30))
             self._irrigation_min._is_in_time_range.assert_called_once()
 
-    def test_get_target_valve_state_with_repetitions(self):
+    def test_get_target_valve_state_with_repetitions(self) -> None:
         """Test _get_target_valve_state with repetitions."""
         config_max = habapp_rules.actors.config.irrigation.IrrigationConfig(
             items=habapp_rules.actors.config.irrigation.IrrigationItems(
@@ -136,7 +136,7 @@ class TestIrrigation(tests.helper.test_case_base.TestCaseBase):
                 unittest.mock.call(datetime.time(12, 45), datetime.time(12, 50), unittest.mock.ANY),
             ])
 
-    def test_is_in_time_range(self):
+    def test_is_in_time_range(self) -> None:
         """Test _is_in_time_range."""
         TestCase = collections.namedtuple("TestCase", "start_time, end_time, time_to_check, expected_result")
 
@@ -155,7 +155,7 @@ class TestIrrigation(tests.helper.test_case_base.TestCaseBase):
         for test_case in test_cases:
             self.assertEqual(test_case.expected_result, self._irrigation_min._is_in_time_range(test_case.start_time, test_case.end_time, test_case.time_to_check))
 
-    def test_cb_set_valve_state(self):
+    def test_cb_set_valve_state(self) -> None:
         """Test _cb_set_valve_state."""
         # called from cyclic call
         with unittest.mock.patch.object(self._irrigation_min, "_get_target_valve_state", return_value=True):

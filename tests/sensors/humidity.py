@@ -36,7 +36,7 @@ class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.humidity = habapp_rules.sensors.humidity.HumiditySwitch(config)
 
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
-    def test_create_graph(self):  # pragma: no cover
+    def test_create_graph(self) -> None:  # pragma: no cover
         """Create state machine graph for documentation."""
         picture_dir = pathlib.Path(__file__).parent / "_state_charts" / "Humidity"
         if not picture_dir.is_dir():
@@ -46,7 +46,7 @@ class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
         humidity_graph.get_graph().draw(picture_dir / "Humidity.png", format="png", prog="dot")
 
-    def test_init(self):
+    def test_init(self) -> None:
         """Test init."""
         full_config = habapp_rules.sensors.config.humidity.HumiditySwitchConfig(
             items=habapp_rules.sensors.config.humidity.HumiditySwitchItems(humidity="Unittest_Humidity", output="Unittest_Output", state="Custom_Name"),
@@ -58,7 +58,7 @@ class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertEqual(42, humidity.state_machine.get_state("on_Extended").timeout)
         self.assertEqual("Custom_Name", humidity._item_state.name)
 
-    def test_get_initial_state(self):
+    def test_get_initial_state(self) -> None:
         """Test get_initial_state."""
         TestCase = collections.namedtuple("TestCase", "humidity_value, expected_state")
 
@@ -74,7 +74,7 @@ class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
                 tests.helper.oh_item.set_state("Unittest_Humidity", test_case.humidity_value)
                 self.assertEqual(test_case.expected_state, self.humidity._get_initial_state())
 
-    def test_check_high_humidity(self):
+    def test_check_high_humidity(self) -> None:
         """Test check_high_humidity."""
         TestCase = collections.namedtuple("TestCase", "item_value,given_value, expected_result")
 
@@ -99,7 +99,7 @@ class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
                 tests.helper.oh_item.set_state("Unittest_Humidity", test_case.item_value)
                 self.assertEqual(test_case.expected_result, self.humidity._check_high_humidity(test_case.given_value))
 
-    def test_cb_humidity(self):
+    def test_cb_humidity(self) -> None:
         """Test _cb_humidity."""
         with (
             unittest.mock.patch.object(self.humidity, "high_humidity_start") as start_mock,
@@ -121,7 +121,7 @@ class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
             start_mock.assert_not_called()
             end_mock.assert_called_once()
 
-    def test_states(self):
+    def test_states(self) -> None:
         """Test states."""
         self.assertEqual("off", self.humidity.state)
 

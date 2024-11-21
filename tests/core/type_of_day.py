@@ -12,7 +12,7 @@ from habapp_rules import TIMEZONE
 class TestTypeOfDay(unittest.TestCase):
     """Test all type of day functions."""
 
-    def test_is_weekend(self):
+    def test_is_weekend(self) -> None:
         """Test is_weekend."""
         TestCase = collections.namedtuple("TestCase", "day, offset, result")
 
@@ -45,7 +45,7 @@ class TestTypeOfDay(unittest.TestCase):
                     datetime_mock.now.return_value = test_case.day
                     self.assertEqual(test_case.result, habapp_rules.core.type_of_day.is_weekend(test_case.offset))
 
-    def test_is_holiday(self):
+    def test_is_holiday(self) -> None:
         """Test is_holiday."""
         TestCase = collections.namedtuple("TestCase", "day, offset, result")
 

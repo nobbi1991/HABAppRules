@@ -27,7 +27,7 @@ class TestKnxHeating(tests.helper.test_case_base.TestCaseBase):
 
         self._rule = habapp_rules.actors.heating.KnxHeating(self._config)
 
-    def test_init(self):
+    def test_init(self) -> None:
         """Test __init__."""
         rule = habapp_rules.actors.heating.KnxHeating(self._config)
         self.assertIsNone(rule._temperature)
@@ -36,14 +36,14 @@ class TestKnxHeating(tests.helper.test_case_base.TestCaseBase):
         rule = habapp_rules.actors.heating.KnxHeating(self._config)
         self.assertEqual(42, rule._temperature)
 
-    def test_feedback_temperature_changed(self):
+    def test_feedback_temperature_changed(self) -> None:
         """Test _cb_actor_feedback_temperature_changed."""
         tests.helper.oh_item.assert_value("Unittest_Temperature_OH", None)
         tests.helper.oh_item.item_state_change_event("Unittest_Temperature_KNX", 42)
         tests.helper.oh_item.assert_value("Unittest_Temperature_OH", 42)
         self.assertEqual(42, self._rule._temperature)
 
-    def test_virtual_temperature_command(self):
+    def test_virtual_temperature_command(self) -> None:
         """Test _cb_virtual_temperature_command."""
         # _temperature and temperature_offset are None
         self.assertIsNone(self._rule._temperature)

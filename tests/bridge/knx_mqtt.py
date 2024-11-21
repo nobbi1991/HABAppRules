@@ -42,7 +42,7 @@ class TestLight(tests.helper.test_case_base.TestCaseBase):
         self._knx_bridge_switch = habapp_rules.bridge.knx_mqtt.KnxMqttDimmerBridge(config_switch)
         self._knx_bridge_dimmer = habapp_rules.bridge.knx_mqtt.KnxMqttDimmerBridge(config_dimmer)
 
-    def test__init__(self):
+    def test__init__(self) -> None:
         """Test __init__."""
         self.assertIsNotNone(self._knx_bridge_full._config.items.knx_switch_ctr)
         self.assertIsNotNone(self._knx_bridge_full._config.items.knx_dimmer_ctr)
@@ -53,7 +53,7 @@ class TestLight(tests.helper.test_case_base.TestCaseBase):
         self.assertIsNone(self._knx_bridge_dimmer._config.items.knx_switch_ctr)
         self.assertIsNotNone(self._knx_bridge_dimmer._config.items.knx_dimmer_ctr)
 
-    def test_init_with_none(self):
+    def test_init_with_none(self) -> None:
         """Test __init__ with None values."""
         tests.helper.oh_item.set_state("Unittest_full_MQTT_dimmer", None)
         tests.helper.oh_item.set_state("Unittest_full_KNX_Switch_ctr", None)
@@ -75,7 +75,7 @@ class TestLight(tests.helper.test_case_base.TestCaseBase):
         habapp_rules.bridge.knx_mqtt.KnxMqttDimmerBridge(config_switch)
         habapp_rules.bridge.knx_mqtt.KnxMqttDimmerBridge(config_dimmer)
 
-    def test_knx_on_off(self):
+    def test_knx_on_off(self) -> None:
         """Test ON/OFF from KNX."""
         self.assertEqual(0, self._knx_bridge_full._config.items.mqtt_dimmer.value)
 
@@ -95,7 +95,7 @@ class TestLight(tests.helper.test_case_base.TestCaseBase):
         tests.helper.oh_item.item_command_event("Unittest_full_KNX_Dimmer_ctr", 0)
         self.assertEqual(0, self._knx_bridge_full._config.items.mqtt_dimmer.value)
 
-    def test_knx_increase(self):
+    def test_knx_increase(self) -> None:
         """Test increase from KNX."""
         self.assertEqual(0, self._knx_bridge_full._config.items.mqtt_dimmer.value)
         tests.helper.oh_item.item_command_event("Unittest_full_KNX_Dimmer_ctr", "INCREASE")
@@ -103,7 +103,7 @@ class TestLight(tests.helper.test_case_base.TestCaseBase):
         tests.helper.oh_item.item_command_event("Unittest_full_KNX_Dimmer_ctr", "INCREASE")
         self.assertEqual(100, self._knx_bridge_full._config.items.mqtt_dimmer.value)
 
-    def test_knx_decrease(self):
+    def test_knx_decrease(self) -> None:
         """Test decrease from KNX."""
         self._knx_bridge_full._config.items.mqtt_dimmer.oh_send_command(100)
         self.assertEqual(100, self._knx_bridge_full._config.items.mqtt_dimmer.value)
@@ -112,13 +112,13 @@ class TestLight(tests.helper.test_case_base.TestCaseBase):
         tests.helper.oh_item.item_command_event("Unittest_full_KNX_Dimmer_ctr", "DECREASE")
         self.assertEqual(0, self._knx_bridge_full._config.items.mqtt_dimmer.value)
 
-    def test_knx_not_supported(self):
+    def test_knx_not_supported(self) -> None:
         """Test not supported command coming from KNX."""
         with unittest.mock.patch.object(self._knx_bridge_full, "_instance_logger") as logger_mock:
             tests.helper.oh_item.item_command_event("Unittest_full_KNX_Dimmer_ctr", "NotSupported")
             logger_mock.error.assert_called_once_with("command 'NotSupported' ist not supported!")
 
-    def test_mqtt_events(self):
+    def test_mqtt_events(self) -> None:
         """Test if KNX item is updated correctly if MQTT item changed."""
         self.assertEqual(0, self._knx_bridge_full._config.items.mqtt_dimmer.value)
         TestCase = collections.namedtuple("TestCase", "send_value, expected_call_dimmer, expected_call_switch")

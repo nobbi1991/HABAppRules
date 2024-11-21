@@ -10,7 +10,7 @@ import habapp_rules.core.logger
 class TestLoggerFunctions(unittest.TestCase):
     """Tests for all logger functions."""
 
-    def test_setup_logger(self):
+    def test_setup_logger(self) -> None:
         """Test setup_logger."""
         stream_handler_mock = unittest.mock.MagicMock()
         file_handler_mock = unittest.mock.MagicMock()
@@ -43,7 +43,7 @@ class TestLoggerFunctions(unittest.TestCase):
 class TestInstanceLogger(unittest.TestCase):
     """Test for instanceLogger."""
 
-    def test_instance_logger(self):
+    def test_instance_logger(self) -> None:
         """Test instance_logger."""
         instance_logger = habapp_rules.core.logger.InstanceLogger(logging.getLogger(__name__), "test_instance")
 

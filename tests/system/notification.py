@@ -15,7 +15,7 @@ from habapp_rules.system.config.notification import NotificationConfig, Notifica
 class TestNotification(tests.helper.test_case_base.TestCaseBase):
     """Test class for notification."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test case."""
         tests.helper.test_case_base.TestCaseBase.setUp(self)
 
@@ -32,7 +32,7 @@ class TestNotification(tests.helper.test_case_base.TestCaseBase):
             NotificationConfig(items=NotificationItems(target_item=HABApp.openhab.items.OpenhabItem.get_item("Unittest_Switch")), parameter=NotificationParameter(notify_connector=self._telegram_mock, recipients="mock_id"))
         )
 
-    def test_state_changed(self):
+    def test_state_changed(self) -> None:
         """Test state changed."""
         self._mail_mock.send_message.assert_not_called()
         self._telegram_mock.send_message.assert_not_called()

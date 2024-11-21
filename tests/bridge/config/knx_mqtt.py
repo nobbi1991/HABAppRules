@@ -18,7 +18,7 @@ class TestKnxMqttConfig(tests.helper.test_case_base.TestCaseBase):
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_KNX_dimmer", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_KNX_switch", None)
 
-    def test_validate_knx_items(self):
+    def test_validate_knx_items(self) -> None:
         """Test validate_knx_items."""
         # Both KNX items are given
         habapp_rules.bridge.config.knx_mqtt.KnxMqttConfig(items=habapp_rules.bridge.config.knx_mqtt.KnxMqttItems(mqtt_dimmer="Unittest_MQTT_dimmer", knx_switch_ctr="Unittest_KNX_switch", knx_dimmer_ctr="Unittest_KNX_dimmer"))

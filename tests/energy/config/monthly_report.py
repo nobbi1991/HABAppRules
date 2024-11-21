@@ -18,7 +18,7 @@ class TestEnergyShare(tests.helper.test_case_base.TestCaseBase):
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Number_1", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Switch_1", None)
 
-    def test_init(self):
+    def test_init(self) -> None:
         """Test init."""
         # valid init
         energy_share = habapp_rules.energy.config.monthly_report.EnergyShare("Number_1", "First Number")

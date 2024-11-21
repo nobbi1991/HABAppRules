@@ -26,7 +26,7 @@ class TestWatchdog(tests.helper.test_case_base.TestCaseBase):
 
         self._watchdog_switch = habapp_rules.system.item_watchdog.ItemWatchdog(WatchdogConfig(items=WatchdogItems(observed="Unittest_Switch", warning="Unittest_Switch_Warning"), parameter=WatchdogParameter(timeout=10)))
 
-    def test_cb_observed_state_updated(self):
+    def test_cb_observed_state_updated(self) -> None:
         """Callback which is called if the observed item was updated."""
         with unittest.mock.patch.object(self._watchdog_number, "_countdown") as number_countdown_mock, unittest.mock.patch.object(self._watchdog_switch, "_countdown") as switch_countdown_mock:
             tests.helper.oh_item.item_state_event("Unittest_Number", 42)

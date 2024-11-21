@@ -32,7 +32,7 @@ class TestExponentialFilter(tests.helper.test_case_base.TestCaseBase):
         self.filter = habapp_rules.common.filter.ExponentialFilter(config)
         self.filter_increase = habapp_rules.common.filter.ExponentialFilter(config_increase)
 
-    def test__init__(self):
+    def test__init__(self) -> None:
         """Test __init__."""
         self.assertEqual("Unittest_Raw", self.filter._config.items.raw.name)
         self.assertEqual("Unittest_Raw", self.filter_increase._config.items.raw.name)
@@ -49,7 +49,7 @@ class TestExponentialFilter(tests.helper.test_case_base.TestCaseBase):
         self.assertTrue(self.filter_increase._config.parameter.instant_increase)
         self.assertFalse(self.filter_increase._config.parameter.instant_decrease)
 
-    def test_cb_cyclic_calculate_and_update_output(self):
+    def test_cb_cyclic_calculate_and_update_output(self) -> None:
         """Test _cb_cyclic_calculate_and_update_output."""
         TestCase = collections.namedtuple("TestCase", "new_value, previous_value, expected_result")
 
@@ -77,7 +77,7 @@ class TestExponentialFilter(tests.helper.test_case_base.TestCaseBase):
             else:
                 self.assertEqual(test_case.previous_value, self.filter._previous_value)
 
-    def test_cb_item_raw(self):
+    def test_cb_item_raw(self) -> None:
         """Test _cb_item_raw."""
         TestCase = collections.namedtuple("TestCase", "new_value, previous_value, instant_increase, instant_decrease, expected_value")
 

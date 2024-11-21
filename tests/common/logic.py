@@ -39,7 +39,7 @@ class TestAndOR(tests.helper.test_case_base.TestCaseBase):
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.RollershutterItem, "Unittest_RollerShutter", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DatetimeItem, "Unittest_DateTime", None)
 
-    def test_and_callback_switch(self):
+    def test_and_callback_switch(self) -> None:
         """Test <AND> for switch items."""
         TestStep = collections.namedtuple("TestStep", "event_item_name, event_item_value, expected_output")
 
@@ -69,7 +69,7 @@ class TestAndOR(tests.helper.test_case_base.TestCaseBase):
             tests.helper.oh_item.send_command(step.event_item_name, step.event_item_value)
             self.assertEqual(step.expected_output, output_item.value)
 
-    def test_or_callback_switch(self):
+    def test_or_callback_switch(self) -> None:
         """Test <OR> for switch items."""
         TestStep = collections.namedtuple("TestStep", "event_item_name, event_item_value, expected_output")
 
@@ -99,7 +99,7 @@ class TestAndOR(tests.helper.test_case_base.TestCaseBase):
             tests.helper.oh_item.send_command(step.event_item_name, step.event_item_value)
             self.assertEqual(step.expected_output, output_item.value)
 
-    def test_and_callback_contact(self):
+    def test_and_callback_contact(self) -> None:
         """Test <AND> for contact items."""
         TestStep = collections.namedtuple("TestStep", "event_item_name, event_item_value, expected_output")
 
@@ -129,7 +129,7 @@ class TestAndOR(tests.helper.test_case_base.TestCaseBase):
             tests.helper.oh_item.send_command(step.event_item_name, step.event_item_value)
             self.assertEqual(step.expected_output, output_item.value)
 
-    def test_or_callback_contact(self):
+    def test_or_callback_contact(self) -> None:
         """Test <or> for contact items."""
         TestStep = collections.namedtuple("TestStep", "event_item_name, event_item_value, expected_output")
 
@@ -188,7 +188,7 @@ class TestNumericLogic(tests.helper.test_case_base.TestCaseBase):
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.RollershutterItem, "Unittest_RollerShutter", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DatetimeItem, "Unittest_DateTime", None)
 
-    def test_number_min_max_sum_without_filter(self):
+    def test_number_min_max_sum_without_filter(self) -> None:
         """Test min / max / sum for number items."""
         TestStep = collections.namedtuple("TestStep", "event_item_index, event_item_value, expected_min, expected_max, expected_sum")
 
@@ -228,7 +228,7 @@ class TestNumericLogic(tests.helper.test_case_base.TestCaseBase):
             self.assertEqual(step.expected_max, output_item_number_max.value)
             self.assertEqual(step.expected_sum, output_item_number_sum.value)
 
-    def test_dimmer_min_max_without_filter(self):
+    def test_dimmer_min_max_without_filter(self) -> None:
         """Test min / max for dimmer items."""
         TestStep = collections.namedtuple("TestStep", "event_item_index, event_item_value, expected_min, expected_max")
 
@@ -263,7 +263,7 @@ class TestNumericLogic(tests.helper.test_case_base.TestCaseBase):
             self.assertEqual(step.expected_min, output_item_dimmer_min.value)
             self.assertEqual(step.expected_max, output_item_dimmer_max.value)
 
-    def test_cb_input_event(self):
+    def test_cb_input_event(self) -> None:
         """Test _cb_input_event."""
         config_min = habapp_rules.common.config.logic.NumericLogicConfig(items=habapp_rules.common.config.logic.NumericLogicItems(inputs=["Unittest_Dimmer_in1", "Unittest_Dimmer_in2", "Unittest_Dimmer_in3"], output="Unittest_Dimmer_out_min"))
 
@@ -280,7 +280,7 @@ class TestNumericLogic(tests.helper.test_case_base.TestCaseBase):
             rule_max._cb_input_event(None)
         set_output_mock.assert_not_called()
 
-    def test_exception_dimmer_sum(self):
+    def test_exception_dimmer_sum(self) -> None:
         """Test exception if Sum is instantiated with dimmer items."""
         config_max = habapp_rules.common.config.logic.NumericLogicConfig(items=habapp_rules.common.config.logic.NumericLogicItems(inputs=["Unittest_Dimmer_in1", "Unittest_Dimmer_in2", "Unittest_Dimmer_in3"], output="Unittest_Dimmer_out_max"))
 
@@ -298,7 +298,7 @@ class TestInvertValue(tests.helper.test_case_base.TestCaseBase):
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Input", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Output", None)
 
-    def test_invert_value_without_pos_neg(self):
+    def test_invert_value_without_pos_neg(self) -> None:
         """Test invert value rule without pos / neg set."""
         TestCase = collections.namedtuple("TestCase", "input, expected_output")
 
@@ -313,7 +313,7 @@ class TestInvertValue(tests.helper.test_case_base.TestCaseBase):
                 tests.helper.oh_item.item_state_change_event("Unittest_Input", test_case.input)
                 tests.helper.oh_item.assert_value("Unittest_Output", test_case.expected_output)
 
-    def test_invert_value_with_only_pos(self):
+    def test_invert_value_with_only_pos(self) -> None:
         """Test invert value rule with only pos is set."""
         TestCase = collections.namedtuple("TestCase", "input, expected_output")
 
@@ -330,7 +330,7 @@ class TestInvertValue(tests.helper.test_case_base.TestCaseBase):
                 tests.helper.oh_item.item_state_change_event("Unittest_Input", test_case.input)
                 tests.helper.oh_item.assert_value("Unittest_Output", test_case.expected_output)
 
-    def test_invert_value_with_only_neg(self):
+    def test_invert_value_with_only_neg(self) -> None:
         """Test invert value rule with only neg is set."""
         TestCase = collections.namedtuple("TestCase", "input, expected_output")
 

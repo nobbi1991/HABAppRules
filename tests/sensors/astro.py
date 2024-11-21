@@ -15,14 +15,14 @@ import tests.helper.test_case_base
 class TestSetDay(tests.helper.test_case_base.TestCaseBase):
     """Tests for TestSetDay."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Setup test case."""
         tests.helper.test_case_base.TestCaseBase.setUp(self)
 
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Elevation", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Day", None)
 
-    def test_init(self):
+    def test_init(self) -> None:
         """Test init without elevation."""
         # default threshold
         config = habapp_rules.sensors.config.astro.SetDayConfig(
@@ -46,7 +46,7 @@ class TestSetDay(tests.helper.test_case_base.TestCaseBase):
         run_soon_mock.assert_called_once_with(rule._set_night)
         self.assertEqual(-2, rule._elevation_threshold)
 
-    def test_init_with_elevation(self):
+    def test_init_with_elevation(self) -> None:
         """Test init without elevation."""
         TestCase = collections.namedtuple("TestCase", "elevation_value, night_state")
 
@@ -79,14 +79,14 @@ class TestSetDay(tests.helper.test_case_base.TestCaseBase):
 class TestSetNight(tests.helper.test_case_base.TestCaseBase):
     """Tests for TestSetNight."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Setup test case."""
         tests.helper.test_case_base.TestCaseBase.setUp(self)
 
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Elevation", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Night", None)
 
-    def test_init(self):
+    def test_init(self) -> None:
         """Test init without elevation."""
         # default threshold
         config = habapp_rules.sensors.config.astro.SetNightConfig(
@@ -110,7 +110,7 @@ class TestSetNight(tests.helper.test_case_base.TestCaseBase):
         run_soon_mock.assert_called_once_with(rule._set_night)
         self.assertEqual(-10, rule._elevation_threshold)
 
-    def test_init_with_elevation(self):
+    def test_init_with_elevation(self) -> None:
         """Test init without elevation."""
         TestCase = collections.namedtuple("TestCase", "elevation_value, night_state")
 

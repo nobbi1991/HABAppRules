@@ -18,7 +18,7 @@ import tests.helper.test_case_base
 class TestHelperFunctions(tests.helper.test_case_base.TestCaseBase):
     """Tests for all helper functions."""
 
-    def test_create_additional_item(self):
+    def test_create_additional_item(self) -> None:
         """Test create additional item."""
         # check if item is created if NOT existing
         self.item_exists_mock.return_value = False
@@ -45,13 +45,13 @@ class TestHelperFunctions(tests.helper.test_case_base.TestCaseBase):
             habapp_rules.core.helper.create_additional_item("Name_of_Item", "Switch")
             create_mock.assert_not_called()
 
-    def test_test_create_additional_item_exception(self):
+    def test_test_create_additional_item_exception(self) -> None:
         """Test exceptions of _create_additional_item."""
         self.item_exists_mock.return_value = False
         with unittest.mock.patch("HABApp.openhab.interface_sync.create_item", spec=HABApp.openhab.interface_sync.create_item, return_value=False), self.assertRaises(habapp_rules.core.exceptions.HabAppRulesError):
             habapp_rules.core.helper.create_additional_item("Name_of_Item", "Switch")
 
-    def test_send_if_different(self):
+    def test_send_if_different(self) -> None:
         """Test send_if_different."""
         # item given
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Number", 0)
@@ -74,7 +74,7 @@ class TestHelperFunctions(tests.helper.test_case_base.TestCaseBase):
 class TestHelperWithItems(tests.helper.test_case_base.TestCaseBase):
     """Test helper functions with OpenHAB items."""
 
-    def test_filter_updated_items(self):
+    def test_filter_updated_items(self) -> None:
         """Test filter_updated_items."""
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Number", 0)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Dimmer", 0)

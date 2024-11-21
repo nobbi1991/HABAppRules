@@ -27,7 +27,7 @@ class TestStateMachineRule(tests.helper.test_case_base.TestCaseBase):
         with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_common_state_machine_rule_StateMachineRule_state", "")):
             self._state_machine = habapp_rules.core.state_machine_rule.StateMachineRule(self.state_item)
 
-    def test_get_initial_state(self):
+    def test_get_initial_state(self) -> None:
         """Test getting of initial state."""
         TestCase = collections.namedtuple("TestCase", "item_value, state_names, default, expected_result")
         test_cases = [
@@ -43,14 +43,14 @@ class TestStateMachineRule(tests.helper.test_case_base.TestCaseBase):
                 self._state_machine.states = [{"name": name} for name in test_case.state_names]
                 self.assertEqual(self._state_machine._get_initial_state(test_case.default), test_case.expected_result)
 
-    def test_update_openhab_state(self):
+    def test_update_openhab_state(self) -> None:
         """Test if OpenHAB state will be updated."""
         self._state_machine.state = "some_state"
         with unittest.mock.patch.object(self._state_machine, "_item_state") as state_item:
             self._state_machine._update_openhab_state()
             state_item.oh_send_command.assert_called_once_with("some_state")
 
-    def test_on_rule_removed(self):
+    def test_on_rule_removed(self) -> None:
         """Test on_rule_removed."""
         # check if 'on_rule_removed' is still available in HABApp
         self.assertIsNotNone(HABApp.rule.Rule.on_rule_removed)

@@ -20,7 +20,7 @@ import tests.helper.test_case_base
 class TestFunctions(unittest.TestCase):
     """Test all global functions."""
 
-    def test_get_last_month_name(self):
+    def test_get_last_month_name(self) -> None:
         """Test _get_last_month_name."""
         TestCase = collections.namedtuple("TestCase", ["month_number", "expected_name"])
 
@@ -69,7 +69,7 @@ class TestMonthlyReport(tests.helper.test_case_base.TestCaseBase):
 
         self._rule = habapp_rules.energy.monthly_report.MonthlyReport(config)
 
-    def test_init(self):
+    def test_init(self) -> None:
         """Test init."""
         TestCase = collections.namedtuple("TestCase", ["sum_in_group", "item_1_in_group", "item_2_in_group", "raises_exception"])
 
@@ -103,7 +103,7 @@ class TestMonthlyReport(tests.helper.test_case_base.TestCaseBase):
                 else:
                     habapp_rules.energy.monthly_report.MonthlyReport(config)
 
-    def test_init_with_debug_mode(self):
+    def test_init_with_debug_mode(self) -> None:
         """Test init with debug mode."""
         config = habapp_rules.energy.config.monthly_report.MonthlyReportConfig(
             items=habapp_rules.energy.config.monthly_report.MonthlyReportItems(energy_sum="Energy_Sum"),
@@ -112,7 +112,7 @@ class TestMonthlyReport(tests.helper.test_case_base.TestCaseBase):
 
         self._rule = habapp_rules.energy.monthly_report.MonthlyReport(config)
 
-    def test_get_historic_value(self):
+    def test_get_historic_value(self) -> None:
         """Test _get_historic_value."""
         mock_item = unittest.mock.MagicMock()
         fake_persistence_data = HABApp.openhab.definitions.helpers.persistence_data.OpenhabPersistenceData()
@@ -129,7 +129,7 @@ class TestMonthlyReport(tests.helper.test_case_base.TestCaseBase):
         fake_persistence_data.data = {"0.0": 42, "1.0": 1337}
         self.assertEqual(42, self._rule._get_historic_value(mock_item, start_time))
 
-    def test_create_html(self):
+    def test_create_html(self) -> None:
         """Test create_html."""
         self._rule._config.items.energy_sum.value = 20_123.5489135
 
@@ -139,7 +139,7 @@ class TestMonthlyReport(tests.helper.test_case_base.TestCaseBase):
 
         template_mock.render.assert_called_once_with(month="MonthName", energy_now="20123.5", energy_last_month="10042.1", habapp_version=habapp_rules.__version__, chart="{{ chart }}")
 
-    def test_cb_send_energy(self):
+    def test_cb_send_energy(self) -> None:
         """Test cb_send_energy."""
         self._rule._config.items.energy_sum.value = 1000
         self._energy_1.energy_item.value = 100

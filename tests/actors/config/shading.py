@@ -51,7 +51,7 @@ class TestShadingConfig(tests.helper.test_case_base.TestCaseBase):
 class TestSlatValueParameter(unittest.TestCase):
     """Test slat value parameter."""
 
-    def test__check_and_sort_characteristic(self):
+    def test__check_and_sort_characteristic(self) -> None:
         """Test __check_and_sort_characteristic."""
         TestCase = collections.namedtuple("TestCase", "input, expected_output, raises")
 

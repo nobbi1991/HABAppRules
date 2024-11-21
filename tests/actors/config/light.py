@@ -16,7 +16,7 @@ from habapp_rules.actors.config.light import BrightnessTimeout, FunctionConfig, 
 class TestBrightnessTimeout(unittest.TestCase):
     """Tests for BrightnessTimeout."""
 
-    def test_post_init(self):
+    def test_post_init(self) -> None:
         """Test post init checks."""
         TestCase = collections.namedtuple("TestCase", "value, timeout, valid")
 
@@ -52,7 +52,7 @@ class TestBrightnessTimeout(unittest.TestCase):
 class TestLightParameter(unittest.TestCase):
     """Tests for LightParameter."""
 
-    def test_post_init(self):
+    def test_post_init(self) -> None:
         """Test check in post init."""
         TestCase = collections.namedtuple("TestCase", "on, pre_off, leaving, pre_sleep, pre_sleep_prevent, valid")
 
@@ -92,7 +92,7 @@ class TestLightParameter(unittest.TestCase):
                     with self.assertRaises(pydantic.ValidationError):
                         LightParameter(on=test_case.on, pre_off=test_case.pre_off, leaving=test_case.leaving, pre_sleep=test_case.pre_sleep, pre_sleep_prevent=test_case.pre_sleep_prevent)
 
-    def test_sleep_of_pre_sleep(self):
+    def test_sleep_of_pre_sleep(self) -> None:
         """Test if sleep of pre_sleep is set correctly."""
         light_config = LightParameter(
             on=FunctionConfig(day=BrightnessTimeout(True, 3), night=BrightnessTimeout(True, 2), sleeping=BrightnessTimeout(True, 1)), pre_off=None, leaving=None, pre_sleep=FunctionConfig(day=None, night=None, sleeping=BrightnessTimeout(True, 1))
@@ -104,7 +104,7 @@ class TestLightParameter(unittest.TestCase):
 class TestLightConfig(tests.helper.test_case_base.TestCaseBase):
     """Tests for LightConfig."""
 
-    def test_validate_config(self):
+    def test_validate_config(self) -> None:
         """Test validate_config."""
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual", None)
