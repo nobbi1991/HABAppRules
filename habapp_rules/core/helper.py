@@ -33,7 +33,7 @@ def create_additional_item(name: str, item_type: str, label: str | None = None, 
 
     if not HABApp.openhab.interface_sync.item_exists(name):
         if not label:
-            label = f"{name.removeprefix("H_").replace("_", " ")}"
+            label = f"{name.removeprefix('H_').replace('_', ' ')}"
         if not HABApp.openhab.interface_sync.create_item(item_type=item_type, name=name, label=label, groups=groups):
             msg = f"Could not create item '{name}'"
             raise habapp_rules.core.exceptions.HabAppRulesError(msg)

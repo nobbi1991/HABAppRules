@@ -73,5 +73,5 @@ class TestCaseBaseStateMachine(TestCaseBase):
             if "children" in state:
                 state_names += self._get_state_names(state, state["name"])
             else:
-                state_names.append(f"{prefix}{state["name"]}")
+                state_names.append(f"{prefix}{state['name']}")
         return state_names

@@ -93,7 +93,6 @@ no_implicit_reexport = false
 indent-width = 4
 line-length = 250
 preview = true
-target-version = "py313"
 exclude=["*rule_runner.py"]
 
 [tool.ruff.format]
