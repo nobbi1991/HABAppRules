@@ -1,9 +1,8 @@
 """Config models for KNX / MQTT bridge."""
 
-import typing
-
 import HABApp.openhab.items
 import pydantic
+import typing_extensions
 
 import habapp_rules.core.pydantic_base
 
@@ -16,14 +15,14 @@ class KnxMqttItems(habapp_rules.core.pydantic_base.ItemBase):
     knx_dimmer_ctr: HABApp.openhab.items.DimmerItem | None = pydantic.Field(None, description="")
 
     @pydantic.model_validator(mode="after")
-    def validate_knx_items(self) -> typing.Self:
+    def validate_knx_items(self) -> typing_extensions.Self:
         """Validate KNX items.
 
         Returns:
-            validated model
+                validated model
 
         Raises:
-            ValueError: if knx_switch_ctr and knx_dimmer_ctr are not set
+                ValueError: if knx_switch_ctr and knx_dimmer_ctr are not set
         """
         if self.knx_switch_ctr is None and self.knx_dimmer_ctr is None:
             msg = "knx_switch_ctr or knx_dimmer_ctr must be set"

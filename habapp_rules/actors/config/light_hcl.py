@@ -1,10 +1,10 @@
 """Config models for HCL color rules."""
 
 import operator
-import typing
 
 import HABApp
 import pydantic
+import typing_extensions
 
 import habapp_rules.core.pydantic_base
 
@@ -36,7 +36,7 @@ class HclElevationParameter(habapp_rules.core.pydantic_base.ParameterBase):
     focus_color: float = pydantic.Field(6000, description="color if focus is active", gt=0)
 
     @pydantic.model_validator(mode="after")
-    def validate_model(self) -> typing.Self:
+    def validate_model(self) -> typing_extensions.Self:
         """Sort color map.
 
         Returns:

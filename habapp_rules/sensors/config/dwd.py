@@ -1,9 +1,8 @@
 """Config rules for DWD rules."""
 
-import typing
-
 import HABApp
 import pydantic
+import typing_extensions
 
 import habapp_rules.core.pydantic_base
 
@@ -34,7 +33,7 @@ class WindAlarmConfig(habapp_rules.core.pydantic_base.ConfigBase):
     parameter: WindAlarmParameter = pydantic.Field(WindAlarmParameter(), description="parameters for DWD wind alarm rule")
 
     @pydantic.model_validator(mode="after")
-    def check_hand_timeout(self) -> typing.Self:
+    def check_hand_timeout(self) -> typing_extensions.Self:
         """Validate hand timeout.
 
         Returns:

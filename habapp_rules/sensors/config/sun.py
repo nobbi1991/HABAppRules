@@ -1,10 +1,10 @@
 """Config models for sun rules."""
 
 import logging
-import typing
 
 import HABApp
 import pydantic
+import typing_extensions
 
 import habapp_rules.core.pydantic_base
 
@@ -30,7 +30,7 @@ class TemperatureDifferenceItems(_ItemsBase):
     temperatures: list[HABApp.openhab.items.NumberItem] = pydantic.Field(..., description="temperature items")
 
     @pydantic.model_validator(mode="after")
-    def validate_temperature_items(self) -> typing.Self:
+    def validate_temperature_items(self) -> typing_extensions.Self:
         """Validate that at least two temperature items are given.
 
         Returns:
@@ -69,7 +69,7 @@ class _ConfigBase(habapp_rules.core.pydantic_base.ConfigBase):
     parameter: BrightnessParameter | TemperatureDifferenceParameter = pydantic.Field(..., description="parameter for sun sensor")
 
     @pydantic.model_validator(mode="after")
-    def validate_threshold(self) -> typing.Self:
+    def validate_threshold(self) -> typing_extensions.Self:
         """Validate threshold.
 
         Returns:
@@ -131,7 +131,7 @@ class SunPositionWindow(pydantic.BaseModel):
         super().__init__(azimuth_min=azimuth_min, azimuth_max=azimuth_max, elevation_min=elevation_min, elevation_max=elevation_max)
 
     @pydantic.model_validator(mode="after")
-    def validate_model(self) -> typing.Self:
+    def validate_model(self) -> typing_extensions.Self:
         """Validate values.
 
         Returns:

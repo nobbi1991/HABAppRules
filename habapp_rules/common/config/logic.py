@@ -1,9 +1,8 @@
 """Config models for logic rules."""
 
-import typing
-
 import HABApp
 import pydantic
+import typing_extensions
 
 import habapp_rules.core.pydantic_base
 
@@ -15,7 +14,7 @@ class BinaryLogicItems(habapp_rules.core.pydantic_base.ItemBase):
     output: HABApp.openhab.items.SwitchItem | HABApp.openhab.items.ContactItem = pydantic.Field(..., description="Output item")
 
     @pydantic.model_validator(mode="after")
-    def validate_items(self) -> typing.Self:
+    def validate_items(self) -> typing_extensions.Self:
         """Validate if all items are of the same type.
 
         Returns:

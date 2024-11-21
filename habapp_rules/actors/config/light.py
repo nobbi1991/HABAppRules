@@ -2,10 +2,10 @@
 
 import collections.abc
 import logging
-import typing
 
 import HABApp.openhab.items
 import pydantic
+import typing_extensions
 
 import habapp_rules.core.exceptions
 import habapp_rules.core.pydantic_base
@@ -45,7 +45,7 @@ class BrightnessTimeout(pydantic.BaseModel):
         super().__init__(brightness=brightness, timeout=timeout)
 
     @pydantic.model_validator(mode="after")
-    def validata_model(self) -> typing.Self:
+    def validata_model(self) -> typing_extensions.Self:
         """Validate brightness and timeout.
 
         Returns:
@@ -147,7 +147,7 @@ class LightConfig(habapp_rules.core.pydantic_base.ConfigBase):
     parameter: LightParameter = pydantic.Field(LightParameter(), description="parameter for all light rules")
 
     @pydantic.model_validator(mode="after")
-    def validate_config(self) -> typing.Self:
+    def validate_config(self) -> typing_extensions.Self:
         """Validate config.
 
         Returns:

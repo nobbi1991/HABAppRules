@@ -1,9 +1,8 @@
 """Config models for filter rules."""
 
-import typing
-
 import HABApp.openhab.items
 import pydantic
+import typing_extensions
 
 import habapp_rules.core.pydantic_base
 
@@ -23,7 +22,7 @@ class ExponentialFilterParameter(habapp_rules.core.pydantic_base.ParameterBase):
     instant_decrease: bool = pydantic.Field(default=False, description="if set to True, decrease of input values will not be filtered")
 
     @pydantic.model_validator(mode="after")
-    def validate_instant_parameters(self) -> typing.Self:
+    def validate_instant_parameters(self) -> typing_extensions.Self:
         """Validate instant_increase and instant_decrease.
 
         Returns:

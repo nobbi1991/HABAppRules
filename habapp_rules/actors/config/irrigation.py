@@ -1,9 +1,8 @@
 """Config models for irrigation rules."""
 
-import typing
-
 import HABApp.openhab.items
 import pydantic
+import typing_extensions
 
 import habapp_rules.core.exceptions
 import habapp_rules.core.pydantic_base
@@ -21,7 +20,7 @@ class IrrigationItems(habapp_rules.core.pydantic_base.ItemBase):
     brake: HABApp.openhab.items.NumberItem | None = pydantic.Field(None, description="time in minutes between repetitions")
 
     @pydantic.model_validator(mode="after")
-    def validate_model(self) -> typing.Self:
+    def validate_model(self) -> typing_extensions.Self:
         """Validate model.
 
         Returns:

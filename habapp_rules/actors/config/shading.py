@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import copy
-import typing
 
 import HABApp.openhab.items  # noqa: TCH002
 import pydantic
+import typing_extensions
 
 import habapp_rules.core.pydantic_base
 
@@ -62,7 +62,7 @@ class ShadingParameter(habapp_rules.core.pydantic_base.ParameterBase):
     value_tolerance: int = pydantic.Field(0, description="value tolerance for shading position which is allowed without manual detection", ge=0)
 
     @pydantic.model_validator(mode="after")
-    def validate_model(self) -> typing.Self:
+    def validate_model(self) -> typing_extensions.Self:
         """Validate model.
 
         Returns:
@@ -80,7 +80,7 @@ class ShadingConfig(habapp_rules.core.pydantic_base.ConfigBase):
     parameter: ShadingParameter = pydantic.Field(ShadingParameter(), description="parameter for shading")
 
     @pydantic.model_validator(mode="after")
-    def validate_model(self) -> typing.Self:
+    def validate_model(self) -> typing_extensions.Self:
         """Validate model.
 
         Returns:
