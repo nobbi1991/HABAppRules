@@ -760,7 +760,7 @@ class TestLightBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
         for item_state in (0, 50, "OFF", "ON"):
             self.light_base._item_light.value = item_state
-            for state_name in [f"auto_{state['name']}" for state in auto_state["children"] if "init" not in state["name"]]:
+            for state_name in [f"auto_{state["name"]}" for state in auto_state["children"] if "init" not in state["name"]]:
                 eval(f"self.light_base.to_{state_name}()")  # noqa: S307
                 self.assertEqual(state_name, self.light_base.state)
                 tests.helper.oh_item.send_command("Unittest_Manual", "ON", "OFF")

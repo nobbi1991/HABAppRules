@@ -84,7 +84,7 @@ class _StateObserverBase(HABApp.Rule, abc.ABC):
         wrong_types = [f"{item.name} <{type(item).__name__}>" for item in self.__control_items + self.__group_items if not isinstance(item, target_type)]
 
         if wrong_types:
-            self._instance_logger.error(msg := f"Found items with wrong item type. Expected: {target_type.__name__}. Wrong: {' | '.join(wrong_types)}")
+            self._instance_logger.error(msg := f"Found items with wrong item type. Expected: {target_type.__name__}. Wrong: {" | ".join(wrong_types)}")
             raise TypeError(msg)
 
     @abc.abstractmethod
