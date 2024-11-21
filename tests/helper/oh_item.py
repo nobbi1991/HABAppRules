@@ -16,9 +16,10 @@ StateTypes = str | float | datetime.datetime
 def add_mock_item(item_type: type[HABApp.openhab.items.OpenhabItem], name: str, initial_value: str | float | None = None) -> None:
     """Add a mock item.
 
-    :param item_type: Type of the mock item
-    :param name: Name of the mock item
-    :param initial_value: initial value
+    Args:
+        item_type: Type of the mock item
+        name: Name of the mock item
+        initial_value: initial value
     """
     if HABApp.core.Items.item_exists(name):
         HABApp.core.Items.pop_item(name)
@@ -30,7 +31,8 @@ def add_mock_item(item_type: type[HABApp.openhab.items.OpenhabItem], name: str, 
 def remove_mocked_item_by_name(name: str) -> None:
     """Remove a mocked item by item name.
 
-    :param name: name of mocked item
+    Args:
+        name: name of mocked item
     """
     HABApp.core.Items.pop_item(name)
     _MOCKED_ITEM_NAMES.remove(name)
@@ -46,8 +48,9 @@ def remove_all_mocked_items() -> None:
 def set_state(item_name: str, value: StateTypes | None) -> None:
     """Helper to set state of item.
 
-    :param item_name: name of item
-    :param value: state which should be set
+    Args:
+        item_name: name of item
+        value: state which should be set
     """
     item = HABApp.openhab.items.OpenhabItem.get_item(item_name)
     if isinstance(item, HABApp.openhab.items.DimmerItem) and value in {"ON", "OFF"}:
@@ -60,9 +63,10 @@ def set_state(item_name: str, value: StateTypes | None) -> None:
 def send_command(item_name: str, new_value: StateTypes, old_value: StateTypes = NO_VALUE) -> None:
     """Replacement of send_command for unit-tests.
 
-    :param item_name: Name of item
-    :param new_value: new value
-    :param old_value: previous value
+    Args:
+        item_name: Name of item
+        new_value: new value
+        old_value: previous value
     """
     old_value = HABApp.openhab.items.OpenhabItem.get_item(item_name).value if old_value is NO_VALUE else old_value
 
@@ -75,8 +79,9 @@ def send_command(item_name: str, new_value: StateTypes, old_value: StateTypes = 
 def item_command_event(item_name: str, value: StateTypes) -> None:
     """Post a command event to the event bus.
 
-    :param item_name: name of item
-    :param value: value of the event
+    Args:
+        item_name: name of item
+        value: value of the event
     """
     with contextlib.suppress(HABApp.core.errors.InvalidItemValue):
         set_state(item_name, value)
@@ -86,8 +91,9 @@ def item_command_event(item_name: str, value: StateTypes) -> None:
 def item_state_event(item_name: str, value: StateTypes) -> None:
     """Post a state event to the event bus.
 
-    :param item_name: name of item
-    :param value: value of the event
+    Args:
+        item_name: name of item
+        value: value of the event
     """
     set_state(item_name, value)
     HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateUpdatedEvent(item_name, value))
@@ -96,9 +102,10 @@ def item_state_event(item_name: str, value: StateTypes) -> None:
 def item_state_change_event(item_name: str, value: StateTypes, old_value: StateTypes = None) -> None:
     """Post a state change event to the event bus.
 
-    :param item_name: name of item
-    :param value: value of the event
-    :param old_value: previous value
+    Args:
+        item_name: name of item
+        value: value of the event
+        old_value: previous value
     """
     prev_value = old_value or HABApp.openhab.items.OpenhabItem.get_item(item_name).value
     set_state(item_name, value)

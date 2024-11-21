@@ -37,7 +37,8 @@ class KnxHeating(HABApp.Rule):
     def __init__(self, config: habapp_rules.actors.config.heating.KnxHeatingConfig) -> None:
         """Init of basic light object.
 
-        :param config: KNX heating config
+        Args:
+            config: KNX heating config
         """
         HABApp.Rule.__init__(self)
         self._config = config

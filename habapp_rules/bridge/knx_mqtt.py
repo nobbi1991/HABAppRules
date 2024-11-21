@@ -25,8 +25,11 @@ class KnxMqttDimmerBridge(HABApp.Rule):
     def __init__(self, config: habapp_rules.bridge.config.knx_mqtt.KnxMqttConfig) -> None:
         """Create object of KNX to MQTT bridge.
 
-        :param config: Configuration of the KNX MQTT bridge
-        :raises habapp_rules.core.exceptions.HabAppRulesConfigurationException: If config is not valid
+        Args:
+            config: Configuration of the KNX MQTT bridge
+
+        Raises:
+            habapp_rules.core.exceptions.HabAppRulesConfigurationException: If config is not valid
         """
         self._config = config
         knx_name = self._config.items.knx_switch_ctr.name if self._config.items.knx_switch_ctr is not None else self._config.items.knx_dimmer_ctr.name
@@ -44,7 +47,8 @@ class KnxMqttDimmerBridge(HABApp.Rule):
     def _cb_knx_event(self, event: HABApp.openhab.events.ItemCommandEvent) -> None:
         """Callback, which is called if a KNX command received.
 
-        :param event: HABApp event
+        Args:
+            event: HABApp event
         """
         if isinstance(event.value, int | float) or event.value in {"ON", "OFF"}:
             self._config.items.mqtt_dimmer.oh_send_command(event.value)
@@ -60,7 +64,8 @@ class KnxMqttDimmerBridge(HABApp.Rule):
     def _cb_mqtt_event(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback, which is called if a MQTT state change event happens.
 
-        :param event: HABApp event
+        Args:
+            event: HABApp event
         """
         if not isinstance(event.value, int | float):
             return
