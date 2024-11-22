@@ -38,9 +38,9 @@
 
 - added support for dimmer items which can be configured for `switch_on` for all rules in `habapp_rules.actors.light_hcl`
 - bumped versions:
-    - HABApp to 24.08.1
-    - multi-notifier to 0.5.0
-    - holidays to 0.53
+  - HABApp to 24.08.1
+  - multi-notifier to 0.5.0
+  - holidays to 0.53
 
 # Version 6.0.1 - 22.07.2024
 
@@ -266,8 +266,8 @@
 ## Features
 
 - Added `habapp_rules.actors.light` to control dimmer lights (switch lights will be supported later):
-    - `habapp_rules.actors.light.Light` for basic light functionality like switch-on brightness or leaving / sleeping light
-    - `habapp_rules.actors.light.LightExtended` includes everything from `habapp_rules.actors.light.Light` plus switch on depending on motion or opening of a door
+  - `habapp_rules.actors.light.Light` for basic light functionality like switch-on brightness or leaving / sleeping light
+  - `habapp_rules.actors.light.LightExtended` includes everything from `habapp_rules.actors.light.Light` plus switch on depending on motion or opening of a door
 - Added `habapp_rules.sensors.motion` to filter motion sensors
 - Added `habapp_rules.common.hysteresis` as a helper for value depended switch with hysteresis
 - Added `habapp_rules.core.timeout_list`
