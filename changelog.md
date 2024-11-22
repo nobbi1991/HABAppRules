@@ -1,13 +1,12 @@
-# Version 7.0.0 - dd.mm.2024
+# Version 7.0.0 - 22.11.2024
 
 ## Breaking changes
 
-- bumped HABApp to dev
-- updated docker container to use python 3.
+- bumped HABApp to 24.11.0. Check [release info](https://community.openhab.org/t/habapp-24/152810/27)
+- updated docker container to use python 3.13
 - renamed all `habapp_rules` exceptions to error. E.g. `habapp_rules.HabAppRulesException` to `habapp_rules.HabAppRulesError`
 - renamed `habapp_rules.system.watchdog` to `habapp_rules.system.item_watchdog`
-
-# Version 6.3.0 - dd.10.2024
+- moved rules of `habapp_rules.actors.power` to `habapp_rules.sensors.current_switch`
 
 ## Features
 
@@ -39,9 +38,9 @@
 
 - added support for dimmer items which can be configured for `switch_on` for all rules in `habapp_rules.actors.light_hcl`
 - bumped versions:
-  - HABApp to 24.08.1
-  - multi-notifier to 0.5.0
-  - holidays to 0.53
+    - HABApp to 24.08.1
+    - multi-notifier to 0.5.0
+    - holidays to 0.53
 
 # Version 6.0.1 - 22.07.2024
 
@@ -267,8 +266,8 @@
 ## Features
 
 - Added `habapp_rules.actors.light` to control dimmer lights (switch lights will be supported later):
-  - `habapp_rules.actors.light.Light` for basic light functionality like switch-on brightness or leaving / sleeping light
-  - `habapp_rules.actors.light.LightExtended` includes everything from `habapp_rules.actors.light.Light` plus switch on depending on motion or opening of a door
+    - `habapp_rules.actors.light.Light` for basic light functionality like switch-on brightness or leaving / sleeping light
+    - `habapp_rules.actors.light.LightExtended` includes everything from `habapp_rules.actors.light.Light` plus switch on depending on motion or opening of a door
 - Added `habapp_rules.sensors.motion` to filter motion sensors
 - Added `habapp_rules.common.hysteresis` as a helper for value depended switch with hysteresis
 - Added `habapp_rules.core.timeout_list`
