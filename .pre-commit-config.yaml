@@ -42,3 +42,14 @@ repos:
     rev: 0.7.18
     hooks:
       - id: mdformat
+
+  - repo: local
+    hooks:
+      - id: version-check
+        name: Check versions
+        entry: python version_check.py
+        language: python
+        pass_filenames: false
+        additional_dependencies:
+          - requests
+          - pytz
