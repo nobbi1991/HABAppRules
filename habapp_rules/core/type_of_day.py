@@ -1,26 +1,35 @@
 """Get type of day."""
+
 import datetime
 
 import holidays
+
+from habapp_rules import TIMEZONE
 
 _BY_HOLIDAYS = holidays.country_holidays("DE", "BY")
 
 
 def is_weekend(offset_days: int = 0) -> bool:
-	"""Check if current (or offset day) is a weekend day
+    """Check if current (or offset day) is a weekend day.
 
-	:param offset_days: 0 means today, 1 tomorrow, -1 yesterday
-	:return: True if desired day is a weekend day
-	"""
-	day_to_check = datetime.datetime.today() + datetime.timedelta(days=offset_days)
-	return day_to_check.isoweekday() in {6, 7}
+    Args:
+        offset_days: 0 means today, 1 tomorrow, -1 yesterday
+
+    Returns:
+        True if desired day is a weekend day
+    """
+    day_to_check = datetime.datetime.now(tz=TIMEZONE) + datetime.timedelta(days=offset_days)
+    return day_to_check.isoweekday() in {6, 7}
 
 
 def is_holiday(offset_days: int = 0) -> bool:
-	"""Check if current (or offset day) is holiday
+    """Check if current (or offset day) is holiday.
 
-	:param offset_days: 0 means today, 1 tomorrow, -1 yesterday
-	:return: True if desired day is holiday
-	"""
-	day_to_check = datetime.datetime.today() + datetime.timedelta(days=offset_days)
-	return day_to_check in _BY_HOLIDAYS
+    Args:
+        offset_days: 0 means today, 1 tomorrow, -1 yesterday
+
+    Returns:
+        True if desired day is holiday
+    """
+    day_to_check = datetime.datetime.now(tz=TIMEZONE) + datetime.timedelta(days=offset_days)
+    return day_to_check in _BY_HOLIDAYS

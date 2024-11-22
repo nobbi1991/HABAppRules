@@ -1,105 +1,135 @@
-"""Test for timeout_list"""
+"""Test for timeout_list."""
+
 import dataclasses
 import time
-import typing
 
 
 @dataclasses.dataclass
 class ValueWithTimeout:
-	"""Define item for TimeoutList"""
-	value: typing.Any
-	timeout: float
-	add_timestamp: float
+    """Define item for TimeoutList."""
+
+    value: object
+    timeout: float
+    add_timestamp: float
 
 
 class TimeoutList:
-	"""List like class, where every item has a timeout, which will remove it from the list."""
+    """List like class, where every item has a timeout, which will remove it from the list."""
 
-	def __init__(self) -> None:
-		"""Init class"""
-		self.__items: list[ValueWithTimeout] = []
+    def __init__(self) -> None:
+        """Init class."""
+        self.__items: list[ValueWithTimeout] = []
 
-	def __repr__(self) -> str:
-		"""Get representation of all list items (without timeout)
+    def __repr__(self) -> str:
+        """Get representation of all list items (without timeout).
 
-		:return: all list elements which are currently in the list
-		"""
-		self.__remove_old_items()
-		return str([itm.value for itm in self.__items])
+        Returns:
+            all list elements which are currently in the list
+        """
+        self.__remove_old_items()
+        return str([itm.value for itm in self.__items])
 
-	def __bool__(self) -> bool:
-		"""Check if list has items
+    def __bool__(self) -> bool:
+        """Check if list has items.
 
-		:return: true if items in list
-		"""
-		self.__remove_old_items()
-		return bool(self.__items)
+        Returns:
+            true if items in list
+        """
+        self.__remove_old_items()
+        return bool(self.__items)
 
-	def __contains__(self, item: typing.Any) -> bool:
-		"""Check if an item is in the list
+    def __contains__(self, item: object) -> bool:
+        """Check if an item is in the list.
 
-		:param item: item which should be checked
-		:return: true if item is in the list
-		"""
-		self.__remove_old_items()
-		return item in [itm.value for itm in self.__items]
+        Args:
+            item: item which should be checked
 
-	def __getitem__(self, index: int) -> typing.Any:
-		"""Get item from list by index
+        Returns:
+            true if item is in the list
+        """
+        self.__remove_old_items()
+        return item in [itm.value for itm in self.__items]
 
-		:param index: index of item position in list.
-		:return: item from list
-		"""
-		self.__remove_old_items()
-		return self.__items[index].value
+    def __getitem__(self, index: int) -> object:
+        """Get item from list by index.
 
-	def __eq__(self, other: typing.Any) -> bool:
-		"""Check if equal.
+        Args:
+            index: index of item position in list.
 
-		:param other: other item
-		:return: true if equal
-		"""
-		if isinstance(other, TimeoutList):
-			return repr(self) == repr(other)
+        Returns:
+            item from list
+        """
+        self.__remove_old_items()
+        return self.__items[index].value
 
-		if isinstance(other, list):
-			self.__remove_old_items()
-			return [itm.value for itm in self.__items] == other
+    def __eq__(self, other: object) -> bool:
+        """Check if equal.
 
-		return False
+        Args:
+            other: other item
 
-	def __remove_old_items(self) -> None:
-		"""Remove items from list, which are timed-out."""
-		current_time = time.time()
-		self.__items = [itm for itm in self.__items if current_time - itm.add_timestamp < itm.timeout]
+        Returns:
+            true if equal
+        """
+        if isinstance(other, TimeoutList):
+            return repr(self) == repr(other)
 
-	def append(self, item: typing.Any, timeout: float) -> None:
-		"""Add item to list
+        if isinstance(other, list):
+            self.__remove_old_items()
+            return [itm.value for itm in self.__items] == other
 
-		:param item: item which should be added to the list
-		:param timeout: timeout, after which the item is not valid anymore
-		"""
-		self.__items.append(ValueWithTimeout(item, timeout, time.time()))
+        return False
 
-	def remove(self, item: typing.Any) -> None:
-		"""Remove item from list. If there are duplicates. The first element will be removed.
+    def __hash__(self) -> int:
+        """Get hash of the TimeoutList object.
 
-		:param item: item which should be deleted
-		:raises ValueError: if item not in list
-		"""
-		item_to_remove = next((itm for itm in self.__items if itm.value == item), None)
+        Returns:
+            hash value
+        """
+        return hash(tuple(itm.value for itm in self.__items))
 
-		if not item_to_remove:
-			raise ValueError(f"{self.__class__.__name__}.remove(x): x not in list")
+    def __remove_old_items(self) -> None:
+        """Remove items from list, which are timed-out."""
+        current_time = time.time()
+        self.__items = [itm for itm in self.__items if current_time - itm.add_timestamp < itm.timeout]
 
-		self.__items.remove(item_to_remove)
+    def append(self, item: object, timeout: float) -> None:
+        """Add item to list.
 
-	def pop(self, element_index: int) -> typing.Any:
-		"""Pop item from list
+        Args:
+            item: item which should be added to the list
+            timeout: timeout, after which the item is not valid anymore
+        """
+        self.__items.append(ValueWithTimeout(item, timeout, time.time()))
 
-		:param element_index: list index of element which should be deleted
-		:return: item which was removed
-		:raises IndexError: if index is out of range
-		:raises TypeError: if index can not be interpreted as integer
-		"""
-		return self.__items.pop(element_index).value
+    def remove(self, item: object) -> None:
+        """Remove item from list. If there are duplicates. The first element will be removed.
+
+        Args:
+            item: item which should be deleted
+
+        Raises:
+            ValueError: if item not in list
+        """
+        item_to_remove = next((itm for itm in self.__items if itm.value == item), None)
+
+        if not item_to_remove:
+            msg = f"{self.__class__.__name__}.remove(x): x not in list"
+            raise ValueError(msg)
+
+        self.__items.remove(item_to_remove)
+
+    def pop(self, element_index: int) -> object:
+        """Pop item from list.
+
+        Args:
+            element_index: list index of element which should be deleted
+
+        Returns:
+            item which was removed
+
+        Raises:
+            IndexError: if index is out of range
+            TypeError: if index can not be interpreted as integer
+        """
+        return self.__items.pop(element_index).value
