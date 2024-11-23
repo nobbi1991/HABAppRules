@@ -1,3 +1,9 @@
+# Version 7.0.1 - dd.11.2024
+
+# Bugfix
+
+- added additional wait time to `habapp_rules.actors.energy_save_switch.EnergySaveSwitch` when switch is in wait for current state and current falls below threshold.
+
 # Version 7.0.0 - 22.11.2024
 
 ## Breaking changes
