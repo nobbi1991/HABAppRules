@@ -19,6 +19,7 @@ LOGGER = logging.getLogger(__name__)
 
 class BathroomLight(habapp_rules.core.state_machine_rule.StateMachineRule):
     """Bathroom light rule."""
+
     states: typing.ClassVar = [
         {"name": "Manual"},
         {
