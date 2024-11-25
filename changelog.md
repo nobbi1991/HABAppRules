@@ -1,3 +1,9 @@
+# Version 7.0.1 - 25.11.2024
+
+# Bugfix
+
+- bumped HABApp to 24.11.1 to fix startup bug with python 3.13
+
 # Version 7.0.0 - 22.11.2024
 
 ## Breaking changes
