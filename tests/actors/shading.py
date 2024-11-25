@@ -169,7 +169,7 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
         jal_graph.get_graph().draw(picture_dir / "Shading.png", format="png", prog="dot")
 
-        for state_name in [state for state in self._get_state_names(self.shading_min.states) if state != "auto_init"]:
+        for state_name in [state for state in self._get_state_names(self.shading_min.states) if "init" not in state.lower()]:
             jal_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self.shading_min.states, transitions=self.shading_min.trans, initial=state_name, show_conditions=True)
             jal_graph.get_graph(force_new=True, show_roi=True).draw(picture_dir / f"Shading_{state_name}.png", format="png", prog="dot")
 

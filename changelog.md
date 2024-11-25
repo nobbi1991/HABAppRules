@@ -1,4 +1,8 @@
-# Version 7.0.1 - dd.11.2024
+# Version 7.1.0 - dd.11.2024
+
+# Features
+
+- added rule `habapp_rules.actors.light_bathroom.BathroomLight` to control bathroom light
 
 # Bugfix
 

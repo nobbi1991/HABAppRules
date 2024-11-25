@@ -81,7 +81,6 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
 
         # init state machine
         self._previous_state = None
-        self._restore_state = None
         self.state_machine = habapp_rules.core.state_machine_rule.HierarchicalStateMachineWithTimeout(model=self, states=self.states, transitions=self.trans, ignore_invalid_triggers=True, after_state_change="_update_openhab_state")
 
         self._max_on_countdown = self.run.countdown(self._config.parameter.max_on_time, self._cb_max_on_countdown) if self._config.parameter.max_on_time is not None else None
