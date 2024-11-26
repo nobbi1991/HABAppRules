@@ -3,6 +3,7 @@
 # Features
 
 - added rule `habapp_rules.actors.light_bathroom.BathroomLight` to control bathroom light
+- added the python version to `habapp_rules.core.version.SetVersions`
 
 # Bugfix
 
