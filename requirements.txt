@@ -1,4 +1,4 @@
-HABApp==24.11.0
+HABApp==24.11.1
 matplotlib~=3.9.2
 multi-notifier~=0.5.0
 transitions==0.9.1 # 0.9.2 creates strange graphs
