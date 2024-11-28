@@ -156,7 +156,8 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
 
         test_cases = [
             TestCase(state="Manual", main_initial=100, main_call=None, mirror=None, hcl=None, color=None),
-            TestCase(state="Auto_Off", main_initial=100, main_call=None, mirror="OFF", hcl=None, color=None),
+            TestCase(state="Auto_Off", main_initial=100, main_call=0, mirror="OFF", hcl=None, color=None),
+            TestCase(state="Auto_Off", main_initial=0, main_call=None, mirror="OFF", hcl=None, color=None),
             TestCase(state="Auto_On_MainDay", main_initial=100, main_call=None, mirror=None, hcl="ON", color=None),
             TestCase(state="Auto_On_MainNight", main_initial=100, main_call=40, mirror=None, hcl=None, color=2600),
             TestCase(state="Auto_On_MainAndMirror", main_initial=100, main_call=100, mirror=None, hcl=None, color=4000),
@@ -182,7 +183,7 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
                     if test_case.color is not None:
                         send_if_different_mock.assert_any_call(self._config.items.light_main_color, test_case.color)
 
-                    if test_case.main_call:
+                    if test_case.main_call is not None:
                         main_observer_mock.send_command.assert_called_once_with(test_case.main_call)
                     else:
                         main_observer_mock.send_command.assert_not_called()

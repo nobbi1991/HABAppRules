@@ -144,7 +144,8 @@ class _StateObserverBase(HABApp.Rule, abc.ABC):
         """
         self._last_manual_event = event
         callback: CallbackType = getattr(self, cb_name)
-        callback(event)
+        if callback is not None:
+            callback(event)
 
     def _values_different_with_tolerance(self, value_1: float, value_2: float) -> bool:
         """Check if values are different, including the difference.
