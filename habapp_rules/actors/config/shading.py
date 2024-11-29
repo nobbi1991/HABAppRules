@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import copy
 
-import HABApp.openhab.items  # noqa: TCH002
+import HABApp.openhab.items  # noqa: TC002
 import pydantic
 import typing_extensions
 
