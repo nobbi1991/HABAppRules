@@ -1,7 +1,6 @@
 name: Update pre-commit hooks
 
 on:
-  workflow_dispatch:
   schedule:
     - cron: '0 0 * * 0' # Runs every Sunday at midnight UTC
   push:
@@ -13,9 +12,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout the repository
+      # Checkout repository
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       # Install pre-commit
       - name: Install pre-commit
@@ -27,8 +26,14 @@ jobs:
         # Run pre-commit autoupdate to update the hook versions
         run: pre-commit autoupdate
 
-      # Create a new branch and push changes (if the branch does not exist)
+      # Set git user identity to avoid "empty ident name" error
+      - name: Set Git user identity
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+
       - name: Create branch and push updates
+        # Create a new branch and push updates (if the branch does not exist)
         run: |
           # Check if the branch exists, if not, create it
           git fetch origin
