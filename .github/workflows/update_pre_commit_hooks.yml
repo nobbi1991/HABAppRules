@@ -3,10 +3,10 @@ name: Update pre-commit hooks
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 0 * * 0'  # Runs every Sunday at midnight UTC
+    - cron: '0 0 * * 0' # Runs every Sunday at midnight UTC
   push:
     branches:
-      - main  # Runs when changes are pushed to the main branch
+      - main # Runs when changes are pushed to the main branch
 
 jobs:
   update-pre-commit-hooks:
@@ -23,8 +23,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install pre-commit
 
-      # Run pre-commit autoupdate to update the hook versions
       - name: Run pre-commit autoupdate
+        # Run pre-commit autoupdate to update the hook versions
         run: pre-commit autoupdate
 
       # Create a new branch and push changes (if the branch does not exist)
@@ -33,7 +33,7 @@ jobs:
           # Check if the branch exists, if not, create it
           git fetch origin
           BRANCH_NAME="pre-commit-updates"
-          
+
           if git rev-parse --verify origin/$BRANCH_NAME; then
             echo "Branch $BRANCH_NAME exists, switching to it."
             git checkout $BRANCH_NAME
