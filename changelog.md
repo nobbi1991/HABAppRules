@@ -1,3 +1,15 @@
+# Version 7.1.0 - dd.11.2024
+
+# Features
+
+- added rule `habapp_rules.actors.light_bathroom.BathroomLight` to control bathroom light
+- added the python version to `habapp_rules.core.version.SetVersions`
+- improved `habapp_rules.core.timeout_list`
+
+# Bugfix
+
+- added additional wait time to `habapp_rules.actors.energy_save_switch.EnergySaveSwitch` when switch is in wait for current state and current falls below threshold.
+
 # Version 7.0.1 - 25.11.2024
 
 # Bugfix

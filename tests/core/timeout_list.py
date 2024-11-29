@@ -6,6 +6,28 @@ import unittest.mock
 import habapp_rules.core.timeout_list
 
 
+class TestValueWithTimeout(unittest.TestCase):
+    """Tests for ValueWithTimeout."""
+
+    def test_less_than(self) -> None:
+        """Test less than of ValueWithTimeout."""
+        self.assertTrue(habapp_rules.core.timeout_list.ValueWithTimeout(42, 10, 10) < habapp_rules.core.timeout_list.ValueWithTimeout(80, 10, 10))
+        self.assertFalse(habapp_rules.core.timeout_list.ValueWithTimeout(80, 10, 10) < habapp_rules.core.timeout_list.ValueWithTimeout(42, 10, 10))
+        self.assertFalse(habapp_rules.core.timeout_list.ValueWithTimeout(42, 10, 10) < habapp_rules.core.timeout_list.ValueWithTimeout(42, 10, 10))
+        with self.assertRaises(TypeError):
+            self.assertEqual(NotImplemented, habapp_rules.core.timeout_list.ValueWithTimeout(42, 10, 10) < 42)
+
+    def test_equal(self) -> None:
+        """Test equal of ValueWithTimeout."""
+        self.assertTrue(habapp_rules.core.timeout_list.ValueWithTimeout(42, 10, 10) == habapp_rules.core.timeout_list.ValueWithTimeout(42, 10, 10))
+        self.assertFalse(habapp_rules.core.timeout_list.ValueWithTimeout(42, 10, 10) == habapp_rules.core.timeout_list.ValueWithTimeout(80, 10, 10))
+        self.assertFalse(habapp_rules.core.timeout_list.ValueWithTimeout(42, 10, 10) == 42)
+
+    def test_hash(self) -> None:
+        """Test hash of ValueWithTimeout."""
+        self.assertEqual(hash(habapp_rules.core.timeout_list.ValueWithTimeout(42, 10, 10)), hash(habapp_rules.core.timeout_list.ValueWithTimeout(42, 10, 10)))
+
+
 class TestTimeoutList(unittest.TestCase):
     """Tests for TimeoutList."""
 
@@ -98,6 +120,16 @@ class TestTimeoutList(unittest.TestCase):
         self.assertTrue(self.timeout_list != [])
         self.assertTrue(self.timeout_list != [80])
         self.assertFalse(self.timeout_list != [42])
+
+    def test_iter(self) -> None:
+        """Test iter of TimeoutList."""
+        self.assertEqual([], list(iter(self.timeout_list)))
+
+        self.timeout_list.append(42, 10)
+        self.assertEqual([42], list(iter(self.timeout_list)))
+
+        self.timeout_list.append("test", 10)
+        self.assertEqual([42, "test"], list(iter(self.timeout_list)))
 
     def test_remove(self) -> None:
         """Test remove of TimeoutList."""

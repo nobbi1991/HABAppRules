@@ -58,7 +58,7 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
             items=habapp_rules.actors.config.energy_save_switch.EnergySaveSwitchItems(
                 switch="Unittest_Current_Switch", state="Unittest_Current_State", manual="Unittest_Current_Manual", current="Unittest_Current", presence_state="Unittest_Presence_state", sleeping_state="Unittest_Sleep_state"
             ),
-            parameter=habapp_rules.actors.config.energy_save_switch.EnergySaveSwitchParameter(current_threshold=0.1),
+            parameter=habapp_rules.actors.config.energy_save_switch.EnergySaveSwitchParameter(current_threshold=0.1, extended_wait_for_current_time=142),
         )
 
         self._rule_min = habapp_rules.actors.energy_save_switch.EnergySaveSwitch(self._config_min)
@@ -76,7 +76,7 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
 
         graph.get_graph().draw(picture_dir / "EnergySaveSwitch.png", format="png", prog="dot")
 
-        for state_name in [state for state in self._get_state_names(self._rule_min.states) if state != "Auto_Init"]:
+        for state_name in [state for state in self._get_state_names(self._rule_min.states) if "init" not in state.lower()]:
             graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self._rule_min.states, transitions=self._rule_min.trans, initial=state_name, show_conditions=True)
             graph.get_graph(force_new=True, show_roi=True).draw(picture_dir / f"EnergySaveSwitch_{state_name}.png", format="png", prog="dot")
 
@@ -85,6 +85,10 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
         self.assertEqual(self._rule_min.state_machine.states["Hand"].timeout, 0)
         self.assertEqual(self._rule_max_without_current.state_machine.states["Hand"].timeout, 1800)
         self.assertEqual(self._rule_with_current.state_machine.states["Hand"].timeout, 0)
+
+        self.assertEqual(self._rule_min.state_machine.states["Auto"].states["WaitCurrentExtended"].timeout, 60)
+        self.assertEqual(self._rule_max_without_current.state_machine.states["Auto"].states["WaitCurrentExtended"].timeout, 60)
+        self.assertEqual(self._rule_with_current.state_machine.states["Auto"].states["WaitCurrentExtended"].timeout, 142)
 
     def test_get_initial_state(self) -> None:
         """Test get initial state."""
@@ -243,8 +247,8 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
         # current below threshold
         self._rule_with_current.to_Auto_WaitCurrent()
         self._rule_with_current.current_below_threshold()
-        tests.helper.oh_item.assert_value("Unittest_Current_State", "Auto_Off")
-        tests.helper.oh_item.assert_value("Unittest_Current_Switch", "OFF")
+        tests.helper.oh_item.assert_value("Unittest_Current_State", "Auto_WaitCurrentExtended")
+        tests.helper.oh_item.assert_value("Unittest_Current_Switch", "ON")
 
         # max_on_countdown
         self._rule_with_current.to_Auto_WaitCurrent()
@@ -295,6 +299,23 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
         tests.helper.oh_item.item_state_change_event("Unittest_Current_Manual", "OFF")
         tests.helper.oh_item.assert_value("Unittest_Current_State", "Auto_On")
 
+    def test_wait_current_extended_transitions(self) -> None:
+        """Test WaitCurrentExtended transitions."""
+        # on conditions met
+        self._rule_with_current.to_Auto_WaitCurrentExtended()
+        self._rule_with_current.on_conditions_met()
+        tests.helper.oh_item.assert_value("Unittest_Current_State", "Auto_On")
+
+        # current above threshold
+        self._rule_with_current.to_Auto_WaitCurrentExtended()
+        tests.helper.oh_item.send_command("Unittest_Current", 2)
+        tests.helper.oh_item.assert_value("Unittest_Current_State", "Auto_WaitCurrent")
+
+        # extended timeout
+        self._rule_with_current.to_Auto_WaitCurrentExtended()
+        tests.helper.timer.call_timeout(self.transitions_timer_mock)
+        tests.helper.oh_item.assert_value("Unittest_Current_State", "Auto_Off")
+
     def test_current_switch_off(self) -> None:
         """Test current switch off."""
         tests.helper.oh_item.set_state("Unittest_Current_Switch", "ON")
@@ -304,5 +325,5 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
         tests.helper.oh_item.assert_value("Unittest_Current_Switch", "ON")
 
         tests.helper.oh_item.item_state_change_event("Unittest_Current", 0.09)
-        tests.helper.oh_item.assert_value("Unittest_Current_State", "Auto_Off")
-        tests.helper.oh_item.assert_value("Unittest_Current_Switch", "OFF")
+        tests.helper.oh_item.assert_value("Unittest_Current_State", "Auto_WaitCurrentExtended")
+        tests.helper.oh_item.assert_value("Unittest_Current_Switch", "ON")

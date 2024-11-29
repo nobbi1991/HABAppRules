@@ -44,19 +44,26 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
                 {"name": "On"},
                 {"name": "Off"},
                 {"name": "WaitCurrent"},
+                {"name": "WaitCurrentExtended", "timeout": 0, "on_timeout": ["extended_wait_timeout"]},
             ],
         },
     ]
 
     trans: typing.ClassVar = [
+        # manual
         {"trigger": "manual_on", "source": ["Auto", "Hand"], "dest": "Manual"},
         {"trigger": "manual_off", "source": "Manual", "dest": "Auto"},
+        # hand
         {"trigger": "hand_detected", "source": "Auto", "dest": "Hand"},
         {"trigger": "_auto_hand_timeout", "source": "Hand", "dest": "Auto"},
-        {"trigger": "on_conditions_met", "source": ["Auto_Off", "Auto_WaitCurrent"], "dest": "Auto_On"},
+        # sleeping presence conditions
+        {"trigger": "on_conditions_met", "source": ["Auto_Off", "Auto_WaitCurrent", "Auto_WaitCurrentExtended"], "dest": "Auto_On"},
         {"trigger": "off_conditions_met", "source": "Auto_On", "dest": "Auto_Off", "unless": "_current_above_threshold"},
         {"trigger": "off_conditions_met", "source": "Auto_On", "dest": "Auto_WaitCurrent", "conditions": "_current_above_threshold"},
-        {"trigger": "current_below_threshold", "source": "Auto_WaitCurrent", "dest": "Auto_Off"},
+        # switch off
+        {"trigger": "current_below_threshold", "source": "Auto_WaitCurrent", "dest": "Auto_WaitCurrentExtended"},
+        {"trigger": "current_above_threshold", "source": "Auto_WaitCurrentExtended", "dest": "Auto_WaitCurrent"},
+        {"trigger": "extended_wait_timeout", "source": "Auto_WaitCurrentExtended", "dest": "Auto_Off"},
         {"trigger": "max_on_countdown", "source": ["Auto_On", "Auto_WaitCurrent", "Hand"], "dest": "Auto_Off"},
     ]
 
@@ -74,7 +81,6 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
 
         # init state machine
         self._previous_state = None
-        self._restore_state = None
         self.state_machine = habapp_rules.core.state_machine_rule.HierarchicalStateMachineWithTimeout(model=self, states=self.states, transitions=self.trans, ignore_invalid_triggers=True, after_state_change="_update_openhab_state")
 
         self._max_on_countdown = self.run.countdown(self._config.parameter.max_on_time, self._cb_max_on_countdown) if self._config.parameter.max_on_time is not None else None
@@ -100,6 +106,7 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
     def _set_timeouts(self) -> None:
         """Set timeouts."""
         self.state_machine.states["Hand"].timeout = self._config.parameter.hand_timeout or 0
+        self.state_machine.states["Auto"].states["WaitCurrentExtended"].timeout = self._config.parameter.extended_wait_for_current_time
 
     def _get_initial_state(self, default_value: str = "") -> str:  # noqa: ARG002
         """Get initial state of state machine.
@@ -228,3 +235,6 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
         """Callback which is triggered if the current value changed."""
         if self.state == "Auto_WaitCurrent" and not self._current_above_threshold():
             self.current_below_threshold()
+
+        if self.state == "Auto_WaitCurrentExtended" and self._current_above_threshold():
+            self.current_above_threshold()

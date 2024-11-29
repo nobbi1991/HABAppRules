@@ -2,6 +2,8 @@
 
 import dataclasses
 import time
+from collections.abc import Iterator
+from typing import Any
 
 
 @dataclasses.dataclass
@@ -11,6 +13,40 @@ class ValueWithTimeout:
     value: object
     timeout: float
     add_timestamp: float
+
+    def __lt__(self, other: "ValueWithTimeout") -> bool:
+        """Compare two ValueWithTimeout objects.
+
+        Args:
+            other: other object for comparison
+
+        Returns:
+            True if self.value is less than other.value
+        """
+        if not isinstance(other, ValueWithTimeout):
+            return NotImplemented
+        return self.value < other.value
+
+    def __eq__(self, other: object) -> bool:
+        """Check if equal.
+
+        Args:
+            other: other item
+
+        Returns:
+            True if equal
+        """
+        if not isinstance(other, ValueWithTimeout):
+            return NotImplemented
+        return self.value == other.value
+
+    def __hash__(self) -> int:
+        """Get hash of the ValueWithTimeout object.
+
+        Returns:
+            hash value
+        """
+        return hash((self.value, self.timeout, self.add_timestamp))
 
 
 class TimeoutList:
@@ -87,6 +123,17 @@ class TimeoutList:
             hash value
         """
         return hash(tuple(itm.value for itm in self.__items))
+
+    def __iter__(self) -> Iterator[Any]:
+        """Get an iterator for the items in the list.
+
+        The iterator yields the values of the items in the list.
+
+        Returns:
+            iterator for the items in the list
+        """
+        self.__remove_old_items()
+        return (itm.value for itm in self.__items)
 
     def __remove_old_items(self) -> None:
         """Remove items from list, which are timed-out."""
