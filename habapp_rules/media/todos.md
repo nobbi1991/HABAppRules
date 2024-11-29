@@ -6,11 +6,11 @@
 - starting
 - standby
 - playing
-    - Radio
-    - TV
-    - Music
-    - ....
-    - Sleep-music?
+  - Radio
+  - TV
+  - Music
+  - ....
+  - Sleep-music?
 - stopping
 
 ## things
