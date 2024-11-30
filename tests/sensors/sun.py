@@ -10,6 +10,7 @@ import habapp_rules.sensors.sun
 import tests.helper.graph_machines
 import tests.helper.oh_item
 import tests.helper.test_case_base
+from habapp_rules.system import PresenceState
 
 
 class TestSensorTemperatureDifference(tests.helper.test_case_base.TestCaseBase):
@@ -259,3 +260,64 @@ class TestSunPositionFilter(tests.helper.test_case_base.TestCaseBase):
                 else:
                     log_1_mock.warning.assert_not_called()
                     log_2_mock.warning.assert_not_called()
+
+
+class TestWinterFilter(tests.helper.test_case_base.TestCaseBase):
+    """Tests cases WinterFilter rule."""
+
+    def setUp(self) -> None:
+        """Setup test case."""
+        tests.helper.test_case_base.TestCaseBase.setUp(self)
+
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Sun", None)
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Winter", None)
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Presence_state", None)
+
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Output_1", None)
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Output_2", None)
+
+        config_full = habapp_rules.sensors.config.sun.WinterFilterConfig(
+            items=habapp_rules.sensors.config.sun.WinterFilterItems(
+                sun="Unittest_Sun",
+                heating_active="Unittest_Winter",
+                presence_state="Unittest_Presence_state",
+                output="Unittest_Output_1",
+            )
+        )
+
+        config_only_heating = habapp_rules.sensors.config.sun.WinterFilterConfig(
+            items=habapp_rules.sensors.config.sun.WinterFilterItems(
+                sun="Unittest_Sun",
+                heating_active="Unittest_Winter",
+                output="Unittest_Output_2",
+            )
+        )
+
+        self._rule_full = habapp_rules.sensors.sun.WinterFilter(config_full)
+        self._rule_winter = habapp_rules.sensors.sun.WinterFilter(config_only_heating)
+
+    def test_filter(self) -> None:
+        """Test WinterFilter rule."""
+        TestCase = collections.namedtuple("TestCase", "sun, heating_active, presence_state, out_full, out_winter")
+
+        test_cases = [
+            # sun off
+            TestCase(sun="OFF", heating_active="OFF", presence_state=PresenceState.PRESENCE, out_full="OFF", out_winter="OFF"),
+            TestCase(sun="OFF", heating_active="OFF", presence_state=PresenceState.ABSENCE, out_full="OFF", out_winter="OFF"),
+            TestCase(sun="OFF", heating_active="ON", presence_state=PresenceState.PRESENCE, out_full="OFF", out_winter="OFF"),
+            TestCase(sun="OFF", heating_active="ON", presence_state=PresenceState.ABSENCE, out_full="OFF", out_winter="OFF"),
+            # sun on
+            TestCase(sun="ON", heating_active="OFF", presence_state=PresenceState.PRESENCE, out_full="ON", out_winter="ON"),
+            TestCase(sun="ON", heating_active="OFF", presence_state=PresenceState.ABSENCE, out_full="ON", out_winter="ON"),
+            TestCase(sun="ON", heating_active="ON", presence_state=PresenceState.PRESENCE, out_full="ON", out_winter="OFF"),
+            TestCase(sun="ON", heating_active="ON", presence_state=PresenceState.ABSENCE, out_full="OFF", out_winter="OFF"),
+        ]
+
+        for test_case in test_cases:
+            with self.subTest(test_case=test_case):
+                tests.helper.oh_item.item_state_change_event("Unittest_Sun", test_case.sun)
+                tests.helper.oh_item.item_state_change_event("Unittest_Winter", test_case.heating_active)
+                tests.helper.oh_item.item_state_change_event("Unittest_Presence_state", test_case.presence_state.value)
+
+                tests.helper.oh_item.assert_value("Unittest_Output_1", test_case.out_full)
+                tests.helper.oh_item.assert_value("Unittest_Output_2", test_case.out_winter)

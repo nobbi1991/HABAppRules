@@ -4,6 +4,8 @@
 
 - added rule `habapp_rules.actors.light_bathroom.BathroomLight` to control bathroom light
 - added the python version to `habapp_rules.core.version.SetVersions`
+- added `habapp_rules.sensors.sun.WinterFilter` to filter the sun signal depending on heating state. This can be used to avoid sun protection when heating is active
+- added `habapp_rules.actors.heating.HeatingActive` which can be used to set a heating flag if one of the heating actors is active
 - improved `habapp_rules.core.timeout_list`
 
 # Bugfix

@@ -11,6 +11,8 @@ import habapp_rules.core.helper
 import habapp_rules.core.logger
 import habapp_rules.core.state_machine_rule
 import habapp_rules.sensors.config.sun
+from habapp_rules.core.helper import send_if_different
+from habapp_rules.system import PresenceState
 
 LOGGER = logging.getLogger(__name__)
 
@@ -238,3 +240,76 @@ class SunPositionFilter(HABApp.Rule):
 
         if filter_output != self._config.items.output.value:
             self._config.items.output.oh_send_command(filter_output)
+
+
+class WinterFilter(HABApp.Rule):
+    """Rule to filter the sun sensor depending on heating and presence state.
+
+    # Items:
+    Switch      sun             "Sun is shining"
+    Switch      heating_active  "Heating is active"
+    Switch      sun_filtered    "Sun filtered"
+
+    # Config:
+    config = habapp_rules.sensors.config.sun.WinterFilterConfig(
+        items=habapp_rules.sensors.config.sun.WinterFilterItems(
+            sun="sun",
+            heating_active="heating_active",
+            output="sun_filtered",
+        )
+    )
+
+    # Rule init:
+    habapp_rules.sensors.sun.WinterFilter(config)
+    """
+
+    def __init__(self, config: habapp_rules.sensors.config.sun.WinterFilterConfig) -> None:
+        """Init of sun position filter.
+
+        Args:
+            config: config for the sun position filter
+        """
+        HABApp.Rule.__init__(self)
+        self._config = config
+
+        # callbacks
+        config.items.sun.listen_event(self._cb_sun, HABApp.openhab.events.ItemStateChangedEventFilter())
+        if config.items.heating_active is not None:
+            config.items.heating_active.listen_event(self._cb_heating, HABApp.openhab.events.ItemStateChangedEventFilter())
+        if config.items.presence_state is not None:
+            config.items.presence_state.listen_event(self.cb_presence_state, HABApp.openhab.events.ItemStateChangedEventFilter())
+
+    def _check_conditions_and_set_output(self) -> None:
+        """Check conditions and set output.
+
+        The output will be on, if the sun is up, the heating is off and somebody is at home.
+        """
+        heating_on = self._config.items.heating_active.is_on()
+        absence = self._config.items.presence_state.value != PresenceState.PRESENCE.value if self._config.items.presence_state is not None else True
+
+        target_state = self._config.items.sun.is_on() and (not heating_on or not absence)
+        send_if_different(self._config.items.output, "ON" if target_state else "OFF")
+
+    def _cb_sun(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:  # noqa: ARG002
+        """Callback which is triggered if sun state changed.
+
+        Args:
+            event: original trigger event
+        """
+        self._check_conditions_and_set_output()
+
+    def _cb_heating(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:  # noqa: ARG002
+        """Callback which is triggered if heating state changed.
+
+        Args:
+            event: original trigger event
+        """
+        self._check_conditions_and_set_output()
+
+    def cb_presence_state(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:  # noqa: ARG002
+        """Callback which is triggered if presence_state changed.
+
+        Args:
+            event: original trigger event
+        """
+        self._check_conditions_and_set_output()

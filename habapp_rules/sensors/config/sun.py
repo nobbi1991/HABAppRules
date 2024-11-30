@@ -178,3 +178,19 @@ class SunPositionConfig(habapp_rules.core.pydantic_base.ConfigBase):
 
     items: SunPositionItems = pydantic.Field(..., description="items for sun position filter")
     parameter: SunPositionParameter = pydantic.Field(..., description="parameter for sun position filter")
+
+
+class WinterFilterItems(habapp_rules.core.pydantic_base.ItemBase):
+    """Items for WinterFilter."""
+
+    sun: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="sun is shining")
+    output: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="output item")
+    heating_active: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="heating is active")
+    presence_state: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="presence state")
+
+
+class WinterFilterConfig(habapp_rules.core.pydantic_base.ConfigBase):
+    """Config model for WinterFilter."""
+
+    items: WinterFilterItems = pydantic.Field(..., description="items for sun position filter")
+    parameter: None = pydantic.Field(None, description="parameter for sun position filter")
