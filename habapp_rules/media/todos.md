@@ -21,3 +21,6 @@ mainly sonos, but also add possibility for logitech harmony
 
 - startup volume
 - couple with other room(s)
+- feedback to KNX (Switch + Display)
+- control from KNX
+- (control from Logitech Harmony)
