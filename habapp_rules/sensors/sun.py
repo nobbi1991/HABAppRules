@@ -279,6 +279,8 @@ class WinterFilter(HABApp.Rule):
         if config.items.presence_state is not None:
             config.items.presence_state.listen_event(self.cb_presence_state, HABApp.openhab.events.ItemStateChangedEventFilter())
 
+        self._check_conditions_and_set_output()
+
     def _check_conditions_and_set_output(self) -> None:
         """Check conditions and set output.
 
