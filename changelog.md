@@ -1,4 +1,4 @@
-# Version 7.1.0 - dd.11.2024
+# Version 7.1.0 - 01.12.2024
 
 # Features
 
