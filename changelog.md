@@ -1,3 +1,7 @@
+# Version 7.1.1 - dd.12.2024
+
+# Bugfix
+
 # Version 7.1.0 - 01.12.2024
 
 # Features
