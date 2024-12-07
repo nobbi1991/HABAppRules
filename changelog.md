@@ -1,4 +1,4 @@
-# Version 7.0.1 - dd.12.2024
+# Version 7.1.1 - dd.12.2024
 
 # Bugfix
 
