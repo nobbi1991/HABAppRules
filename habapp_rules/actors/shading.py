@@ -1,6 +1,7 @@
 """Rules to manage shading objects."""
 
 import abc
+import datetime
 import logging
 import time
 import typing
@@ -13,6 +14,7 @@ import habapp_rules.core.exceptions
 import habapp_rules.core.logger
 import habapp_rules.core.state_machine_rule
 import habapp_rules.system
+from habapp_rules import TIMEZONE
 
 LOGGER = logging.getLogger(__name__)
 
@@ -685,3 +687,50 @@ class SlatValueSun(HABApp.Rule):
         """
         self._slat_characteristic_active = self._config.parameter.elevation_slat_characteristic_summer if event.value == "ON" else self._config.parameter.elevation_slat_characteristic
         self.__send_slat_value()
+
+
+class ReferenceRun(HABApp.Rule):
+    """Rule to trigger a reference run for blinds every month.
+
+    # Items:
+    Switch      trigger_run         "trigger reference run"
+    DateTime    last_run            "last run"
+    String      presence_state      "Presence state"
+
+    # Config
+    config = habapp_rules.actors.config.shading.ReferenceRunConfig(
+            items=habapp_rules.actors.config.shading.ReferenceRunItems(
+                trigger_run="trigger_run",
+                presence_state="presence_state",
+                last_run="last_run",
+            )
+    )
+
+    # Rule init:
+    habapp_rules.actors.shading.ReferenceRun(config)
+    """
+
+    def __init__(self, config: habapp_rules.actors.config.shading.ReferenceRunConfig) -> None:
+        """Init ReferenceRun.
+
+        Args:
+            config: configuration of reference run rule
+        """
+        self._config = config
+        HABApp.Rule.__init__(self)
+
+        self._config.items.presence_state.listen_event(self._cb_presence_state, HABApp.openhab.events.ItemStateChangedEventFilter())
+
+    def _cb_presence_state(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+        """Callback which is called if presence state changed.
+
+        Args:
+            event: presence state event
+        """
+        if event.value == habapp_rules.system.PresenceState.ABSENCE.value:
+            last_run = self._config.items.last_run.value or datetime.datetime.min  # noqa: DTZ901
+            current_time = datetime.datetime.now(TIMEZONE)
+
+            if last_run.year < current_time.year or last_run.month < current_time.month:
+                self._config.items.trigger_run.oh_send_command("ON")
+                self._config.items.last_run.oh_send_command(current_time)

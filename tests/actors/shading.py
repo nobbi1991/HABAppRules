@@ -2,6 +2,7 @@
 
 import collections
 import copy
+import datetime
 import pathlib
 import sys
 import time
@@ -23,6 +24,7 @@ import tests.helper.graph_machines
 import tests.helper.oh_item
 import tests.helper.test_case_base
 import tests.helper.timer
+from habapp_rules.system import PresenceState
 
 
 class TestShadingBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
@@ -1132,3 +1134,52 @@ class TestSlatValueSun(tests.helper.test_case_base.TestCaseBase):
         tests.helper.oh_item.item_state_change_event("Unittest_Summer", "OFF")
         self.assertEqual(self.config_dual.parameter.elevation_slat_characteristic, self.slat_value_sun_dual._slat_characteristic_active)
         tests.helper.oh_item.assert_value("Unittest_SlatValueDual", 50)
+
+
+class TestReferenceRun(tests.helper.test_case_base.TestCaseBase):
+    """Test ReferenceRun rule."""
+
+    def setUp(self) -> None:
+        """Setup test case."""
+        tests.helper.test_case_base.TestCaseBase.setUp(self)
+
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_TriggerRun", None)
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_PresenceState", None)
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DatetimeItem, "Unittest_LastRun", None)
+
+        self.config = habapp_rules.actors.config.shading.ReferenceRunConfig(
+            items=habapp_rules.actors.config.shading.ReferenceRunItems(
+                trigger_run="Unittest_TriggerRun",
+                presence_state="Unittest_PresenceState",
+                last_run="Unittest_LastRun",
+            )
+        )
+
+        self.rule = habapp_rules.actors.shading.ReferenceRun(self.config)
+
+    def test_cb_presence_state(self) -> None:
+        """Test _cb_presence_state."""
+        TestCase = collections.namedtuple("TestCase", "now, last_run, presence_state, run_triggered")
+
+        test_cases = [
+            # trigger expected
+            TestCase(datetime.datetime(2021, 1, 1, 10), datetime.datetime(2020, 12, 1, 10), PresenceState.ABSENCE, True),
+            TestCase(datetime.datetime(2021, 2, 1, 10), datetime.datetime(2021, 1, 1, 10), PresenceState.ABSENCE, True),
+            # no trigger -> wrong state
+            TestCase(datetime.datetime(2021, 2, 1, 10), datetime.datetime(2021, 1, 1, 10), PresenceState.PRESENCE, False),
+            TestCase(datetime.datetime(2021, 2, 1, 10), datetime.datetime(2021, 1, 1, 10), PresenceState.LEAVING, False),
+            TestCase(datetime.datetime(2021, 2, 1, 10), datetime.datetime(2021, 1, 1, 10), PresenceState.LONG_ABSENCE, False),
+            # no trigger -> already triggered this month
+            TestCase(datetime.datetime(2021, 2, 1, 10), datetime.datetime(2021, 2, 1, 9), PresenceState.ABSENCE, False),
+        ]
+
+        with unittest.mock.patch("datetime.datetime") as datetime_mock:
+            for test_case in test_cases:
+                with self.subTest(test_case=test_case):
+                    tests.helper.oh_item.set_state("Unittest_LastRun", test_case.last_run)
+                    tests.helper.oh_item.set_state("Unittest_TriggerRun", None)
+                    datetime_mock.now.return_value = test_case.now
+
+                    tests.helper.oh_item.item_state_change_event("Unittest_PresenceState", test_case.presence_state.value)
+
+                    tests.helper.oh_item.assert_value("Unittest_TriggerRun", "ON" if test_case.run_triggered else None)
