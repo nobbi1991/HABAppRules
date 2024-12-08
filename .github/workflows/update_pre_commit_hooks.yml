@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - main # Runs when changes are pushed to the main branch
+  workflow_dispatch:
 
 jobs:
   update-pre-commit-hooks:
@@ -33,13 +34,11 @@ jobs:
           git config --global user.name "GitHub Actions"
 
       - name: Check for changes and push updates
-        # Check for changes and push updates only if there are changes
         run: |
-          # Check if there are any changes to commit
-          git diff --exit-code
-          if [ $? -eq 0 ]; then
+          # Check for any changes in the working directory or staged changes
+          if git diff --quiet && git diff --cached --quiet; then
             echo "No changes detected, skipping commit."
-            exit 0  # No changes, so skip the commit step
+            exit 0
           fi
 
           # If changes are detected, continue with committing and pushing
