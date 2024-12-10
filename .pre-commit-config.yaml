@@ -24,7 +24,7 @@ repos:
       - id: fix-byte-order-marker
       - id: trailing-whitespace
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.1
+    rev: v0.8.2
     hooks:
       - id: ruff
         args: [--fix]
@@ -35,7 +35,7 @@ repos:
       - id: yamlfmt
         args: [-conf, .yamlfmt.yaml]
   - repo: https://github.com/scop/pre-commit-shfmt
-    rev: v3.10.0-1
+    rev: v3.10.0-2
     hooks:
       - id: shfmt
   - repo: https://github.com/executablebooks/mdformat
