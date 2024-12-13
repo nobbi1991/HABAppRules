@@ -65,16 +65,16 @@ class DwdWindAlarm(habapp_rules.core.state_machine_rule.StateMachineRule):
     String      I26_99_wind_alarm_state         "Wind alarm state"
 
     String      I26_99_warning_1_severity       "Severity"              {channel="dwdunwetter:dwdwarnings:ingolstadt:severity1"}
-    String      I26_99_warning_1_description    "Description [%s]"      {channel="dwdunwetter:dwdwarnings:ingolstadt:description1"}
-    DateTime    I26_99_warning_1_start_time     "valid from [%s]"       {channel="dwdunwetter:dwdwarnings:ingolstadt:onset1"}
-    DateTime    I26_99_warning_1_end_time       "valid till [%s]"       {channel="dwdunwetter:dwdwarnings:ingolstadt:expires1"}
-    String      I26_99_warning_1_type           "Type [%s]"             {channel="dwdunwetter:dwdwarnings:ingolstadt:event1"}
+    String      I26_99_warning_1_description    "Description"           {channel="dwdunwetter:dwdwarnings:ingolstadt:description1"}
+    DateTime    I26_99_warning_1_start_time     "valid from"            {channel="dwdunwetter:dwdwarnings:ingolstadt:onset1"}
+    DateTime    I26_99_warning_1_end_time       "valid till"            {channel="dwdunwetter:dwdwarnings:ingolstadt:expires1"}
+    String      I26_99_warning_1_type           "Type"                  {channel="dwdunwetter:dwdwarnings:ingolstadt:event1"}
 
     String      I26_99_warning_2_severity       "Severity"              {channel="dwdunwetter:dwdwarnings:ingolstadt:severity2"}
-    String      I26_99_warning_2_description    "Description [%s]"      {channel="dwdunwetter:dwdwarnings:ingolstadt:description2"}
-    DateTime    I26_99_warning_2_start_time     "valid from [%s]"       {channel="dwdunwetter:dwdwarnings:ingolstadt:onset2"}
-    DateTime    I26_99_warning_2_end_time       "valid till [%s]"       {channel="dwdunwetter:dwdwarnings:ingolstadt:expires2"}
-    String      I26_99_warning_2_type           "Type [%s]"             {channel="dwdunwetter:dwdwarnings:ingolstadt:event2"}
+    String      I26_99_warning_2_description    "Description"           {channel="dwdunwetter:dwdwarnings:ingolstadt:description2"}
+    DateTime    I26_99_warning_2_start_time     "valid from"            {channel="dwdunwetter:dwdwarnings:ingolstadt:onset2"}
+    DateTime    I26_99_warning_2_end_time       "valid till"            {channel="dwdunwetter:dwdwarnings:ingolstadt:expires2"}
+    String      I26_99_warning_2_type           "Type"                  {channel="dwdunwetter:dwdwarnings:ingolstadt:event2"}
 
     # Config
     config = habapp_rules.sensors.config.dwd.WindAlarmConfig(

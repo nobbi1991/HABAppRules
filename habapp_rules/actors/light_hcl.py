@@ -209,7 +209,7 @@ class HclElevation(_HclBase):
     """Sun elevation based HCL.
 
     # Items:
-    Number    Elevation                     "Elevation [%s]"                {channel="astro:sun:home:position#elevation"}
+    Number    Elevation                     "Elevation"                     {channel="astro:sun:home:position#elevation"}
     Number    HCL_Color_Elevation           "HCL Color Elevation"
     Switch    HCL_Color_Elevation_manual    "HCL Color Elevation manual"
 

@@ -171,7 +171,7 @@ class StateObserverSwitch(_StateObserverBase):
     }
 
     # Items:
-    Switch    I01_01_Switch    "Switch [%s]" {channel="knx:device:bridge:T00_99_OpenHab_DimmerSwitch:switch"}
+    Switch    I01_01_Switch    "Switch"      {channel="knx:device:bridge:T00_99_OpenHab_DimmerSwitch:switch"}
 
     # Rule init:
     habapp_rules.actors.state_observer.StateObserverSwitch("I01_01_Switch", callback_on, callback_off)
@@ -249,7 +249,7 @@ class StateObserverDimmer(_StateObserverBase):
     }
 
     # Items:
-    Dimmer    I01_01_Light              "Light [%s]"        {channel="knx:device:bridge:T00_99_OpenHab_DimmerObserver:light"}
+    Dimmer    I01_01_Light              "Light"             {channel="knx:device:bridge:T00_99_OpenHab_DimmerObserver:light"}
     Dimmer    I01_01_Light_ctr          "Light ctr"         {channel="knx:device:bridge:T00_99_OpenHab_DimmerObserver:light_ctr"}
     Dimmer    I01_01_Light_group        "Light Group"       {channel="knx:device:bridge:T00_99_OpenHab_DimmerObserver:light_group"}
 
@@ -356,7 +356,7 @@ class StateObserverRollerShutter(_StateObserverBase):
     }
 
     # Items:
-    Rollershutter    I_Rollershutter              "Rollershutter [%s]"        {channel="knx:device:bridge:T00_99_OpenHab_RollershutterObserver:Rollershutter"}
+    Rollershutter    I_Rollershutter              "Rollershutter"             {channel="knx:device:bridge:T00_99_OpenHab_RollershutterObserver:Rollershutter"}
     Rollershutter    I_Rollershutter_ctr          "Rollershutter ctr"         {channel="knx:device:bridge:T00_99_OpenHab_RollershutterObserver:Rollershutter_ctr"}
     Rollershutter    I_Rollershutter_group        "Rollershutter Group"       {channel="knx:device:bridge:T00_99_OpenHab_RollershutterObserver:Rollershutter_group"}
 
@@ -439,7 +439,7 @@ class StateObserverNumber(_StateObserverBase):
     }
 
     # Items:
-    Number    I01_01_Number    "Switch [%s]" {channel="knx:device:bridge:T00_99_OpenHab_DimmerNumber:number"}
+    Number    I01_01_Number    "Switch"      {channel="knx:device:bridge:T00_99_OpenHab_DimmerNumber:number"}
 
     # Rule init:
     habapp_rules.actors.state_observer.StateObserverNumber("I01_01_Number", callback_value_changed)

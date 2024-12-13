@@ -52,7 +52,7 @@ class SetDay(_SetNightDayBase):
 
     # Items:
     Switch    day                   "Day"
-    Number    elevation             "Sun elevation [%s]"    <sun>     {channel="astro...}
+    Number    elevation             "Sun elevation"    <sun>     {channel="astro...}
 
     # Config:
     config = habapp_rules.sensors.config.astro.SetDayConfig(
@@ -91,7 +91,7 @@ class SetNight(_SetNightDayBase):
 
     # Items:
     Switch    night_for_shading     "Night for shading"
-    Number    elevation             "Sun elevation [%s]"    <sun>     {channel="astro...}
+    Number    elevation             "Sun elevation"    <sun>     {channel="astro...}
 
     # Config:
     config = habapp_rules.sensors.config.astro.SetNightConfig(

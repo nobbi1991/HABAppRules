@@ -391,7 +391,7 @@ class LightSwitch(_LightBase):
     }
 
     # Items:
-    Switch    I01_01_Light              "Light [%s]"        {channel="knx:device:bridge:T00_99_OpenHab_DimmerObserver:light"}
+    Switch    I01_01_Light              "Light"             {channel="knx:device:bridge:T00_99_OpenHab_DimmerObserver:light"}
     Switch    I00_00_Light_manual       "Light manual"
 
     # Config:
@@ -486,7 +486,7 @@ class LightDimmer(_LightBase):
     }
 
     # Items:
-    Dimmer    I01_01_Light              "Light [%s]"        {channel="knx:device:bridge:T00_99_OpenHab_DimmerObserver:light"}
+    Dimmer    I01_01_Light              "Light"             {channel="knx:device:bridge:T00_99_OpenHab_DimmerObserver:light"}
     Dimmer    I01_01_Light_ctr          "Light ctr"         {channel="knx:device:bridge:T00_99_OpenHab_DimmerObserver:light_ctr"}
     Dimmer    I01_01_Light_group        "Light Group"       {channel="knx:device:bridge:T00_99_OpenHab_DimmerObserver:light_group"}
     Switch    I00_00_Light_manual       "Light manual"

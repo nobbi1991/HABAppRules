@@ -362,11 +362,11 @@ class Shutter(_ShadingBase):
     }
 
     # Items:
-    Rollershutter    shading_position       "Shading position [%s %%]"          <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position"}
-    Rollershutter    shading_position_ctr   "Shading position ctr [%s %%]"      <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position_ctr"}
+    Rollershutter    shading_position       "Shading position"                  <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position"}
+    Rollershutter    shading_position_ctr   "Shading position ctr"              <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position_ctr"}
     Dimmer           shading_slat           "Shading slat"                      <slat>              {channel="knx:device:bridge:KNX_Shading:shading_slat"}
     Switch           shading_manual         "Shading manual"
-    Rollershutter    shading_all_ctr        "Shading all ctr [%s %%]"           <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_group_all_ctr"}
+    Rollershutter    shading_all_ctr        "Shading all ctr"                   <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_group_all_ctr"}
     Switch           shading_hand_manual    "Shading in Hand / Manual state"                        {channel="knx:device:bridge:KNX_Shading:shading_hand_manual_ctr"}
 
     # Config:
@@ -427,11 +427,11 @@ class Raffstore(_ShadingBase):
     }
 
     # Items:
-    Rollershutter    shading_position       "Shading position [%s %%]"          <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position"}
-    Rollershutter    shading_position_ctr   "Shading position ctr [%s %%]"      <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position_ctr"}
-    Dimmer           shading_slat           "Shading slat [%s %%]"              <slat>              {channel="knx:device:bridge:KNX_Shading:shading_slat"}
+    Rollershutter    shading_position       "Shading position"                  <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position"}
+    Rollershutter    shading_position_ctr   "Shading position ctr"              <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position_ctr"}
+    Dimmer           shading_slat           "Shading slat"                      <slat>              {channel="knx:device:bridge:KNX_Shading:shading_slat"}
     Switch           shading_manual         "Shading manual"
-    Rollershutter    shading_all_ctr        "Shading all ctr [%s %%]"           <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_group_all_ctr"}
+    Rollershutter    shading_all_ctr        "Shading all ctr"                   <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_group_all_ctr"}
     Switch           shading_hand_manual    "Shading in Hand / Manual state"                        {channel="knx:device:bridge:KNX_Shading:shading_hand_manual_ctr"}
 
     # Config:
@@ -605,8 +605,8 @@ class SlatValueSun(HABApp.Rule):
     """Rules class to get slat value depending on sun elevation.
 
     # Items:
-    Number    elevation             "Sun elevation [%s]"    <sun>     {channel="astro...}
-    Number    sun_protection_slat   "Slat value [%s %%]"    <slat>
+    Number    elevation             "Sun elevation"         <sun>     {channel="astro...}
+    Number    sun_protection_slat   "Slat value"            <slat>
 
     # Config
     config = habapp_rules.actors.config.shading.SlatValueConfig(

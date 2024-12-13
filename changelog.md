@@ -3,6 +3,7 @@
 # Features
 
 - added rule `habapp_rules.actors.shading.ReferenceRun` to trigger the reference run for blinds every month
+- added rule `habapp_rules.system.task.RecurringTask` to trigger recurring tasks
 
 # Version 7.1.0 - 01.12.2024
 

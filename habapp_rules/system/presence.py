@@ -31,8 +31,8 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
     }
 
     # Items:
-    Switch    I01_00_Presence    "Presence [%s]"    <presence>    (G00_00_rrd4j)    ["Status", "Presence"]    {channel="knx:device:bridge:T00_99_OpenHab_Presence:presence"}
-    Switch    I01_00_Leaving     "Leaving [%s]"     <leaving>                                                 {channel="knx:device:bridge:T00_99_OpenHab_Presence:leaving"}
+    Switch    I01_00_Presence    "Presence"         <presence>    (G00_00_rrd4j)    ["Status", "Presence"]    {channel="knx:device:bridge:T00_99_OpenHab_Presence:presence"}
+    Switch    I01_00_Leaving     "Leaving"          <leaving>                                                 {channel="knx:device:bridge:T00_99_OpenHab_Presence:leaving"}
 
     # Config:
     config = habapp_rules.system.config.presence.PresenceConfig(
