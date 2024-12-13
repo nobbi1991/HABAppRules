@@ -84,9 +84,9 @@ class SensorBrightness(_SensorBase):
     """Rules class to set sun protection depending on brightness level.
 
     # Items:
-    Number    brightness                    "Current brightness [%d lux]"       {channel="..."}
-    Number    brightness_threshold          "Brightness threshold [%d lux]"
-    Switch    sun_protection_brightness     "Sun protection brightness [%s]     {channel="..."}
+    Number    brightness                    "Current brightness"               {channel="..."}
+    Number    brightness_threshold          "Brightness threshold"
+    Switch    sun_protection_brightness     "Sun protection brightness"        {channel="..."}
 
     # Config:
     config = habapp_rules.sensors.config.sun.BrightnessConfig(
@@ -114,10 +114,10 @@ class SensorTemperatureDifference(_SensorBase):
     """Rules class to set sun protection depending on temperature difference. E.g. temperature in the sun / temperature in the shadow.
 
     # Items:
-    Number    temperature_sun               "Temperature sun [%.1f °C]"         {channel="..."}
-    Number    temperature_shadow            "Temperature shadow [%.1f °C]"      {channel="..."}
-    Number    temperature_threshold         "Temperature threshold [%.1f °C]"
-    Switch    sun_protection_temperature    "Sun protection temperature [%s]    {channel="..."}
+    Number    temperature_sun               "Temperature sun"               {channel="..."}
+    Number    temperature_shadow            "Temperature shadow"            {channel="..."}
+    Number    temperature_threshold         "Temperature threshold"
+    Switch    sun_protection_temperature    "Sun protection temperature"    {channel="..."}
 
     # Config:
     config = habapp_rules.sensors.config.sun.TemperatureDifferenceConfig(
@@ -167,10 +167,10 @@ class SunPositionFilter(HABApp.Rule):
     """Rules class to filter a switch state depending on the sun position. This can be used to only close the blinds of a window, if the sun hits the window.
 
     # Items:
-    Number    sun_azimuth           "Sun Azimuth [%.1f °]"              {channel="astro..."}
-    Number    sun_elevation         "Sun Elevation [%.1f °]"            {channel="astro..."}
-    Switch    sun_shining           "Sun is shining [%s]
-    Switch    sun_hits_window       "Sun hits window [%s]
+    Number    sun_azimuth           "Sun Azimuth"                       {channel="astro..."}
+    Number    sun_elevation         "Sun Elevation"                     {channel="astro..."}
+    Switch    sun_shining           "Sun is shining"
+    Switch    sun_hits_window       "Sun hits window"
 
     # Config:
     config = habapp_rules.sensors.config.sun.SunPositionConfig(

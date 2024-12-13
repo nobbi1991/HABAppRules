@@ -14,9 +14,9 @@ class ExponentialFilter(HABApp.Rule):
     """Rules class to apply a exponential filter to a number value.
 
     # Items:
-    Number    BrightnessValue                       "Brightness Value [%d]"                         {channel="..."}
-    Number    BrightnessFiltered                    "Brightness filtered [%d]"
-    Number    BrightnessFilteredInstantIncrease     "Brightness filtered instant increase [%d]"
+    Number    BrightnessValue                       "Brightness Value"                         {channel="..."}
+    Number    BrightnessFiltered                    "Brightness filtered"
+    Number    BrightnessFilteredInstantIncrease     "Brightness filtered instant increase"
 
     # Config
     config = habapp_rules.common.config.filter.ExponentialFilterConfig(

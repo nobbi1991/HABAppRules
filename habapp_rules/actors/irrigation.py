@@ -19,9 +19,9 @@ class Irrigation(HABApp.Rule):
     # Items:
     Switch     I999_valve                   "Valve state"           {channel="some_channel_config"}
     Switch     I999_irrigation_active       "Irrigation active"
-    Number     I999_irrigation_hour         "Start hour [%d]"
-    Number     I999_irrigation_minute       "Start minute[%d]"
-    Number     I999_irrigation_duration     "Duration [%d]"
+    Number     I999_irrigation_hour         "Start hour"
+    Number     I999_irrigation_minute       "Start minute"
+    Number     I999_irrigation_duration     "Duration"
 
     # Config:
     config = habapp_rules.actors.config.irrigation.IrrigationConfig(
