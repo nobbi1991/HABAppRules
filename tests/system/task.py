@@ -34,7 +34,7 @@ class TestRecurringTaskConfig(tests.helper.test_case_base.TestCaseBase):
         self._rule = habapp_rules.system.task.RecurringTask(
             habapp_rules.system.config.task.RecurringTaskConfig(
                 items=habapp_rules.system.config.task.RecurringTaskItems(task_active="Unittest_Task", last_done="Unittest_Task_last"),
-                parameter=habapp_rules.system.config.task.RecurringTaskParameter(recurrence_time=datetime.timedelta(hours=12), fixed_check_time=datetime.time(7))
+                parameter=habapp_rules.system.config.task.RecurringTaskParameter(recurrence_time=datetime.timedelta(hours=12), fixed_check_time=datetime.time(7)),
             )
         )
 
