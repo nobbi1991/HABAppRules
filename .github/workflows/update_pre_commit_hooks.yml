@@ -2,58 +2,62 @@ name: Update pre-commit hooks
 
 on:
   schedule:
-    - cron: '0 0 * * 0' # Runs every Sunday at midnight UTC
-  push:
-    branches:
-      - main # Runs when changes are pushed to the main branch
-  workflow_dispatch:
+    - cron: "0 0 * * *"
 
 jobs:
   update-pre-commit-hooks:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Install pre-commit
       - name: Install pre-commit
         run: |
           python -m pip install --upgrade pip
           pip install pre-commit
 
       - name: Run pre-commit autoupdate
-        # Run pre-commit autoupdate to update the hook versions
         run: pre-commit autoupdate
 
-      # Set git user identity to avoid "empty ident name" error
-      - name: Set Git user identity
+      - name: Set git user identity
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
 
       - name: Check for changes and push updates
+        id: check-for-changes
         run: |
-          # Check for any changes in the working directory or staged changes
           if git diff --quiet && git diff --cached --quiet; then
             echo "No changes detected, skipping commit."
+            echo "::set-output name=changes_found::false"
             exit 0
           fi
 
-          # If changes are detected, continue with committing and pushing
           BRANCH_NAME="pre-commit-updates"
 
           git fetch origin
           if git rev-parse --verify origin/$BRANCH_NAME; then
             echo "Branch $BRANCH_NAME exists, switching to it."
+            git stash
             git checkout $BRANCH_NAME
           else
             echo "Branch $BRANCH_NAME does not exist, creating it."
             git checkout -b $BRANCH_NAME
           fi
 
-          # Commit and push changes
           git add .pre-commit-config.yaml
           git commit -m 'Update pre-commit hook versions'
           git push -u origin $BRANCH_NAME
+          echo "::set-output name=changes_found::true"
+
+      - name: Create pull request
+        if: steps.check-for-changes.outputs.changes_found == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          title: 'Update pre-commit hook versions'
+          body: 'Automated update of pre-commit hooks'
+          branch: ${{ github.ref_name }}
+          delete-branch: true
+          commit-message: 'Update pre-commit hook versions'
+          labels: 'pre-commit, automated'
