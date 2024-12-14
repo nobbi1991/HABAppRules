@@ -53,3 +53,4 @@ repos:
           - requests
           - pytz
         verbose: true
+        auto-fix: false
