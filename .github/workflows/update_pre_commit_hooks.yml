@@ -59,6 +59,5 @@ jobs:
           title: 'Update pre-commit hook versions'
           body: 'Automated update of pre-commit hooks'
           branch: ${{ github.ref_name }}
-          delete-branch: true
           commit-message: 'Update pre-commit hook versions'
           labels: 'pre-commit, automated'
