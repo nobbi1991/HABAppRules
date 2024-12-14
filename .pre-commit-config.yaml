@@ -51,6 +51,3 @@ repos:
         pass_filenames: false
         additional_dependencies:
           - requests
-          - pytz
-        verbose: true
-        auto-fix: false
