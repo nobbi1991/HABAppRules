@@ -16,7 +16,6 @@ import habapp_rules.core.exceptions
 import habapp_rules.core.logger
 import habapp_rules.energy.config.monthly_report
 import habapp_rules.energy.donut_chart
-from habapp_rules import TIMEZONE
 
 LOGGER = logging.getLogger(__name__)
 
@@ -31,7 +30,7 @@ def _get_previous_month_name() -> str:
     Returns:
         name of current month
     """
-    today = datetime.datetime.now(tz=TIMEZONE)
+    today = datetime.datetime.now()
     last_month = today.replace(day=1) - datetime.timedelta(days=1)
 
     return MONTH_MAPPING[last_month.month]
@@ -165,7 +164,7 @@ class MonthlyReport(HABApp.Rule):
         """Send the mail with the energy consumption of the last month."""
         self._instance_logger.debug("Send energy consumption was triggered.")
         # get values
-        now = datetime.datetime.now(tz=TIMEZONE)
+        now = datetime.datetime.now()
         last_month = now - dateutil.relativedelta.relativedelta(months=1)
 
         energy_sum_month = self._config.items.energy_sum.value - self._get_historic_value(self._config.items.energy_sum, last_month)

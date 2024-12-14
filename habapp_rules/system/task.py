@@ -3,7 +3,6 @@ import datetime
 import HABApp
 
 import habapp_rules.system.config.task
-from habapp_rules import TIMEZONE
 from habapp_rules.core.helper import send_if_different
 
 
@@ -59,11 +58,11 @@ class RecurringTask(HABApp.Rule):
             event: event, which triggered this callback
         """
         if event.value == "OFF":
-            self._config.items.last_done.oh_send_command(datetime.datetime.now(TIMEZONE))
+            self._config.items.last_done.oh_send_command(datetime.datetime.now())
 
     def _check_and_set_task_undone(self) -> None:
         """Check if task should be set to True."""
-        last_done_time = self._config.items.last_done.value if self._config.items.last_done.value is not None else datetime.datetime.min.replace(tzinfo=TIMEZONE)
+        last_done_time = self._config.items.last_done.value if self._config.items.last_done.value is not None else datetime.datetime.min.replace()
 
-        if last_done_time + self._config.parameter.recurrence_time < datetime.datetime.now(TIMEZONE):
+        if last_done_time + self._config.parameter.recurrence_time < datetime.datetime.now():
             send_if_different(self._config.items.task_active, "ON")

@@ -8,7 +8,6 @@ import HABApp
 import habapp_rules.actors.config.irrigation
 import habapp_rules.core.exceptions
 import habapp_rules.core.logger
-from habapp_rules import TIMEZONE
 
 LOGGER = logging.getLogger(__name__)
 
@@ -84,7 +83,7 @@ class Irrigation(HABApp.Rule):
         repetitions = self._config.items.repetitions.value if self._config.items.repetitions else 0
         brake = int(self._config.items.brake.value) if self._config.items.brake else 0
 
-        now = datetime.datetime.now(tz=TIMEZONE)
+        now = datetime.datetime.now()
         hour = int(self._config.items.hour.value)
         minute = int(self._config.items.minute.value)
         duration = int(self._config.items.duration.value)

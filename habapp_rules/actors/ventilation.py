@@ -14,7 +14,6 @@ import habapp_rules.core.helper
 import habapp_rules.core.logger
 import habapp_rules.core.state_machine_rule
 import habapp_rules.system
-from habapp_rules import TIMEZONE
 
 LOGGER = logging.getLogger(__name__)
 
@@ -70,7 +69,7 @@ class _VentilationBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
         # init state machine
         self._previous_state = None
-        self._state_change_time = datetime.datetime.now(tz=TIMEZONE)
+        self._state_change_time = datetime.datetime.now()
         self.state_machine = habapp_rules.core.state_machine_rule.HierarchicalStateMachineWithTimeout(model=self, states=self.states, transitions=self.trans, ignore_invalid_triggers=True, after_state_change="_update_openhab_state")
         self._set_initial_state()
 
@@ -118,7 +117,7 @@ class _VentilationBase(habapp_rules.core.state_machine_rule.StateMachineRule):
         """
         if self.state != self._previous_state:
             super()._update_openhab_state()
-            self._state_change_time = datetime.datetime.now(tz=TIMEZONE)
+            self._state_change_time = datetime.datetime.now()
             self._instance_logger.debug(f"State change: {self._previous_state} -> {self.state}")
 
             self._set_level()
@@ -195,7 +194,7 @@ class _VentilationBase(habapp_rules.core.state_machine_rule.StateMachineRule):
             return
 
         # get the remaining minutes and set display text
-        remaining_minutes = round((self._config.parameter.state_hand.timeout - (datetime.datetime.now(tz=TIMEZONE) - self._state_change_time).seconds) / 60)
+        remaining_minutes = round((self._config.parameter.state_hand.timeout - (datetime.datetime.now() - self._state_change_time).seconds) / 60)
         remaining_minutes = max(remaining_minutes, 0)
         habapp_rules.core.helper.send_if_different(self._config.items.display_text, f"{self._config.parameter.state_hand.display_text} {remaining_minutes}min")
 

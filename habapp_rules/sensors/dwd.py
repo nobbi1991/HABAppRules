@@ -222,9 +222,7 @@ class DwdWindAlarm(habapp_rules.core.state_machine_rule.StateMachineRule):
                 if not speed_values:
                     continue
 
-                if (
-                    max(speed_values) >= self._config.parameter.threshold_wind_speed and dwd_items.severity_as_int >= self._config.parameter.threshold_severity and dwd_items.start_time.value < datetime.datetime.now() < dwd_items.end_time.value  # noqa: DTZ005
-                ):
+                if max(speed_values) >= self._config.parameter.threshold_wind_speed and dwd_items.severity_as_int >= self._config.parameter.threshold_severity and dwd_items.start_time.value < datetime.datetime.now() < dwd_items.end_time.value:
                     return True
         return False
 

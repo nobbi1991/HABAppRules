@@ -10,7 +10,6 @@ import habapp_rules.system.config.task
 import habapp_rules.system.task
 import tests.helper.oh_item
 import tests.helper.test_case_base
-from habapp_rules import TIMEZONE
 
 
 class TestRecurringTaskConfig(tests.helper.test_case_base.TestCaseBase):
@@ -62,7 +61,7 @@ class TestRecurringTaskConfig(tests.helper.test_case_base.TestCaseBase):
         tests.helper.oh_item.assert_value("Unittest_Task_last", None)
 
         tests.helper.oh_item.item_state_change_event("Unittest_Task", "OFF")
-        self.assertTrue(datetime.datetime.now(TIMEZONE) - self._rule._config.items.last_done.value < datetime.timedelta(seconds=1))
+        self.assertTrue(datetime.datetime.now() - self._rule._config.items.last_done.value < datetime.timedelta(seconds=1))
 
     def test_check_and_set_task_undone(self) -> None:
         """Test _check_and_set_task_undone."""
@@ -74,12 +73,12 @@ class TestRecurringTaskConfig(tests.helper.test_case_base.TestCaseBase):
 
         # last done is value that should set task to undone
         tests.helper.oh_item.item_state_change_event("Unittest_Task", "OFF")
-        tests.helper.oh_item.set_state("Unittest_Task_last", datetime.datetime.now(TIMEZONE) - datetime.timedelta(days=1))
+        tests.helper.oh_item.set_state("Unittest_Task_last", datetime.datetime.now() - datetime.timedelta(days=1))
         self._rule._check_and_set_task_undone()
         tests.helper.oh_item.assert_value("Unittest_Task", "ON")
 
         # last done is value that should not set task to undone
         tests.helper.oh_item.item_state_change_event("Unittest_Task", "OFF")
-        tests.helper.oh_item.set_state("Unittest_Task_last", datetime.datetime.now(TIMEZONE) - datetime.timedelta(hours=1))
+        tests.helper.oh_item.set_state("Unittest_Task_last", datetime.datetime.now() - datetime.timedelta(hours=1))
         self._rule._check_and_set_task_undone()
         tests.helper.oh_item.assert_value("Unittest_Task", "OFF")
