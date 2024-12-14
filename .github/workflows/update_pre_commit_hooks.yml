@@ -3,7 +3,6 @@ name: Update pre-commit hooks
 on:
   schedule:
     - cron: "0 0 * * *"
-  workflow_dispatch:
 
 jobs:
   update-pre-commit-hooks:
@@ -27,9 +26,11 @@ jobs:
           git config --global user.name "GitHub Actions"
 
       - name: Check for changes and push updates
+        id: check-for-changes
         run: |
           if git diff --quiet && git diff --cached --quiet; then
             echo "No changes detected, skipping commit."
+            echo "::set-output name=changes_found::false"
             exit 0
           fi
 
@@ -48,6 +49,7 @@ jobs:
           git add .pre-commit-config.yaml
           git commit -m 'Update pre-commit hook versions'
           git push -u origin $BRANCH_NAME
+          echo "::set-output name=changes_found::true"
 
       - name: Create pull request
         if: steps.check-for-changes.outputs.changes_found == 'true'
