@@ -45,8 +45,8 @@ class TestRecurringTaskConfig(tests.helper.test_case_base.TestCaseBase):
         TestCase = collections.namedtuple("TestCase", "recurrence_time, expected_result")
 
         test_cases = [
-            TestCase(datetime.timedelta(hours=12), datetime.timedelta(seconds=8640)),
-            TestCase(datetime.timedelta(hours=5), datetime.timedelta(hours=1)),
+            TestCase(datetime.timedelta(hours=12), datetime.timedelta(seconds=2160)),
+            TestCase(datetime.timedelta(hours=20), datetime.timedelta(hours=1)),
         ]
 
         for test_case in test_cases:

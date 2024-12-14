@@ -50,7 +50,7 @@ class RecurringTask(HABApp.Rule):
         Returns:
             cycle time
         """
-        return self._config.parameter.recurrence_time / 5
+        return self._config.parameter.recurrence_time / 20
 
     def _cb_task_active(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback, which is called if the "task_active" item was changed.
