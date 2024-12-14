@@ -42,7 +42,6 @@ repos:
     rev: 0.7.19
     hooks:
       - id: mdformat
-
   - repo: local
     hooks:
       - id: version-check
@@ -52,4 +51,3 @@ repos:
         pass_filenames: false
         additional_dependencies:
           - requests
-          - pytz
