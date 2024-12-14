@@ -31,7 +31,7 @@ jobs:
         run: |
           if git diff --quiet && git diff --cached --quiet; then
             echo "No changes detected, skipping commit."
-            echo "::set-output name=changes_found::false"
+            echo "changes_found=false" >> $GITHUB_ENV
             exit 0
           fi
 
@@ -50,10 +50,10 @@ jobs:
           git add .pre-commit-config.yaml
           git commit -m 'Update pre-commit hook versions'
           git push -u origin $BRANCH_NAME
-          echo "::set-output name=changes_found::true"
+          echo "changes_found=true" >> $GITHUB_ENV
 
       - name: Create pull request
-        if: steps.check-for-changes.outputs.changes_found == 'true'
+        if: env.changes_found == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
           title: 'Update pre-commit hook versions'
