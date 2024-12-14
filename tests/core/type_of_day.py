@@ -6,7 +6,6 @@ import unittest
 import unittest.mock
 
 import habapp_rules.core.type_of_day
-from habapp_rules import TIMEZONE
 
 
 class TestTypeOfDay(unittest.TestCase):
@@ -18,25 +17,25 @@ class TestTypeOfDay(unittest.TestCase):
 
         test_cases = [
             # Monday
-            TestCase(datetime.datetime(2023, 12, 18, tzinfo=TIMEZONE), -1, True),
-            TestCase(datetime.datetime(2023, 12, 18, tzinfo=TIMEZONE), 0, False),
-            TestCase(datetime.datetime(2023, 12, 18, tzinfo=TIMEZONE), 1, False),
-            TestCase(datetime.datetime(2023, 12, 18, tzinfo=TIMEZONE), 2, False),
+            TestCase(datetime.datetime(2023, 12, 18), -1, True),
+            TestCase(datetime.datetime(2023, 12, 18), 0, False),
+            TestCase(datetime.datetime(2023, 12, 18), 1, False),
+            TestCase(datetime.datetime(2023, 12, 18), 2, False),
             # Friday
-            TestCase(datetime.datetime(2023, 12, 22, tzinfo=TIMEZONE), -1, False),
-            TestCase(datetime.datetime(2023, 12, 22, tzinfo=TIMEZONE), 0, False),
-            TestCase(datetime.datetime(2023, 12, 22, tzinfo=TIMEZONE), 1, True),
-            TestCase(datetime.datetime(2023, 12, 22, tzinfo=TIMEZONE), 2, True),
+            TestCase(datetime.datetime(2023, 12, 22), -1, False),
+            TestCase(datetime.datetime(2023, 12, 22), 0, False),
+            TestCase(datetime.datetime(2023, 12, 22), 1, True),
+            TestCase(datetime.datetime(2023, 12, 22), 2, True),
             # Saturday
-            TestCase(datetime.datetime(2023, 12, 23, tzinfo=TIMEZONE), -1, False),
-            TestCase(datetime.datetime(2023, 12, 23, tzinfo=TIMEZONE), 0, True),
-            TestCase(datetime.datetime(2023, 12, 23, tzinfo=TIMEZONE), 1, True),
-            TestCase(datetime.datetime(2023, 12, 23, tzinfo=TIMEZONE), 2, False),
+            TestCase(datetime.datetime(2023, 12, 23), -1, False),
+            TestCase(datetime.datetime(2023, 12, 23), 0, True),
+            TestCase(datetime.datetime(2023, 12, 23), 1, True),
+            TestCase(datetime.datetime(2023, 12, 23), 2, False),
             # Sunday
-            TestCase(datetime.datetime(2023, 12, 24, tzinfo=TIMEZONE), -1, True),
-            TestCase(datetime.datetime(2023, 12, 24, tzinfo=TIMEZONE), 0, True),
-            TestCase(datetime.datetime(2023, 12, 24, tzinfo=TIMEZONE), 1, False),
-            TestCase(datetime.datetime(2023, 12, 24, tzinfo=TIMEZONE), 2, False),
+            TestCase(datetime.datetime(2023, 12, 24), -1, True),
+            TestCase(datetime.datetime(2023, 12, 24), 0, True),
+            TestCase(datetime.datetime(2023, 12, 24), 1, False),
+            TestCase(datetime.datetime(2023, 12, 24), 2, False),
         ]
 
         with unittest.mock.patch("datetime.datetime") as datetime_mock:
@@ -51,15 +50,15 @@ class TestTypeOfDay(unittest.TestCase):
 
         test_cases = [
             # Holy evening
-            TestCase(datetime.datetime(2023, 12, 23, tzinfo=TIMEZONE), -1, False),
-            TestCase(datetime.datetime(2023, 12, 23, tzinfo=TIMEZONE), 0, False),
-            TestCase(datetime.datetime(2023, 12, 23, tzinfo=TIMEZONE), 1, False),
-            TestCase(datetime.datetime(2023, 12, 23, tzinfo=TIMEZONE), 2, True),
+            TestCase(datetime.datetime(2023, 12, 23), -1, False),
+            TestCase(datetime.datetime(2023, 12, 23), 0, False),
+            TestCase(datetime.datetime(2023, 12, 23), 1, False),
+            TestCase(datetime.datetime(2023, 12, 23), 2, True),
             # Christmas
-            TestCase(datetime.datetime(2023, 12, 25, tzinfo=TIMEZONE), -1, False),
-            TestCase(datetime.datetime(2023, 12, 25, tzinfo=TIMEZONE), 0, True),
-            TestCase(datetime.datetime(2023, 12, 25, tzinfo=TIMEZONE), 1, True),
-            TestCase(datetime.datetime(2023, 12, 25, tzinfo=TIMEZONE), 2, False),
+            TestCase(datetime.datetime(2023, 12, 25), -1, False),
+            TestCase(datetime.datetime(2023, 12, 25), 0, True),
+            TestCase(datetime.datetime(2023, 12, 25), 1, True),
+            TestCase(datetime.datetime(2023, 12, 25), 2, False),
         ]
 
         with unittest.mock.patch("datetime.datetime") as datetime_mock:

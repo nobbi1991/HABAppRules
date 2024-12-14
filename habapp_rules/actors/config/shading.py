@@ -177,3 +177,18 @@ class SlatValueConfig(habapp_rules.core.pydantic_base.ConfigBase):
 
     items: SlatValueItems = pydantic.Field(..., description="items for slat values for sun protection")
     parameter: SlatValueParameter = pydantic.Field(SlatValueParameter(), description="parameter for slat values for sun protection")
+
+
+class ReferenceRunItems(habapp_rules.core.pydantic_base.ItemBase):
+    """Items for reference run."""
+
+    trigger_run: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="item for triggering the reference run")
+    last_run: HABApp.openhab.items.DatetimeItem = pydantic.Field(..., description="item for date/time of the last run")
+    presence_state: HABApp.openhab.items.StringItem = pydantic.Field(..., description="item for presence state")
+
+
+class ReferenceRunConfig(habapp_rules.core.pydantic_base.ConfigBase):
+    """Config for reference run."""
+
+    items: ReferenceRunItems = pydantic.Field(..., description="items for reference run")
+    parameter: None = None

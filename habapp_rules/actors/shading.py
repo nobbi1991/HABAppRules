@@ -1,6 +1,7 @@
 """Rules to manage shading objects."""
 
 import abc
+import datetime
 import logging
 import time
 import typing
@@ -360,11 +361,11 @@ class Shutter(_ShadingBase):
     }
 
     # Items:
-    Rollershutter    shading_position       "Shading position [%s %%]"          <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position"}
-    Rollershutter    shading_position_ctr   "Shading position ctr [%s %%]"      <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position_ctr"}
+    Rollershutter    shading_position       "Shading position"                  <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position"}
+    Rollershutter    shading_position_ctr   "Shading position ctr"              <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position_ctr"}
     Dimmer           shading_slat           "Shading slat"                      <slat>              {channel="knx:device:bridge:KNX_Shading:shading_slat"}
     Switch           shading_manual         "Shading manual"
-    Rollershutter    shading_all_ctr        "Shading all ctr [%s %%]"           <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_group_all_ctr"}
+    Rollershutter    shading_all_ctr        "Shading all ctr"                   <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_group_all_ctr"}
     Switch           shading_hand_manual    "Shading in Hand / Manual state"                        {channel="knx:device:bridge:KNX_Shading:shading_hand_manual_ctr"}
 
     # Config:
@@ -425,11 +426,11 @@ class Raffstore(_ShadingBase):
     }
 
     # Items:
-    Rollershutter    shading_position       "Shading position [%s %%]"          <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position"}
-    Rollershutter    shading_position_ctr   "Shading position ctr [%s %%]"      <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position_ctr"}
-    Dimmer           shading_slat           "Shading slat [%s %%]"              <slat>              {channel="knx:device:bridge:KNX_Shading:shading_slat"}
+    Rollershutter    shading_position       "Shading position"                  <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position"}
+    Rollershutter    shading_position_ctr   "Shading position ctr"              <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_position_ctr"}
+    Dimmer           shading_slat           "Shading slat"                      <slat>              {channel="knx:device:bridge:KNX_Shading:shading_slat"}
     Switch           shading_manual         "Shading manual"
-    Rollershutter    shading_all_ctr        "Shading all ctr [%s %%]"           <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_group_all_ctr"}
+    Rollershutter    shading_all_ctr        "Shading all ctr"                   <rollershutter>     {channel="knx:device:bridge:KNX_Shading:shading_group_all_ctr"}
     Switch           shading_hand_manual    "Shading in Hand / Manual state"                        {channel="knx:device:bridge:KNX_Shading:shading_hand_manual_ctr"}
 
     # Config:
@@ -603,8 +604,8 @@ class SlatValueSun(HABApp.Rule):
     """Rules class to get slat value depending on sun elevation.
 
     # Items:
-    Number    elevation             "Sun elevation [%s]"    <sun>     {channel="astro...}
-    Number    sun_protection_slat   "Slat value [%s %%]"    <slat>
+    Number    elevation             "Sun elevation"         <sun>     {channel="astro...}
+    Number    sun_protection_slat   "Slat value"            <slat>
 
     # Config
     config = habapp_rules.actors.config.shading.SlatValueConfig(
@@ -685,3 +686,50 @@ class SlatValueSun(HABApp.Rule):
         """
         self._slat_characteristic_active = self._config.parameter.elevation_slat_characteristic_summer if event.value == "ON" else self._config.parameter.elevation_slat_characteristic
         self.__send_slat_value()
+
+
+class ReferenceRun(HABApp.Rule):
+    """Rule to trigger a reference run for blinds every month.
+
+    # Items:
+    Switch      trigger_run         "trigger reference run"
+    DateTime    last_run            "last run"
+    String      presence_state      "Presence state"
+
+    # Config
+    config = habapp_rules.actors.config.shading.ReferenceRunConfig(
+            items=habapp_rules.actors.config.shading.ReferenceRunItems(
+                trigger_run="trigger_run",
+                presence_state="presence_state",
+                last_run="last_run",
+            )
+    )
+
+    # Rule init:
+    habapp_rules.actors.shading.ReferenceRun(config)
+    """
+
+    def __init__(self, config: habapp_rules.actors.config.shading.ReferenceRunConfig) -> None:
+        """Init ReferenceRun.
+
+        Args:
+            config: configuration of reference run rule
+        """
+        self._config = config
+        HABApp.Rule.__init__(self)
+
+        self._config.items.presence_state.listen_event(self._cb_presence_state, HABApp.openhab.events.ItemStateChangedEventFilter())
+
+    def _cb_presence_state(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+        """Callback which is called if presence state changed.
+
+        Args:
+            event: presence state event
+        """
+        if event.value == habapp_rules.system.PresenceState.ABSENCE.value:
+            last_run = self._config.items.last_run.value or datetime.datetime.min
+            current_time = datetime.datetime.now()
+
+            if last_run.year < current_time.year or last_run.month < current_time.month:
+                self._config.items.trigger_run.oh_send_command("ON")
+                self._config.items.last_run.oh_send_command(current_time)

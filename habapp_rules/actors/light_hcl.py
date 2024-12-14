@@ -15,7 +15,6 @@ import habapp_rules.core.logger
 import habapp_rules.core.state_machine_rule
 import habapp_rules.core.type_of_day
 import habapp_rules.system
-from habapp_rules import TIMEZONE
 
 LOGGER = logging.getLogger(__name__)
 
@@ -209,7 +208,7 @@ class HclElevation(_HclBase):
     """Sun elevation based HCL.
 
     # Items:
-    Number    Elevation                     "Elevation [%s]"                {channel="astro:sun:home:position#elevation"}
+    Number    Elevation                     "Elevation"                     {channel="astro:sun:home:position#elevation"}
     Number    HCL_Color_Elevation           "HCL Color Elevation"
     Switch    HCL_Color_Elevation_manual    "HCL Color Elevation manual"
 
@@ -326,7 +325,7 @@ class HclTime(_HclBase):
         Returns:
             HCL light color
         """
-        current_time = datetime.datetime.now(TIMEZONE)
+        current_time = datetime.datetime.now()
 
         if self._one_hour_later(current_time):
             current_time -= datetime.timedelta(hours=1)

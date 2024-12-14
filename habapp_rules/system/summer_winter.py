@@ -9,7 +9,6 @@ import HABApp
 import habapp_rules.common.hysteresis
 import habapp_rules.core.logger
 import habapp_rules.system.config.summer_winter
-from habapp_rules import TIMEZONE
 
 LOGGER = logging.getLogger(__name__)
 
@@ -33,7 +32,7 @@ class SummerWinter(HABApp.Rule):
 
         # set class variables
         self._hysteresis_switch = habapp_rules.common.hysteresis.HysteresisSwitch(config.parameter.temperature_threshold, 0.5)
-        self.__now = datetime.datetime.now(tz=TIMEZONE)
+        self.__now = datetime.datetime.now()
 
         # run at init and every day at 23:00
         self.run.soon(self._cb_update_summer)
@@ -62,7 +61,7 @@ class SummerWinter(HABApp.Rule):
 
         temperature_values = []
         for hour in [7, 14, 22]:
-            start_time = datetime.datetime(self.__now.year, self.__now.month, self.__now.day, hour, 0) - datetime.timedelta(days=day_offset + days_in_past)  # noqa: DTZ001
+            start_time = datetime.datetime(self.__now.year, self.__now.month, self.__now.day, hour, 0) - datetime.timedelta(days=day_offset + days_in_past)
             end_time = start_time + datetime.timedelta(hours=1)
             persistence_data = self._config.items.outside_temperature.get_persistence_data(persistence=self._config.parameter.persistence_service, start_time=start_time, end_time=end_time)
             if not persistence_data.data:
@@ -80,7 +79,7 @@ class SummerWinter(HABApp.Rule):
         Raises:
             SummerWinterError: if summer/winter could not be detected
         """
-        self.__now = datetime.datetime.now(tz=TIMEZONE)
+        self.__now = datetime.datetime.now()
         values = []
         for day in range(self._config.parameter.days):
             try:
@@ -114,4 +113,4 @@ class SummerWinter(HABApp.Rule):
 
         # update last update item at every call
         if self._config.items.last_check is not None:
-            self._config.items.last_check.oh_send_command(datetime.datetime.now(tz=TIMEZONE))
+            self._config.items.last_check.oh_send_command(datetime.datetime.now())

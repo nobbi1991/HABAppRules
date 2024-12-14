@@ -8,7 +8,6 @@ import HABApp
 import habapp_rules.actors.config.irrigation
 import habapp_rules.core.exceptions
 import habapp_rules.core.logger
-from habapp_rules import TIMEZONE
 
 LOGGER = logging.getLogger(__name__)
 
@@ -19,9 +18,9 @@ class Irrigation(HABApp.Rule):
     # Items:
     Switch     I999_valve                   "Valve state"           {channel="some_channel_config"}
     Switch     I999_irrigation_active       "Irrigation active"
-    Number     I999_irrigation_hour         "Start hour [%d]"
-    Number     I999_irrigation_minute       "Start minute[%d]"
-    Number     I999_irrigation_duration     "Duration [%d]"
+    Number     I999_irrigation_hour         "Start hour"
+    Number     I999_irrigation_minute       "Start minute"
+    Number     I999_irrigation_duration     "Duration"
 
     # Config:
     config = habapp_rules.actors.config.irrigation.IrrigationConfig(
@@ -84,7 +83,7 @@ class Irrigation(HABApp.Rule):
         repetitions = self._config.items.repetitions.value if self._config.items.repetitions else 0
         brake = int(self._config.items.brake.value) if self._config.items.brake else 0
 
-        now = datetime.datetime.now(tz=TIMEZONE)
+        now = datetime.datetime.now()
         hour = int(self._config.items.hour.value)
         minute = int(self._config.items.minute.value)
         duration = int(self._config.items.duration.value)

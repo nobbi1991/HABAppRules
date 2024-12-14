@@ -13,7 +13,6 @@ import habapp_rules.core.helper
 import habapp_rules.core.logger
 import habapp_rules.core.state_machine_rule
 import habapp_rules.system.config.sleep
-from habapp_rules import TIMEZONE
 
 LOGGER = logging.getLogger(__name__)
 
@@ -34,12 +33,12 @@ class Sleep(habapp_rules.core.state_machine_rule.StateMachineRule):
     }
 
     # Items:
-    Switch    I01_02_Sleep              "Sleep [%s]"                <moon>     {channel="knx:device:bridge:T00_99_OpenHab_Sleep:sleep_RM"}
+    Switch    I01_02_Sleep              "Sleep"                     <moon>     {channel="knx:device:bridge:T00_99_OpenHab_Sleep:sleep_RM"}
     Switch    I01_02_Sleep_req          "Sleep request"             <moon>     {channel="knx:device:bridge:T00_99_OpenHab_Sleep:sleep"}
-    String    I01_02_Sleep_text         "Text for display [%s]"                {channel="knx:device:bridge:T00_99_OpenHab_Sleep:sleep_text"}
-    Switch    I01_02_Sleep_lock         "Lock [%s]"                 <lock>     {channel="knx:device:bridge:T00_99_OpenHab_Sleep:sleep_lock_RM"}
+    String    I01_02_Sleep_text         "Text for display"                     {channel="knx:device:bridge:T00_99_OpenHab_Sleep:sleep_text"}
+    Switch    I01_02_Sleep_lock         "Lock"                      <lock>     {channel="knx:device:bridge:T00_99_OpenHab_Sleep:sleep_lock_RM"}
     Switch    I01_02_Sleep_lock_req     "Lock request"              <lock>     {channel="knx:device:bridge:T00_99_OpenHab_Sleep:sleep_lock"}
-    String    I01_02_Sleep_State        "State [%s]"                <state>
+    String    I01_02_Sleep_State        "State"                     <state>
 
     # Config:
     config = habapp_rules.system.config.sleep.SleepConfig(
@@ -246,7 +245,7 @@ class LinkSleep(HABApp.Rule):
         Returns:
             True if current time is in time the active time window
         """
-        now = datetime.datetime.now(tz=TIMEZONE).time()
+        now = datetime.datetime.now().time()
 
         if self._config.parameter.link_time_start <= self._config.parameter.link_time_end:
             return self._config.parameter.link_time_start <= now <= self._config.parameter.link_time_end

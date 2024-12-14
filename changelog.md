@@ -1,6 +1,13 @@
-# Version 7.1.1 - dd.12.2024
+# Version 7.2.0 - dd.12.2024
+
+# Features
+
+- added rule `habapp_rules.actors.shading.ReferenceRun` to trigger the reference run for blinds every month
+- added rule `habapp_rules.system.task.RecurringTask` to trigger recurring tasks
 
 # Bugfix
+
+- removed timezone from all datetime.items, since timezone makes no sense in the OpenHAB context
 
 # Version 7.1.0 - 01.12.2024
 

@@ -8,7 +8,7 @@ updates:
       - dependency-name: "*"
         update-types:
           - "version-update:semver-patch"
-  - package-manager: "github-actions"
+  - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
