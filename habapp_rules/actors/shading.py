@@ -14,7 +14,6 @@ import habapp_rules.core.exceptions
 import habapp_rules.core.logger
 import habapp_rules.core.state_machine_rule
 import habapp_rules.system
-from habapp_rules import TIMEZONE
 
 LOGGER = logging.getLogger(__name__)
 
@@ -728,8 +727,8 @@ class ReferenceRun(HABApp.Rule):
             event: presence state event
         """
         if event.value == habapp_rules.system.PresenceState.ABSENCE.value:
-            last_run = self._config.items.last_run.value or datetime.datetime.min  # noqa: DTZ901
-            current_time = datetime.datetime.now(TIMEZONE)
+            last_run = self._config.items.last_run.value or datetime.datetime.min
+            current_time = datetime.datetime.now()
 
             if last_run.year < current_time.year or last_run.month < current_time.month:
                 self._config.items.trigger_run.oh_send_command("ON")

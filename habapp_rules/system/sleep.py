@@ -13,7 +13,6 @@ import habapp_rules.core.helper
 import habapp_rules.core.logger
 import habapp_rules.core.state_machine_rule
 import habapp_rules.system.config.sleep
-from habapp_rules import TIMEZONE
 
 LOGGER = logging.getLogger(__name__)
 
@@ -246,7 +245,7 @@ class LinkSleep(HABApp.Rule):
         Returns:
             True if current time is in time the active time window
         """
-        now = datetime.datetime.now(tz=TIMEZONE).time()
+        now = datetime.datetime.now().time()
 
         if self._config.parameter.link_time_start <= self._config.parameter.link_time_end:
             return self._config.parameter.link_time_start <= now <= self._config.parameter.link_time_end
