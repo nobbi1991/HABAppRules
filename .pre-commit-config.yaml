@@ -42,7 +42,6 @@ repos:
     rev: 0.7.19
     hooks:
       - id: mdformat
-
   - repo: local
     hooks:
       - id: version-check
