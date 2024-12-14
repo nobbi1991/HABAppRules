@@ -52,3 +52,4 @@ repos:
         additional_dependencies:
           - requests
           - pytz
+        verbose: true
