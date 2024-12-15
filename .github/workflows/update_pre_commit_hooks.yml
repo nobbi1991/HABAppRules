@@ -22,3 +22,4 @@ jobs:
           labels: 'pre-commit, automated'
           commit-message: "chore: update pre-commit hooks"
           body: Update versions of pre-commit hooks to latest version.
+          paths: .pre-commit-config.yaml
