@@ -28,6 +28,17 @@ def add_mock_item(item_type: type[HABApp.openhab.items.OpenhabItem], name: str, 
     _MOCKED_ITEM_NAMES.append(name)
 
 
+def add_mock_thing(name: str) -> None:
+    """Add a mock thing.
+
+    Args:
+        name: name of thing
+    """
+    thing = HABApp.openhab.items.Thing(name)
+    HABApp.core.Items.add_item(thing)
+    _MOCKED_ITEM_NAMES.append(name)
+
+
 def remove_mocked_item_by_name(name: str) -> None:
     """Remove a mocked item by item name.
 

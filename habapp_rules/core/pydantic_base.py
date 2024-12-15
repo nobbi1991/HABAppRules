@@ -52,7 +52,7 @@ class ItemBase(pydantic.BaseModel):
             field_types = field_types if isinstance(field_types, list) else [field_types]
 
             for field_type in field_types:
-                if not issubclass(field_type, HABApp.openhab.items.OpenhabItem):
+                if not issubclass(field_type, HABApp.openhab.items.OpenhabItem | HABApp.openhab.items.Thing):
                     msg = f"Field {field_type} is not an OpenhabItem"
                     raise habapp_rules.core.exceptions.HabAppRulesConfigurationError(msg)
 
@@ -110,7 +110,12 @@ class ItemBase(pydantic.BaseModel):
         Raises:
             habapp_rules.core.exceptions.HabAppRulesConfigurationError: if type is not supported
         """
-        return item if isinstance(item, HABApp.openhab.items.OpenhabItem) else HABApp.openhab.items.OpenhabItem.get_item(item)
+        if isinstance(item, str):
+            if ":" in item:
+                return HABApp.openhab.items.Thing.get_item(item)
+            return HABApp.openhab.items.OpenhabItem.get_item(item)
+
+        return item
 
     @classmethod
     def _get_type_of_field(cls, field_name: str) -> type | list[type]:
