@@ -263,14 +263,16 @@ class StateObserverDimmer(_StateObserverBase):
                     cb_brightness_change=callback_change)
     """
 
-    def __init__(self, item_name: str, cb_on: CallbackType, cb_off: CallbackType, cb_brightness_change: CallbackType | None = None, control_names: list[str] | None = None, group_names: list[str] | None = None, value_tolerance: float = 0) -> None:
+    def __init__(
+        self, item_name: str, cb_on: CallbackType | None = None, cb_off: CallbackType | None = None, cb_change: CallbackType | None = None, control_names: list[str] | None = None, group_names: list[str] | None = None, value_tolerance: float = 0
+    ) -> None:
         """Init state observer for dimmer item.
 
         Args:
             item_name: Name of dimmer item
             cb_on: callback which is called if manual_on was detected
             cb_off: callback which is called if manual_off was detected
-            cb_brightness_change: callback which is called if dimmer is on and brightness changed
+            cb_change: callback which is called if dimmer is on and value changed
             control_names: list of control items. They are used to also respond to switch on/off via INCREASE/DECREASE
             group_names: list of group items where the item is a part of. Group item type must match with type of item_name
             value_tolerance: the tolerance can be used to allow a difference when comparing new and old values.
@@ -279,7 +281,7 @@ class StateObserverDimmer(_StateObserverBase):
 
         self._cb_on = cb_on
         self._cb_off = cb_off
-        self._cb_brightness_change = cb_brightness_change
+        self._cb_change = cb_change
 
     def _check_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
         """Check if light was triggered by a manual action.
@@ -298,7 +300,7 @@ class StateObserverDimmer(_StateObserverBase):
 
             elif self._values_different_with_tolerance(event.value, self._value):
                 self._value = event.value
-                self._trigger_callback("_cb_brightness_change", event)
+                self._trigger_callback("_cb_change", event)
 
         elif event.value == "ON" and (self._value is None or self._value == 0):
             self._value = 100

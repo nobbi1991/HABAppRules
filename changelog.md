@@ -1,8 +1,8 @@
-# Version 7.2.1 - dd.12.2024
+# Version 8.0.0 - dd.01.2025
 
-## Bugfix
+## Breaking changes
 
-- ...
+- renamed `_cb_brightness_change` of `habapp_rules.actors.state_observer.StateObserverDimmer` to `_cb_change`
 
 # Version 7.2.0 - 15.12.2024
 

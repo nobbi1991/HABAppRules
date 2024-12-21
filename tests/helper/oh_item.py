@@ -71,6 +71,17 @@ def set_state(item_name: str, value: StateTypes | None) -> None:
         item.set_value(value)
 
 
+def set_thing_state(thing_name: str, value: StateTypes | None) -> None:
+    """Helper to set state of thing.
+
+    Args:
+        thing_name: name of thing
+        value: state which should be set
+    """
+    thing = HABApp.openhab.items.Thing.get_item(thing_name)
+    thing.status = value
+
+
 def send_command(item_name: str, new_value: StateTypes, old_value: StateTypes = NO_VALUE) -> None:
     """Replacement of send_command for unit-tests.
 
