@@ -1,17 +1,23 @@
-# Version 7.2.0 - dd.12.2024
+# Version 7.2.1 - dd.12.2024
 
-# Features
+## Bugfix
+
+- ...
+
+# Version 7.2.0 - 15.12.2024
+
+## Features
 
 - added rule `habapp_rules.actors.shading.ReferenceRun` to trigger the reference run for blinds every month
 - added rule `habapp_rules.system.task.RecurringTask` to trigger recurring tasks
 
-# Bugfix
+## Bugfix
 
 - removed timezone from all datetime.items, since timezone makes no sense in the OpenHAB context
 
 # Version 7.1.0 - 01.12.2024
 
-# Features
+## Features
 
 - added rule `habapp_rules.actors.light_bathroom.BathroomLight` to control bathroom light
 - added the python version to `habapp_rules.core.version.SetVersions`
@@ -19,13 +25,13 @@
 - added `habapp_rules.actors.heating.HeatingActive` which can be used to set a heating flag if one of the heating actors is active
 - improved `habapp_rules.core.timeout_list`
 
-# Bugfix
+## Bugfix
 
 - added additional wait time to `habapp_rules.actors.energy_save_switch.EnergySaveSwitch` when switch is in wait for current state and current falls below threshold.
 
 # Version 7.0.1 - 25.11.2024
 
-# Bugfix
+## Bugfix
 
 - bumped HABApp to 24.11.1 to fix startup bug with python 3.13
 
