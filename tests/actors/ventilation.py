@@ -25,6 +25,31 @@ import tests.helper.test_case_base
 import tests.helper.timer
 
 
+class TestGlobalFunctions(unittest.TestCase):
+    """Test global functions."""
+
+    def test_to_datetime(self) -> None:
+        """Test _to_datetime."""
+        TestCase = collections.namedtuple("TestCase", "input_time, now, expected_result")
+
+        test_cases = [
+            TestCase(datetime.time(0, 0), datetime.datetime(2024, 1, 1, 0, 1), datetime.datetime(2024, 1, 2, 0, 0)),
+            TestCase(datetime.time(6, 0), datetime.datetime(2024, 1, 1, 0, 1), datetime.datetime(2024, 1, 1, 6, 0)),
+            TestCase(datetime.time(18, 0), datetime.datetime(2024, 1, 1, 17, 59), datetime.datetime(2024, 1, 1, 18, 0)),
+            TestCase(datetime.time(18, 0), datetime.datetime(2024, 1, 1, 18, 00), datetime.datetime(2024, 1, 2, 18, 0)),
+            TestCase(datetime.time(18, 0), datetime.datetime(2024, 1, 1, 18, 1), datetime.datetime(2024, 1, 2, 18, 0)),
+        ]
+
+        combine_orig = datetime.datetime.combine
+
+        with unittest.mock.patch("datetime.datetime") as datetime_mock:
+            datetime.datetime.combine = combine_orig
+            for test_case in test_cases:
+                with self.subTest(test_case=test_case):
+                    datetime_mock.now.return_value = test_case.now
+                    self.assertEqual(test_case.expected_result, habapp_rules.actors.ventilation._to_datetime(test_case.input_time))
+
+
 class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
     """Tests cases for testing Ventilation."""
 
@@ -223,9 +248,9 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
     def test_on_enter_long_absence_off(self) -> None:
         """Test on_enter_Auto_LongAbsence_Off."""
-        with unittest.mock.patch.object(self.ventilation_max, "_trigger_long_absence_power_on") as trigger_on_mock:
+        with unittest.mock.patch.object(self.ventilation_max, "_trigger_long_absence_power_on") as trigger_on_mock, unittest.mock.patch("habapp_rules.actors.ventilation._to_datetime") as to_datetime_mock:
             self.ventilation_max.to_Auto_LongAbsence_Off()
-        self.run_at_mock.assert_called_once_with(datetime.time(18), trigger_on_mock)
+        self.run_at_mock.assert_called_once_with(to_datetime_mock.return_value, trigger_on_mock)
 
     def test_trigger_long_absence_power_on(self) -> None:
         """Test _trigger_long_absence_power_on."""
