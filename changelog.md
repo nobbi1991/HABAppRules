@@ -1,8 +1,8 @@
-# Version 7.2.1 - dd.12.2024
+# Version 7.2.1 - 31.12.2024
 
 ## Bugfix
 
-- ...
+- Added workaround for all rules of `habapp_rules.actors.ventilation` for triggering the ventilation if presence state is `long_absence`. Check the following GitHub link for more details: https://github.com/spacemanspiff2007/eascheduler/issues/24
 
 # Version 7.2.0 - 15.12.2024
 
