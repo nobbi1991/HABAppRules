@@ -1,3 +1,9 @@
+# Version 7.2.2 - dd.mm.2025
+
+## Bugfix
+
+- *
+
 # Version 7.2.1 - 31.12.2024
 
 ## Bugfix
