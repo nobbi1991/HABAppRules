@@ -23,6 +23,9 @@ import habapp_rules.core.logger
 import habapp_rules.core.state_machine_rule
 import habapp_rules.system
 
+if typing.TYPE_CHECKING:
+    from collections.abc import Callable  # pragma: no cover
+
 LOGGER = logging.getLogger(__name__)
 
 DIMMER_VALUE_TOLERANCE = 5
@@ -559,7 +562,7 @@ class _LightExtendedMixin:
     state: str
     _config: habapp_rules.actors.config.light.LightConfig
     state_machine: habapp_rules.core.state_machine_rule.HierarchicalStateMachineWithTimeout
-    _get_sleeping_activ: typing.Callable[[bool | None], bool]
+    _get_sleeping_activ: Callable[[bool | None], bool]
 
     def __init__(self, config: habapp_rules.actors.config.light.LightConfig) -> None:
         """Init mixin class.
