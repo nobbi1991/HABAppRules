@@ -9,7 +9,7 @@ import habapp_rules.core.pydantic_base
 class KnownContentBase(pydantic.BaseModel):
     """Base class for known content."""
 
-    display_text: str = pydantic.Field(..., description="display string for known content")
+    display_text: str = pydantic.Field(..., description="display string for known content", max_length=14)
     favorite_id: int | None = pydantic.Field(None, description="favorite id for known content", gt=0)  # fav id 0 is reserved for OFF
     start_volume: int | None = pydantic.Field(None, description="start volume. None means no volume")
 
@@ -51,15 +51,16 @@ class SonosItems(habapp_rules.core.pydantic_base.ItemBase):
 class SonosParameter(habapp_rules.core.pydantic_base.ParameterBase):
     """Parameter for sonos."""
 
-    known_content: list[KnownContentBase] = pydantic.Field(default_factory=list, description="known content")
+    known_content: list[ContentTuneIn | ContentPlayUri | ContentLineIn] = pydantic.Field(default_factory=list, description="known content")
     lock_time_volume: int | None = pydantic.Field(None, description="lock time for automatic volume setting in seconds after manual volume change. None means no lock")
     start_volume_tune_in: int | None = pydantic.Field(None, description="start volume for tune in. None means no volume")
     start_volume_line_in: int | None = pydantic.Field(None, description="start volume for line in. None means no volume")
     start_volume_unknown: int | None = pydantic.Field(None, description="start volume for unknown content. None means no volume")
+    starting_timeout: int = pydantic.Field(20, description="timeout for starting new content in seconds. After this timeout the state will fallback to standby if no content is playing", gt=0)
 
     @pydantic.field_validator("known_content", mode="after")
     @classmethod
-    def validate_known_content(cls, value: list[KnownContentBase]) -> list[KnownContentBase]:
+    def validate_known_content(cls, value: list[ContentTuneIn | ContentPlayUri | ContentLineIn]) -> list[ContentTuneIn | ContentPlayUri | ContentLineIn]:
         """Validate known content.
 
         Args:
