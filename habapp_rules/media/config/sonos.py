@@ -41,9 +41,9 @@ class SonosItems(habapp_rules.core.pydantic_base.ItemBase):
     sonos_player: HABApp.openhab.items.PlayerItem = pydantic.Field(..., description="sonos controller")
     sonos_volume: HABApp.openhab.items.DimmerItem | None = pydantic.Field(None, description="sonos volume")  # TODO add to unit test
     play_uri: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="sonos play uri item")
-    current_track_uri: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="sonos current track uri item")
+    current_track_uri: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="sonos current track uri item")  # todo make mandatory for content detection ?
     tune_in_station_id: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="sonos tune in station id item")
-    line_in: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="sonos line in item")
+    line_in: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="sonos line in item")  # todo: remove if not needed
     favorite_id: HABApp.openhab.items.NumberItem | None = pydantic.Field(None, description="favorite id item")
     display_string: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="display string item")
 
@@ -56,7 +56,8 @@ class SonosParameter(habapp_rules.core.pydantic_base.ParameterBase):
     start_volume_tune_in: int | None = pydantic.Field(None, description="start volume for tune in. None means no volume")
     start_volume_line_in: int | None = pydantic.Field(None, description="start volume for line in. None means no volume")
     start_volume_unknown: int | None = pydantic.Field(None, description="start volume for unknown content. None means no volume")
-    starting_timeout: int = pydantic.Field(20, description="timeout for starting new content in seconds. After this timeout the state will fallback to standby if no content is playing", gt=0)
+    booting_timeout: int = pydantic.Field(300, description="timeout for booting sonos devices. After this timeout the state will fallback to PowerOff if the device did not come online.", gt=0)
+    starting_timeout: int = pydantic.Field(60, description="timeout for starting new content in seconds. After this timeout the state will fallback to standby if no content is playing", gt=0)
 
     @pydantic.field_validator("known_content", mode="after")
     @classmethod

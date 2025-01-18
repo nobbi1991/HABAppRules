@@ -20,7 +20,7 @@ KNOWN_CONTENT_TYPES = ContentTuneIn | ContentPlayUri | ContentLineIn
 class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO think about sonos without switch
     states: typing.ClassVar = [
         {"name": "PowerOff"},
-        {"name": "Booting"},
+        {"name": "Booting", "timeout": 300, "on_timeout": "timeout_booting"},
         {"name": "Standby"},
         {"name": "Starting", "timeout": 20, "on_timeout": "timeout_starting"},
         {
@@ -40,13 +40,14 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         # power switch
         {"trigger": "power_on", "source": "PowerOff", "dest": "Booting"},
         {"trigger": "power_off", "source": ["Booting", "Standby", "Playing"], "dest": "PowerOff"},
+        {"trigger": "timeout_booting", "source": "Booting", "dest": "PowerOff"},
         # sonos thing
         {"trigger": "thing_online", "source": "Booting", "dest": "Standby"},
         # player
         {"trigger": "player_start", "source": ["Standby", "Starting"], "dest": "Playing"},
-        {"trigger": "player_end", "source": "Playing", "dest": "Standby"},
+        {"trigger": "player_end", "source": ["Playing"], "dest": "Standby"},  # todo: check if "Starting" should be added to source
         # content changed
-        {"trigger": "content_changed", "source": ["Standby", "Playing"], "dest": "Starting"},
+        {"trigger": "content_changed", "source": ["Standby", "Starting", "Playing"], "dest": "Starting"},
         # starting
         {"trigger": "timeout_starting", "source": "Starting", "dest": "Standby"},
     ]
@@ -62,6 +63,8 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, self._config.items.state)
         self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, self._config.items.sonos_player.name)
 
+        # favorite id
+        self._started_through_favorite_id = False
         self._favorite_id_observer = habapp_rules.actors.state_observer.StateObserverNumber(self._config.items.favorite_id.name, cb_manual=self._cb_favorite_id) if self._config.items.favorite_id is not None else None
 
         # volume
@@ -92,6 +95,7 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
 
     def _set_timeouts(self) -> None:
         """Set timeouts of state machine."""
+        self.state_machine.states["Booting"].timeout = self._config.parameter.booting_timeout
         self.state_machine.states["Starting"].timeout = self._config.parameter.starting_timeout
 
     def _get_initial_state(self, default_value: str = "") -> str:  # noqa: ARG002
@@ -113,19 +117,21 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
 
     def on_enter_Playing_Init(self) -> None:  # noqa: N802
         """Go to child state if playing_init state is entered."""
-        if self._config.items.current_track_uri is not None and self._config.items.current_track_uri.value in self._config.parameter.get_known_play_uris():
+        if self._config.items.current_track_uri.value.startswith("x-file-cifs:"):  # todo add to enum?! and reuse it
             self._set_state("Playing_PlayUri")
-            return
 
-        if self._config.items.tune_in_station_id is not None and self._config.items.tune_in_station_id.value not in {"", None}:
+        elif "tunein" in self._config.items.current_track_uri.value:
             self._set_state("Playing_TuneIn")
-            return
 
-        if self._config.items.line_in is not None and self._config.items.line_in.is_on():
+        elif self._config.items.current_track_uri.value.startswith("x-sonos-htastream:"):
             self._set_state("Playing_LineIn")
-            return
 
-        self._set_state("Playing_UnknownContent")
+        else:
+            self._set_state("Playing_UnknownContent")
+
+    def on_enter_Starting(self) -> None:  # noqa: N802
+        if self._config.items.sonos_player.value == "PLAY":
+            self.player_start()
 
     def _update_openhab_state(self) -> None:
         """Update OpenHAB state item and other states.
@@ -143,8 +149,9 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         """Set output states."""
         known_content = self._check_if_known_content() if self.state.startswith("Playing_") else None
 
+        self._set_start_volume(known_content)
         self._set_outputs_display_string(known_content)
-        self._set_outputs_fav_id(known_content)
+        self._set_outputs_favorite_id(known_content)
 
     def _set_outputs_display_string(self, known_content: KNOWN_CONTENT_TYPES | None = None) -> None:
         """Set display string."""
@@ -163,17 +170,23 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         if self._config.items.display_string is not None:
             send_if_different(self._config.items.display_string, display_str)
 
-    def _set_outputs_fav_id(self, known_content: KNOWN_CONTENT_TYPES | None = None) -> None:
+    def _set_outputs_favorite_id(self, known_content: KNOWN_CONTENT_TYPES | None = None) -> None:
         """Set favorite id."""
-        if self._previous_state is None or self._favorite_id_observer is None:
+        if self._favorite_id_observer is None:
             return
 
         if self.state == "Standby" and self._previous_state.startswith("Playing_"):
             self._favorite_id_observer.send_command(0)
 
+        elif self.state == "Standby" and self._previous_state == "Booting" and self._started_through_favorite_id:
+            self._set_favorite_content(self._get_favorite_content())
+
         elif self.state.startswith("Playing_"):
             fav_id = known_content.favorite_id if known_content is not None else -1
             self._favorite_id_observer.send_command(fav_id)
+
+        elif self.state == "PowerOff":
+            self._favorite_id_observer.send_command(0)
 
     def _check_if_known_content(self) -> KNOWN_CONTENT_TYPES | None:
         """Check if the current content is a known content.
@@ -181,22 +194,26 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         Returns:
             known content object if known, otherwise None
         """
-        if self._config.items.current_track_uri is not None:  # noqa: SIM102
+        if self._config.items.current_track_uri.value.startswith("x-file-cifs:"):
             if known_content := next((content for content in self._config.parameter.known_content if isinstance(content, ContentPlayUri) and content.uri == self._config.items.current_track_uri.value), None):
                 return known_content
 
-        if self._config.items.tune_in_station_id is not None and str(self._config.items.tune_in_station_id.value).isnumeric():  # noqa: SIM102
+        elif "tunein" in self._config.items.current_track_uri.value:
             if known_content := next((content for content in self._config.parameter.known_content if isinstance(content, ContentTuneIn) and content.tune_in_id == int(self._config.items.tune_in_station_id.value)), None):
                 return known_content
 
-        if self._config.items.line_in is not None and self._config.items.line_in.is_on() and (known_content := next((content for content in self._config.parameter.known_content if isinstance(content, ContentLineIn)), None)):
+        elif (
+            self._config.items.current_track_uri.value.startswith("x-sonos-htastream:")
+            and self._config.items.line_in.is_on()
+            and (known_content := next((content for content in self._config.parameter.known_content if isinstance(content, ContentLineIn)), None))
+        ):
             return known_content
 
         return None
 
     def _set_start_volume(self, known_content: KnownContentBase | None) -> None:
         """Set start volume."""
-        if self._volume_locked:
+        if self._volume_locked or not self.state.startswith("Playing_"):
             return
 
         start_volume = known_content.start_volume if known_content else None
@@ -211,6 +228,29 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
 
         if start_volume is not None:
             self._volume_observer.send_command(start_volume)
+
+    def _get_favorite_content(self, fav_id: int | None = None) -> ContentTuneIn | ContentPlayUri | None:
+        """Get favorite content instance by favorite id."
+
+        Args:
+            fav_id: favorite ID. If not given, the value will be taken from the OH item
+
+        Returns:
+            instance of ContentTuneIn or ContentPlayUri (or None if not found)
+        """
+        fav_id = fav_id if fav_id is not None else self._config.items.favorite_id.value
+        return next((content for content in self._config.parameter.known_content if content.favorite_id == fav_id), None)
+
+    def _set_favorite_content(self, fav_content: ContentTuneIn | ContentPlayUri) -> None:
+        """Set favorite content.
+
+        Args:
+            fav_content: instance of ContentTuneIn or ContentPlayUri which should be set
+        """
+        if isinstance(fav_content, ContentTuneIn):
+            self._config.items.tune_in_station_id.oh_send_command(fav_content.tune_in_id)
+        elif isinstance(fav_content, ContentPlayUri):
+            self._config.items.play_uri.oh_send_command(str(fav_content.uri))
 
     def _cb_power_switch(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback if the power switch was changed.
@@ -268,25 +308,26 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         if event.value == 0:  # fav id 0 -> stop
             if self.state.startswith("Playing_"):
                 self._config.items.sonos_player.oh_send_command("PAUSE")
-            else:
+            elif self.state == "Starting":
                 self.player_end()
             return
 
-        fav_content = next((content for content in self._config.parameter.known_content if content.favorite_id == int(event.value)), None)
+        fav_content = self._get_favorite_content(event.value)
 
         if fav_content is None:
             self._instance_logger.warning(f"Favorite ID {event.value} is not known.")
             return
 
-        if self.state.startswith("Playing_") or self.state == "Standby":
-            # todo implement other states, eg. power off
-            # todo move next lines to own method
-            self.content_changed()
+        if self.state.startswith("Playing_"):
+            self._config.items.sonos_player.oh_send_command("PAUSE")
 
-            if isinstance(fav_content, ContentTuneIn):
-                self._config.items.tune_in_station_id.oh_send_command(fav_content.tune_in_id)
-            elif isinstance(fav_content, ContentPlayUri):
-                self._config.items.play_uri.oh_send_command(str(fav_content.uri))
+        if self.state.startswith("Playing_") or self.state == "Standby":
+            self.content_changed()
+            self._set_favorite_content(fav_content)
+
+        if self.state == "PowerOff":
+            self._started_through_favorite_id = True
+            self._config.items.power_switch.oh_send_command("ON")
 
     def _cb_tune_in_station_id(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback if the statin id changed.
@@ -294,7 +335,7 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         Args:
             event: event which triggered this event
         """
-        if event.value and self.state.startswith("Playing_") or self.state == "Standby":
+        if (event.value and self.state.startswith("Playing_")) or self.state == "Standby":
             self.content_changed()
 
     def _cb_current_track_uri(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
@@ -303,7 +344,7 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         Args:
             event: event which triggered this event
         """
-        if event.value and self.state.startswith("Playing_") or self.state == "Standby":
+        if (event.value and self.state.startswith("Playing_")) or self.state == "Standby" and "tunein" not in event.value.lower():
             self.content_changed()
 
     def _cb_line_in(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
@@ -312,5 +353,5 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         Args:
             event: event which triggered this event
         """
-        if event.value == "ON" and self.state.startswith("Playing_") or self.state == "Standby":
+        if (event.value == "ON" and self.state.startswith("Playing_")) or self.state == "Standby":
             self.content_changed()
