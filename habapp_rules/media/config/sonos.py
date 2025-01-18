@@ -26,12 +26,6 @@ class ContentPlayUri(KnownContentBase):
     uri: str = pydantic.Field(..., description="uri for play uri content")
 
 
-class ContentLineIn(KnownContentBase):
-    """LineIn content."""
-
-    favorite_id: None = None
-
-
 class SonosItems(habapp_rules.core.pydantic_base.ItemBase):
     """Items for sonos."""
 
@@ -39,11 +33,10 @@ class SonosItems(habapp_rules.core.pydantic_base.ItemBase):
     state: HABApp.openhab.items.StringItem = pydantic.Field(..., description="sonos state")
     power_switch: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="sonos power switch")
     sonos_player: HABApp.openhab.items.PlayerItem = pydantic.Field(..., description="sonos controller")
-    sonos_volume: HABApp.openhab.items.DimmerItem | None = pydantic.Field(None, description="sonos volume")  # TODO add to unit test
+    current_track_uri: HABApp.openhab.items.StringItem = pydantic.Field(..., description="sonos current track uri item")
+    sonos_volume: HABApp.openhab.items.DimmerItem | None = pydantic.Field(None, description="sonos volume")
     play_uri: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="sonos play uri item")
-    current_track_uri: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="sonos current track uri item")  # todo make mandatory for content detection ?
     tune_in_station_id: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="sonos tune in station id item")
-    line_in: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="sonos line in item")  # todo: remove if not needed
     favorite_id: HABApp.openhab.items.NumberItem | None = pydantic.Field(None, description="favorite id item")
     display_string: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="display string item")
 
@@ -51,7 +44,7 @@ class SonosItems(habapp_rules.core.pydantic_base.ItemBase):
 class SonosParameter(habapp_rules.core.pydantic_base.ParameterBase):
     """Parameter for sonos."""
 
-    known_content: list[ContentTuneIn | ContentPlayUri | ContentLineIn] = pydantic.Field(default_factory=list, description="known content")
+    known_content: list[ContentTuneIn | ContentPlayUri] = pydantic.Field(default_factory=list, description="known content")
     lock_time_volume: int | None = pydantic.Field(None, description="lock time for automatic volume setting in seconds after manual volume change. None means no lock")
     start_volume_tune_in: int | None = pydantic.Field(None, description="start volume for tune in. None means no volume")
     start_volume_line_in: int | None = pydantic.Field(None, description="start volume for line in. None means no volume")
@@ -61,7 +54,7 @@ class SonosParameter(habapp_rules.core.pydantic_base.ParameterBase):
 
     @pydantic.field_validator("known_content", mode="after")
     @classmethod
-    def validate_known_content(cls, value: list[ContentTuneIn | ContentPlayUri | ContentLineIn]) -> list[ContentTuneIn | ContentPlayUri | ContentLineIn]:
+    def validate_known_content(cls, value: list[ContentTuneIn | ContentPlayUri]) -> list[ContentTuneIn | ContentPlayUri]:
         """Validate known content.
 
         Args:
@@ -79,21 +72,27 @@ class SonosParameter(habapp_rules.core.pydantic_base.ParameterBase):
             raise ValueError(msg)
         return value
 
-    def get_known_tune_in_ids(self) -> list[int]:
-        """Get known tune in ids.
+    def check_if_known_tune_in(self, tune_in_id: int) -> ContentTuneIn | None:
+        """Check if tune in id is known.
+
+        Args:
+            tune_in_id: tune in id
 
         Returns:
-            list of known tune in ids
+            instance of ContentTuneIn (or None if not found)
         """
-        return [content.tune_in_id for content in self.known_content if isinstance(content, ContentTuneIn)]
+        return next((content for content in self.known_content if isinstance(content, ContentTuneIn) and content.tune_in_id == tune_in_id), None)
 
-    def get_known_play_uris(self) -> list[str]:
-        """Get known play uris.
+    def check_if_known_play_uri(self, uri: str) -> ContentPlayUri | None:
+        """Check if play uri is known.
+
+        Args:
+            uri: play uri
 
         Returns:
-            list of known play uris
+            instance of ContentPlayUri (or None if not found)
         """
-        return [content.uri for content in self.known_content if isinstance(content, ContentPlayUri)]
+        return next((content for content in self.known_content if isinstance(content, ContentPlayUri) and content.uri == uri), None)
 
 
 class SonosConfig(habapp_rules.core.pydantic_base.ConfigBase):
@@ -118,10 +117,6 @@ class SonosConfig(habapp_rules.core.pydantic_base.ConfigBase):
 
         if any(isinstance(content, ContentPlayUri) for content in self.parameter.known_content) and (self.items.play_uri is None or self.items.current_track_uri is None):
             msg = "play_uri and current_track_uri items must be set if ContentPlayUri is used"
-            raise ValueError(msg)
-
-        if any(isinstance(content, ContentLineIn) for content in self.parameter.known_content) and self.items.line_in is None:
-            msg = "line_in item must be set if ContentLineIn is used"
             raise ValueError(msg)
 
         start_volumes = [self.parameter.start_volume_tune_in, self.parameter.start_volume_line_in, self.parameter.start_volume_unknown] + [content.start_volume for content in self.parameter.known_content]

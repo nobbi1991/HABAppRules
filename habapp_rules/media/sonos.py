@@ -10,11 +10,11 @@ import habapp_rules.core.logger
 import habapp_rules.core.state_machine_rule
 import habapp_rules.media.config.sonos
 from habapp_rules.core.helper import send_if_different
-from habapp_rules.media.config.sonos import ContentLineIn, ContentPlayUri, ContentTuneIn, KnownContentBase
+from habapp_rules.media.config.sonos import ContentPlayUri, ContentTuneIn, KnownContentBase
 
 LOGGER = logging.getLogger(__name__)
 
-KNOWN_CONTENT_TYPES = ContentTuneIn | ContentPlayUri | ContentLineIn
+KNOWN_CONTENT_TYPES = ContentTuneIn | ContentPlayUri
 
 
 class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO think about sonos without switch
@@ -45,7 +45,7 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         {"trigger": "thing_online", "source": "Booting", "dest": "Standby"},
         # player
         {"trigger": "player_start", "source": ["Standby", "Starting"], "dest": "Playing"},
-        {"trigger": "player_end", "source": ["Playing"], "dest": "Standby"},  # todo: check if "Starting" should be added to source
+        {"trigger": "player_end", "source": ["Playing"], "dest": "Standby"},
         # content changed
         {"trigger": "content_changed", "source": ["Standby", "Starting", "Playing"], "dest": "Starting"},
         # starting
@@ -83,12 +83,8 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         self._config.items.sonos_thing.listen_event(self._cb_thing, HABApp.core.events.EventFilter(HABApp.openhab.events.ThingStatusInfoChangedEvent))
         self._config.items.sonos_player.listen_event(self._cb_player, HABApp.openhab.events.ItemStateChangedEventFilter())
 
-        if self._config.items.tune_in_station_id is not None:
-            self._config.items.tune_in_station_id.listen_event(self._cb_tune_in_station_id, HABApp.openhab.events.ItemStateChangedEventFilter())
         if self._config.items.current_track_uri is not None:
             self._config.items.current_track_uri.listen_event(self._cb_current_track_uri, HABApp.openhab.events.ItemStateChangedEventFilter())
-        if self._config.items.line_in is not None:
-            self._config.items.line_in.listen_event(self._cb_line_in, HABApp.openhab.events.ItemStateChangedEventFilter())
 
         # log init finished
         self._instance_logger.info(self.get_initial_log_message())
@@ -117,7 +113,7 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
 
     def on_enter_Playing_Init(self) -> None:  # noqa: N802
         """Go to child state if playing_init state is entered."""
-        if self._config.items.current_track_uri.value.startswith("x-file-cifs:"):  # todo add to enum?! and reuse it
+        if self._config.items.current_track_uri.value.startswith("x-file-cifs:"):
             self._set_state("Playing_PlayUri")
 
         elif "tunein" in self._config.items.current_track_uri.value:
@@ -130,6 +126,7 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
             self._set_state("Playing_UnknownContent")
 
     def on_enter_Starting(self) -> None:  # noqa: N802
+        """Callback which is triggered if "Starting" state is entered."""
         if self._config.items.sonos_player.value == "PLAY":
             self.player_start()
 
@@ -165,6 +162,8 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
             display_str = "Standby"
         elif self.state == "Starting":
             display_str = "Starting"
+        elif self.state == "Playing_LineIn":
+            display_str = "TV"
         elif self.state.startswith("Playing_"):
             display_str = known_content.display_text if known_content is not None else "Playing"
         if self._config.items.display_string is not None:
@@ -175,18 +174,22 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         if self._favorite_id_observer is None:
             return
 
-        if self.state == "Standby" and self._previous_state.startswith("Playing_"):
-            self._favorite_id_observer.send_command(0)
-
-        elif self.state == "Standby" and self._previous_state == "Booting" and self._started_through_favorite_id:
-            self._set_favorite_content(self._get_favorite_content())
-
-        elif self.state.startswith("Playing_"):
+        if self.state.startswith("Playing_"):
             fav_id = known_content.favorite_id if known_content is not None else -1
             self._favorite_id_observer.send_command(fav_id)
 
         elif self.state == "PowerOff":
             self._favorite_id_observer.send_command(0)
+
+        elif self._previous_state is None:
+            # the following checks need _previous_state to be set
+            return
+
+        elif self.state == "Standby" and self._previous_state.startswith("Playing_"):
+            self._favorite_id_observer.send_command(0)
+
+        elif self.state == "Standby" and self._previous_state == "Booting" and self._started_through_favorite_id:
+            self._set_favorite_content(self._get_favorite_content())
 
     def _check_if_known_content(self) -> KNOWN_CONTENT_TYPES | None:
         """Check if the current content is a known content.
@@ -194,19 +197,10 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         Returns:
             known content object if known, otherwise None
         """
-        if self._config.items.current_track_uri.value.startswith("x-file-cifs:"):
-            if known_content := next((content for content in self._config.parameter.known_content if isinstance(content, ContentPlayUri) and content.uri == self._config.items.current_track_uri.value), None):
-                return known_content
+        if self.state == "Playing_PlayUri" and (known_content := self._config.parameter.check_if_known_play_uri(self._config.items.current_track_uri.value)):
+            return known_content
 
-        elif "tunein" in self._config.items.current_track_uri.value:
-            if known_content := next((content for content in self._config.parameter.known_content if isinstance(content, ContentTuneIn) and content.tune_in_id == int(self._config.items.tune_in_station_id.value)), None):
-                return known_content
-
-        elif (
-            self._config.items.current_track_uri.value.startswith("x-sonos-htastream:")
-            and self._config.items.line_in.is_on()
-            and (known_content := next((content for content in self._config.parameter.known_content if isinstance(content, ContentLineIn)), None))
-        ):
+        if self.state == "Playing_TuneIn" and (known_content := self._config.parameter.check_if_known_tune_in(int(self._config.items.tune_in_station_id.value))):
             return known_content
 
         return None
@@ -230,7 +224,7 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
             self._volume_observer.send_command(start_volume)
 
     def _get_favorite_content(self, fav_id: int | None = None) -> ContentTuneIn | ContentPlayUri | None:
-        """Get favorite content instance by favorite id."
+        """Get favorite content instance by favorite id.".
 
         Args:
             fav_id: favorite ID. If not given, the value will be taken from the OH item
@@ -329,29 +323,11 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
             self._started_through_favorite_id = True
             self._config.items.power_switch.oh_send_command("ON")
 
-    def _cb_tune_in_station_id(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
-        """Callback if the statin id changed.
-
-        Args:
-            event: event which triggered this event
-        """
-        if (event.value and self.state.startswith("Playing_")) or self.state == "Standby":
-            self.content_changed()
-
     def _cb_current_track_uri(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback if the track URI changed.
 
         Args:
             event: event which triggered this event
         """
-        if (event.value and self.state.startswith("Playing_")) or self.state == "Standby" and "tunein" not in event.value.lower():
-            self.content_changed()
-
-    def _cb_line_in(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
-        """Callback if the line in state changed.
-
-        Args:
-            event: event which triggered this event
-        """
-        if (event.value == "ON" and self.state.startswith("Playing_")) or self.state == "Standby":
+        if (event.value and self.state.startswith("Playing_")) or (self.state == "Standby" and "tunein" not in event.value.lower()):
             self.content_changed()
