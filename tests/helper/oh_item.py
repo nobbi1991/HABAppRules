@@ -4,9 +4,13 @@ from __future__ import annotations
 
 import contextlib
 import datetime
+from typing import TYPE_CHECKING
 
 import HABApp.core
 import HABApp.openhab.events
+
+if TYPE_CHECKING:
+    from HABApp.openhab.definitions import ThingStatusEnum
 
 NO_VALUE = object()
 _MOCKED_ITEM_NAMES = []
@@ -71,7 +75,7 @@ def set_state(item_name: str, value: StateTypes | None) -> None:
         item.set_value(value)
 
 
-def set_thing_state(thing_name: str, value: StateTypes | None) -> None:
+def set_thing_state(thing_name: str, value: ThingStatusEnum | None) -> None:
     """Helper to set state of thing.
 
     Args:
@@ -132,6 +136,17 @@ def item_state_change_event(item_name: str, value: StateTypes, old_value: StateT
     prev_value = old_value or HABApp.openhab.items.OpenhabItem.get_item(item_name).value
     set_state(item_name, value)
     HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateChangedEvent(item_name, value, prev_value))
+
+
+def thing_status_info_changed_event(thing_name: str, status: ThingStatusEnum) -> None:
+    """Trigger a thing status info changed event.
+
+    Args:
+        thing_name: name of thing
+        status: status
+    """
+    set_thing_state(thing_name, status)
+    HABApp.core.EventBus.post_event(thing_name, HABApp.openhab.events.ThingStatusInfoChangedEvent(thing_name, status))
 
 
 def assert_value(item_name: str, value: StateTypes | None, message: str | None = None) -> None:

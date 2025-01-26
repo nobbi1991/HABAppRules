@@ -49,7 +49,7 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         {"trigger": "player_start", "source": ["Standby", "Starting"], "dest": "Playing"},
         {"trigger": "player_end", "source": ["Playing"], "dest": "Standby"},
         # content changed
-        {"trigger": "content_changed", "source": ["Standby", "Starting", "Playing"], "dest": "Starting"},
+        {"trigger": "content_changed", "source": ["Standby", "Starting", "Playing"], "dest": "Starting"},  # TODO: check if Standby can be removed as source
         # starting
         {"trigger": "timeout_starting", "source": "Starting", "dest": "Standby"},
     ]
@@ -70,8 +70,12 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         self._favorite_id_observer = habapp_rules.actors.state_observer.StateObserverNumber(self._config.items.favorite_id.name, cb_manual=self._cb_favorite_id) if self._config.items.favorite_id is not None else None
 
         # volume
-        self._volume_observer = habapp_rules.actors.state_observer.StateObserverDimmer(self._config.items.sonos_volume.name, cb_change=self._cb_volume_changed) if self._config.items.sonos_volume is not None else None
-        self._countdown_volume_lock = self.run.countown(self._cb_countdown_volume_lock, self._config.parameter.lock_time_volume) if self._config.parameter.lock_time_volume is not None else None
+        self._volume_observer = (
+            habapp_rules.actors.state_observer.StateObserverDimmer(self._config.items.sonos_volume.name, cb_on=self._cb_volume_changed, cb_off=self._cb_volume_changed, cb_change=self._cb_volume_changed)
+            if self._config.items.sonos_volume is not None
+            else None
+        )
+        self._countdown_volume_lock = self.run.countdown(self._config.parameter.lock_time_volume, self._cb_countdown_volume_lock) if self._config.parameter.lock_time_volume is not None else None
         self._volume_locked = False
 
         # init state machine
@@ -330,7 +334,7 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         if event.value == 0:  # fav id 0 -> stop
             if self.state.startswith("Playing_"):
                 self._config.items.sonos_player.oh_send_command("PAUSE")
-            elif self.state == "Starting":
+            elif self.state == "Starting":  # TODO this can be removed, check on real system
                 self.player_end()
             return
 

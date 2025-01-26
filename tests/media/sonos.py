@@ -9,9 +9,11 @@ from HABApp.openhab.definitions import ThingStatusEnum
 
 import habapp_rules.media.config.sonos
 import habapp_rules.media.sonos
+import habapp_rules.system
 import tests.helper.graph_machines
 import tests.helper.oh_item
 import tests.helper.test_case_base
+import tests.helper.timer
 from habapp_rules.media.config.sonos import ContentPlayUri, ContentTuneIn, SonosParameter
 
 
@@ -486,3 +488,173 @@ class TestSonos(tests.helper.test_case_base.TestCaseBaseStateMachine):
             self.sonos_max._set_favorite_content(None)
         send_tune_in_mock.assert_not_called()
         send_play_uri_mock.assert_not_called()
+
+    def test_cb_volume(self) -> None:
+        """Test _cb_volume."""
+        # no lock time
+        self.sonos_max._config.parameter.lock_time_volume = None
+        self.assertFalse(self.sonos_max._volume_locked)
+        tests.helper.oh_item.item_state_change_event("Unittest_Volume_max", 42)
+        self.assertFalse(self.sonos_max._volume_locked)
+
+        # with lock time
+        self._config_max.parameter.lock_time_volume = 10
+        self.sonos_max = habapp_rules.media.sonos.Sonos(self._config_max)
+        self.assertFalse(self.sonos_max._volume_locked)
+        tests.helper.oh_item.item_state_change_event("Unittest_Volume_max", 45)
+        self.assertTrue(self.sonos_max._volume_locked)
+
+    def test_cb_countdown_volume_lock(self) -> None:
+        """Test _cb_countdown_volume_lock."""
+        self.sonos_max._volume_locked = True
+        self.sonos_max._cb_countdown_volume_lock()
+        self.assertFalse(self.sonos_max._volume_locked)
+
+    def test_cb_favorite_id(self) -> None:
+        """Test _cb_favorite_id."""
+        # unknown content
+        self.sonos_max.to_Standby()
+        tests.helper.oh_item.item_state_change_event("Unittest_FavoriteId_max", -1)
+        tests.helper.oh_item.assert_value("Unittest_State_max", "Standby")
+
+        # favorite id == 0 (stop) | playing state
+        tests.helper.oh_item.set_state("Unittest_Player_max", "PLAY")
+        self.sonos_max.to_Playing_Init()
+        tests.helper.oh_item.assert_value("Unittest_State_max", "Playing_UnknownContent")
+        tests.helper.oh_item.item_state_change_event("Unittest_FavoriteId_max", 0)
+        tests.helper.oh_item.assert_value("Unittest_State_max", "Standby")
+        tests.helper.oh_item.assert_value("Unittest_Player_max", "PAUSE")
+
+        # unknown content
+        self.sonos_max.to_Standby()
+        with unittest.mock.patch.object(self.sonos_max, "_instance_logger") as locker_mock:
+            tests.helper.oh_item.item_state_change_event("Unittest_FavoriteId_max", 99)
+        tests.helper.oh_item.assert_value("Unittest_State_max", "Standby")
+        locker_mock.warning.assert_called_once()
+
+        # known content from plying state
+        self.sonos_max.to_Playing_Init()
+        tests.helper.oh_item.set_state("Unittest_Player_max", "PLAY")
+        fav_content = ContentTuneIn(display_text="TuneIn1", tune_in_id=123)
+        with (
+            unittest.mock.patch.object(self.sonos_max, "_get_favorite_content_by_id", return_value=fav_content) as get_fav_content_mock,
+            unittest.mock.patch.object(self.sonos_max, "_set_favorite_content") as set_fav_content_mock,
+            unittest.mock.patch.object(self.sonos_max, "content_changed") as content_changed_mock,
+        ):
+            tests.helper.oh_item.item_state_change_event("Unittest_FavoriteId_max", 17)
+        get_fav_content_mock.assert_called_once_with(17)
+        set_fav_content_mock.assert_called_once_with(fav_content)
+        content_changed_mock.assert_called()
+        tests.helper.oh_item.assert_value("Unittest_Player_max", "PAUSE")
+
+        # known content from standby state
+        self.sonos_max.to_Standby()
+        with (
+            unittest.mock.patch.object(self.sonos_max, "_get_favorite_content_by_id", return_value=fav_content) as get_fav_content_mock,
+            unittest.mock.patch.object(self.sonos_max, "_set_favorite_content") as set_fav_content_mock,
+            unittest.mock.patch.object(self.sonos_max, "content_changed") as content_changed_mock,
+        ):
+            tests.helper.oh_item.item_state_change_event("Unittest_FavoriteId_max", 17)
+        get_fav_content_mock.assert_called_once_with(17)
+        set_fav_content_mock.assert_called_once_with(fav_content)
+        content_changed_mock.assert_called()
+
+        # known content from power off state
+        self.sonos_max.to_PowerOff()
+        fav_content = ContentTuneIn(display_text="TuneIn1", tune_in_id=123)
+        tests.helper.oh_item.set_state("Unittest_PowerSwitch_max", "OFF")
+        self.assertFalse(self.sonos_max._started_through_favorite_id)
+        with unittest.mock.patch.object(self.sonos_max, "_get_favorite_content_by_id", return_value=fav_content) as get_fav_content_mock:
+            tests.helper.oh_item.item_state_change_event("Unittest_FavoriteId_max", 17)
+        get_fav_content_mock.assert_called_once_with(17)
+        self.assertTrue(self.sonos_max._started_through_favorite_id)
+        tests.helper.oh_item.assert_value("Unittest_PowerSwitch_max", "ON")
+
+    def test_cb_presence_state(self) -> None:
+        """Test _cb_presence_state."""
+        # test if playing is stopped
+        self.sonos_max.to_Playing_Init()
+        tests.helper.oh_item.item_state_change_event("Unittest_PresenceState", habapp_rules.system.PresenceState.LEAVING.value)
+        tests.helper.oh_item.assert_value("Unittest_State_max", "Standby")
+
+        # test that nothing happens if presence state is "presence"
+        self.sonos_max.to_Playing_Init()
+        tests.helper.oh_item.item_state_change_event("Unittest_PresenceState", habapp_rules.system.PresenceState.PRESENCE.value)
+        tests.helper.oh_item.assert_value("Unittest_State_max", "Playing_UnknownContent")
+
+    def test_transitions_power_off(self) -> None:
+        """Test transitions of PowerOff state."""
+        self.sonos_max.to_PowerOff()
+        tests.helper.oh_item.item_state_change_event("Unittest_PowerSwitch_max", "ON")
+        tests.helper.oh_item.assert_value("Unittest_State_max", "Booting")
+
+    def test_transitions_booting(self) -> None:
+        """Test transitions of Booting state."""
+        # power off during booting
+        self.sonos_max.to_Booting()
+        tests.helper.oh_item.item_state_change_event("Unittest_PowerSwitch_max", "OFF")
+        tests.helper.oh_item.assert_value("Unittest_State_max", "PowerOff")
+
+        # timeout during booting
+        self.sonos_max.to_Booting()
+        tests.helper.timer.call_timeout(self.transitions_timer_mock)
+        tests.helper.oh_item.assert_value("Unittest_State_max", "PowerOff")
+
+        # thing online during booting
+        self.sonos_max.to_Booting()
+        tests.helper.oh_item.thing_status_info_changed_event("Unittest:SonosMax", ThingStatusEnum.ONLINE)
+        tests.helper.oh_item.assert_value("Unittest_State_max", "Standby")
+
+    def test_transitions_standby(self) -> None:
+        """Test transitions of Standby state."""
+        # power off
+        self.sonos_max.to_Standby()
+        tests.helper.oh_item.item_state_change_event("Unittest_PowerSwitch_max", "OFF")
+        tests.helper.oh_item.assert_value("Unittest_State_max", "PowerOff")
+
+        # player start
+        self.sonos_max.to_Standby()
+        tests.helper.oh_item.item_state_change_event("Unittest_Player_max", "PLAY")
+        tests.helper.oh_item.assert_value("Unittest_State_max", "Playing_UnknownContent")
+
+        # content changed through track uri
+        self.sonos_max.to_Standby()
+        tests.helper.oh_item.item_state_change_event("Unittest_Player_max", "PAUSE")
+        tests.helper.oh_item.item_state_change_event("Unittest_CurrentTrackUri_max", "uri1")
+        tests.helper.oh_item.assert_value("Unittest_State_max", "Starting")
+
+        # content change should not be triggered if tunein in current track uri
+        self.sonos_max.to_Standby()
+        tests.helper.oh_item.item_state_change_event("Unittest_Player_max", "PAUSE")
+        tests.helper.oh_item.item_state_change_event("Unittest_CurrentTrackUri_max", "something_tunein")
+        tests.helper.oh_item.assert_value("Unittest_State_max", "Standby")
+
+        # content changed by favorite id
+        self.sonos_max.to_Standby()
+        self.sonos_max._config.parameter.known_content = [ContentTuneIn(tune_in_id=1, favorite_id=42, display_text="TuneIn1")]
+        tests.helper.oh_item.item_state_change_event("Unittest_Player_max", "PAUSE")
+        tests.helper.oh_item.item_state_change_event("Unittest_FavoriteId_max", 42)
+        tests.helper.oh_item.assert_value("Unittest_State_max", "Starting")
+
+    def test_transitions_starting(self) -> None:
+        """Test transitions of Starting state."""
+        # player start
+        self.sonos_max.to_Starting()
+        tests.helper.oh_item.item_state_change_event("Unittest_Player_max", "PLAY")
+        tests.helper.oh_item.assert_value("Unittest_State_max", "Playing_UnknownContent")
+
+        # player already started before enter of Starting state
+        self.sonos_max.to_Starting()
+        tests.helper.oh_item.assert_value("Unittest_State_max", "Playing_UnknownContent")
+
+    def test_transitions_playing(self) -> None:
+        """Test transitions of Playing state."""
+        # player stopped
+        self.sonos_max.to_Playing_Init()
+        tests.helper.oh_item.item_state_change_event("Unittest_Player_max", "PAUSE")
+        tests.helper.oh_item.assert_value("Unittest_State_max", "Standby")
+
+        # power off
+        self.sonos_max.to_Playing_Init()
+        tests.helper.oh_item.item_state_change_event("Unittest_PowerSwitch_max", "OFF")
+        tests.helper.oh_item.assert_value("Unittest_State_max", "PowerOff")
