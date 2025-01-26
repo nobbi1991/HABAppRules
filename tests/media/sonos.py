@@ -2,6 +2,7 @@ import collections
 import pathlib
 import sys
 import unittest
+import unittest.mock
 
 import HABApp
 from HABApp.openhab.definitions import ThingStatusEnum
@@ -11,7 +12,7 @@ import habapp_rules.media.sonos
 import tests.helper.graph_machines
 import tests.helper.oh_item
 import tests.helper.test_case_base
-from habapp_rules.media.config.sonos import ContentLineIn, ContentPlayUri, ContentTuneIn
+from habapp_rules.media.config.sonos import ContentPlayUri, ContentTuneIn, SonosParameter
 
 
 class TestSonos(tests.helper.test_case_base.TestCaseBaseStateMachine):
@@ -25,6 +26,7 @@ class TestSonos(tests.helper.test_case_base.TestCaseBaseStateMachine):
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_State_min", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_PowerSwitch_min", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.PlayerItem, "Unittest_Player_min", None)
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_CurrentTrackUri_min", None)
 
         tests.helper.oh_item.add_mock_thing("Unittest:SonosMax")
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_State_max", None)
@@ -34,32 +36,38 @@ class TestSonos(tests.helper.test_case_base.TestCaseBaseStateMachine):
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_PlayUri_max", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_CurrentTrackUri_max", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_TuneInStationId_max", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_LineIn_max", None)
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Volume_max", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_FavoriteId_max", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_DisplayString_max", None)
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_ZoneAdd_max", None)
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_ZoneRemove_max", None)
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_PresenceState", None)
 
-        config_min = habapp_rules.media.config.sonos.SonosConfig(
-            items=habapp_rules.media.config.sonos.SonosItems(sonos_thing="Unittest:SonosMin", state="Unittest_State_min", power_switch="Unittest_PowerSwitch_min", sonos_player="Unittest_Player_min"),
+        self._config_min = habapp_rules.media.config.sonos.SonosConfig(
+            items=habapp_rules.media.config.sonos.SonosItems(sonos_thing="Unittest:SonosMin", state="Unittest_State_min", power_switch="Unittest_PowerSwitch_min", sonos_player="Unittest_Player_min", current_track_uri="Unittest_CurrentTrackUri_min"),
             parameter=habapp_rules.media.config.sonos.SonosParameter(),
         )
 
         self._config_max = habapp_rules.media.config.sonos.SonosConfig(
             items=habapp_rules.media.config.sonos.SonosItems(
-                sonos_thing="Unittest:SonosMin",
-                state="Unittest_State_min",
-                power_switch="Unittest_PowerSwitch_min",
-                sonos_player="Unittest_Player_min",
+                sonos_thing="Unittest:SonosMax",
+                state="Unittest_State_max",
+                power_switch="Unittest_PowerSwitch_max",
+                sonos_player="Unittest_Player_max",
                 play_uri="Unittest_PlayUri_max",
                 current_track_uri="Unittest_CurrentTrackUri_max",
                 tune_in_station_id="Unittest_TuneInStationId_max",
-                line_in="Unittest_LineIn_max",
+                sonos_volume="Unittest_Volume_max",
                 favorite_id="Unittest_FavoriteId_max",
+                zone_add="Unittest_ZoneAdd_max",
+                zone_remove="Unittest_ZoneRemove_max",
                 display_string="Unittest_DisplayString_max",
+                presence_state="Unittest_PresenceState",
             ),
             parameter=habapp_rules.media.config.sonos.SonosParameter(),
         )
 
-        self.sonos_min = habapp_rules.media.sonos.Sonos(config_min)
+        self.sonos_min = habapp_rules.media.sonos.Sonos(self._config_min)
         self.sonos_max = habapp_rules.media.sonos.Sonos(self._config_max)
 
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
@@ -86,8 +94,8 @@ class TestSonos(tests.helper.test_case_base.TestCaseBaseStateMachine):
             TestCase("OFF", ThingStatusEnum.OFFLINE, "PLAY", "PowerOff"),
             TestCase("OFF", ThingStatusEnum.ONLINE, "PAUSE", "PowerOff"),
             TestCase("OFF", ThingStatusEnum.ONLINE, "PLAY", "PowerOff"),
-            TestCase("ON", ThingStatusEnum.OFFLINE, "PAUSE", "Starting"),
-            TestCase("ON", ThingStatusEnum.OFFLINE, "PLAY", "Starting"),
+            TestCase("ON", ThingStatusEnum.OFFLINE, "PAUSE", "Booting"),
+            TestCase("ON", ThingStatusEnum.OFFLINE, "PLAY", "Booting"),
             TestCase("ON", ThingStatusEnum.ONLINE, "PAUSE", "Standby"),
             TestCase("ON", ThingStatusEnum.ONLINE, "PLAY", "Playing_Init"),
         ]
@@ -106,83 +114,375 @@ class TestSonos(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
     def test_on_enter_playing_init(self) -> None:
         """Test on_enter_playing_init."""
-        TestCase = collections.namedtuple("TestCase", "tune_in_station_id , current_track_uri , line_in , expected_state_min, expected_state_max")
-        self.sonos_max._config.parameter.known_content = [ContentPlayUri(uri="some_stream", display_text="some_stream")]
+        TestCase = collections.namedtuple("TestCase", "current_track_uri, expected_state")
 
         test_cases = [
-            TestCase(None, None, None, "Playing_UnknownContent", "Playing_UnknownContent"),
-            TestCase("", "unknown_content", "OFF", "Playing_UnknownContent", "Playing_UnknownContent"),
-            TestCase("", "", "OFF", "Playing_UnknownContent", "Playing_UnknownContent"),
-            TestCase("", "", "ON", "Playing_UnknownContent", "Playing_LineIn"),
-            TestCase("", "some_stream", "OFF", "Playing_UnknownContent", "Playing_PlayUri"),
-            TestCase("", "some_stream", "ON", "Playing_UnknownContent", "Playing_PlayUri"),
-            TestCase("42", "", "OFF", "Playing_UnknownContent", "Playing_TuneIn"),
-            TestCase("42", "", "ON", "Playing_UnknownContent", "Playing_TuneIn"),
-            TestCase("42", "some_stream", "OFF", "Playing_UnknownContent", "Playing_TuneIn"),
-            TestCase("42", "some_stream", "ON", "Playing_UnknownContent", "Playing_TuneIn"),
+            TestCase(None, "Playing_UnknownContent"),
+            TestCase("", "Playing_UnknownContent"),
+            TestCase("x-file-cifs:some_stream", "Playing_PlayUri"),
+            TestCase("tunein:some_stream", "Playing_TuneIn"),
+            TestCase("some_tunein_stream", "Playing_TuneIn"),
+            TestCase("x-sonos-htastream:some_stream", "Playing_LineIn"),
+            TestCase("some_stream", "Playing_UnknownContent"),
+            TestCase("spotify", "Playing_UnknownContent"),
         ]
 
         for test_case in test_cases:
             with self.subTest(test_case=test_case):
-                tests.helper.oh_item.set_state("Unittest_TuneInStationId_max", test_case.tune_in_station_id)
-                tests.helper.oh_item.set_state("Unittest_CurrentTrackUri_max", test_case.current_track_uri)
-                tests.helper.oh_item.set_state("Unittest_LineIn_max", test_case.line_in)
-
-                self.sonos_min.to_Playing_Init()
+                self._config_max.items.current_track_uri.value = test_case.current_track_uri
                 self.sonos_max.to_Playing_Init()
+                self.assertEqual(test_case.expected_state, self.sonos_max.state)
 
-                self.assertEqual(self.sonos_min.state, test_case.expected_state_min)
-                self.assertEqual(self.sonos_max.state, test_case.expected_state_max)
+    def test_on_enter_starting(self) -> None:
+        """Test on_enter_Starting."""
+        # state is pause
+        self._config_min.items.sonos_player.value = "PAUSE"
+        self._config_max.items.sonos_player.value = "PAUSE"
+
+        self.sonos_min.to_Starting()
+        self.sonos_max.to_Starting()
+
+        self.assertEqual(self.sonos_min.state, "Starting")
+        self.assertEqual(self.sonos_max.state, "Starting")
+
+        # state is play
+        self._config_min.items.sonos_player.value = "PLAY"
+        self._config_max.items.sonos_player.value = "PLAY"
+
+        self.sonos_min.to_Starting()
+        self.sonos_max.to_Starting()
+
+        self.assertEqual(self.sonos_min.state, "Playing_UnknownContent")
+        self.assertEqual(self.sonos_max.state, "Playing_UnknownContent")
+
+    def test_set_outputs(self) -> None:
+        """Test set_outputs."""
+        # not in playing state
+        with (
+            unittest.mock.patch.object(self.sonos_max, "_check_if_known_content") as mock_check_if_known_content,
+            unittest.mock.patch.object(self.sonos_max, "_set_start_volume") as mock_set_start_volume,
+            unittest.mock.patch.object(self.sonos_max, "_set_outputs_display_text") as mock_set_outputs_display_text,
+            unittest.mock.patch.object(self.sonos_max, "_set_outputs_favorite_id") as mock_set_outputs_favorite_id,
+        ):
+            self.sonos_max._set_outputs()
+            mock_check_if_known_content.assert_not_called()
+            mock_set_start_volume.assert_called_once_with(None)
+            mock_set_outputs_display_text.assert_called_once_with(None)
+            mock_set_outputs_favorite_id.assert_called_once_with(None)
+
+        # in playing state
+        self.sonos_max.state = "Playing_UnknownContent"
+        with (
+            unittest.mock.patch.object(self.sonos_max, "_check_if_known_content") as mock_check_if_known_content,
+            unittest.mock.patch.object(self.sonos_max, "_set_start_volume") as mock_set_start_volume,
+            unittest.mock.patch.object(self.sonos_max, "_set_outputs_display_text") as mock_set_outputs_display_text,
+            unittest.mock.patch.object(self.sonos_max, "_set_outputs_favorite_id") as mock_set_outputs_favorite_id,
+        ):
+            self.sonos_max._set_outputs()
+            mock_check_if_known_content.assert_called_once()
+            mock_set_start_volume.assert_called_once_with(mock_check_if_known_content.return_value)
+            mock_set_outputs_display_text.assert_called_once_with(mock_check_if_known_content.return_value)
+            mock_set_outputs_favorite_id.assert_called_once_with(mock_check_if_known_content.return_value)
+
+    def test_set_outputs_display_text(self) -> None:
+        """Test set_outputs_display_text."""
+        TestCase = collections.namedtuple("TestCase", "state, known_content, expected_text")
+
+        content_tune_in = ContentTuneIn(display_text="TuneIn1", tune_in_id=1)
+        content_play_uri = ContentPlayUri(display_text="PlayUri1", uri="uri1")
+
+        test_cases = [
+            # no known content
+            TestCase("PowerOff", None, "Off"),
+            TestCase("Booting", None, "Booting"),
+            TestCase("Standby", None, "Standby"),
+            TestCase("Starting", None, "Starting"),
+            TestCase("Playing_Init", None, "Playing"),
+            TestCase("Playing_UnknownContent", None, "Playing"),
+            TestCase("Playing_TuneIn", None, "Playing"),
+            TestCase("Playing_PlayUri", None, "Playing"),
+            TestCase("Playing_LineIn", None, "TV"),
+            # known content for states where it does not matter
+            TestCase("PowerOff", content_tune_in, "Off"),
+            TestCase("Booting", content_tune_in, "Booting"),
+            TestCase("Standby", content_tune_in, "Standby"),
+            TestCase("Starting", content_tune_in, "Starting"),
+            TestCase("Playing_LineIn", content_tune_in, "TV"),
+            # known content where it matters
+            TestCase("Playing_TuneIn", content_tune_in, "TuneIn1"),
+            TestCase("Playing_PlayUri", content_play_uri, "PlayUri1"),
+        ]
+
+        for test_case in test_cases:
+            with self.subTest(test_case=test_case):
+                self.sonos_min.state = test_case.state
+                self.sonos_max.state = test_case.state
+
+                self.sonos_min._set_outputs_display_text(test_case.known_content)
+                self.sonos_max._set_outputs_display_text(test_case.known_content)
+
+                tests.helper.oh_item.assert_value("Unittest_DisplayString_max", test_case.expected_text)
+
+    def test_set_outputs_favorite_id(self) -> None:
+        """Test set_outputs_favorite_id."""
+        tests.helper.oh_item.assert_value("Unittest_FavoriteId_max", 0)
+        tests.helper.oh_item.assert_value("Unittest_State_max", "PowerOff")
+
+        # playing without known content
+        self.sonos_max.to_Playing_Init()
+        self.sonos_max._set_outputs_favorite_id(None)
+        tests.helper.oh_item.assert_value("Unittest_FavoriteId_max", -1)
+
+        # playing with known content
+        self.sonos_max.to_Playing_Init()
+        self.sonos_max._set_outputs_favorite_id(ContentTuneIn(tune_in_id=1, favorite_id=42, display_text="TuneIn1"))
+        tests.helper.oh_item.assert_value("Unittest_FavoriteId_max", 42)
+
+        # previous state is not set
+        self.sonos_max._previous_state = None
+        self.sonos_max.to_Starting()
+
+        # Standby from Playing
+        self.sonos_max._previous_state = "Playing_UnknownContent"
+        self.sonos_max.to_Standby()
+        tests.helper.oh_item.assert_value("Unittest_FavoriteId_max", 0)
+
+        # Standby from Booting and _started_through_favorite_id
+        self.sonos_max._previous_state = "Booting"
+        self.sonos_max._started_through_favorite_id = True
+        with unittest.mock.patch.object(self.sonos_max, "_get_favorite_content_by_id") as mock_get_fav_content_by_id, unittest.mock.patch.object(self.sonos_max, "_set_favorite_content") as mock_set_favorite_content:
+            self.sonos_max.to_Standby()
+            mock_set_favorite_content.assert_called_once_with(mock_get_fav_content_by_id.return_value)
 
     def test_check_if_known_content(self) -> None:
         """Test _check_if_known_content."""
-        TestCase = collections.namedtuple("TestCase", "known_content, item_tune_id, item_track_uri, item_line_in, value_tune_in_id, value_track_uri, value_line_in, expected_result")
+        TestCase = collections.namedtuple("TestCase", "state, known_content, current_track_uri,  station_id, expected_result")
+
         known_content = [
             ContentTuneIn(display_text="TuneIn1", tune_in_id=1),
             ContentTuneIn(display_text="TuneIn2", tune_in_id=2),
             ContentPlayUri(display_text="PlayUri1", uri="uri1"),
             ContentPlayUri(display_text="PlayUri2", uri="uri2"),
-            ContentLineIn(display_text="LineIn"),
         ]
 
         test_cases = [
-            # item is None
-            TestCase([], False, False, False, None, None, None, None),
-            TestCase([], False, False, True, None, None, None, None),
-            TestCase([], False, True, False, None, None, None, None),
-            TestCase([], False, True, True, None, None, None, None),
-            TestCase([], True, False, False, None, None, None, None),
-            TestCase([], True, False, True, None, None, None, None),
-            TestCase([], True, True, False, None, None, None, None),
-            TestCase([], True, True, True, None, None, None, None),
-            # states but no known_content
-            TestCase([], True, True, True, None, None, None, None),
-            TestCase([], True, True, True, None, None, "OFF", None),
-            TestCase([], True, True, True, None, None, "ON", None),
-            # states but with known_content
-            TestCase(known_content, True, True, True, None, None, None, None),
-            TestCase(known_content, True, True, True, "", "", "OFF", None),
-            TestCase(known_content, True, True, True, "", "", "ON", known_content[4]),
-            TestCase(known_content, True, True, True, "", "uri2", "OFF", known_content[3]),
-            TestCase(known_content, True, True, True, "", "uri2", "ON", known_content[3]),
-            TestCase(known_content, True, True, True, "2", "", "OFF", known_content[1]),
-            TestCase(known_content, True, True, True, "2", "", "ON", known_content[1]),
-            TestCase(known_content, True, True, True, "2", "uri2", "OFF", known_content[1]),
-            TestCase(known_content, True, True, True, "2", "uri2", "ON", known_content[1]),
+            # Standby
+            TestCase("Standby", [], "", "", None),
+            TestCase("Standby", [], "", "2", None),
+            TestCase("Standby", [], "uri2", "", None),
+            TestCase("Standby", [], "uri2", "2", None),
+            TestCase("Standby", known_content, "", "", None),
+            TestCase("Standby", known_content, "", "2", None),
+            TestCase("Standby", known_content, "uri2", "", None),
+            TestCase("Standby", known_content, "uri2", "2", None),
+            # PlayUri
+            TestCase("Playing_PlayUri", [], "", "", None),
+            TestCase("Playing_PlayUri", [], "", "2", None),
+            TestCase("Playing_PlayUri", [], "uri2", "", None),
+            TestCase("Playing_PlayUri", [], "uri2", "2", None),
+            TestCase("Playing_PlayUri", known_content, "", "", None),
+            TestCase("Playing_PlayUri", known_content, "", "2", None),
+            TestCase("Playing_PlayUri", known_content, "uri2", "", known_content[3]),
+            TestCase("Playing_PlayUri", known_content, "uri2", "2", known_content[3]),
+            # TuneIn
+            TestCase("Playing_TuneIn", [], "", "", None),
+            TestCase("Playing_TuneIn", [], "", "2", None),
+            TestCase("Playing_TuneIn", [], "uri2", "", None),
+            TestCase("Playing_TuneIn", [], "uri2", "2", None),
+            TestCase("Playing_TuneIn", known_content, "", "", None),
+            TestCase("Playing_TuneIn", known_content, "", "2", known_content[1]),
+            TestCase("Playing_TuneIn", known_content, "uri2", "", None),
+            TestCase("Playing_TuneIn", known_content, "uri2", "2", known_content[1]),
         ]
 
         for test_case in test_cases:
             with self.subTest(test_case=test_case):
-                self._config_max.items.tune_in_station_id = HABApp.openhab.items.OpenhabItem.get_item("Unittest_TuneInStationId_max") if test_case.item_tune_id else None
-                self._config_max.items.current_track_uri = HABApp.openhab.items.OpenhabItem.get_item("Unittest_CurrentTrackUri_max") if test_case.item_track_uri else None
-                self._config_max.items.line_in = HABApp.openhab.items.OpenhabItem.get_item("Unittest_LineIn_max") if test_case.item_line_in else None
+                self.sonos_max.state = test_case.state
                 self._config_max.parameter.known_content = test_case.known_content
+                self._config_max.items.current_track_uri.value = test_case.current_track_uri
 
-                if test_case.item_tune_id is not None:
-                    tests.helper.oh_item.set_state("Unittest_TuneInStationId_max", test_case.value_tune_in_id)
-                if test_case.item_track_uri is not None:
-                    tests.helper.oh_item.set_state("Unittest_CurrentTrackUri_max", test_case.value_track_uri)
-                if test_case.item_line_in is not None:
-                    tests.helper.oh_item.set_state("Unittest_LineIn_max", test_case.value_line_in)
+                if test_case.station_id is None:
+                    self._config_max.items.tune_in_station_id = None
+                else:
+                    self._config_max.items.tune_in_station_id = HABApp.openhab.items.OpenhabItem.get_item("Unittest_TuneInStationId_max")
+                    self._config_max.items.tune_in_station_id.value = test_case.station_id
 
                 self.assertEqual(test_case.expected_result, self.sonos_max._check_if_known_content())
+
+    def test_set_start_volume(self) -> None:
+        """Test _set_start_volume."""
+        # just to be sure that sonos min does not raise
+        self.sonos_min._set_start_volume(None)
+        self.sonos_min._set_start_volume(ContentTuneIn(display_text="TuneIn1", tune_in_id=1))
+
+        parameter_none = SonosParameter(
+            known_content=[],
+            start_volume_tune_in=None,
+            start_volume_line_in=None,
+            start_volume_unknown=None,
+        )
+
+        paremter_volumes_set = SonosParameter(
+            known_content=[],
+            start_volume_tune_in=10,
+            start_volume_line_in=20,
+            start_volume_unknown=30,
+        )
+
+        content_tune_in = ContentTuneIn(display_text="TuneIn1", tune_in_id=1, start_volume=90)
+        content_play_uri = ContentPlayUri(display_text="PlayUri1", uri="uri1", start_volume=95)
+
+        TestCase = collections.namedtuple("TestCase", "config_parameter, locked, state, known_content, expected_volume")
+
+        test_cases = [
+            # parameter not set | not locked
+            TestCase(config_parameter=parameter_none, locked=False, state="Standby", known_content=None, expected_volume=None),
+            TestCase(config_parameter=parameter_none, locked=False, state="Standby", known_content=content_tune_in, expected_volume=None),
+            TestCase(config_parameter=parameter_none, locked=False, state="Standby", known_content=content_play_uri, expected_volume=None),
+            TestCase(config_parameter=parameter_none, locked=False, state="Playing_TuneIn", known_content=None, expected_volume=None),
+            TestCase(config_parameter=parameter_none, locked=False, state="Playing_TuneIn", known_content=content_tune_in, expected_volume=90),
+            TestCase(config_parameter=parameter_none, locked=False, state="Playing_TuneIn", known_content=content_play_uri, expected_volume=95),
+            TestCase(config_parameter=parameter_none, locked=False, state="Playing_LineIn", known_content=None, expected_volume=None),
+            TestCase(config_parameter=parameter_none, locked=False, state="Playing_LineIn", known_content=content_tune_in, expected_volume=90),
+            TestCase(config_parameter=parameter_none, locked=False, state="Playing_LineIn", known_content=content_play_uri, expected_volume=95),
+            TestCase(config_parameter=parameter_none, locked=False, state="Playing_UnknownContent", known_content=None, expected_volume=None),
+            TestCase(config_parameter=parameter_none, locked=False, state="Playing_UnknownContent", known_content=content_tune_in, expected_volume=90),
+            TestCase(config_parameter=parameter_none, locked=False, state="Playing_UnknownContent", known_content=content_play_uri, expected_volume=95),
+            # parameter not set | locked
+            TestCase(config_parameter=parameter_none, locked=True, state="Standby", known_content=None, expected_volume=None),
+            TestCase(config_parameter=parameter_none, locked=True, state="Standby", known_content=content_tune_in, expected_volume=None),
+            TestCase(config_parameter=parameter_none, locked=True, state="Standby", known_content=content_play_uri, expected_volume=None),
+            TestCase(config_parameter=parameter_none, locked=True, state="Playing_TuneIn", known_content=None, expected_volume=None),
+            TestCase(config_parameter=parameter_none, locked=True, state="Playing_TuneIn", known_content=content_tune_in, expected_volume=None),
+            TestCase(config_parameter=parameter_none, locked=True, state="Playing_TuneIn", known_content=content_play_uri, expected_volume=None),
+            TestCase(config_parameter=parameter_none, locked=True, state="Playing_LineIn", known_content=None, expected_volume=None),
+            TestCase(config_parameter=parameter_none, locked=True, state="Playing_LineIn", known_content=content_tune_in, expected_volume=None),
+            TestCase(config_parameter=parameter_none, locked=True, state="Playing_LineIn", known_content=content_play_uri, expected_volume=None),
+            TestCase(config_parameter=parameter_none, locked=True, state="Playing_UnknownContent", known_content=None, expected_volume=None),
+            TestCase(config_parameter=parameter_none, locked=True, state="Playing_UnknownContent", known_content=content_tune_in, expected_volume=None),
+            TestCase(config_parameter=parameter_none, locked=True, state="Playing_UnknownContent", known_content=content_play_uri, expected_volume=None),
+            # parameter set | not locked
+            TestCase(config_parameter=paremter_volumes_set, locked=False, state="Standby", known_content=None, expected_volume=None),
+            TestCase(config_parameter=paremter_volumes_set, locked=False, state="Standby", known_content=content_tune_in, expected_volume=None),
+            TestCase(config_parameter=paremter_volumes_set, locked=False, state="Standby", known_content=content_play_uri, expected_volume=None),
+            TestCase(config_parameter=paremter_volumes_set, locked=False, state="Playing_TuneIn", known_content=None, expected_volume=10),
+            TestCase(config_parameter=paremter_volumes_set, locked=False, state="Playing_TuneIn", known_content=content_tune_in, expected_volume=90),
+            TestCase(config_parameter=paremter_volumes_set, locked=False, state="Playing_TuneIn", known_content=content_play_uri, expected_volume=95),
+            TestCase(config_parameter=paremter_volumes_set, locked=False, state="Playing_LineIn", known_content=None, expected_volume=20),
+            TestCase(config_parameter=paremter_volumes_set, locked=False, state="Playing_LineIn", known_content=content_tune_in, expected_volume=90),
+            TestCase(config_parameter=paremter_volumes_set, locked=False, state="Playing_LineIn", known_content=content_play_uri, expected_volume=95),
+            TestCase(config_parameter=paremter_volumes_set, locked=False, state="Playing_UnknownContent", known_content=None, expected_volume=30),
+            TestCase(config_parameter=paremter_volumes_set, locked=False, state="Playing_UnknownContent", known_content=content_tune_in, expected_volume=90),
+            TestCase(config_parameter=paremter_volumes_set, locked=False, state="Playing_UnknownContent", known_content=content_play_uri, expected_volume=95),
+            # parameter set | locked
+            TestCase(config_parameter=paremter_volumes_set, locked=True, state="Standby", known_content=None, expected_volume=None),
+            TestCase(config_parameter=paremter_volumes_set, locked=True, state="Standby", known_content=content_tune_in, expected_volume=None),
+            TestCase(config_parameter=paremter_volumes_set, locked=True, state="Standby", known_content=content_play_uri, expected_volume=None),
+            TestCase(config_parameter=paremter_volumes_set, locked=True, state="Playing_TuneIn", known_content=None, expected_volume=None),
+            TestCase(config_parameter=paremter_volumes_set, locked=True, state="Playing_TuneIn", known_content=content_tune_in, expected_volume=None),
+            TestCase(config_parameter=paremter_volumes_set, locked=True, state="Playing_TuneIn", known_content=content_play_uri, expected_volume=None),
+            TestCase(config_parameter=paremter_volumes_set, locked=True, state="Playing_LineIn", known_content=None, expected_volume=None),
+            TestCase(config_parameter=paremter_volumes_set, locked=True, state="Playing_LineIn", known_content=content_tune_in, expected_volume=None),
+            TestCase(config_parameter=paremter_volumes_set, locked=True, state="Playing_LineIn", known_content=content_play_uri, expected_volume=None),
+            TestCase(config_parameter=paremter_volumes_set, locked=True, state="Playing_UnknownContent", known_content=None, expected_volume=None),
+            TestCase(config_parameter=paremter_volumes_set, locked=True, state="Playing_UnknownContent", known_content=content_tune_in, expected_volume=None),
+            TestCase(config_parameter=paremter_volumes_set, locked=True, state="Playing_UnknownContent", known_content=content_play_uri, expected_volume=None),
+        ]
+
+        for test_case in test_cases:
+            with self.subTest(test_case=test_case):
+                self._config_max.parameter = test_case.config_parameter
+                self.sonos_max._volume_locked = test_case.locked
+                self.sonos_max.state = test_case.state
+
+                with unittest.mock.patch.object(self.sonos_max._volume_observer, "send_command") as mock_send_volume:
+                    self.sonos_max._set_start_volume(test_case.known_content)
+
+                    if test_case.expected_volume:
+                        mock_send_volume.assert_called_once_with(test_case.expected_volume)
+                    else:
+                        mock_send_volume.assert_not_called()
+
+    def test_get_favorite_content_by_id(self) -> None:
+        """Test _get_favorite_content_by_id."""
+        TestCase = collections.namedtuple("TestCase", "fav_id_arg, fav_id_item, known_content, expected_content")
+
+        known_content = [ContentTuneIn(display_text="TuneIn1", tune_in_id=1, favorite_id=42), ContentPlayUri(display_text="PlayUri1", uri="uri1", favorite_id=44)]
+
+        test_cases = [
+            # fav id from item
+            TestCase(None, None, [], None),
+            TestCase(None, None, known_content, None),
+            TestCase(None, None, [], None),
+            TestCase(None, None, known_content, None),
+            TestCase(None, 17, [], None),
+            TestCase(None, 17, known_content, None),
+            TestCase(None, 17, [], None),
+            TestCase(None, 17, known_content, None),
+            TestCase(None, 42, [], None),
+            TestCase(None, 42, known_content, known_content[0]),
+            TestCase(None, 42, [], None),
+            TestCase(None, 42, known_content, known_content[0]),
+            TestCase(None, 44, [], None),
+            TestCase(None, 44, known_content, known_content[1]),
+            TestCase(None, 44, [], None),
+            TestCase(None, 44, known_content, known_content[1]),
+            # fav id from arg | item is None
+            TestCase(17, None, [], None),
+            TestCase(17, None, known_content, None),
+            TestCase(17, None, [], None),
+            TestCase(17, None, known_content, None),
+            TestCase(42, None, [], None),
+            TestCase(42, None, known_content, known_content[0]),
+            TestCase(42, None, [], None),
+            TestCase(42, None, known_content, known_content[0]),
+            TestCase(44, None, [], None),
+            TestCase(44, None, known_content, known_content[1]),
+            TestCase(44, None, [], None),
+            TestCase(44, None, known_content, known_content[1]),
+            # fav id from arg | item is not None, but will be ignored
+            TestCase(17, 42, [], None),
+            TestCase(17, 42, known_content, None),
+            TestCase(17, 42, [], None),
+            TestCase(17, 42, known_content, None),
+            TestCase(42, 44, [], None),
+            TestCase(42, 44, known_content, known_content[0]),
+            TestCase(42, 44, [], None),
+            TestCase(42, 44, known_content, known_content[0]),
+            TestCase(44, 42, [], None),
+            TestCase(44, 42, known_content, known_content[1]),
+            TestCase(44, 42, [], None),
+            TestCase(44, 42, known_content, known_content[1]),
+        ]
+
+        for test_case in test_cases:
+            with self.subTest(test_case=test_case):
+                self.sonos_max._config.items.favorite_id.value = test_case.fav_id_item
+                self.sonos_max._config.parameter.known_content = test_case.known_content
+
+                if test_case.fav_id_arg is not None:
+                    self.assertEqual(test_case.expected_content, self.sonos_max._get_favorite_content_by_id(test_case.fav_id_arg))
+                    self.assertIsNone(self.sonos_min._get_favorite_content_by_id(test_case.fav_id_arg))
+                else:
+                    self.assertEqual(test_case.expected_content, self.sonos_max._get_favorite_content_by_id())
+                    self.assertIsNone(self.sonos_min._get_favorite_content_by_id())
+
+    def test_set_favorite_content(self) -> None:
+        """Test _set_favorite_content."""
+        # TuneIn
+        with unittest.mock.patch.object(self._config_max.items.tune_in_station_id, "oh_send_command") as send_tune_in_mock, unittest.mock.patch.object(self._config_max.items.play_uri, "oh_send_command") as send_play_uri_mock:
+            self.sonos_max._set_favorite_content(ContentTuneIn(display_text="TuneIn1", tune_in_id=123))
+        send_tune_in_mock.assert_called_once_with(123)
+        send_play_uri_mock.assert_not_called()
+
+        # PlayUri
+        with unittest.mock.patch.object(self._config_max.items.tune_in_station_id, "oh_send_command") as send_tune_in_mock, unittest.mock.patch.object(self._config_max.items.play_uri, "oh_send_command") as send_play_uri_mock:
+            self.sonos_max._set_favorite_content(ContentPlayUri(display_text="PlayUri1", uri="uri1"))
+        send_tune_in_mock.assert_not_called()
+        send_play_uri_mock.assert_called_once_with("uri1")
+
+        # None
+        with unittest.mock.patch.object(self._config_max.items.tune_in_station_id, "oh_send_command") as send_tune_in_mock, unittest.mock.patch.object(self._config_max.items.play_uri, "oh_send_command") as send_play_uri_mock:
+            self.sonos_max._set_favorite_content(None)
+        send_tune_in_mock.assert_not_called()
+        send_play_uri_mock.assert_not_called()

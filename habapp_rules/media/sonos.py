@@ -9,8 +9,10 @@ import habapp_rules.actors.state_observer
 import habapp_rules.core.logger
 import habapp_rules.core.state_machine_rule
 import habapp_rules.media.config.sonos
+import habapp_rules.system
+from habapp_rules.core.exceptions import HabAppRulesError
 from habapp_rules.core.helper import send_if_different
-from habapp_rules.media.config.sonos import ContentPlayUri, ContentTuneIn, KnownContentBase
+from habapp_rules.media.config.sonos import ContentPlayUri, ContentTuneIn
 
 LOGGER = logging.getLogger(__name__)
 
@@ -85,9 +87,20 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
 
         if self._config.items.current_track_uri is not None:
             self._config.items.current_track_uri.listen_event(self._cb_current_track_uri, HABApp.openhab.events.ItemStateChangedEventFilter())
+        if self._config.items.presence_state is not None:
+            self._config.items.presence_state.listen_event(self._cb_presence_state, HABApp.openhab.events.ItemStateChangedEventFilter())
 
         # log init finished
         self._instance_logger.info(self.get_initial_log_message())
+
+    @property
+    def config(self) -> habapp_rules.media.config.sonos.SonosConfig:
+        """Get config.
+
+        Returns:
+            Config
+        """
+        return self._config
 
     def _set_timeouts(self) -> None:
         """Set timeouts of state machine."""
@@ -113,13 +126,18 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
 
     def on_enter_Playing_Init(self) -> None:  # noqa: N802
         """Go to child state if playing_init state is entered."""
-        if self._config.items.current_track_uri.value.startswith("x-file-cifs:"):
+        track_uri = self._config.items.current_track_uri.value
+
+        if not track_uri or not isinstance(track_uri, str):
+            self._set_state("Playing_UnknownContent")
+
+        elif track_uri.startswith("x-file-cifs:"):
             self._set_state("Playing_PlayUri")
 
-        elif "tunein" in self._config.items.current_track_uri.value:
+        elif "tunein" in track_uri:
             self._set_state("Playing_TuneIn")
 
-        elif self._config.items.current_track_uri.value.startswith("x-sonos-htastream:"):
+        elif track_uri.startswith("x-sonos-htastream:"):
             self._set_state("Playing_LineIn")
 
         else:
@@ -147,11 +165,11 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         known_content = self._check_if_known_content() if self.state.startswith("Playing_") else None
 
         self._set_start_volume(known_content)
-        self._set_outputs_display_string(known_content)
+        self._set_outputs_display_text(known_content)
         self._set_outputs_favorite_id(known_content)
 
-    def _set_outputs_display_string(self, known_content: KNOWN_CONTENT_TYPES | None = None) -> None:
-        """Set display string."""
+    def _set_outputs_display_text(self, known_content: KNOWN_CONTENT_TYPES | None = None) -> None:
+        """Set display text."""
         display_str = "Unknown"
 
         if self.state == "PowerOff":
@@ -189,7 +207,8 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
             self._favorite_id_observer.send_command(0)
 
         elif self.state == "Standby" and self._previous_state == "Booting" and self._started_through_favorite_id:
-            self._set_favorite_content(self._get_favorite_content())
+            # this is used to set the favorite content after booting. E.g. if booted through favorite id (user pressed favorite button and Sonos was in PowerOff state)
+            self._set_favorite_content(self._get_favorite_content_by_id())
 
     def _check_if_known_content(self) -> KNOWN_CONTENT_TYPES | None:
         """Check if the current content is a known content.
@@ -200,14 +219,20 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         if self.state == "Playing_PlayUri" and (known_content := self._config.parameter.check_if_known_play_uri(self._config.items.current_track_uri.value)):
             return known_content
 
-        if self.state == "Playing_TuneIn" and (known_content := self._config.parameter.check_if_known_tune_in(int(self._config.items.tune_in_station_id.value))):
+        if self._config.items.tune_in_station_id is None or self._config.items.tune_in_station_id.value is None:
+            return None
+
+        if not (tune_in_station_id := self._config.items.tune_in_station_id.value).isnumeric():
+            return None
+
+        if self.state == "Playing_TuneIn" and (known_content := self._config.parameter.check_if_known_tune_in(int(tune_in_station_id))):
             return known_content
 
         return None
 
-    def _set_start_volume(self, known_content: KnownContentBase | None) -> None:
+    def _set_start_volume(self, known_content: KNOWN_CONTENT_TYPES | None) -> None:
         """Set start volume."""
-        if self._volume_locked or not self.state.startswith("Playing_"):
+        if self._config.items.sonos_volume is None or self._volume_locked or not self.state.startswith("Playing_"):
             return
 
         start_volume = known_content.start_volume if known_content else None
@@ -223,7 +248,7 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         if start_volume is not None:
             self._volume_observer.send_command(start_volume)
 
-    def _get_favorite_content(self, fav_id: int | None = None) -> ContentTuneIn | ContentPlayUri | None:
+    def _get_favorite_content_by_id(self, fav_id: int | None = None) -> ContentTuneIn | ContentPlayUri | None:
         """Get favorite content instance by favorite id.".
 
         Args:
@@ -232,10 +257,13 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         Returns:
             instance of ContentTuneIn or ContentPlayUri (or None if not found)
         """
+        if self._config.items.favorite_id is None:
+            return None
+
         fav_id = fav_id if fav_id is not None else self._config.items.favorite_id.value
         return next((content for content in self._config.parameter.known_content if content.favorite_id == fav_id), None)
 
-    def _set_favorite_content(self, fav_content: ContentTuneIn | ContentPlayUri) -> None:
+    def _set_favorite_content(self, fav_content: KNOWN_CONTENT_TYPES) -> None:
         """Set favorite content.
 
         Args:
@@ -306,7 +334,7 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
                 self.player_end()
             return
 
-        fav_content = self._get_favorite_content(event.value)
+        fav_content = self._get_favorite_content_by_id(event.value)
 
         if fav_content is None:
             self._instance_logger.warning(f"Favorite ID {event.value} is not known.")
@@ -331,3 +359,36 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         """
         if (event.value and self.state.startswith("Playing_")) or (self.state == "Standby" and "tunein" not in event.value.lower()):
             self.content_changed()
+
+    def _cb_presence_state(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+        """Callback if the presence state changed.
+
+        Args:
+            event: event which triggered this event
+        """
+        if event.value != habapp_rules.system.PresenceState.PRESENCE.value:
+            send_if_different(self._config.items.favorite_id, 0)
+
+    def add_speaker(self, speaker: "Sonos") -> None:
+        """Add another speaker to this sonos speaker.
+
+        Args:
+            speaker: speaker to add
+
+        Raises:
+            HabAppRulesError: if this sonos speaker has no zone add item
+        """
+        if self._config.items.zone_add is None:
+            msg = "This sonos speaker has no zone add item configured. Can not add other speakers to it."
+            raise HabAppRulesError(msg)
+
+        self._config.items.zone_add(speaker.config.items.sonos_thing.name)
+        # TODO: set volume?!
+
+    def remove_speaker(self, speaker: "Sonos") -> None:
+        """Remove speaker from this sonos speaker.
+
+        Args:
+            speaker: speaker to remove
+        """
+        self._config.items.zone_remove(speaker.config.items.sonos_thing.name)
