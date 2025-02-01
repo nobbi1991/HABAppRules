@@ -60,7 +60,9 @@ class BathroomLight(habapp_rules.core.state_machine_rule.StateMachineRule):
         self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, self._config.items.light_main.name)
 
         self._sleep_end_time = 0
-        self._light_main_observer = habapp_rules.actors.state_observer.StateObserverDimmer(self._config.items.light_main.name, cb_on=self._cb_hand_on, cb_off=self._cb_hand_off, value_tolerance=5)
+        self._switch_on_via_increase = False
+        control_names = [self._config.items.light_main_ctr.name] if self._config.items.light_main_ctr is not None else []
+        self._light_main_observer = habapp_rules.actors.state_observer.StateObserverDimmer(self._config.items.light_main.name, control_names=control_names, cb_on=self._cb_hand_on, cb_off=self._cb_hand_off, value_tolerance=5)
 
         # init state machine
         self._previous_state = None
@@ -113,7 +115,9 @@ class BathroomLight(habapp_rules.core.state_machine_rule.StateMachineRule):
             self._previous_state = self.state
 
     def _set_outputs(self) -> None:
+        """Set outputs to OpenHAB items."""
         if self.state == "Manual":
+            self._switch_on_via_increase = False
             return
 
         if self.state == "Auto_Off":
@@ -123,29 +127,53 @@ class BathroomLight(habapp_rules.core.state_machine_rule.StateMachineRule):
         elif self.state == "Auto_On_MainDay":
             habapp_rules.core.helper.send_if_different(self._config.items.light_main_hcl, "ON")
         elif self.state == "Auto_On_MainNight":
-            self._light_main_observer.send_command(self._config.parameter.brightness_night)
+            if not self._switch_on_via_increase:
+                self._light_main_observer.send_command(self._config.parameter.brightness_night)
             habapp_rules.core.helper.send_if_different(self._config.items.light_main_color, self._config.parameter.color_night)
         elif self.state == "Auto_On_MainAndMirror":
             habapp_rules.core.helper.send_if_different(self._config.items.light_main_color, self._config.parameter.color_mirror_sync)
             new_brightness = max(self._config.parameter.min_brightness_mirror_sync, self._light_main_observer.value)
             self._light_main_observer.send_command(new_brightness)
 
+        self._switch_on_via_increase = False
+
     def _is_day(self) -> bool:
+        """Check if it is day.
+
+        Returns:
+            True if it is day
+        """
         if self._config.items.sleeping_state.value != habapp_rules.system.SleepState.AWAKE.value:
             return False
 
         return time.time() - self._sleep_end_time > self._config.parameter.extended_sleep_time
 
     def _mirror_is_on(self) -> bool:
+        """Check if mirror light is on.
+
+        Returns:
+            True if mirror light is on
+        """
         return self._config.items.light_mirror.is_on()
 
     def _cb_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+        """Callback which is triggered if the 'manual' item changed.
+
+        Args:
+            event: event, which triggered this callback
+        """
         if event.value == "ON":
             self.manual_on()
         else:
             self.manual_off()
 
-    def _cb_hand_on(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:  # noqa: ARG002
+    def _cb_hand_on(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+        """Callback which is triggered if a hand action was detected.
+
+        Args:
+            event: event, which triggered this callback
+        """
+        self._switch_on_via_increase = event.value == "INCREASE"
         self.hand_on()
 
     def _cb_hand_off(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:  # noqa: ARG002

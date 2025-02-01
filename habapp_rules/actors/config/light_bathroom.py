@@ -9,6 +9,7 @@ class BathroomLightItems(ItemBase):
 
     # lights
     light_main: HABApp.openhab.items.DimmerItem = pydantic.Field(..., description="main light item")
+    light_main_ctr: HABApp.openhab.items.DimmerItem | None = pydantic.Field(None, description="control item for main light, this can be used to detect switch on via dimming")
     light_main_color: HABApp.openhab.items.NumberItem = pydantic.Field(..., description="main light color (Kelvin)")
     light_main_hcl: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="set HCL mode from KNX actor active for main light")
     light_mirror: HABApp.openhab.items.DimmerItem = pydantic.Field(..., description="mirror light item")
