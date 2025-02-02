@@ -1,4 +1,4 @@
-FROM python:3.13 as buildimage
+FROM python:3.13 AS buildimage
 
 COPY . /tmp/app_install
 
@@ -14,7 +14,7 @@ COPY container/entrypoint.sh /entrypoint.sh
 
 ENV HABAPP_HOME=/habapp \
 	USER_ID=9001 \
-	GROUP_ID=${USER_ID} \
+	GROUP_ID=9001 \
 	TZ=Europe/Berlin
 
 RUN set -eux; \
