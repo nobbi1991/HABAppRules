@@ -2,7 +2,8 @@
 
 ## Bugfix
 
-- -
+- Fixed bug in `habapp_rules.actors.energy_save_switch.EnergySaveSwitch` where the max_on_time-timeout switched off the switch, also if external request was active
+- Fixed bug in `habapp_rules.actors.light_bathroom.BathroomLight` which set the night brightness also if the light was switched on via dimming
 
 # Version 7.2.1 - 31.12.2024
 
