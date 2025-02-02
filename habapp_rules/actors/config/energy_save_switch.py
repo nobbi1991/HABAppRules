@@ -21,7 +21,7 @@ class EnergySaveSwitchItems(habapp_rules.core.pydantic_base.ItemBase):
 class EnergySaveSwitchParameter(habapp_rules.core.pydantic_base.ParameterBase):
     """Parameter config for EnergySaveSwitch rule."""
 
-    max_on_time: int | None = pydantic.Field(None, description="maximum on time in seconds. None means no timeout.")
+    max_on_time: int | None = pydantic.Field(None, description="maximum on time in seconds. None means no timeout. If the external request item is ON, the timeout will be extended till the external request is OFF.")
     hand_timeout: int | None = pydantic.Field(None, description="Fallback time from hand to automatic mode in seconds. None means no timeout.")
     current_threshold: float = pydantic.Field(0.030, description="threshold in Ampere.")
     extended_wait_for_current_time: int = pydantic.Field(60, description="Extended time to wait time before switch off the relay in seconds. If current goes above threshold, it will jump back to ON state.", gt=0)

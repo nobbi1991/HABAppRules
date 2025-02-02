@@ -236,6 +236,26 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
 
                     tests.helper.oh_item.assert_value("Unittest_Min_State", "Auto_On")
 
+    def test_auto_on_transitions_timeout(self) -> None:
+        """Test auto on transitions with max_on_countdown."""
+        # external request OFF
+        tests.helper.oh_item.item_state_change_event("Unittest_External_Request", "OFF")
+        self._rule_max_without_current.to_Auto_On()
+        self._rule_max_without_current._cb_max_on_countdown()
+        tests.helper.oh_item.assert_value("Unittest_Max_State", "Auto_Off")
+        tests.helper.oh_item.assert_value("Unittest_Max_Switch", "OFF")
+
+        # external request ON
+        tests.helper.oh_item.item_state_change_event("Unittest_External_Request", "ON")
+        self._rule_max_without_current.to_Auto_On()
+        self._rule_max_without_current._cb_max_on_countdown()
+        tests.helper.oh_item.assert_value("Unittest_Max_State", "Auto_On")
+        tests.helper.oh_item.assert_value("Unittest_Max_Switch", "ON")
+        # external to off
+        tests.helper.oh_item.item_state_change_event("Unittest_External_Request", "OFF")
+        tests.helper.oh_item.assert_value("Unittest_Max_State", "Auto_Off")
+        tests.helper.oh_item.assert_value("Unittest_Max_Switch", "OFF")
+
     def test_auto_wait_current_transitions(self) -> None:
         """Test Auto_WaitCurrent transitions."""
         # on conditions met
@@ -250,19 +270,43 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
         tests.helper.oh_item.assert_value("Unittest_Current_State", "Auto_WaitCurrentExtended")
         tests.helper.oh_item.assert_value("Unittest_Current_Switch", "ON")
 
-        # max_on_countdown
-        self._rule_with_current.to_Auto_WaitCurrent()
-        self._rule_with_current.max_on_countdown()
-        tests.helper.oh_item.assert_value("Unittest_Current_State", "Auto_Off")
-        tests.helper.oh_item.assert_value("Unittest_Current_Switch", "OFF")
+        # max_on_countdown | external request off
+        tests.helper.oh_item.item_state_change_event("Unittest_External_Request", "OFF")
+        self._rule_max_without_current.to_Auto_WaitCurrent()
+        self._rule_max_without_current._cb_max_on_countdown()
+        tests.helper.oh_item.assert_value("Unittest_Max_State", "Auto_Off")
+        tests.helper.oh_item.assert_value("Unittest_Max_Switch", "OFF")
+
+        # max_on_countdown | external request on
+        tests.helper.oh_item.item_state_change_event("Unittest_External_Request", "ON")
+        self._rule_max_without_current.to_Auto_WaitCurrent()
+        self._rule_max_without_current._cb_max_on_countdown()
+        tests.helper.oh_item.assert_value("Unittest_Max_State", "Auto_WaitCurrent")
+        tests.helper.oh_item.assert_value("Unittest_Max_Switch", "ON")
+        # external to off
+        tests.helper.oh_item.item_state_change_event("Unittest_External_Request", "OFF")
+        tests.helper.oh_item.assert_value("Unittest_Max_State", "Auto_Off")
+        tests.helper.oh_item.assert_value("Unittest_Max_Switch", "OFF")
 
     def test_hand_transitions(self) -> None:
         """Test Hand transitions."""
-        # max_on_countdown
+        # max_on_countdown | external request off
+        tests.helper.oh_item.item_state_change_event("Unittest_External_Request", "OFF")
         self._rule_max_without_current.to_Hand()
-        self._rule_max_without_current.max_on_countdown()
-        tests.helper.oh_item.assert_value("Unittest_Current_State", "Auto_Off")
-        tests.helper.oh_item.assert_value("Unittest_Current_Switch", "OFF")
+        self._rule_max_without_current._cb_max_on_countdown()
+        tests.helper.oh_item.assert_value("Unittest_Max_State", "Auto_Off")
+        tests.helper.oh_item.assert_value("Unittest_Max_Switch", "OFF")
+
+        # max_on_countdown | external request on
+        tests.helper.oh_item.item_state_change_event("Unittest_External_Request", "ON")
+        self._rule_max_without_current.to_Hand()
+        self._rule_max_without_current._cb_max_on_countdown()
+        tests.helper.oh_item.assert_value("Unittest_Max_State", "Hand")
+        tests.helper.oh_item.assert_value("Unittest_Max_Switch", "ON")
+        # external to off
+        tests.helper.oh_item.item_state_change_event("Unittest_External_Request", "OFF")
+        tests.helper.oh_item.assert_value("Unittest_Max_State", "Auto_Off")
+        tests.helper.oh_item.assert_value("Unittest_Max_Switch", "OFF")
 
         # hand timeout
         self._rule_max_without_current.to_Hand()

@@ -84,6 +84,7 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
         self.state_machine = habapp_rules.core.state_machine_rule.HierarchicalStateMachineWithTimeout(model=self, states=self.states, transitions=self.trans, ignore_invalid_triggers=True, after_state_change="_update_openhab_state")
 
         self._max_on_countdown = self.run.countdown(self._config.parameter.max_on_time, self._cb_max_on_countdown) if self._config.parameter.max_on_time is not None else None
+        self._switch_off_after_external_req = False
         self._set_timeouts()
         self._set_state(self._get_initial_state())
 
@@ -185,8 +186,11 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
 
     def _cb_max_on_countdown(self) -> None:
         """Callback which is triggered if max on time is reached."""
-        if self._max_on_countdown is not None:
-            self.max_on_countdown()
+        if self._max_on_countdown:
+            if self._config.items.external_request is not None and self._config.items.external_request.is_on():
+                self._switch_off_after_external_req = True
+            else:
+                self.max_on_countdown()
 
     def _cb_switch(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback which is triggered if switch changed.
@@ -227,9 +231,13 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
         """Callback which is triggered if sleeping state changed."""
         self._conditions_changed()
 
-    def _cb_external_request(self, _: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_external_request(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback which is triggered if external request changed."""
-        self._conditions_changed()
+        if event.value == "OFF" and self._switch_off_after_external_req:
+            self.to_Auto_Off()
+        else:
+            self._conditions_changed()
+        self._switch_off_after_external_req = False
 
     def _cb_current_changed(self, _: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback which is triggered if the current value changed."""
