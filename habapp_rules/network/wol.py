@@ -33,5 +33,5 @@ class Wol(HABApp.Rule):
         """
         if event.value == "ON":
             send_magic_packet(self._config.parameter.mac_address)
-            LOGGER.info(f"Triggered WOL for {self._config.parameter.log_name}")
+            LOGGER.info(f"Triggered WOL for '{self._config.parameter.log_name}'")
             self._config.items.trigger_wol.oh_send_command("OFF")
