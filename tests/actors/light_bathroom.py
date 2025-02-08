@@ -134,6 +134,27 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
                 self._rule._sleep_end_time = test_case.sleep_end_time
                 self.assertEqual(test_case.expected_result, self._rule._is_day())
 
+    def test_is_extended_sleep(self) -> None:
+        """Test _is_extended_sleep."""
+        TestCase = collections.namedtuple("TestCase", "sleep_end_time, time_now, expected_result")
+
+        self._config.parameter.extended_sleep_time = 10
+
+        test_cases = [
+            TestCase(sleep_end_time=100, time_now=200, expected_result=False),
+            TestCase(sleep_end_time=100, time_now=100, expected_result=True),
+            TestCase(sleep_end_time=100, time_now=109, expected_result=True),
+            TestCase(sleep_end_time=100, time_now=110, expected_result=True),
+            TestCase(sleep_end_time=100, time_now=111, expected_result=False),
+        ]
+
+        with unittest.mock.patch("time.time", return_value=42) as time_mock:
+            for test_case in test_cases:
+                with self.subTest(test_case=test_case):
+                    self._rule._sleep_end_time = test_case.sleep_end_time
+                    time_mock.return_value = test_case.time_now
+                    self.assertEqual(test_case.expected_result, self._rule._is_extended_sleep())
+
     def test_mirror_is_on(self) -> None:
         """Test _mirror_is_on."""
         TestCase = collections.namedtuple("TestCase", "mirror_value, expected_result")
@@ -201,6 +222,22 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
                         main_observer_mock.send_command.assert_not_called()
 
                     self.assertFalse(self._rule._switch_on_via_increase)
+
+    def test_set_outputs_sleep_extended(self) -> None:
+        """Test _set_outputs for sleep and extended sleep."""
+        self._config.parameter.brightness_night = 18
+        self._config.parameter.brightness_night_extended = 42
+        self._rule.state = "Auto_On_MainNight"
+
+        # normal sleep
+        with unittest.mock.patch.object(self._rule, "_is_extended_sleep", return_value=False):
+            self._rule._set_outputs()
+        tests.helper.oh_item.assert_value("Unittest_Light_Main", 18)
+
+        # extended sleep
+        with unittest.mock.patch.object(self._rule, "_is_extended_sleep", return_value=True):
+            self._rule._set_outputs()
+        tests.helper.oh_item.assert_value("Unittest_Light_Main", 42)
 
     def test_manual_transitions(self) -> None:
         """Test transitions of state Manual."""
