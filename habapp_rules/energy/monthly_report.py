@@ -16,6 +16,7 @@ import habapp_rules.core.exceptions
 import habapp_rules.core.logger
 import habapp_rules.energy.config.monthly_report
 import habapp_rules.energy.donut_chart
+import habapp_rules.energy.helper
 
 LOGGER = logging.getLogger(__name__)
 
@@ -81,7 +82,7 @@ class MonthlyReport(HABApp.Rule):
 
         if config.parameter.persistence_group_name is not None:
             # check if all energy items are in the given persistence group
-            items_to_check = [config.items.energy_sum] + [share.energy_item for share in config.parameter.known_energy_shares]
+            items_to_check = [config.items.energy_sum] + [item for share in config.parameter.known_energy_shares for item in share.get_items_as_list]
             not_in_persistence_group = [item.name for item in items_to_check if config.parameter.persistence_group_name not in item.groups]
             if not_in_persistence_group:
                 msg = f"The following OpenHAB items are not in the persistence group '{config.parameter.persistence_group_name}': {not_in_persistence_group}"
@@ -93,23 +94,6 @@ class MonthlyReport(HABApp.Rule):
             self._instance_logger.warning("Debug mode is active!")
             self.run.soon(self._cb_send_energy)
         self._instance_logger.info(f"Successfully initiated monthly consumption rule for {config.items.energy_sum.name}.")
-
-    def _get_historic_value(self, item: HABApp.openhab.items.NumberItem, start_time: datetime.datetime) -> float:
-        """Get historic value of given Number item.
-
-        Args:
-            item: item instance
-            start_time: start time to search for the interested value
-
-        Returns:
-            historic value of the item
-        """
-        historic = item.get_persistence_data(start_time=start_time, end_time=start_time + datetime.timedelta(hours=1)).data
-        if not historic:
-            self._instance_logger.warning(f"Could not get value of item '{item.name}' of time = {start_time}")
-            return 0
-
-        return next(iter(historic.values()))
 
     def _create_html(self, energy_sum_month: float) -> str:
         """Create html which will be sent by the mail.
@@ -167,13 +151,13 @@ class MonthlyReport(HABApp.Rule):
         now = datetime.datetime.now()
         last_month = now - dateutil.relativedelta.relativedelta(months=1)
 
-        energy_sum_month = self._config.items.energy_sum.value - self._get_historic_value(self._config.items.energy_sum, last_month)# todo handle if 0
+        energy_sum_month = self._config.items.energy_sum.value - habapp_rules.energy.helper.get_historic_value(self._config.items.energy_sum, last_month)
         for share in self._config.parameter.known_energy_shares:
-            share.monthly_power = share.energy_item.value - self._get_historic_value(share.energy_item, last_month)
+            share.monthly_power = share.get_energy_since(last_month)
 
         energy_unknown = energy_sum_month - sum(share.monthly_power for share in self._config.parameter.known_energy_shares)
 
-        with tempfile.TemporaryDirectory() as temp_dir_name: # todo only create if there are valid values
+        with tempfile.TemporaryDirectory() as temp_dir_name:
             # create plot
             labels = [share.chart_name for share in self._config.parameter.known_energy_shares] + ["Rest"]
             values = [share.monthly_power for share in self._config.parameter.known_energy_shares] + [energy_unknown]
