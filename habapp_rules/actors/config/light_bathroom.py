@@ -31,6 +31,7 @@ class BathroomLightParameter(ParameterBase):
     color_night: int = pydantic.Field(2600, description="color temperature for night mode")
     brightness_night: int = pydantic.Field(40, description="brightness for night mode")
     extended_sleep_time: int = pydantic.Field(15 * 60, description="additional sleep time in seconds", gt=0)
+    brightness_night_extended: int | None = pydantic.Field(None, description="brightness for night mode extended")
 
 
 class BathroomLightConfig(ConfigBase):
