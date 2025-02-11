@@ -1,3 +1,9 @@
+# Version 7.4.0 - dd.mm.2025
+
+## Features
+
+- Added support for multiple energy items to `habapp_rules.energy.config.monthly_report.EnergyShare`
+
 # Version 7.3.0 - 08.02.2025
 
 ## Features
