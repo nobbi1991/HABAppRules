@@ -24,13 +24,13 @@ repos:
       - id: fix-byte-order-marker
       - id: trailing-whitespace
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.5
+    rev: v0.9.8
     hooks:
       - id: ruff
         args: [--fix]
       - id: ruff-format
   - repo: https://github.com/google/yamlfmt
-    rev: v0.15.0
+    rev: v0.16.0
     hooks:
       - id: yamlfmt
         args: [-conf, .yamlfmt.yaml]

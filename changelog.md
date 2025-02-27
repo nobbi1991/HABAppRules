@@ -2,6 +2,7 @@
 
 ## Features
 
+- added rule `habapp_rules.network.wol.Wol` to wake up devices via Wake-on-LAN
 - Added support for multiple energy items to `habapp_rules.energy.config.monthly_report.EnergyShare`
 
 # Version 7.3.0 - 08.02.2025
