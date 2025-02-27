@@ -128,7 +128,9 @@ class BathroomLight(habapp_rules.core.state_machine_rule.StateMachineRule):
             habapp_rules.core.helper.send_if_different(self._config.items.light_main_hcl, "ON")
         elif self.state == "Auto_On_MainNight":
             if not self._switch_on_via_increase:
-                self._light_main_observer.send_command(self._config.parameter.brightness_night)
+                extended_sleep_brightness = self._config.parameter.brightness_night_extended or self._config.parameter.brightness_night
+                target_brightness = extended_sleep_brightness if self._is_extended_sleep() else self._config.parameter.brightness_night
+                self._light_main_observer.send_command(target_brightness)
             habapp_rules.core.helper.send_if_different(self._config.items.light_main_color, self._config.parameter.color_night)
         elif self.state == "Auto_On_MainAndMirror":
             habapp_rules.core.helper.send_if_different(self._config.items.light_main_color, self._config.parameter.color_mirror_sync)
@@ -147,6 +149,14 @@ class BathroomLight(habapp_rules.core.state_machine_rule.StateMachineRule):
             return False
 
         return time.time() - self._sleep_end_time > self._config.parameter.extended_sleep_time
+
+    def _is_extended_sleep(self) -> bool:
+        """Check if it is extended sleep.
+
+        Returns:
+            True if it is extended sleep
+        """
+        return time.time() - self._sleep_end_time <= self._config.parameter.extended_sleep_time
 
     def _mirror_is_on(self) -> bool:
         """Check if mirror light is on.

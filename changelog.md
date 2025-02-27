@@ -1,8 +1,14 @@
-# Version 7.3.0 - dd.mm.2025
+# Version 7.4.0 - dd.mm.2025
 
 ## Features
 
 - added rule `habapp_rules.network.wol.Wol` to wake up devices via Wake-on-LAN
+
+# Version 7.3.0 - 08.02.2025
+
+## Features
+
+- Added parameter `brightness_night_extended` to config of `habapp_rules.actors.light_bathroom.BathroomLight` to configure the brightness for the extended sleep time
 
 # Version 7.2.2 - 02.02.2025
 
