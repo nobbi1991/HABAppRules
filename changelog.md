@@ -1,3 +1,9 @@
+# Version 7.4.0 - dd.mm.2025
+
+## Features
+
+- added rule `habapp_rules.network.wol.Wol` to wake up devices via Wake-on-LAN
+
 # Version 7.3.0 - 08.02.2025
 
 ## Features
