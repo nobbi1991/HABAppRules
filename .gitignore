@@ -6,3 +6,5 @@
 /tests/.coverage
 /.coverage
 *.log
+/shelf/
+/workspace.xml
