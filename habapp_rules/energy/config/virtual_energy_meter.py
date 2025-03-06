@@ -1,5 +1,4 @@
 import dataclasses
-import typing
 
 import HABApp
 import pydantic
@@ -17,7 +16,7 @@ class EnergyMeterBaseItems(ItemBase):
     energy_output: HABApp.openhab.items.NumberItem | None = pydantic.Field(None, description="energy output item, unit is kWh")
 
     @pydantic.model_validator(mode="after")
-    def validate_items(self) -> typing.Self:
+    def validate_items(self) -> typing_extensions.Self:
         """Validate items.
 
         Returns:
