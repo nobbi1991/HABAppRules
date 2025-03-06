@@ -89,6 +89,25 @@ class _VirtualEnergyMeterBase(HABApp.Rule):
 
 
 class VirtualEnergyMeterSwitch(_VirtualEnergyMeterBase):
+    """Rule to monitor energy consumption of switch items without a real energy meter.
+
+    # Config
+    config = VirtualEnergyMeterSwitch(config=EnergyMeterSwitchConfig(
+        items=EnergyMeterSwitchItems(
+            monitored_item="Switch",
+            power_output="Virtual_Power",
+            energy_output="Virtual_Energy"
+
+        ),
+        parameter=EnergyMeterSwitchParameter(
+            power=42
+        )
+    ))
+
+    # Rule init
+    VirtualEnergyMeterSwitch(config)
+    """
+
     def __init__(self, config: EnergyMeterSwitchConfig) -> None:
         """Init Rule.
 
@@ -121,6 +140,28 @@ class VirtualEnergyMeterSwitch(_VirtualEnergyMeterBase):
 
 
 class VirtualEnergyMeterNumber(_VirtualEnergyMeterBase):
+    """Rule to monitor energy consumption of dimmer / number items without a real energy meter.
+
+    # Config
+    config = VirtualEnergyMeterNumber(config=EnergyMeterNumberConfig(
+        items=EnergyMeterNumberItems(
+            monitored_item="Dimmer",
+            power_output="Virtual_Power",
+            energy_output="Virtual_Energy"
+
+        ),
+        parameter=EnergyMeterNumberParameter(
+            power_mapping=[
+                PowerMapping(value=0, power=0),
+                PowerMapping(value=100, power=10_000)
+            ]
+        )
+    ))
+
+    # Rule init
+    VirtualEnergyMeterNumber(config)
+    """
+
     def __init__(self, config: EnergyMeterNumberConfig) -> None:
         """Init Rule.
 

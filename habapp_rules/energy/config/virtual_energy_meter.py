@@ -3,6 +3,7 @@ import typing
 
 import HABApp
 import pydantic
+import typing_extensions
 from pydantic import model_validator
 
 from habapp_rules.core.exceptions import HabAppRulesConfigurationError
@@ -130,8 +131,8 @@ class EnergyMeterNumberConfig(ConfigBase):
     parameter: EnergyMeterNumberParameter = pydantic.Field(..., description="parameter for the dimmer")
 
     @model_validator(mode="after")
-    def validate_model(self) -> typing.Self:
-        """Validate model
+    def validate_model(self) -> typing_extensions.Self:
+        """Validate model.
 
         Returns:
             Validated model

@@ -149,7 +149,7 @@ class TestVirtualEnergyMeterSwitch(tests.helper.test_case_base.TestCaseBase):
             update_energy_item_mock.assert_called_once_with(get_countdown_mock.return_value)
             reset_countdown_mock.assert_called_once()
 
-    def test_update_energy_item(self):
+    def test_update_energy_item(self) -> None:
         """Test _update_energy_item."""
         TestCase = collections.namedtuple("TestCase", "energy_output_value, power, time_since_last_update, expected_energy")
 
@@ -160,7 +160,7 @@ class TestVirtualEnergyMeterSwitch(tests.helper.test_case_base.TestCaseBase):
             TestCase(energy_output_value=0, power=100, time_since_last_update=10, expected_energy=0.1 * 10 / 3600),
             TestCase(energy_output_value=0, power=-100, time_since_last_update=0, expected_energy=0),
             TestCase(energy_output_value=0, power=-100, time_since_last_update=10, expected_energy=-0.1 * 10 / 3600),
-            #
+            # with initial power
             TestCase(energy_output_value=1000, power=0, time_since_last_update=0, expected_energy=1000),
             TestCase(energy_output_value=1000, power=0, time_since_last_update=10, expected_energy=1000),
             TestCase(energy_output_value=1000, power=100, time_since_last_update=0, expected_energy=1000),
