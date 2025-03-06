@@ -3,14 +3,16 @@ import time
 
 import HABApp
 
-from habapp_rules.energy.config.virtual_energy_meter import EnergyMeterDimmerConfig, EnergyMeterSwitchConfig
+from habapp_rules.energy.config.virtual_energy_meter import EnergyMeterNumberConfig, EnergyMeterSwitchConfig
 
 
 class _VirtualEnergyMeterBase(HABApp.Rule):
-    def __init__(self, config: EnergyMeterSwitchConfig | EnergyMeterDimmerConfig) -> None:
+    """Base class for virtual energy meter classes."""
+
+    def __init__(self, config: EnergyMeterSwitchConfig | EnergyMeterNumberConfig) -> None:
         HABApp.Rule.__init__(self)
         self._config = config
-        self._monitored_item = config.items.monitored_switch if isinstance(config, EnergyMeterSwitchConfig) else config.items.monitored_dimmer
+        self._monitored_item = config.items.monitored_switch if isinstance(config, EnergyMeterSwitchConfig) else config.items.monitored_item
 
         if self._config.items.energy_output is not None and self._config.items.energy_output.value is None:
             self._config.items.energy_output.oh_send_command(0)
@@ -38,14 +40,14 @@ class _VirtualEnergyMeterBase(HABApp.Rule):
         """Get time to send energy.
 
         Returns:
-            time to send energy
+            time to send energy in seconds
         """
         # calc time to send every X W (X from config)
         # E = P * t -> t = E / P -> t = E / P
         if self._power == 0:
             return 1  # avoid divide by zero
 
-        return self._config.parameter.energy_update_resolution / self._power * 3600
+        return self._config.parameter.energy_update_resolution / self._power * 3_600_000
 
     def _cb_monitored_item(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:  # noqa:  ARG002
         """Callback which is triggered if the monitored item changed.
@@ -118,15 +120,15 @@ class VirtualEnergyMeterSwitch(_VirtualEnergyMeterBase):
                 self._set_energy_from_remaining_time()
 
 
-class VirtualEnergyMeterDimmer(_VirtualEnergyMeterBase):
-    def __init__(self, config: EnergyMeterDimmerConfig) -> None:
+class VirtualEnergyMeterNumber(_VirtualEnergyMeterBase):
+    def __init__(self, config: EnergyMeterNumberConfig) -> None:
         """Init Rule.
 
         Args:
             config: Config for virtual energy meter
         """
-        if config.items.monitored_dimmer.value is None:
-            config.items.monitored_dimmer.oh_send_command(0)
+        if config.items.monitored_item.value is None:
+            config.items.monitored_item.oh_send_command(0)
 
         _VirtualEnergyMeterBase.__init__(self, config)
 
@@ -136,7 +138,7 @@ class VirtualEnergyMeterDimmer(_VirtualEnergyMeterBase):
         Returns:
             power
         """
-        return self._config.parameter.get_power(self._config.items.monitored_dimmer.value)
+        return self._config.parameter.get_power(self._config.items.monitored_item.value)
 
     def _cb_monitored_item(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback which is triggered if the monitored item changed.

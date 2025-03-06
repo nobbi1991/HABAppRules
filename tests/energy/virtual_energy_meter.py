@@ -26,14 +26,14 @@ class TestVirtualEnergyMeterSwitch(tests.helper.test_case_base.TestCaseBase):
         tests.helper.test_case_base.TestCaseBase.setUp(self)
 
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch")
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Power")
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Energy")
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Power_Dimmer")
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Energy_Dimmer")
 
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_only_Power")
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_only_Energy")
 
         self._config_max = habapp_rules.energy.config.virtual_energy_meter.EnergyMeterSwitchConfig(
-            items=habapp_rules.energy.config.virtual_energy_meter.EnergyMeterSwitchItems(monitored_switch="Unittest_Switch", power_output="Unittest_Power", energy_output="Unittest_Energy"),
+            items=habapp_rules.energy.config.virtual_energy_meter.EnergyMeterSwitchItems(monitored_switch="Unittest_Switch", power_output="Unittest_Power_Dimmer", energy_output="Unittest_Energy_Dimmer"),
             parameter=habapp_rules.energy.config.virtual_energy_meter.EnergyMeterSwitchParameter(power=100, energy_update_resolution=1),
         )
 
@@ -73,10 +73,10 @@ class TestVirtualEnergyMeterSwitch(tests.helper.test_case_base.TestCaseBase):
         TestCase = collections.namedtuple("TestCase", "power, energy_update_resolution, expected_time")
 
         test_cases = [
-            TestCase(power=10, energy_update_resolution=10, expected_time=3600),
-            TestCase(power=10, energy_update_resolution=1, expected_time=360),
-            TestCase(power=100, energy_update_resolution=10, expected_time=360),
-            TestCase(power=100, energy_update_resolution=1, expected_time=36),
+            TestCase(power=10, energy_update_resolution=0.010, expected_time=3600),
+            TestCase(power=10, energy_update_resolution=0.001, expected_time=360),
+            TestCase(power=100, energy_update_resolution=0.010, expected_time=360),
+            TestCase(power=100, energy_update_resolution=0.001, expected_time=36),
         ]
 
         for test_case in test_cases:
@@ -87,24 +87,24 @@ class TestVirtualEnergyMeterSwitch(tests.helper.test_case_base.TestCaseBase):
 
     def test_power(self) -> None:
         """Test if power ist set correctly."""
-        tests.helper.oh_item.assert_value("Unittest_Power", 0)
+        tests.helper.oh_item.assert_value("Unittest_Power_Dimmer", 0)
         tests.helper.oh_item.assert_value("Unittest_only_Power", 0)
 
         tests.helper.oh_item.item_state_change_event("Unittest_Switch", "ON")
-        tests.helper.oh_item.assert_value("Unittest_Power", 100)
+        tests.helper.oh_item.assert_value("Unittest_Power_Dimmer", 100)
         tests.helper.oh_item.assert_value("Unittest_only_Power", 42)
 
         tests.helper.oh_item.item_state_change_event("Unittest_Switch", "OFF")
-        tests.helper.oh_item.assert_value("Unittest_Power", 0)
+        tests.helper.oh_item.assert_value("Unittest_Power_Dimmer", 0)
         tests.helper.oh_item.assert_value("Unittest_only_Power", 0)
 
     def test_energy(self) -> None:
         """Test if energy ist set correctly."""
-        tests.helper.oh_item.assert_value("Unittest_Energy", 0)
+        tests.helper.oh_item.assert_value("Unittest_Energy_Dimmer", 0)
         tests.helper.oh_item.assert_value("Unittest_only_Energy", 0)
 
         tests.helper.oh_item.item_state_change_event("Unittest_Switch", "ON")
-        tests.helper.oh_item.assert_value("Unittest_Energy", 0)
+        tests.helper.oh_item.assert_value("Unittest_Energy_Dimmer", 0)
         tests.helper.oh_item.assert_value("Unittest_only_Energy", 0)
 
     def test_cb_monitored_item(self) -> None:
@@ -149,68 +149,106 @@ class TestVirtualEnergyMeterSwitch(tests.helper.test_case_base.TestCaseBase):
             update_energy_item_mock.assert_called_once_with(get_countdown_mock.return_value)
             reset_countdown_mock.assert_called_once()
 
+    def test_update_energy_item(self):
+        """Test _update_energy_item."""
+        TestCase = collections.namedtuple("TestCase", "energy_output_value, power, time_since_last_update, expected_energy")
 
-class TestVirtualEnergyMeterDimmer(tests.helper.test_case_base.TestCaseBase):
-    """Tests cases for testing VirtualEnergyMeterDimmer."""
+        test_cases = [
+            TestCase(energy_output_value=0, power=0, time_since_last_update=0, expected_energy=0),
+            TestCase(energy_output_value=0, power=0, time_since_last_update=10, expected_energy=0),
+            TestCase(energy_output_value=0, power=100, time_since_last_update=0, expected_energy=0),
+            TestCase(energy_output_value=0, power=100, time_since_last_update=10, expected_energy=0.1 * 10 / 3600),
+            TestCase(energy_output_value=0, power=-100, time_since_last_update=0, expected_energy=0),
+            TestCase(energy_output_value=0, power=-100, time_since_last_update=10, expected_energy=-0.1 * 10 / 3600),
+            #
+            TestCase(energy_output_value=1000, power=0, time_since_last_update=0, expected_energy=1000),
+            TestCase(energy_output_value=1000, power=0, time_since_last_update=10, expected_energy=1000),
+            TestCase(energy_output_value=1000, power=100, time_since_last_update=0, expected_energy=1000),
+            TestCase(energy_output_value=1000, power=100, time_since_last_update=10, expected_energy=1000 + 0.1 * 10 / 3600),
+            TestCase(energy_output_value=1000, power=-100, time_since_last_update=0, expected_energy=1000),
+            TestCase(energy_output_value=1000, power=-100, time_since_last_update=10, expected_energy=1000 - 0.1 * 10 / 3600),
+        ]
+
+        for test_case in test_cases:
+            with self.subTest(test_case=test_case):
+                self._rule_max._config.items.energy_output.value = test_case.energy_output_value
+                self._rule_max._power = test_case.power
+                self._rule_max._update_energy_item(test_case.time_since_last_update)
+                self.assertEqual(test_case.expected_energy, self._rule_max._config.items.energy_output.value)
+
+
+class TestVirtualEnergyMeterNumber(tests.helper.test_case_base.TestCaseBase):
+    """Tests cases for testing VirtualEnergyMeterNumber."""
 
     def setUp(self) -> None:
         """Setup test case."""
         tests.helper.test_case_base.TestCaseBase.setUp(self)
 
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Dimmer")
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Power")
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Energy")
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Number")
+
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Power_Dimmer")
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Energy_Dimmer")
+
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Power_Number")
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Energy_Number")
 
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_only_Power")
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_only_Energy")
 
-        self._config_max = habapp_rules.energy.config.virtual_energy_meter.EnergyMeterDimmerConfig(
-            items=habapp_rules.energy.config.virtual_energy_meter.EnergyMeterDimmerItems(monitored_dimmer="Unittest_Dimmer", power_output="Unittest_Power", energy_output="Unittest_Energy"),
-            parameter=habapp_rules.energy.config.virtual_energy_meter.EnergyMeterDimmerParameter(power_mapping=[PowerMapping(0, 0), PowerMapping(100, 1000)], energy_update_resolution=1),
+        self._config_max_dimmer = habapp_rules.energy.config.virtual_energy_meter.EnergyMeterNumberConfig(
+            items=habapp_rules.energy.config.virtual_energy_meter.EnergyMeterNumberItems(monitored_item="Unittest_Dimmer", power_output="Unittest_Power_Dimmer", energy_output="Unittest_Energy_Dimmer"),
+            parameter=habapp_rules.energy.config.virtual_energy_meter.EnergyMeterNumberParameter(power_mapping=[PowerMapping(0, 0), PowerMapping(100, 1000)], energy_update_resolution=1),
         )
 
-        self._config_only_power = habapp_rules.energy.config.virtual_energy_meter.EnergyMeterDimmerConfig(
-            items=habapp_rules.energy.config.virtual_energy_meter.EnergyMeterDimmerItems(monitored_dimmer="Unittest_Dimmer", power_output="Unittest_only_Power"),
-            parameter=habapp_rules.energy.config.virtual_energy_meter.EnergyMeterDimmerParameter(power_mapping=[PowerMapping(0, 0), PowerMapping(100, 42)]),
+        self._config_max_number = habapp_rules.energy.config.virtual_energy_meter.EnergyMeterNumberConfig(
+            items=habapp_rules.energy.config.virtual_energy_meter.EnergyMeterNumberItems(monitored_item="Unittest_Number", power_output="Unittest_Power_Number", energy_output="Unittest_Energy_Number"),
+            parameter=habapp_rules.energy.config.virtual_energy_meter.EnergyMeterNumberParameter(power_mapping=[PowerMapping(0, 0), PowerMapping(2, 100)], energy_update_resolution=1),
         )
 
-        self._config_only_energy = habapp_rules.energy.config.virtual_energy_meter.EnergyMeterDimmerConfig(
-            items=habapp_rules.energy.config.virtual_energy_meter.EnergyMeterDimmerItems(monitored_dimmer="Unittest_Dimmer", energy_output="Unittest_only_Energy"),
-            parameter=habapp_rules.energy.config.virtual_energy_meter.EnergyMeterDimmerParameter(power_mapping=[PowerMapping(0, 0), PowerMapping(100, 10_000)]),
+        self._config_only_power = habapp_rules.energy.config.virtual_energy_meter.EnergyMeterNumberConfig(
+            items=habapp_rules.energy.config.virtual_energy_meter.EnergyMeterNumberItems(monitored_item="Unittest_Dimmer", power_output="Unittest_only_Power"),
+            parameter=habapp_rules.energy.config.virtual_energy_meter.EnergyMeterNumberParameter(power_mapping=[PowerMapping(0, 0), PowerMapping(100, 42)]),
         )
 
-        self._rule_max = habapp_rules.energy.virtual_energy_meter.VirtualEnergyMeterDimmer(self._config_max)
-        self._rule_only_power = habapp_rules.energy.virtual_energy_meter.VirtualEnergyMeterDimmer(self._config_only_power)
-        self._rule_only_energy = habapp_rules.energy.virtual_energy_meter.VirtualEnergyMeterDimmer(self._config_only_energy)
+        self._config_only_energy = habapp_rules.energy.config.virtual_energy_meter.EnergyMeterNumberConfig(
+            items=habapp_rules.energy.config.virtual_energy_meter.EnergyMeterNumberItems(monitored_item="Unittest_Dimmer", energy_output="Unittest_only_Energy"),
+            parameter=habapp_rules.energy.config.virtual_energy_meter.EnergyMeterNumberParameter(power_mapping=[PowerMapping(0, 0), PowerMapping(100, 10_000)]),
+        )
+
+        self._rule_max_dimmer = habapp_rules.energy.virtual_energy_meter.VirtualEnergyMeterNumber(self._config_max_dimmer)
+        self._rule_max_number = habapp_rules.energy.virtual_energy_meter.VirtualEnergyMeterNumber(self._config_max_number)
+        self._rule_only_power = habapp_rules.energy.virtual_energy_meter.VirtualEnergyMeterNumber(self._config_only_power)
+        self._rule_only_energy = habapp_rules.energy.virtual_energy_meter.VirtualEnergyMeterNumber(self._config_only_energy)
 
     def test_power(self) -> None:
         """Test if power ist set correctly."""
-        tests.helper.oh_item.assert_value("Unittest_Power", 0)
+        tests.helper.oh_item.assert_value("Unittest_Power_Dimmer", 0)
         tests.helper.oh_item.assert_value("Unittest_only_Power", 0)
 
         tests.helper.oh_item.item_state_change_event("Unittest_Dimmer", 100)
-        tests.helper.oh_item.assert_value("Unittest_Power", 1000)
+        tests.helper.oh_item.assert_value("Unittest_Power_Dimmer", 1000)
         tests.helper.oh_item.assert_value("Unittest_only_Power", 42)
 
         tests.helper.oh_item.item_state_change_event("Unittest_Dimmer", 50)
-        tests.helper.oh_item.assert_value("Unittest_Power", 500)
+        tests.helper.oh_item.assert_value("Unittest_Power_Dimmer", 500)
         tests.helper.oh_item.assert_value("Unittest_only_Power", 21)
 
         tests.helper.oh_item.item_state_change_event("Unittest_Dimmer", 0)
-        tests.helper.oh_item.assert_value("Unittest_Power", 0)
+        tests.helper.oh_item.assert_value("Unittest_Power_Dimmer", 0)
         tests.helper.oh_item.assert_value("Unittest_only_Power", 0)
 
     def test_get_energy_countdown_time(self) -> None:
         """Test _get_energy_countdown_time."""
         # power is not yet set -> avoid division by zero and return 1
-        self.assertEqual(0, self._rule_max._power)
-        self.assertEqual(1, self._rule_max._get_energy_countdown_time())
+        self.assertEqual(0, self._rule_max_dimmer._power)
+        self.assertEqual(1, self._rule_max_dimmer._get_energy_countdown_time())
 
     def test_cb_monitored_item(self) -> None:
         """Test _cb_monitored_item."""
         with (
-            unittest.mock.patch.object(self._rule_max, "_reset_countdown") as max_reset_countdown_mock,
-            unittest.mock.patch.object(self._rule_max, "_set_energy_from_remaining_time") as max_set_energy_mock,
+            unittest.mock.patch.object(self._rule_max_dimmer, "_reset_countdown") as max_reset_countdown_mock,
+            unittest.mock.patch.object(self._rule_max_dimmer, "_set_energy_from_remaining_time") as max_set_energy_mock,
             unittest.mock.patch.object(self._rule_only_power, "_reset_countdown") as only_reset_countdown_mock,
             unittest.mock.patch.object(self._rule_only_power, "_set_energy_from_remaining_time") as only_set_energy_mock,
         ):

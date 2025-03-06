@@ -3,6 +3,7 @@ import typing
 
 import HABApp
 import pydantic
+from pydantic import model_validator
 
 from habapp_rules.core.exceptions import HabAppRulesConfigurationError
 from habapp_rules.core.pydantic_base import ConfigBase, ItemBase, ParameterBase
@@ -36,16 +37,16 @@ class EnergyMeterSwitchItems(EnergyMeterBaseItems):
     monitored_switch: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="switch item, which will be monitored")
 
 
-class EnergyMeterDimmerItems(EnergyMeterBaseItems):
+class EnergyMeterNumberItems(EnergyMeterBaseItems):
     """Items for virtual energy meter for a dimmer item."""
 
-    monitored_dimmer: HABApp.openhab.items.DimmerItem = pydantic.Field(..., description="dimmer item, which will be monitored")
+    monitored_item: HABApp.openhab.items.DimmerItem | HABApp.openhab.items.NumberItem = pydantic.Field(..., description="dimmer item, which will be monitored")
 
 
 class EnergyMeterBaseParameter(ParameterBase):
     """Base class for energy meter parameters."""
 
-    energy_update_resolution: int = pydantic.Field(10, description="update the energy item every x Wh. Default is 10 Wh", gt=0)
+    energy_update_resolution: int = pydantic.Field(0.010, description="update the energy item every x kWh. Default is 0.01kWh == 10 Wh", gt=0)
 
 
 class EnergyMeterSwitchParameter(EnergyMeterBaseParameter):
@@ -65,7 +66,7 @@ class PowerMapping:
     power: float
 
 
-class EnergyMeterDimmerParameter(EnergyMeterBaseParameter):
+class EnergyMeterNumberParameter(EnergyMeterBaseParameter):
     """Parameter for a virtual energy meter for a dimmer item."""
 
     power_mapping: list[PowerMapping] = pydantic.Field(..., description="typical power if dimmed")
@@ -86,11 +87,6 @@ class EnergyMeterDimmerParameter(EnergyMeterBaseParameter):
         """
         if len(mappings) < 2:  # noqa: PLR2004
             msg = "power_mapping must have at least 2 elements"
-            raise HabAppRulesConfigurationError(msg)
-
-        all_values = [mapping.value for mapping in mappings]
-        if any(value < 0 for value in all_values) or any(value > 100 for value in all_values):  # noqa: PLR2004
-            msg = "power_mapping values for dimmer items must be between 0 and 100"
             raise HabAppRulesConfigurationError(msg)
 
         mappings.sort(key=lambda x: x.value)
@@ -127,8 +123,25 @@ class EnergyMeterSwitchConfig(ConfigBase):
     parameter: EnergyMeterSwitchParameter = pydantic.Field(..., description="parameter for the switch")
 
 
-class EnergyMeterDimmerConfig(ConfigBase):
+class EnergyMeterNumberConfig(ConfigBase):
     """Config for virtual energy meter for a dimmer item."""
 
-    items: EnergyMeterDimmerItems = pydantic.Field(..., description="items for the dimmer")
-    parameter: EnergyMeterDimmerParameter = pydantic.Field(..., description="parameter for the dimmer")
+    items: EnergyMeterNumberItems = pydantic.Field(..., description="items for the dimmer")
+    parameter: EnergyMeterNumberParameter = pydantic.Field(..., description="parameter for the dimmer")
+
+    @model_validator(mode="after")
+    def validate_model(self) -> typing.Self:
+        """Validate model
+
+        Returns:
+            Validated model
+
+        Raises:
+            HabAppRulesConfigurationError: if config is not valid
+        """
+        if isinstance(self.items.monitored_item, HABApp.openhab.items.DimmerItem):
+            all_values = [mapping.value for mapping in self.parameter.power_mapping]
+            if any(value < 0 for value in all_values) or any(value > 100 for value in all_values):  # noqa: PLR2004
+                msg = "power_mapping values for dimmer items must be between 0 and 100"
+                raise HabAppRulesConfigurationError(msg)
+        return self
