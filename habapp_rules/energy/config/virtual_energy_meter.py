@@ -1,4 +1,3 @@
-import dataclasses
 
 import HABApp
 import pydantic
@@ -65,7 +64,7 @@ class PowerMapping(pydantic.BaseModel):
     power: float = pydantic.Field(..., description="power in W")
 
     def __init__(self, value: float, power: float) -> None:
-        """Init PowerMapping
+        """Init PowerMapping.
 
         Args:
             value: dimmer / number value
