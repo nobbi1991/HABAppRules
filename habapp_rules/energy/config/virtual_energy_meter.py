@@ -1,4 +1,3 @@
-
 import HABApp
 import pydantic
 import typing_extensions
