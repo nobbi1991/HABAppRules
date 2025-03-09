@@ -19,7 +19,7 @@ class EnergyShare(pydantic.BaseModel):
     chart_name: str
     monthly_power: float = 0.0
 
-    def __init__(self, energy_item: str | HABApp.openhab.items.NumberItem, chart_name: str, monthly_power: float = 0.0) -> None:
+    def __init__(self, energy_item: str | HABApp.openhab.items.NumberItem | list[HABApp.openhab.items.NumberItem] | list[str], chart_name: str, monthly_power: float = 0.0) -> None:
         """Init energy share object without keywords.
 
         Args:
