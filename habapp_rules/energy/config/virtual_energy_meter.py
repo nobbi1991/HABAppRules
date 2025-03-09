@@ -1,5 +1,3 @@
-import dataclasses
-
 import HABApp
 import pydantic
 import typing_extensions
@@ -55,15 +53,23 @@ class EnergyMeterSwitchParameter(EnergyMeterBaseParameter):
     power: float = pydantic.Field(..., description="typical power in W if switch is ON", gt=0)
 
 
-@dataclasses.dataclass
-class PowerMapping:
+class PowerMapping(pydantic.BaseModel):
     """Class to map a value to a power.
 
     This can be used to map e.g. a dimmer value to used power
     """
 
-    value: float
-    power: float
+    value: float = pydantic.Field(..., description="dimmer / number value, which will be mapped to a power value")
+    power: float = pydantic.Field(..., description="power in W")
+
+    def __init__(self, value: float, power: float) -> None:
+        """Init PowerMapping.
+
+        Args:
+            value: dimmer / number value
+            power: power in W
+        """
+        super().__init__(value=value, power=power)
 
 
 class EnergyMeterNumberParameter(EnergyMeterBaseParameter):

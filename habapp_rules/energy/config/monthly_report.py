@@ -1,10 +1,13 @@
 """Config models for monthly energy report."""
 
+import datetime
+
 import HABApp
 import multi_notifier.connectors.connector_mail
 import pydantic
 
 import habapp_rules.core.pydantic_base
+import habapp_rules.energy.helper
 
 
 class EnergyShare(pydantic.BaseModel):
@@ -12,11 +15,11 @@ class EnergyShare(pydantic.BaseModel):
 
     model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
 
-    energy_item: HABApp.openhab.items.NumberItem
+    energy_item: HABApp.openhab.items.NumberItem | list[HABApp.openhab.items.NumberItem]
     chart_name: str
     monthly_power: float = 0.0
 
-    def __init__(self, energy_item: str | HABApp.openhab.items.NumberItem, chart_name: str, monthly_power: float = 0.0) -> None:
+    def __init__(self, energy_item: str | HABApp.openhab.items.NumberItem | list[HABApp.openhab.items.NumberItem] | list[str], chart_name: str, monthly_power: float = 0.0) -> None:
         """Init energy share object without keywords.
 
         Args:
@@ -26,9 +29,17 @@ class EnergyShare(pydantic.BaseModel):
         """
         super().__init__(energy_item=energy_item, chart_name=chart_name, monthly_power=monthly_power)
 
+    @staticmethod
+    def _get_number_item_by_name(name: str) -> HABApp.openhab.items.NumberItem:
+        try:
+            return HABApp.openhab.items.NumberItem.get_item(name)
+        except HABApp.core.errors.ItemNotFoundException as exc:
+            msg = f"Could not find any item for given name '{name}'"
+            raise ValueError(msg) from exc
+
     @pydantic.field_validator("energy_item", mode="before")
     @classmethod
-    def check_oh_item(cls, data: str | HABApp.openhab.items.NumberItem) -> HABApp.openhab.items.NumberItem:
+    def check_oh_item(cls, data: str | HABApp.openhab.items.NumberItem) -> HABApp.openhab.items.NumberItem | list[HABApp.openhab.items.NumberItem]:
         """Check if given item is an OpenHAB item or try to get it from OpenHAB.
 
         Args:
@@ -42,11 +53,35 @@ class EnergyShare(pydantic.BaseModel):
         """
         if isinstance(data, HABApp.openhab.items.NumberItem):
             return data
-        try:
-            return HABApp.openhab.items.NumberItem.get_item(data)
-        except HABApp.core.errors.ItemNotFoundException as exc:
-            msg = f"Could not find any item for given name '{data}'"
-            raise ValueError(msg) from exc
+        if isinstance(data, list):
+            if all(isinstance(itm, HABApp.openhab.items.NumberItem) for itm in data):
+                return data
+            return [cls._get_number_item_by_name(itm) for itm in data]
+        return cls._get_number_item_by_name(data)
+
+    def get_energy_since(self, start_time: datetime.datetime) -> float:
+        """Get energy since start time.
+
+        Args:
+            start_time: start time to search for the interested value
+
+        Returns:
+            energy since start time
+        """
+        if isinstance(self.energy_item, list):
+            return sum(itm.value - habapp_rules.energy.helper.get_historic_value(itm, start_time) for itm in self.energy_item)
+        return self.energy_item.value - habapp_rules.energy.helper.get_historic_value(self.energy_item, start_time)
+
+    @property
+    def get_items_as_list(self) -> list[HABApp.openhab.items.NumberItem]:
+        """Get energy item(s) as list.
+
+        Returns:
+            All energy items
+        """
+        if isinstance(self.energy_item, list):
+            return self.energy_item
+        return [self.energy_item]
 
 
 class MonthlyReportItems(habapp_rules.core.pydantic_base.ItemBase):
