@@ -3,6 +3,7 @@
 ## Features
 
 - added rule `habapp_rules.network.wol.Wol` to wake up devices via Wake-on-LAN
+- added rules `habapp_rules.energy.virtual_energy_meter.VirtualEnergyMeterSwitch` and `habapp_rules.energy.virtual_energy_meter.VirtualEnergyMeterNumber` to estimate energy consumption of devices without current / energy measurement
 
 # Version 7.3.0 - 08.02.2025
 
