@@ -1,4 +1,4 @@
-# Version 7.4.0 - dd.mm.2025
+# Version 7.4.0 - 10.03.2025
 
 ## Features
 
