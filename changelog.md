@@ -1,3 +1,9 @@
+# Version 7.4.1 - 11.03.2025
+
+## Bugfix
+
+- added missing reporting of current `ventilation_level` to `habapp_rules.actors.ventilation.VentilationHeliosTwoStage` and `habapp_rules.actors.ventilation.VentilationHeliosTwoStageHumidity`
+
 # Version 7.4.0 - 10.03.2025
 
 ## Features

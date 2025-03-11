@@ -441,6 +441,7 @@ class TestVentilationHeliosTwoStage(tests.helper.test_case_base.TestCaseBaseStat
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Ventilation_max_external_request", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Ventilation_max_feedback_on", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Ventilation_max_feedback_power", None)
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Ventilation_max_feedback_ventilation_level", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Ventilation_max_display_text", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Presence_state", None)
 
@@ -466,6 +467,7 @@ class TestVentilationHeliosTwoStage(tests.helper.test_case_base.TestCaseBaseStat
                 display_text="Unittest_Ventilation_max_display_text",
                 presence_state="Unittest_Presence_state",
                 state="Unittest_Ventilation_max_Custom_State",
+                feedback_ventilation_level="Unittest_Ventilation_max_feedback_ventilation_level",
             ),
             parameter=parameter_max,
         )
@@ -498,17 +500,17 @@ class TestVentilationHeliosTwoStage(tests.helper.test_case_base.TestCaseBaseStat
 
     def test_set_level(self) -> None:
         """Test _set_level."""
-        TestCase = collections.namedtuple("TestCase", "state, expected_on, expected_power")
+        TestCase = collections.namedtuple("TestCase", "state, expected_on, expected_power, expected_level")
 
         test_cases = [
-            TestCase("Manual", None, None),
-            TestCase("Auto_PowerHand", "ON", "ON"),
-            TestCase("Auto_Normal", "ON", "OFF"),
-            TestCase("Auto_PowerExternal", "ON", "ON"),
-            TestCase("Auto_LongAbsence_On", "ON", "ON"),
-            TestCase("Auto_LongAbsence_Off", "OFF", "OFF"),
-            TestCase("Auto_Init", None, None),
-            TestCase("Auto_PowerAfterRun", "ON", "OFF"),
+            TestCase("Manual", None, None, 101),
+            TestCase("Auto_PowerHand", "ON", "ON", 102),
+            TestCase("Auto_Normal", "ON", "OFF", 1),
+            TestCase("Auto_PowerExternal", "ON", "ON", 103),
+            TestCase("Auto_LongAbsence_On", "ON", "ON", 105),
+            TestCase("Auto_LongAbsence_Off", "OFF", "OFF", 0),
+            TestCase("Auto_Init", None, None, 0),
+            TestCase("Auto_PowerAfterRun", "ON", "OFF", 99),
         ]
 
         self.ventilation_max._config.parameter.state_normal.level = 1
@@ -526,6 +528,8 @@ class TestVentilationHeliosTwoStage(tests.helper.test_case_base.TestCaseBaseStat
 
                     if test_case.expected_power is not None:
                         send_mock.assert_any_call(self.ventilation_max._config.items.ventilation_output_power, test_case.expected_power)
+
+                    tests.helper.oh_item.assert_value("Unittest_Ventilation_max_feedback_ventilation_level", test_case.expected_level)
 
     def test_set_feedback_states(self) -> None:
         """Test _set_feedback_states."""
