@@ -14,6 +14,8 @@ import habapp_rules.core.helper
 import habapp_rules.core.logger
 import habapp_rules.core.state_machine_rule
 import habapp_rules.system
+from habapp_rules.actors.config.ventilation import VentilationTwoStageItems
+from habapp_rules.core.helper import send_if_different
 
 LOGGER = logging.getLogger(__name__)
 
@@ -40,6 +42,8 @@ def _to_datetime(time_input: datetime.time) -> datetime.datetime:  # this is nee
 
 class _VentilationBase(habapp_rules.core.state_machine_rule.StateMachineRule):
     """Class for ventilation objects."""
+
+    _config: VentilationTwoStageItems
 
     states: typing.ClassVar = [
         {"name": "Manual"},
@@ -413,9 +417,12 @@ class VentilationHeliosTwoStage(_VentilationBase):
         if self.state == "Auto_PowerAfterRun":
             self._ventilation_level = self._config.parameter.state_after_run.level
             self._set_level_to_ventilation_items()
-            return
 
-        super()._set_level()
+        else:
+            super()._set_level()
+
+        if self._config.items.feedback_ventilation_level is not None:
+            send_if_different(self._config.items.feedback_ventilation_level, self._ventilation_level)
 
     def _set_level_to_ventilation_items(self) -> None:
         """Set ventilation to output item(s)."""
