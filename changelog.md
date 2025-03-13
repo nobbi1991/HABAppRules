@@ -1,3 +1,9 @@
+# Version 7.4.2 - 13.03.2025
+
+## Bugfix
+
+- fixed bug in `habapp_rules.actors.ventilation.VentilationHeliosTwoStage` and `habapp_rules.actors.ventilation.VentilationHeliosTwoStageHumidity` which made the rules unusable if a NumberItem was used
+
 # Version 7.4.1 - 11.03.2025
 
 ## Bugfix

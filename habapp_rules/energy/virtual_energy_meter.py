@@ -22,18 +22,26 @@ class _VirtualEnergyMeterBase(HABApp.Rule):
         self._send_energy_countdown = self.run.countdown(self._get_energy_countdown_time(), self._cb_countdown_end)
         self._monitored_item.listen_event(self._cb_monitored_item, HABApp.openhab.events.ItemStateChangedEventFilter())
 
-        if self._monitored_item.is_on():
+        if self._is_on():
             self.run.soon(self._cb_monitored_item, HABApp.openhab.events.ItemStateChangedEvent(self._monitored_item.name, self._monitored_item.value, None))
 
         if self._config.items.power_output is not None:
-            self._config.items.power_output.oh_send_command(self._get_power() if self._monitored_item.is_on() else 0)
+            self._config.items.power_output.oh_send_command(self._get_power() if self._is_on() else 0)
 
     @abc.abstractmethod
     def _get_power(self) -> float:
-        """Get power for monitored item is on.
+        """Get power for monitored, for ON state.
 
         Returns:
             power
+        """
+
+    @abc.abstractmethod
+    def _is_on(self) -> bool:
+        """Check if monitored item is on.
+
+        Returns:
+            True if monitored item is on
         """
 
     def _get_energy_countdown_time(self) -> float:
@@ -55,11 +63,11 @@ class _VirtualEnergyMeterBase(HABApp.Rule):
         Args:
             event: event which triggered this callback
         """
-        if self._monitored_item.is_on():
+        if self._is_on():
             self._power = self._get_power()
 
         if self._config.items.power_output is not None:
-            self._config.items.power_output.oh_send_command(self._power if self._monitored_item.is_on() else 0)
+            self._config.items.power_output.oh_send_command(self._power if self._is_on() else 0)
 
     def _reset_countdown(self) -> None:
         """Reset countdown for sending energy."""
@@ -117,12 +125,20 @@ class VirtualEnergyMeterSwitch(_VirtualEnergyMeterBase):
         _VirtualEnergyMeterBase.__init__(self, config)
 
     def _get_power(self) -> float:
-        """Get power for monitored item is on.
+        """Get power for monitored, for ON state.
 
         Returns:
             power
         """
         return self._config.parameter.power
+
+    def _is_on(self) -> bool:
+        """Check if monitored item is on.
+
+        Returns:
+            True if monitored item is on
+        """
+        return self._monitored_item.is_on()
 
     def _cb_monitored_item(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback which is triggered if the monitored item changed.
@@ -174,12 +190,20 @@ class VirtualEnergyMeterNumber(_VirtualEnergyMeterBase):
         _VirtualEnergyMeterBase.__init__(self, config)
 
     def _get_power(self) -> float:
-        """Get power for monitored item is on.
+        """Get power for monitored, for ON state.
 
         Returns:
             power
         """
         return self._config.parameter.get_power(self._config.items.monitored_item.value)
+
+    def _is_on(self) -> bool:
+        """Check if monitored item is on.
+
+        Returns:
+            True if monitored item is on
+        """
+        return self._get_power() != 0
 
     def _cb_monitored_item(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback which is triggered if the monitored item changed.
