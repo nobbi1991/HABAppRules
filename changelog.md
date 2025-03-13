@@ -1,3 +1,9 @@
+# Version 7.4.3 - dd.03.2025
+
+## Bugfix
+
+-
+
 # Version 7.4.2 - 13.03.2025
 
 ## Bugfix
