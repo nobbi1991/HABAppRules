@@ -185,7 +185,7 @@ class TestVirtualEnergyMeterNumber(tests.helper.test_case_base.TestCaseBase):
         tests.helper.test_case_base.TestCaseBase.setUp(self)
 
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Dimmer")
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Number")
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Number")
 
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Power_Dimmer")
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Energy_Dimmer")
