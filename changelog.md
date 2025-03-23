@@ -1,8 +1,8 @@
-# Version 7.4.3 - dd.03.2025
+# Version 7.4.3 - 23.03.2025
 
 ## Bugfix
 
--
+- fixed bug in `habapp_rules.energy.montly_report.MonthlyReport` which crashed if one energy-share was negative. Now, this share will be ignored
 
 # Version 7.4.2 - 13.03.2025
 
