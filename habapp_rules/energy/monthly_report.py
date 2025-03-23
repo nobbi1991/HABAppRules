@@ -155,12 +155,16 @@ class MonthlyReport(HABApp.Rule):
         for share in self._config.parameter.known_energy_shares:
             share.monthly_power = share.get_energy_since(last_month)
 
+        # calculate unknown energy share
         energy_unknown = energy_sum_month - sum(share.monthly_power for share in self._config.parameter.known_energy_shares)
+
+        # filter energy shares which are zero
+        shares_for_chart = [share for share in self._config.parameter.known_energy_shares if share.monthly_power > 0]
 
         with tempfile.TemporaryDirectory() as temp_dir_name:
             # create plot
-            labels = [share.chart_name for share in self._config.parameter.known_energy_shares] + ["Rest"]
-            values = [share.monthly_power for share in self._config.parameter.known_energy_shares] + [energy_unknown]
+            labels = [share.chart_name for share in shares_for_chart] + ["Rest"]
+            values = [share.monthly_power for share in shares_for_chart] + [energy_unknown]
             chart_path = pathlib.Path(temp_dir_name) / "chart.png"
             habapp_rules.energy.donut_chart.create_chart(labels, values, chart_path)
 

@@ -10,6 +10,19 @@ import habapp_rules.core.pydantic_base
 import habapp_rules.energy.helper
 
 
+def _calc_difference(start_value: float, end_value: float) -> float:
+    """Calculate the difference between start and end value and return zero if start value is greater than end value.
+
+    Args:
+        start_value: energy value at the start of the month
+        end_value: energy value at the end of the month
+
+    Returns:
+        difference between start and end value and zero if start value is greater than end value
+    """
+    return max(0.0, start_value - end_value)
+
+
 class EnergyShare(pydantic.BaseModel):
     """Dataclass for defining energy share objects."""
 
@@ -69,8 +82,8 @@ class EnergyShare(pydantic.BaseModel):
             energy since start time
         """
         if isinstance(self.energy_item, list):
-            return sum(itm.value - habapp_rules.energy.helper.get_historic_value(itm, start_time) for itm in self.energy_item)
-        return self.energy_item.value - habapp_rules.energy.helper.get_historic_value(self.energy_item, start_time)
+            return sum(_calc_difference(itm.value, habapp_rules.energy.helper.get_historic_value(itm, start_time)) for itm in self.energy_item)
+        return _calc_difference(self.energy_item.value, habapp_rules.energy.helper.get_historic_value(self.energy_item, start_time))
 
     @property
     def get_items_as_list(self) -> list[HABApp.openhab.items.NumberItem]:

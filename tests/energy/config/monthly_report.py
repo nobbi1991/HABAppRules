@@ -78,6 +78,14 @@ class TestEnergyShare(tests.helper.test_case_base.TestCaseBase):
         self.assertEqual(2, get_historic_value_mock.call_count)
         get_historic_value_mock.assert_has_calls([unittest.mock.call(multiple.energy_item[0], time_mock), unittest.mock.call(multiple.energy_item[1], time_mock)])
 
+        # negative_value
+        single = habapp_rules.energy.config.monthly_report.EnergyShare("Number_1", "First Number")
+        tests.helper.oh_item.set_state("Number_1", 42)
+        with unittest.mock.patch("habapp_rules.energy.helper.get_historic_value", side_effect=[100]) as get_historic_value_mock:
+            time_mock = unittest.mock.MagicMock()
+            self.assertEqual(0, single.get_energy_since(time_mock))
+        get_historic_value_mock.assert_called_once_with(single.energy_item, time_mock)
+
     def test_get_items_as_list(self) -> None:
         """Test get_items_as_list."""
         # single item
