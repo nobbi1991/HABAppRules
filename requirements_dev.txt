@@ -2,5 +2,5 @@ graphviz~=0.20.3
 hatch-requirements-txt~=0.4.1
 hatch~=1.14.0
 pre-commit~=4.1.0
-pytest~=8.3.4
+pytest~=8.4.0
 ruff~=0.11.2
