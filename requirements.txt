@@ -1,4 +1,4 @@
-HABApp==24.11.1
+HABApp==25.6.1
 matplotlib~=3.10.0
 multi-notifier~=0.5.0
 pydantic_extra_types~=2.10.2
