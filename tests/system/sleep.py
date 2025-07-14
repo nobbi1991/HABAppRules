@@ -230,8 +230,7 @@ class TestSleep(tests.helper.test_case_base.TestCaseBaseStateMachine):
     def test_minimal_items(self) -> None:
         """Test Sleeping class with minimal set of items."""
         # delete sleep rule from init
-        self._runner.loaded_rules[0]._habapp_ctx.unload_rule()
-        self._runner.loaded_rules.clear()
+        self.unload_rule(self._runner.loaded_rules[0])
 
         tests.helper.oh_item.remove_mocked_item_by_name("Unittest_Lock")
         tests.helper.oh_item.remove_mocked_item_by_name("Unittest_Lock_Request")

@@ -46,6 +46,9 @@ class EnergyShare(pydantic.BaseModel):
     def _get_number_item_by_name(name: str) -> HABApp.openhab.items.NumberItem:
         try:
             return HABApp.openhab.items.NumberItem.get_item(name)
+        except HABApp.core.errors.WrongItemTypeError as exc:
+            msg = f"Item must be of type NumberItem. Given: {type(HABApp.openhab.items.OpenhabItem.get_item(name))}"
+            raise ValueError(msg) from exc
         except HABApp.core.errors.ItemNotFoundException as exc:
             msg = f"Could not find any item for given name '{name}'"
             raise ValueError(msg) from exc

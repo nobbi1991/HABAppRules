@@ -8,7 +8,6 @@ import unittest
 import unittest.mock
 
 import HABApp.rule.rule
-from HABApp.core.internals import get_current_context
 
 import habapp_rules.actors.config.energy_save_switch
 import habapp_rules.actors.config.light_bathroom
@@ -113,7 +112,7 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
                     is_day_mock.return_value = not test_case.sleeping
                     rule = habapp_rules.actors.light_bathroom.BathroomLight(config=self._config)
                     self.assertEqual(test_case.expected_state, rule.state)
-                    get_current_context(rule).unload_rule()
+                    self.unload_rule(rule)
 
     def test_is_day(self) -> None:
         """Test _is_day."""

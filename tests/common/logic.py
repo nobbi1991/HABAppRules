@@ -19,10 +19,6 @@ class TestAndOR(tests.helper.test_case_base.TestCaseBase):
         """Setup unit-tests."""
         tests.helper.test_case_base.TestCaseBase.setUp(self)
 
-        self.post_update_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.post_update", new=tests.helper.oh_item.send_command)
-        self.addCleanup(self.post_update_mock_patcher.stop)
-        self.post_update_mock_patcher.start()
-
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch_out", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch_in1", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch_in2", None)
