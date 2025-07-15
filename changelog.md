@@ -1,3 +1,12 @@
+# Version 8.0.0 - 15.07.2025
+
+## Breaking changes
+
+- bumped HABApp to 25.6.2. Check release infos:
+  - [HABApp 25.04.0](https://github.com/spacemanspiff2007/HABApp/releases/tag/25.04.0)
+  - [HABApp 25.05.0](https://github.com/spacemanspiff2007/HABApp/releases/tag/25.05.0)
+  - [HABApp 25.06.0](https://github.com/spacemanspiff2007/HABApp/releases/tag/25.06.0)
+
 # Version 7.4.3 - 23.03.2025
 
 ## Bugfix

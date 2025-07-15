@@ -4,9 +4,12 @@ import threading
 import unittest
 import unittest.mock
 
-import habapp_rules.core.state_machine_rule
+import HABApp.rule.rule
+from HABApp.core.internals import get_current_context
+
 import tests.helper.oh_item
 import tests.helper.rule_runner
+from tests.helper.async_helper import call_async_sync
 
 
 class TestCaseBase(unittest.TestCase):
@@ -14,11 +17,11 @@ class TestCaseBase(unittest.TestCase):
 
     def setUp(self) -> None:
         """Setup test case."""
-        self.send_command_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.send_command", new=tests.helper.oh_item.send_command)
+        self.send_command_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.OpenhabItem.oh_send_command", new=tests.helper.oh_item.oh_send_command)
         self.addCleanup(self.send_command_mock_patcher.stop)
         self.send_command_mock = self.send_command_mock_patcher.start()
 
-        self.send_command_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.post_update", new=tests.helper.oh_item.set_state)
+        self.send_command_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.OpenhabItem.oh_post_update", new=tests.helper.oh_item.oh_post_update)
         self.addCleanup(self.send_command_mock_patcher.stop)
         self.send_command_mock = self.send_command_mock_patcher.start()
 
@@ -27,12 +30,21 @@ class TestCaseBase(unittest.TestCase):
         self.item_exists_mock = self.item_exists_mock_patcher.start()
 
         self._runner = tests.helper.rule_runner.SimpleRuleRunner()
-        self._runner.set_up()
+        call_async_sync(self._runner.set_up)
+
+    def unload_rule(self, rule: HABApp.rule.rule.Rule) -> None:
+        """Unload a rule.
+
+        Args:
+            rule: The rule to unload
+        """
+        call_async_sync(get_current_context(rule).unload_rule)
+        self._runner.loaded_rules.remove(rule)
 
     def tearDown(self) -> None:
         """Tear down test case."""
         tests.helper.oh_item.remove_all_mocked_items()
-        self._runner.tear_down()
+        call_async_sync(self._runner.tear_down)
 
 
 class TestCaseBaseStateMachine(TestCaseBase):
@@ -50,7 +62,7 @@ class TestCaseBaseStateMachine(TestCaseBase):
         self.addCleanup(self.threading_timer_mock_patcher.stop)
         self.threading_timer_mock = self.threading_timer_mock_patcher.start()
 
-        self.on_rule_removed_mock_patcher = unittest.mock.patch("habapp_rules.core.state_machine_rule.StateMachineRule.on_rule_removed", spec=habapp_rules.core.state_machine_rule.StateMachineRule.on_rule_removed)
+        self.on_rule_removed_mock_patcher = unittest.mock.patch("habapp_rules.core.state_machine_rule.StateMachineRule.on_rule_removed", new_callable=unittest.mock.AsyncMock)
         self.addCleanup(self.on_rule_removed_mock_patcher.stop)
         self.on_rule_removed_mock_patcher.start()
 

@@ -3,7 +3,6 @@
 import collections
 import pathlib
 import sys
-import threading
 import unittest
 import unittest.mock
 
@@ -37,6 +36,10 @@ class TestPresence(tests.helper.test_case_base.TestCaseBaseStateMachine):
         config = habapp_rules.system.config.presence.PresenceConfig(
             items=habapp_rules.system.config.presence.PresenceItems(presence="Unittest_Presence", leaving="Unittest_Leaving", outdoor_doors=["Unittest_Door1", "Unittest_Door2"], phones=["Unittest_Phone1", "Unittest_Phone2"], state="CustomState")
         )
+
+        self.habapp_countdown_mock_patcher = unittest.mock.patch("HABApp.rule.scheduler.job_builder.HABAppJobBuilder.countdown")
+        self.addCleanup(self.habapp_countdown_mock_patcher.stop)
+        self.habapp_countdown_mock = self.habapp_countdown_mock_patcher.start()
 
         self._presence = habapp_rules.system.presence.Presence(config)
 
@@ -237,7 +240,7 @@ class TestPresence(tests.helper.test_case_base.TestCaseBaseStateMachine):
         tests.helper.oh_item.set_state("Unittest_Phone1", "ON")
 
         tests.helper.oh_item.send_command("Unittest_Phone1", "OFF", "ON")
-        tests.helper.timer.call_timeout(self.threading_timer_mock)
+        tests.helper.timer.call_timeout(self.habapp_countdown_mock)
         self.assertEqual(self._presence.state, "leaving")
         tests.helper.oh_item.assert_value("Unittest_Leaving", "ON")
 
@@ -248,7 +251,7 @@ class TestPresence(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertEqual(self._presence.state, "presence")
 
         tests.helper.oh_item.send_command("Unittest_Phone1", "OFF", "ON")
-        tests.helper.timer.call_timeout(self.threading_timer_mock)
+        tests.helper.timer.call_timeout(self.habapp_countdown_mock)
         self.assertEqual(self._presence.state, "leaving")
         tests.helper.oh_item.assert_value("Unittest_Leaving", "ON")
 
@@ -361,47 +364,31 @@ class TestPresence(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self._presence.state_machine.set_state("absence")
         tests.helper.oh_item.send_command("Unittest_Phone1", "ON", "OFF")
         self.assertEqual(self._presence.state, "presence")
-        self.threading_timer_mock.assert_not_called()
+        self.habapp_countdown_mock.return_value.reset.assert_not_called()
 
         # second phone switches to ON -> no change expected
         tests.helper.oh_item.send_command("Unittest_Phone2", "ON", "OFF")
         self.assertEqual(self._presence.state, "presence")
-        self.threading_timer_mock.assert_not_called()
+        self.habapp_countdown_mock.return_value.reset.assert_not_called()
 
         # second phone switches to OFF -> no change expected
         tests.helper.oh_item.send_command("Unittest_Phone2", "OFF", "ON")
         self.assertEqual(self._presence.state, "presence")
-        self.threading_timer_mock.assert_not_called()
+        self.habapp_countdown_mock.return_value.reset.assert_not_called()
 
         # first phone switches to OFF -> timer should be started
         tests.helper.oh_item.send_command("Unittest_Phone1", "OFF", "ON")
         self.assertEqual(self._presence.state, "presence")
-        self.threading_timer_mock.assert_called_once_with(1200, self._presence._Presence__set_leaving_through_phone)
-        tests.helper.timer.call_timeout(self.threading_timer_mock)
+        self.habapp_countdown_mock.return_value.reset.assert_called_once()
+        tests.helper.timer.call_timeout(self.habapp_countdown_mock)
         self.assertEqual(self._presence.state, "leaving")
 
         # phone appears during leaving -> leaving expected
+        self.habapp_countdown_mock.return_value.cancel.reset_mock()
         tests.helper.oh_item.send_command("Unittest_Phone1", "ON", "OFF")
         self.assertEqual(self._presence.state, "presence")
-        self.assertIsNone(self._presence._Presence__phone_absence_timer)
+        self.habapp_countdown_mock.return_value.cancel.assert_called_once()
 
         # timeout is over -> absence expected
         tests.helper.timer.call_timeout(self.transitions_timer_mock)
         self.assertEqual(self._presence.state, "absence")
-
-    def test_on_rule_removed(self) -> None:
-        """Test on_rule_removed."""
-        # timer NOT running
-        with unittest.mock.patch("habapp_rules.core.state_machine_rule.StateMachineRule.on_rule_removed") as parent_on_remove:
-            self._presence.on_rule_removed()
-
-        parent_on_remove.assert_called_once()
-
-        # timer running
-        self._presence._Presence__phone_absence_timer = threading.Timer(42, unittest.mock.MagicMock())
-        self._presence._Presence__phone_absence_timer.start()
-        with unittest.mock.patch("habapp_rules.core.state_machine_rule.StateMachineRule.on_rule_removed") as parent_on_remove:
-            self._presence.on_rule_removed()
-
-        parent_on_remove.assert_called_once()
-        self.assertIsNone(self._presence._Presence__phone_absence_timer)

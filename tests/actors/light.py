@@ -139,7 +139,6 @@ class TestLightBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
             picture_dir.mkdir(parents=True)
 
         light_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self.light_base.states, transitions=self.light_base.trans, initial=self.light_base.state, show_conditions=False)
-
         light_graph.get_graph().draw(picture_dir / "Light.png", format="png", prog="dot")
 
         for state_name in [state for state in self._get_state_names(self.light_base.states) if "init" not in state.lower()]:
