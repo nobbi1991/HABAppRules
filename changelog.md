@@ -1,3 +1,10 @@
+# Version 8.1.0 - 31.07.2025
+
+## Features
+
+- added support for OpenHAB 5.0
+- bumped HABApp to 25.7.0
+
 # Version 8.0.0 - 15.07.2025
 
 ## Breaking changes
