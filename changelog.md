@@ -1,3 +1,9 @@
+# Version 8.1.2 - dd.08.2025
+
+## Bugfix
+
+- removed deprecation triggered by `habapp_rules.system.presence.Presence` if phones are used
+
 # Version 8.1.1 - 15.08.2025
 
 ## Bugfix
