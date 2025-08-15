@@ -170,7 +170,7 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
         if active_phones == 1 and event.value == "ON":
             # first phone switched to ON
             if self.__phone_absence_countdown.get_next_run():
-                self.__phone_absence_countdown.cancel()
+                self.__phone_absence_countdown.stop()
 
             if self.state == PresenceState.LEAVING.value:
                 self._instance_logger.debug("Leaving was aborted through first phone which came online")

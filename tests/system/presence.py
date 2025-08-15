@@ -384,10 +384,10 @@ class TestPresence(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertEqual(self._presence.state, "leaving")
 
         # phone appears during leaving -> leaving expected
-        self.habapp_countdown_mock.return_value.cancel.reset_mock()
+        self.habapp_countdown_mock.return_value.stop.reset_mock()
         tests.helper.oh_item.send_command("Unittest_Phone1", "ON", "OFF")
         self.assertEqual(self._presence.state, "presence")
-        self.habapp_countdown_mock.return_value.cancel.assert_called_once()
+        self.habapp_countdown_mock.return_value.stop.assert_called_once()
 
         # timeout is over -> absence expected
         tests.helper.timer.call_timeout(self.transitions_timer_mock)
