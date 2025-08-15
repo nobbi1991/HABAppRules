@@ -1,3 +1,9 @@
+# Version 8.1.1 - 15.08.2025
+
+## Bugfix
+
+- fixed bug in `habapp_rules.system.presence.Presence` which did not stop the phone-leaving-counter correctly
+
 # Version 8.1.0 - 31.07.2025
 
 ## Features
