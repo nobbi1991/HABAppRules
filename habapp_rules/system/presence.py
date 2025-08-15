@@ -169,7 +169,7 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
         active_phones = len([phone for phone in self._config.items.phones if phone.value == "ON"])
         if active_phones == 1 and event.value == "ON":
             # first phone switched to ON
-            if self.__phone_absence_countdown.get_next_run():
+            if self.__phone_absence_countdown.next_run_datetime:
                 self.__phone_absence_countdown.stop()
 
             if self.state == PresenceState.LEAVING.value:
