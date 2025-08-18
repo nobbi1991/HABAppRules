@@ -164,6 +164,7 @@ class TestSleep(tests.helper.test_case_base.TestCaseBaseStateMachine):
         # post_sleeping check if sleep change is ignored
         tests.helper.oh_item.send_command("Unittest_Sleep_Request", "ON", "OFF")
         self.assertEqual(self._sleep.state, "post_sleeping")
+        tests.helper.oh_item.send_command("Unittest_Sleep_Request", "OFF", "OFF")
 
         # post_sleeping timeout -> awake
         tests.helper.timer.call_timeout(self.transitions_timer_mock)
