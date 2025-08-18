@@ -218,6 +218,16 @@ class Sleep(habapp_rules.core.state_machine_rule.StateMachineRule):
         else:
             self.__update_lock_state()
 
+    def on_enter_awake(self) -> None:
+        """Callback, which is called if state machine entered awake state."""
+        if self._config.items.sleep_request.is_on():
+            self.start_sleeping()
+
+    def on_enter_sleeping(self) -> None:
+        """Callback, which is called if state machine entered sleeping state."""
+        if not self._config.items.sleep_request.is_on():
+            self.end_sleeping()
+
 
 class LinkSleep(HABApp.Rule):
     """Link sleep items depending on current time."""

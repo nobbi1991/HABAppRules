@@ -164,6 +164,7 @@ class TestSleep(tests.helper.test_case_base.TestCaseBaseStateMachine):
         # post_sleeping check if sleep change is ignored
         tests.helper.oh_item.send_command("Unittest_Sleep_Request", "ON", "OFF")
         self.assertEqual(self._sleep.state, "post_sleeping")
+        tests.helper.oh_item.send_command("Unittest_Sleep_Request", "OFF", "OFF")
 
         # post_sleeping timeout -> awake
         tests.helper.timer.call_timeout(self.transitions_timer_mock)
@@ -226,6 +227,18 @@ class TestSleep(tests.helper.test_case_base.TestCaseBaseStateMachine):
         tests.helper.oh_item.assert_value("CustomState", "awake")
         tests.helper.oh_item.send_command("Unittest_Lock_Request", "ON", "OFF")
         tests.helper.oh_item.assert_value("CustomState", "locked")
+
+    def test_request_changed(self) -> None:
+        """Test request changed at pre_sleeping and post_sleeping."""
+        # on enter awake | request is on -> expected state = pre_sleeping
+        tests.helper.oh_item.set_state("Unittest_Sleep_Request", "ON")
+        self._sleep.to_awake()
+        tests.helper.oh_item.assert_value("CustomState", "pre_sleeping")
+
+        # on enter sleeping | request is off -> expected state = post_sleeping
+        tests.helper.oh_item.set_state("Unittest_Sleep_Request", "OFF")
+        self._sleep.to_sleeping()
+        tests.helper.oh_item.assert_value("CustomState", "post_sleeping")
 
     def test_minimal_items(self) -> None:
         """Test Sleeping class with minimal set of items."""
