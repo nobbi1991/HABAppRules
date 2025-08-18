@@ -3,7 +3,7 @@
 ## Bugfix
 
 - removed deprecation triggered by `habapp_rules.system.presence.Presence` if phones are used
-- fixed bug in `habapp_rules.system.sleep.Sleep` which did not change back to sleep / awake if request changed  in `pre_sleeping` or `post_sleeping` 
+- fixed bug in `habapp_rules.system.sleep.Sleep` which did not change back to sleep / awake if request changed in `pre_sleeping` or `post_sleeping`
 
 # Version 8.1.1 - 15.08.2025
 
