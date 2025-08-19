@@ -223,7 +223,7 @@ class TestSleep(tests.helper.test_case_base.TestCaseBaseStateMachine):
         tests.helper.oh_item.send_command("Unittest_Lock_Request", "ON", "OFF")
         tests.helper.oh_item.assert_value("CustomState", "locked")
 
-    def test_request_changed(self):
+    def test_request_changed(self) -> None:
         """Test transitions when sleep request is changed at pre_sleeping or post_sleeping state."""
         tests.helper.oh_item.set_state("Unittest_Sleep_Request", "ON")
         self._sleep.to_pre_sleeping()
