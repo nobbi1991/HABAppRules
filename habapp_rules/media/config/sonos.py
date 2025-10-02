@@ -1,4 +1,4 @@
-import typing
+from typing_extensions import Self
 
 import HABApp.openhab.items.thing_item
 import pydantic
@@ -45,7 +45,7 @@ class SonosItems(habapp_rules.core.pydantic_base.ItemBase):
     presence_state: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="presence state item")
 
     @pydantic.model_validator(mode="after")
-    def validate_model(self) -> typing.Self:
+    def validate_model(self) -> Self:
         """Validate items.
 
         Returns:
@@ -122,7 +122,7 @@ class SonosConfig(habapp_rules.core.pydantic_base.ConfigBase):
     parameter: SonosParameter = pydantic.Field(..., description="sonos parameter")
 
     @pydantic.model_validator(mode="after")
-    def _validate_model(self) -> typing.Self:
+    def _validate_model(self) -> Self:
         """Validate model.
 
         Returns:
