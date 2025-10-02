@@ -53,6 +53,7 @@ class VentilationTwoStageItems(_VentilationItemsBase):
     ventilation_output_on: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="Item to switch on the ventilation")
     ventilation_output_power: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="Item to switch on the power mode")
     current: HABApp.openhab.items.NumberItem | None = pydantic.Field(None, description="Item to measure the current of the ventilation")
+    feedback_ventilation_level: HABApp.openhab.items.NumberItem | None = pydantic.Field(None, description="Item feedback current ventilation level")
 
 
 class VentilationParameter(habapp_rules.core.pydantic_base.ParameterBase):

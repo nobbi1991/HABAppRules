@@ -14,14 +14,36 @@ import habapp_rules.core.helper
 import habapp_rules.core.logger
 import habapp_rules.core.state_machine_rule
 import habapp_rules.system
+from habapp_rules.actors.config.ventilation import VentilationTwoStageItems
+from habapp_rules.core.helper import send_if_different
 
 LOGGER = logging.getLogger(__name__)
 
 LEVEL_POWER = 2
 
 
+def _to_datetime(time_input: datetime.time) -> datetime.datetime:  # this is needed because of https://github.com/spacemanspiff2007/eascheduler/issues
+    """Converts a datetime.time object to a datetime.datetime object using today's date. Adds one day if the time is in the past.
+
+    Args:
+        time_input: The time to convert.
+
+    Returns:
+        The resulting datetime object with today's date or the next day if the time is in the past.
+    """
+    result = datetime.datetime.combine(datetime.datetime.now(), time_input)
+
+    # If the resulting datetime is in the past, add one day
+    if result <= datetime.datetime.now():
+        result += datetime.timedelta(days=1)
+
+    return result
+
+
 class _VentilationBase(habapp_rules.core.state_machine_rule.StateMachineRule):
     """Class for ventilation objects."""
+
+    _config: VentilationTwoStageItems
 
     states: typing.ClassVar = [
         {"name": "Manual"},
@@ -207,7 +229,8 @@ class _VentilationBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
     def on_enter_Auto_LongAbsence_Off(self) -> None:  # noqa: N802
         """Is called on entering of Auto_LongAbsence_Off state."""
-        self.run.once(self._config.parameter.state_long_absence.start_time, self._trigger_long_absence_power_on)
+        trigger_time = _to_datetime(self._config.parameter.state_long_absence.start_time)
+        self.run.once(trigger_time, self._trigger_long_absence_power_on)
 
     def _trigger_long_absence_power_on(self) -> None:
         """Trigger long absence power on."""
@@ -394,9 +417,12 @@ class VentilationHeliosTwoStage(_VentilationBase):
         if self.state == "Auto_PowerAfterRun":
             self._ventilation_level = self._config.parameter.state_after_run.level
             self._set_level_to_ventilation_items()
-            return
 
-        super()._set_level()
+        else:
+            super()._set_level()
+
+        if self._config.items.feedback_ventilation_level is not None:
+            send_if_different(self._config.items.feedback_ventilation_level, self._ventilation_level)
 
     def _set_level_to_ventilation_items(self) -> None:
         """Set ventilation to output item(s)."""

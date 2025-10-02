@@ -10,6 +10,7 @@ import HABApp.core
 import HABApp.openhab.events
 
 if TYPE_CHECKING:
+    from HABApp.openhab.items import OpenhabItem
     from HABApp.openhab.definitions import ThingStatusEnum
 
 NO_VALUE = object()
@@ -102,6 +103,27 @@ def send_command(item_name: str, new_value: StateTypes, old_value: StateTypes = 
     HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateUpdatedEvent(item_name, new_value))
 
 
+def oh_send_command(item: OpenhabItem, new_value: StateTypes, old_value: StateTypes = NO_VALUE) -> None:
+    """Replacement of send_command for unit-tests.
+
+    Args:
+        item: item
+        new_value: new value
+        old_value: previous value
+    """
+    send_command(item.name, new_value, old_value)
+
+
+def oh_post_update(item: OpenhabItem, new_value: StateTypes) -> None:
+    """Replacement of post_update for unit-tests.
+
+    Args:
+        item: item
+        new_value: new value
+    """
+    set_state(item.name, new_value)
+
+
 def item_command_event(item_name: str, value: StateTypes) -> None:
     """Post a command event to the event bus.
 
@@ -109,7 +131,7 @@ def item_command_event(item_name: str, value: StateTypes) -> None:
         item_name: name of item
         value: value of the event
     """
-    with contextlib.suppress(HABApp.core.errors.InvalidItemValue):
+    with contextlib.suppress(HABApp.core.errors.InvalidItemValueError):
         set_state(item_name, value)
     HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemCommandEvent(item_name, value))
 

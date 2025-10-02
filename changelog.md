@@ -1,8 +1,77 @@
-# Version 8.0.0 - dd.01.2025
+# Version 8.1.2 - dd.08.2025
+
+## Bugfix
+
+- removed deprecation triggered by `habapp_rules.system.presence.Presence` if phones are used
+- fixed bug in `habapp_rules.system.sleep.Sleep` which did not change back to sleep / awake if request changed in `pre_sleeping` or `post_sleeping`
+- renamed `_cb_brightness_change` of `habapp_rules.actors.state_observer.StateObserverDimmer` to `_cb_change`
+
+# Version 8.1.1 - 15.08.2025
+
+## Bugfix
+
+- fixed bug in `habapp_rules.system.presence.Presence` which did not stop the phone-leaving-counter correctly
+
+# Version 8.1.0 - 31.07.2025
+
+## Features
+
+- added support for OpenHAB 5.0
+- bumped HABApp to 25.7.0
+
+# Version 8.0.0 - 15.07.2025
 
 ## Breaking changes
 
-- renamed `_cb_brightness_change` of `habapp_rules.actors.state_observer.StateObserverDimmer` to `_cb_change`
+- bumped HABApp to 25.6.2. Check release infos:
+  - [HABApp 25.04.0](https://github.com/spacemanspiff2007/HABApp/releases/tag/25.04.0)
+  - [HABApp 25.05.0](https://github.com/spacemanspiff2007/HABApp/releases/tag/25.05.0)
+  - [HABApp 25.06.0](https://github.com/spacemanspiff2007/HABApp/releases/tag/25.06.0)
+
+# Version 7.4.3 - 23.03.2025
+
+## Bugfix
+
+- fixed bug in `habapp_rules.energy.montly_report.MonthlyReport` which crashed if one energy-share was negative. Now, this share will be ignored
+
+# Version 7.4.2 - 13.03.2025
+
+## Bugfix
+
+- fixed bug in `habapp_rules.actors.ventilation.VentilationHeliosTwoStage` and `habapp_rules.actors.ventilation.VentilationHeliosTwoStageHumidity` which made the rules unusable if a NumberItem was used
+
+# Version 7.4.1 - 11.03.2025
+
+## Bugfix
+
+- added missing reporting of current `ventilation_level` to `habapp_rules.actors.ventilation.VentilationHeliosTwoStage` and `habapp_rules.actors.ventilation.VentilationHeliosTwoStageHumidity`
+
+# Version 7.4.0 - 10.03.2025
+
+## Features
+
+- added rule `habapp_rules.network.wol.Wol` to wake up devices via Wake-on-LAN
+- added rules `habapp_rules.energy.virtual_energy_meter.VirtualEnergyMeterSwitch` and `habapp_rules.energy.virtual_energy_meter.VirtualEnergyMeterNumber` to estimate energy consumption of devices without current / energy measurement
+- Added support for multiple energy items to `habapp_rules.energy.config.monthly_report.EnergyShare`
+
+# Version 7.3.0 - 08.02.2025
+
+## Features
+
+- Added parameter `brightness_night_extended` to config of `habapp_rules.actors.light_bathroom.BathroomLight` to configure the brightness for the extended sleep time
+
+# Version 7.2.2 - 02.02.2025
+
+## Bugfix
+
+- Fixed bug in `habapp_rules.actors.energy_save_switch.EnergySaveSwitch` where the max_on_time-timeout switched off the switch, also if external request was active
+- Fixed bug in `habapp_rules.actors.light_bathroom.BathroomLight` which set the night brightness also if the light was switched on via dimming
+
+# Version 7.2.1 - 31.12.2024
+
+## Bugfix
+
+- Added workaround for all rules of `habapp_rules.actors.ventilation` for triggering the ventilation if presence state is `long_absence`. Check the following GitHub link for more details: https://github.com/spacemanspiff2007/eascheduler/issues/24
 
 # Version 7.2.0 - 15.12.2024
 

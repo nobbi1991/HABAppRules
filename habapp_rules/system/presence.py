@@ -1,7 +1,6 @@
 """Rule to detect presence or absence."""
 
 import logging
-import threading
 import typing
 
 import HABApp.openhab.definitions
@@ -83,7 +82,7 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
         for phone_item in self._config.items.phones:
             phone_item.listen_event(self._cb_phone, HABApp.core.events.ValueChangeEventFilter())
 
-        self.__phone_absence_timer: threading.Timer | None = None
+        self.__phone_absence_countdown = self.run.countdown(20 * 60, self.__set_leaving_through_phone)
         self._instance_logger.debug(super().get_initial_log_message())
 
     def _get_initial_state(self, default_value: str = PresenceState.PRESENCE.value) -> str:
@@ -170,9 +169,8 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
         active_phones = len([phone for phone in self._config.items.phones if phone.value == "ON"])
         if active_phones == 1 and event.value == "ON":
             # first phone switched to ON
-            if self.__phone_absence_timer:
-                self.__phone_absence_timer.cancel()
-                self.__phone_absence_timer = None
+            if self.__phone_absence_countdown.next_run_datetime:
+                self.__phone_absence_countdown.stop()
 
             if self.state == PresenceState.LEAVING.value:
                 self._instance_logger.debug("Leaving was aborted through first phone which came online")
@@ -184,21 +182,10 @@ class Presence(habapp_rules.core.state_machine_rule.StateMachineRule):
 
         elif active_phones == 0 and event.value == "OFF":
             # last phone switched to OFF
-            self.__phone_absence_timer = threading.Timer(20 * 60, self.__set_leaving_through_phone)
-            self.__phone_absence_timer.start()
+            self.__phone_absence_countdown.reset()
 
     def __set_leaving_through_phone(self) -> None:
         """Set leaving detected if timeout expired."""
         if self.state == PresenceState.PRESENCE.value:
             self._instance_logger.debug("Leaving was set, because last phone left some time ago.")
             self.leaving_detected()
-        self.__phone_absence_timer = None
-
-    def on_rule_removed(self) -> None:
-        """Stop all threads, started by this rule."""
-        habapp_rules.core.state_machine_rule.StateMachineRule.on_rule_removed(self)
-
-        # stop phone absence timer
-        if self.__phone_absence_timer:
-            self.__phone_absence_timer.cancel()
-            self.__phone_absence_timer = None

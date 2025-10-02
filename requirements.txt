@@ -1,5 +1,7 @@
-HABApp==24.11.1
+HABApp==25.7.0
 matplotlib~=3.10.0
 multi-notifier~=0.5.0
-transitions==0.9.1 # 0.9.2 creates strange graphs
-typing_extensions~=4.12.2 # used for py3.10 support (SelfType)
+pydantic_extra_types~=2.10.2
+transitions==0.9.1  # > 0.9.pip 1 creates strange graphs
+typing_extensions~=4.14.0  # used for py3.10 support (SelfType)
+wakeonlan~=3.1.0

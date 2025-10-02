@@ -161,10 +161,6 @@ class TestSleep(tests.helper.test_case_base.TestCaseBaseStateMachine):
         tests.helper.oh_item.assert_value("Unittest_Display_Text", "Guten Morgen")
         self.transitions_timer_mock.assert_called_with(3, unittest.mock.ANY, args=unittest.mock.ANY)
 
-        # post_sleeping check if sleep change is ignored
-        tests.helper.oh_item.send_command("Unittest_Sleep_Request", "ON", "OFF")
-        self.assertEqual(self._sleep.state, "post_sleeping")
-
         # post_sleeping timeout -> awake
         tests.helper.timer.call_timeout(self.transitions_timer_mock)
         self.assertEqual(self._sleep.state, "awake")
@@ -227,11 +223,22 @@ class TestSleep(tests.helper.test_case_base.TestCaseBaseStateMachine):
         tests.helper.oh_item.send_command("Unittest_Lock_Request", "ON", "OFF")
         tests.helper.oh_item.assert_value("CustomState", "locked")
 
+    def test_request_changed(self) -> None:
+        """Test transitions when sleep request is changed at pre_sleeping or post_sleeping state."""
+        tests.helper.oh_item.set_state("Unittest_Sleep_Request", "ON")
+        self._sleep.to_pre_sleeping()
+        tests.helper.oh_item.send_command("Unittest_Sleep_Request", "OFF")
+        tests.helper.oh_item.assert_value("CustomState", "awake")
+
+        tests.helper.oh_item.set_state("Unittest_Sleep_Request", "OFF")
+        self._sleep.to_post_sleeping()
+        tests.helper.oh_item.send_command("Unittest_Sleep_Request", "ON")
+        tests.helper.oh_item.assert_value("CustomState", "pre_sleeping")
+
     def test_minimal_items(self) -> None:
         """Test Sleeping class with minimal set of items."""
         # delete sleep rule from init
-        self._runner.loaded_rules[0]._habapp_ctx.unload_rule()
-        self._runner.loaded_rules.clear()
+        self.unload_rule(self._runner.loaded_rules[0])
 
         tests.helper.oh_item.remove_mocked_item_by_name("Unittest_Lock")
         tests.helper.oh_item.remove_mocked_item_by_name("Unittest_Lock_Request")

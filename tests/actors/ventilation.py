@@ -25,6 +25,31 @@ import tests.helper.test_case_base
 import tests.helper.timer
 
 
+class TestGlobalFunctions(unittest.TestCase):
+    """Test global functions."""
+
+    def test_to_datetime(self) -> None:
+        """Test _to_datetime."""
+        TestCase = collections.namedtuple("TestCase", "input_time, now, expected_result")
+
+        test_cases = [
+            TestCase(datetime.time(0, 0), datetime.datetime(2024, 1, 1, 0, 1), datetime.datetime(2024, 1, 2, 0, 0)),
+            TestCase(datetime.time(6, 0), datetime.datetime(2024, 1, 1, 0, 1), datetime.datetime(2024, 1, 1, 6, 0)),
+            TestCase(datetime.time(18, 0), datetime.datetime(2024, 1, 1, 17, 59), datetime.datetime(2024, 1, 1, 18, 0)),
+            TestCase(datetime.time(18, 0), datetime.datetime(2024, 1, 1, 18, 00), datetime.datetime(2024, 1, 2, 18, 0)),
+            TestCase(datetime.time(18, 0), datetime.datetime(2024, 1, 1, 18, 1), datetime.datetime(2024, 1, 2, 18, 0)),
+        ]
+
+        combine_orig = datetime.datetime.combine
+
+        with unittest.mock.patch("datetime.datetime") as datetime_mock:
+            datetime.datetime.combine = combine_orig
+            for test_case in test_cases:
+                with self.subTest(test_case=test_case):
+                    datetime_mock.now.return_value = test_case.now
+                    self.assertEqual(test_case.expected_result, habapp_rules.actors.ventilation._to_datetime(test_case.input_time))
+
+
 class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
     """Tests cases for testing Ventilation."""
 
@@ -223,9 +248,9 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
     def test_on_enter_long_absence_off(self) -> None:
         """Test on_enter_Auto_LongAbsence_Off."""
-        with unittest.mock.patch.object(self.ventilation_max, "_trigger_long_absence_power_on") as trigger_on_mock:
+        with unittest.mock.patch.object(self.ventilation_max, "_trigger_long_absence_power_on") as trigger_on_mock, unittest.mock.patch("habapp_rules.actors.ventilation._to_datetime") as to_datetime_mock:
             self.ventilation_max.to_Auto_LongAbsence_Off()
-        self.run_at_mock.assert_called_once_with(datetime.time(18), trigger_on_mock)
+        self.run_at_mock.assert_called_once_with(to_datetime_mock.return_value, trigger_on_mock)
 
     def test_trigger_long_absence_power_on(self) -> None:
         """Test _trigger_long_absence_power_on."""
@@ -416,6 +441,7 @@ class TestVentilationHeliosTwoStage(tests.helper.test_case_base.TestCaseBaseStat
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Ventilation_max_external_request", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Ventilation_max_feedback_on", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Ventilation_max_feedback_power", None)
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Ventilation_max_feedback_ventilation_level", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Ventilation_max_display_text", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Presence_state", None)
 
@@ -441,6 +467,7 @@ class TestVentilationHeliosTwoStage(tests.helper.test_case_base.TestCaseBaseStat
                 display_text="Unittest_Ventilation_max_display_text",
                 presence_state="Unittest_Presence_state",
                 state="Unittest_Ventilation_max_Custom_State",
+                feedback_ventilation_level="Unittest_Ventilation_max_feedback_ventilation_level",
             ),
             parameter=parameter_max,
         )
@@ -473,17 +500,17 @@ class TestVentilationHeliosTwoStage(tests.helper.test_case_base.TestCaseBaseStat
 
     def test_set_level(self) -> None:
         """Test _set_level."""
-        TestCase = collections.namedtuple("TestCase", "state, expected_on, expected_power")
+        TestCase = collections.namedtuple("TestCase", "state, expected_on, expected_power, expected_level")
 
         test_cases = [
-            TestCase("Manual", None, None),
-            TestCase("Auto_PowerHand", "ON", "ON"),
-            TestCase("Auto_Normal", "ON", "OFF"),
-            TestCase("Auto_PowerExternal", "ON", "ON"),
-            TestCase("Auto_LongAbsence_On", "ON", "ON"),
-            TestCase("Auto_LongAbsence_Off", "OFF", "OFF"),
-            TestCase("Auto_Init", None, None),
-            TestCase("Auto_PowerAfterRun", "ON", "OFF"),
+            TestCase("Manual", None, None, 101),
+            TestCase("Auto_PowerHand", "ON", "ON", 102),
+            TestCase("Auto_Normal", "ON", "OFF", 1),
+            TestCase("Auto_PowerExternal", "ON", "ON", 103),
+            TestCase("Auto_LongAbsence_On", "ON", "ON", 105),
+            TestCase("Auto_LongAbsence_Off", "OFF", "OFF", 0),
+            TestCase("Auto_Init", None, None, 0),
+            TestCase("Auto_PowerAfterRun", "ON", "OFF", 99),
         ]
 
         self.ventilation_max._config.parameter.state_normal.level = 1
@@ -501,6 +528,8 @@ class TestVentilationHeliosTwoStage(tests.helper.test_case_base.TestCaseBaseStat
 
                     if test_case.expected_power is not None:
                         send_mock.assert_any_call(self.ventilation_max._config.items.ventilation_output_power, test_case.expected_power)
+
+                    tests.helper.oh_item.assert_value("Unittest_Ventilation_max_feedback_ventilation_level", test_case.expected_level)
 
     def test_set_feedback_states(self) -> None:
         """Test _set_feedback_states."""

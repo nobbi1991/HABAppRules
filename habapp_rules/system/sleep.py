@@ -65,7 +65,7 @@ class Sleep(habapp_rules.core.state_machine_rule.StateMachineRule):
     ]
 
     trans: typing.ClassVar = [
-        {"trigger": "start_sleeping", "source": "awake", "dest": "pre_sleeping"},
+        {"trigger": "start_sleeping", "source": ["awake", "post_sleeping"], "dest": "pre_sleeping"},
         {"trigger": "pre_sleeping_timeout", "source": "pre_sleeping", "dest": "sleeping"},
         {"trigger": "end_sleeping", "source": "sleeping", "dest": "post_sleeping"},
         {"trigger": "end_sleeping", "source": "pre_sleeping", "dest": "awake", "unless": "lock_request_active"},
@@ -191,7 +191,7 @@ class Sleep(habapp_rules.core.state_machine_rule.StateMachineRule):
         Args:
             event: Item state change event of sleep_request item
         """
-        if event.value == "ON" and self.state == "awake":
+        if event.value == "ON" and self.state in {"awake", "post_sleeping"}:
             self._instance_logger.debug("Start sleeping through sleep switch")
             self._sleep_request_active = True
             self.start_sleeping()

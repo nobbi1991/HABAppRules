@@ -6,7 +6,7 @@ import abc
 import logging
 import threading
 import time
-import typing
+from collections.abc import Callable
 
 import HABApp
 import HABApp.openhab.items
@@ -18,7 +18,7 @@ import habapp_rules.core.timeout_list
 LOGGER = logging.getLogger(__name__)
 
 EventTypes = HABApp.openhab.events.ItemStateChangedEvent | HABApp.openhab.events.ItemCommandEvent
-CallbackType = typing.Callable[[EventTypes], None]
+CallbackType = Callable[[EventTypes], None]
 
 
 class _StateObserverBase(HABApp.Rule, abc.ABC):

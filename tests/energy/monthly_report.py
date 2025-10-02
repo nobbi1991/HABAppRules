@@ -57,9 +57,11 @@ class TestMonthlyReport(tests.helper.test_case_base.TestCaseBase):
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Energy_Sum", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Energy_1", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Energy_2", None)
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Energy_3", None)
 
         self._energy_1 = habapp_rules.energy.config.monthly_report.EnergyShare("Energy_1", "Energy 1")
         self._energy_2 = habapp_rules.energy.config.monthly_report.EnergyShare("Energy_2", "Energy 2")
+        self._energy_3 = habapp_rules.energy.config.monthly_report.EnergyShare("Energy_3", "Energy 3")
         self._mail_config = multi_notifier.connectors.connector_mail.MailConfig(user="User", password="Password", smtp_host="smtp.test.de", smtp_port=587)  # noqa: S106
 
         config = habapp_rules.energy.config.monthly_report.MonthlyReportConfig(
@@ -112,23 +114,6 @@ class TestMonthlyReport(tests.helper.test_case_base.TestCaseBase):
 
         self._rule = habapp_rules.energy.monthly_report.MonthlyReport(config)
 
-    def test_get_historic_value(self) -> None:
-        """Test _get_historic_value."""
-        mock_item = unittest.mock.MagicMock()
-        fake_persistence_data = HABApp.openhab.definitions.helpers.persistence_data.OpenhabPersistenceData()
-        mock_item.get_persistence_data.return_value = fake_persistence_data
-
-        start_time = datetime.datetime.now()
-        end_time = start_time + datetime.timedelta(hours=1)
-
-        # no data
-        self.assertEqual(0, self._rule._get_historic_value(mock_item, start_time))
-        mock_item.get_persistence_data.assert_called_once_with(start_time=start_time, end_time=end_time)
-
-        # data
-        fake_persistence_data.data = {"0.0": 42, "1.0": 1337}
-        self.assertEqual(42, self._rule._get_historic_value(mock_item, start_time))
-
     def test_create_html(self) -> None:
         """Test create_html."""
         self._rule._config.items.energy_sum.value = 20_123.5489135
@@ -144,9 +129,10 @@ class TestMonthlyReport(tests.helper.test_case_base.TestCaseBase):
         self._rule._config.items.energy_sum.value = 1000
         self._energy_1.energy_item.value = 100
         self._energy_2.energy_item.value = 50
+        self._energy_3.energy_item.value = 5
 
         with (
-            unittest.mock.patch.object(self._rule, "_get_historic_value", side_effect=[800, 90, 45]),
+            unittest.mock.patch("habapp_rules.energy.helper.get_historic_value", side_effect=[800, 90, 45, 100]),
             unittest.mock.patch("habapp_rules.energy.donut_chart.create_chart", return_value="html text result") as create_chart_mock,
             unittest.mock.patch.object(self._rule, "_create_html") as create_html_mock,
             unittest.mock.patch("habapp_rules.energy.monthly_report._get_previous_month_name", return_value="MonthName"),
