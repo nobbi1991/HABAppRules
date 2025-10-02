@@ -1,10 +1,13 @@
-# Version 8.1.2 - dd.08.2025
+# Version 9.0.0 - dd.08.2025
+
+## Breaking changes
+
+- renamed `_cb_brightness_change` of `habapp_rules.actors.state_observer.StateObserverDimmer` to `_cb_change`
 
 ## Bugfix
 
 - removed deprecation triggered by `habapp_rules.system.presence.Presence` if phones are used
 - fixed bug in `habapp_rules.system.sleep.Sleep` which did not change back to sleep / awake if request changed in `pre_sleeping` or `post_sleeping`
-- renamed `_cb_brightness_change` of `habapp_rules.actors.state_observer.StateObserverDimmer` to `_cb_change`
 
 # Version 8.1.1 - 15.08.2025
 
