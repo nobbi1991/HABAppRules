@@ -10,8 +10,8 @@ import HABApp.core
 import HABApp.openhab.events
 
 if TYPE_CHECKING:
-    from HABApp.openhab.items import OpenhabItem
     from HABApp.openhab.definitions import ThingStatusEnum
+    from HABApp.openhab.items import OpenhabItem
 
 NO_VALUE = object()
 _MOCKED_ITEM_NAMES = []

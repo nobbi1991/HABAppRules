@@ -1,10 +1,8 @@
-from typing_extensions import Self
-
 import HABApp.openhab.items.thing_item
 import pydantic
+from typing_extensions import Self
 
 import habapp_rules.core.pydantic_base
-from habapp_rules.core.exceptions import HabAppRulesConfigurationError
 
 
 class KnownContentBase(pydantic.BaseModel):
@@ -38,27 +36,9 @@ class SonosItems(habapp_rules.core.pydantic_base.ItemBase):
     sonos_volume: HABApp.openhab.items.DimmerItem | None = pydantic.Field(None, description="sonos volume")
     play_uri: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="sonos play uri item")
     tune_in_station_id: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="sonos tune in station id item")
-    zone_add: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="Add the given zone player to the group of this player")
-    zone_remove: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="Remove the given zone player from the group of this player")
     favorite_id: HABApp.openhab.items.NumberItem | None = pydantic.Field(None, description="favorite id item")
     display_string: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="display string item")
     presence_state: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="presence state item")
-
-    @pydantic.model_validator(mode="after")
-    def validate_model(self) -> Self:
-        """Validate items.
-
-        Returns:
-            validated items
-
-        Raises:
-            HabAppRulesConfigurationError: if validation fails
-        """
-        if (self.zone_add is None) != (self.zone_remove is None):
-            msg = "zone_add and zone_remove must be set together"
-            raise HabAppRulesConfigurationError(msg)
-
-        return self
 
 
 class SonosParameter(habapp_rules.core.pydantic_base.ParameterBase):
@@ -135,8 +115,8 @@ class SonosConfig(habapp_rules.core.pydantic_base.ConfigBase):
             msg = "tune_in_station_id item must be set if ContentTuneIn is used"
             raise ValueError(msg)
 
-        if any(isinstance(content, ContentPlayUri) for content in self.parameter.known_content) and (self.items.play_uri is None or self.items.current_track_uri is None):
-            msg = "play_uri and current_track_uri items must be set if ContentPlayUri is used"
+        if any(isinstance(content, ContentPlayUri) for content in self.parameter.known_content) and self.items.play_uri is None:
+            msg = "play_uri item must be set if ContentPlayUri is used"
             raise ValueError(msg)
 
         start_volumes = [self.parameter.start_volume_tune_in, self.parameter.start_volume_line_in, self.parameter.start_volume_unknown] + [content.start_volume for content in self.parameter.known_content]

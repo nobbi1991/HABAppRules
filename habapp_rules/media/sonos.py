@@ -10,7 +10,6 @@ import habapp_rules.core.logger
 import habapp_rules.core.state_machine_rule
 import habapp_rules.media.config.sonos
 import habapp_rules.system
-from habapp_rules.core.exceptions import HabAppRulesError
 from habapp_rules.core.helper import send_if_different
 from habapp_rules.media.config.sonos import ContentPlayUri, ContentTuneIn
 
@@ -96,15 +95,6 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
 
         # log init finished
         self._instance_logger.info(self.get_initial_log_message())
-
-    @property
-    def config(self) -> habapp_rules.media.config.sonos.SonosConfig:
-        """Get config.
-
-        Returns:
-            Config
-        """
-        return self._config
 
     def _set_timeouts(self) -> None:
         """Set timeouts of state machine."""
@@ -372,27 +362,3 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         """
         if event.value != habapp_rules.system.PresenceState.PRESENCE.value:
             send_if_different(self._config.items.favorite_id, 0)
-
-    def add_speaker(self, other_speaker: "Sonos") -> None:
-        """Add another speaker to this sonos speaker.
-
-        Args:
-            other_speaker: speaker to add
-
-        Raises:
-            HabAppRulesError: if this sonos speaker has no zone add item
-        """
-        if self._config.items.zone_add is None:
-            msg = "This sonos speaker has no 'zone_add' item configured. Can not add other speakers to it."
-            raise HabAppRulesError(msg)
-
-        self._config.items.zone_add(other_speaker.config.items.sonos_thing.name)
-        # TODO: set volume?!
-
-    def remove_speaker(self, other_speaker: "Sonos") -> None:
-        """Remove speaker from this sonos speaker.
-
-        Args:
-            other_speaker: speaker to remove
-        """
-        self._config.items.zone_remove(other_speaker.config.items.sonos_thing.name)

@@ -41,8 +41,6 @@ class TestSonos(tests.helper.test_case_base.TestCaseBaseStateMachine):
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Volume_max", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_FavoriteId_max", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_DisplayString_max", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_ZoneAdd_max", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_ZoneRemove_max", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_PresenceState", None)
 
         self._config_min = habapp_rules.media.config.sonos.SonosConfig(
@@ -61,8 +59,6 @@ class TestSonos(tests.helper.test_case_base.TestCaseBaseStateMachine):
                 tune_in_station_id="Unittest_TuneInStationId_max",
                 sonos_volume="Unittest_Volume_max",
                 favorite_id="Unittest_FavoriteId_max",
-                zone_add="Unittest_ZoneAdd_max",
-                zone_remove="Unittest_ZoneRemove_max",
                 display_string="Unittest_DisplayString_max",
                 presence_state="Unittest_PresenceState",
             ),
@@ -303,7 +299,7 @@ class TestSonos(tests.helper.test_case_base.TestCaseBaseStateMachine):
                 self._config_max.parameter.known_content = test_case.known_content
                 self._config_max.items.current_track_uri.value = test_case.current_track_uri
 
-                if test_case.station_id is None:
+                if not test_case.station_id:
                     self._config_max.items.tune_in_station_id = None
                 else:
                     self._config_max.items.tune_in_station_id = HABApp.openhab.items.OpenhabItem.get_item("Unittest_TuneInStationId_max")
