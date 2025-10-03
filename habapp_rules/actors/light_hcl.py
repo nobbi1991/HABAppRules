@@ -55,7 +55,7 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
         habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, self._config.items.state)
         self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, self._config.items.color.name)
 
-        self._state_observer = habapp_rules.actors.state_observer.StateObserverNumber(self._config.items.color.name, self._cb_hand, value_tolerance=10)
+        self._state_observer = habapp_rules.actors.state_observer.StateObserverNumber(self._config.items.color.name, self._cb_hand, value_tolerance=config.parameter.color_tolerance)
 
         # init state machine
         self._previous_state = None

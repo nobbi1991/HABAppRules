@@ -34,6 +34,7 @@ class HclElevationParameter(habapp_rules.core.pydantic_base.ParameterBase):
     sleep_color: float = pydantic.Field(2500, description="color if sleeping is active", gt=0)
     post_sleep_timeout: int = pydantic.Field(1, description="time after sleeping was active where the sleeping color will be set", gt=0)
     focus_color: float = pydantic.Field(6000, description="color if focus is active", gt=0)
+    color_tolerance: int = pydantic.Field(10, description="color tolerance for hand detection", gt=0)
 
     @pydantic.model_validator(mode="after")
     def validate_model(self) -> typing_extensions.Self:

@@ -4,6 +4,7 @@
 
 - removed deprecation triggered by `habapp_rules.system.presence.Presence` if phones are used
 - fixed bug in `habapp_rules.system.sleep.Sleep` which did not change back to sleep / awake if request changed in `pre_sleeping` or `post_sleeping`
+- added parameter `color_tolerance` to `habapp_rules.actors.light_hcl.HclElevationParameter` and `habapp_rules.actors.light_hcl.HclTimeParameter` to set the color tolerance for hand detection and avoid false positives if the light can not set exact color values
 
 # Version 8.1.1 - 15.08.2025
 
