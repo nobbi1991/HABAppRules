@@ -71,6 +71,10 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
         graph.get_graph().draw(picture_dir / "HCL_Base.png", format="png", prog="dot")
 
+        for state_name in [state for state in self._get_state_names(self._hcl_elevation_min.states) if "init" not in state.lower()]:
+            light_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self._hcl_elevation_min.states, transitions=self._hcl_elevation_min.trans, initial=state_name, show_conditions=True)
+            light_graph.get_graph(force_new=True, show_roi=True).draw(picture_dir / f"HCL_{state_name}.png", format="png", prog="dot")
+
     def test_set_timeouts(self) -> None:
         """Test _set_timeouts."""
         # min
