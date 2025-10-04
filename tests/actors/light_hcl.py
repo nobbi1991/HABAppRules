@@ -138,6 +138,29 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
                 self._hcl_elevation_min._config.items.elevation.value = test_case.input
                 self.assertEqual(test_case.output, self._hcl_elevation_min._get_hcl_color())
 
+    def test_sleep_active(self) -> None:
+        """Test _sleep_active."""
+        # sleep_state is not configured
+        self.assertIsNone(self._hcl_elevation_min._config.items.sleep_state)
+        self.assertFalse(self._hcl_elevation_min._sleep_active())
+
+        # sleep_state is configured
+        self.assertIsNotNone(self._hcl_elevation_max._config.items.sleep_state)
+
+        TestCase = collections.namedtuple("TestCase", "sleep_state, result")
+        test_cases = [
+            TestCase(habapp_rules.system.SleepState.AWAKE.value, False),
+            TestCase(habapp_rules.system.SleepState.PRE_SLEEPING.value, True),
+            TestCase(habapp_rules.system.SleepState.SLEEPING.value, True),
+            TestCase(habapp_rules.system.SleepState.POST_SLEEPING.value, False),
+            TestCase(habapp_rules.system.SleepState.LOCKED.value, False),
+        ]
+
+        for test_case in test_cases:
+            with self.subTest(test_case=test_case):
+                tests.helper.oh_item.set_state("Unittest_Sleep_state", test_case.sleep_state)
+                self.assertEqual(test_case.result, self._hcl_elevation_max._sleep_active())
+
     def test_end_to_end(self) -> None:
         """Test end to end behavior."""
         tests.helper.oh_item.assert_value("Unittest_Color_min", None)
@@ -238,42 +261,18 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
         )
 
         # event value == OFF
-        with unittest.mock.patch("HABApp.rule.scheduler.job_builder.HABAppJobBuilder.once") as run_soon_mock:
+        with unittest.mock.patch.object(hcl_color_dimmer, "_set_light_color") as set_color_dimmer_mock, unittest.mock.patch.object(self._hcl_elevation_max, "_set_light_color") as set_color_max_mock:
             tests.helper.oh_item.item_state_change_event("Unittest_Switch_on_max", "OFF")
             tests.helper.oh_item.item_state_change_event("Unittest_Switch_on_dimmer", 0)
-            run_soon_mock.assert_not_called()
+            set_color_dimmer_mock.assert_not_called()
+            set_color_max_mock.assert_not_called()
 
-        # state is not Auto_HCL
-        with unittest.mock.patch("HABApp.rule.scheduler.job_builder.HABAppJobBuilder.once") as run_soon_mock:
+        # event value == ON
+        with unittest.mock.patch.object(hcl_color_dimmer, "_set_light_color") as set_color_dimmer_mock, unittest.mock.patch.object(self._hcl_elevation_max, "_set_light_color") as set_color_max_mock:
             tests.helper.oh_item.item_state_change_event("Unittest_Switch_on_max", "ON")
             tests.helper.oh_item.item_state_change_event("Unittest_Switch_on_dimmer", 42)
-            run_soon_mock.assert_not_called()
-
-        # target_color is None
-        self._hcl_elevation_max.state = "Auto_HCL"
-        with (
-            unittest.mock.patch("HABApp.rule.scheduler.job_builder.HABAppJobBuilder.once") as run_soon_mock,
-            unittest.mock.patch.object(self._hcl_elevation_max, "_get_hcl_color", return_value=None),
-            unittest.mock.patch.object(hcl_color_dimmer, "_get_hcl_color", return_value=None),
-        ):
-            tests.helper.oh_item.item_state_change_event("Unittest_Switch_on_max", "ON")
-            tests.helper.oh_item.item_state_change_event("Unittest_Switch_on_dimmer", 43)
-            run_soon_mock.assert_not_called()
-
-        # target_color is a valid value
-        self._hcl_elevation_max.state = "Auto_HCL"
-        with (
-            unittest.mock.patch("HABApp.rule.scheduler.job_builder.HABAppJobBuilder.once") as run_soon_mock,
-            unittest.mock.patch.object(self._hcl_elevation_max, "_get_hcl_color", return_value=42),
-            unittest.mock.patch.object(hcl_color_dimmer, "_get_hcl_color", return_value=44),
-        ):
-            tests.helper.oh_item.item_state_change_event("Unittest_Switch_on_max", "ON")
-            tests.helper.oh_item.item_state_change_event("Unittest_Switch_on_dimmer", 80)
-
-            run_soon_mock.assert_has_calls([
-                unittest.mock.call(1, self._hcl_elevation_max._state_observer.send_command, 42),
-                unittest.mock.call(1, hcl_color_dimmer._state_observer.send_command, 44),
-            ])
+            set_color_dimmer_mock.assert_called_once()
+            set_color_max_mock.assert_called_once()
 
 
 class TestHclTime(tests.helper.test_case_base.TestCaseBaseStateMachine):

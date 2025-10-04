@@ -41,7 +41,8 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
         {"trigger": "sleep_end", "source": "Auto_Sleep_Active", "dest": "Auto_Sleep_Post"},
         {"trigger": "post_sleep_timeout", "source": "Auto_Sleep_Post", "dest": "Auto_HCL"},
         {"trigger": "focus_start", "source": ["Auto_HCL", "Auto_Sleep"], "dest": "Auto_Focus"},
-        {"trigger": "focus_end", "source": "Auto_Focus", "dest": "Auto_HCL"},
+        {"trigger": "focus_end", "source": "Auto_Focus", "dest": "Auto_Sleep", "conditions": "_sleep_active"},
+        {"trigger": "focus_end", "source": "Auto_Focus", "dest": "Auto_HCL", "unless": "_sleep_active"},
     ]
 
     def __init__(self, config: habapp_rules.actors.config.light_hcl.HclElevationConfig | habapp_rules.actors.config.light_hcl.HclTimeConfig) -> None:
@@ -150,6 +151,16 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
         return fit_m * value + fit_t
 
+    def _sleep_active(self) -> bool:
+        """Check if sleeping is active.
+
+        Returns:
+            True if sleeping is active, else False
+        """
+        if not self._config.items.sleep_state:
+            return False
+        return self._config.items.sleep_state.value in {habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value}
+
     def _cb_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback, which is triggered if the manual switch has a state change event.
 
@@ -200,8 +211,8 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
         Args:
             event: trigger event
         """
-        if ((self.state == "Auto_HCL" and event.value == "ON") or (isinstance(event.value, int | float) and event.value > 0)) and (target_color := self._get_hcl_color()) is not None:
-            self.run.once(1, self._state_observer.send_command, target_color)
+        if event.value == "ON" or (isinstance(event.value, int | float) and event.value > 0):
+            self._set_light_color()
 
 
 class HclElevation(_HclBase):
