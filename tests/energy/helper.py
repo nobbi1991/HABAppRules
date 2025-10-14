@@ -2,7 +2,6 @@ import datetime
 import unittest
 import unittest.mock
 
-import HABApp
 import HABApp.openhab.definitions.helpers.persistence_data
 
 import habapp_rules.energy.helper

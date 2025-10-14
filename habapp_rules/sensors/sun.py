@@ -9,7 +9,6 @@ import habapp_rules.common.filter
 import habapp_rules.common.hysteresis
 import habapp_rules.core.helper
 import habapp_rules.core.logger
-import habapp_rules.core.state_machine_rule
 import habapp_rules.sensors.config.sun
 from habapp_rules.core.helper import send_if_different
 from habapp_rules.system import PresenceState

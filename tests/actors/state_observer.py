@@ -1,16 +1,13 @@
 """Test Presence rule."""
 
 import collections
-import unittest
 import unittest.mock
 
 import HABApp.rule.rule
 
 import habapp_rules.actors.state_observer
-import habapp_rules.core.state_machine_rule
 import tests.helper.oh_item
 import tests.helper.test_case_base
-import tests.helper.timer
 
 
 class TestStateObserverSwitch(tests.helper.test_case_base.TestCaseBase):

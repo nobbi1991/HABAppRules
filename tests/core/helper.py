@@ -2,7 +2,6 @@
 
 import collections
 import time
-import unittest
 import unittest.mock
 
 import HABApp
@@ -10,7 +9,6 @@ import whenever
 
 import habapp_rules.core.exceptions
 import habapp_rules.core.helper
-import habapp_rules.core.logger
 import tests.helper.oh_item
 import tests.helper.test_case_base
 

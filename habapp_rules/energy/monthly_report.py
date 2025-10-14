@@ -7,7 +7,6 @@ import tempfile
 
 import dateutil.relativedelta
 import HABApp
-import HABApp.core.internals
 import jinja2
 import multi_notifier.connectors.connector_mail
 

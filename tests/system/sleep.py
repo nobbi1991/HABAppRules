@@ -9,7 +9,6 @@ import unittest.mock
 
 import HABApp.rule.rule
 
-import habapp_rules.core.state_machine_rule
 import habapp_rules.system.config.sleep
 import habapp_rules.system.sleep
 import tests.helper.graph_machines
