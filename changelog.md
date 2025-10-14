@@ -4,10 +4,25 @@
 
 - renamed `_cb_brightness_change` of `habapp_rules.actors.state_observer.StateObserverDimmer` to `_cb_change`
 
+## Features
+
+- added `habapp_rules.media.sonos.Sonos` to control and monitor Sonos Speaker
+
+# Version 8.1.3 - 04.10.2025
+
+## Bugfix
+
+- fixed bugs in `habapp_rules.actors.light_hcl.HclElevation` and `habapp_rules.actors.light_hcl.HclTime`:
+  - color was not set if light switched on and state was not `Auto_HCL`
+  - color was not set to sleeping color if focus was switched off during sleeping time
+
+# Version 8.1.2 - 03.10.2025
+
 ## Bugfix
 
 - removed deprecation triggered by `habapp_rules.system.presence.Presence` if phones are used
 - fixed bug in `habapp_rules.system.sleep.Sleep` which did not change back to sleep / awake if request changed in `pre_sleeping` or `post_sleeping`
+- added parameter `color_tolerance` to `habapp_rules.actors.light_hcl.config.HclElevationParameter` and `habapp_rules.actors.light_hcl.config.HclTimeParameter` to set the color tolerance for hand detection and avoid false positives if the light can not set exact color values
 
 # Version 8.1.1 - 15.08.2025
 
