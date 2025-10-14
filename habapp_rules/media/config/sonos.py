@@ -5,7 +5,7 @@ from typing_extensions import Self
 import habapp_rules.core.pydantic_base
 
 
-class KnownContentBase(pydantic.BaseModel):
+class _KnownContentBase(pydantic.BaseModel):
     """Base class for known content."""
 
     display_text: str = pydantic.Field(..., description="display string for known content", max_length=14)
@@ -13,13 +13,13 @@ class KnownContentBase(pydantic.BaseModel):
     start_volume: int | None = pydantic.Field(None, description="start volume. None means no volume")
 
 
-class ContentTuneIn(KnownContentBase):
+class ContentTuneIn(_KnownContentBase):
     """TuneIn Radio content."""
 
     tune_in_id: int = pydantic.Field(..., description="TuneIn id for radio content")
 
 
-class ContentPlayUri(KnownContentBase):
+class ContentPlayUri(_KnownContentBase):
     """PlayUri content."""
 
     uri: str = pydantic.Field(..., description="uri for play uri content")

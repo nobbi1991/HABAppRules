@@ -14,6 +14,7 @@ import tests.helper.test_case_base
 
 class TestSonosParameter(unittest.TestCase):
     """Tests for SonosParameter."""
+
     def setUp(self) -> None:
         """Setup tests."""
         self.known_content_uri_1 = habapp_rules.media.config.sonos.ContentPlayUri(display_text="content 1", favorite_id=1, uri="http://example.com/content1")
@@ -63,6 +64,7 @@ class TestSonosParameter(unittest.TestCase):
 
 class TestSonosConfig(tests.helper.test_case_base.TestCaseBase):
     """Tests for SonosConfig."""
+
     def setUp(self) -> None:
         """Setup tests."""
         tests.helper.test_case_base.TestCaseBase.setUp(self)

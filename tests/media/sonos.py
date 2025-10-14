@@ -470,7 +470,7 @@ class TestSonos(tests.helper.test_case_base.TestCaseBaseStateMachine):
         # TuneIn
         with unittest.mock.patch.object(self._config_max.items.tune_in_station_id, "oh_send_command") as send_tune_in_mock, unittest.mock.patch.object(self._config_max.items.play_uri, "oh_send_command") as send_play_uri_mock:
             self.sonos_max._set_favorite_content(ContentTuneIn(display_text="TuneIn1", tune_in_id=123))
-        send_tune_in_mock.assert_called_once_with(123)
+        send_tune_in_mock.assert_called_once_with("123")
         send_play_uri_mock.assert_not_called()
 
         # PlayUri
@@ -535,12 +535,10 @@ class TestSonos(tests.helper.test_case_base.TestCaseBaseStateMachine):
         with (
             unittest.mock.patch.object(self.sonos_max, "_get_favorite_content_by_id", return_value=fav_content) as get_fav_content_mock,
             unittest.mock.patch.object(self.sonos_max, "_set_favorite_content") as set_fav_content_mock,
-            unittest.mock.patch.object(self.sonos_max, "content_changed") as content_changed_mock,
         ):
             tests.helper.oh_item.item_state_change_event("Unittest_FavoriteId_max", 17)
         get_fav_content_mock.assert_called_once_with(17)
         set_fav_content_mock.assert_called_once_with(fav_content)
-        content_changed_mock.assert_called()
         tests.helper.oh_item.assert_value("Unittest_Player_max", "PAUSE")
 
         # known content from standby state
@@ -548,12 +546,10 @@ class TestSonos(tests.helper.test_case_base.TestCaseBaseStateMachine):
         with (
             unittest.mock.patch.object(self.sonos_max, "_get_favorite_content_by_id", return_value=fav_content) as get_fav_content_mock,
             unittest.mock.patch.object(self.sonos_max, "_set_favorite_content") as set_fav_content_mock,
-            unittest.mock.patch.object(self.sonos_max, "content_changed") as content_changed_mock,
         ):
-            tests.helper.oh_item.item_state_change_event("Unittest_FavoriteId_max", 17)
-        get_fav_content_mock.assert_called_once_with(17)
+            tests.helper.oh_item.item_state_change_event("Unittest_FavoriteId_max", 16)
+        get_fav_content_mock.assert_called_once_with(16)
         set_fav_content_mock.assert_called_once_with(fav_content)
-        content_changed_mock.assert_called()
 
         # known content from power off state
         self.sonos_max.to_PowerOff()
