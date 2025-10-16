@@ -19,8 +19,12 @@ logger_mock = unittest.mock.MagicMock()
 logger_mock.level = logging.WARNING
 
 
-def run_tests():
-    """Run the tests and return the result object."""
+def run_tests() -> unittest.TestResult:
+    """Run the tests and return the result object.
+
+    Returns:
+        result object of all tests
+    """
     with unittest.mock.patch("logging.getLogger", return_value=logger_mock):
         # Create a test suite from all test modules
         test_suite = unittest.TestLoader().loadTestsFromNames(INPUT_MODULES)
