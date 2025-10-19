@@ -48,7 +48,6 @@ repos:
       - id: tests
         name: Run unit tests with coverage
         entry: uv run coverage run tests/run_unittest.py && coverage html --skip-covered --fail-under=100
-        language: python
+        language: system
         always_run: true
         pass_filenames: false
-        additional_dependencies: [coverage]
