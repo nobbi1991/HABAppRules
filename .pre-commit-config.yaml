@@ -2,18 +2,11 @@
 # See https://pre-commit.com/hooks.html for more hooks
 default_install_hook_types: [pre-push]
 repos:
-  #  - repo: https://github.com/pre-commit/mirrors-mypy
-  #    rev: v1.13.0
-  #    hooks:
-  #      - id: mypy
-  #        args: [--install-types, --non-interactive]
-  #        exclude: ^tests/
-  #        additional_dependencies:
-  #          - pydantic
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
       - id: check-added-large-files
+        exclude: uv\.lock
       - id: check-ast
       - id: check-case-conflict
       - id: check-executables-have-shebangs
@@ -24,13 +17,13 @@ repos:
       - id: fix-byte-order-marker
       - id: trailing-whitespace
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.0
+    rev: v0.14.1
     hooks:
       - id: ruff
         args: [--fix]
       - id: ruff-format
   - repo: https://github.com/google/yamlfmt
-    rev: v0.18.1
+    rev: v0.19.0
     hooks:
       - id: yamlfmt
         args: [-conf, .yamlfmt.yaml]
@@ -39,7 +32,7 @@ repos:
     hooks:
       - id: shfmt
   - repo: https://github.com/executablebooks/mdformat
-    rev: 0.7.22
+    rev: 1.0.0
     hooks:
       - id: mdformat
   - repo: local
@@ -51,3 +44,11 @@ repos:
         pass_filenames: false
         additional_dependencies:
           - requests
+
+      - id: tests
+        name: Run unit tests with coverage
+        entry: uv run coverage run tests/run_unittest.py && coverage html --skip-covered --fail-under=100
+        language: python
+        always_run: true
+        pass_filenames: false
+        additional_dependencies: [coverage]
