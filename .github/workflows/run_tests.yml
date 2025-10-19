@@ -31,8 +31,7 @@ jobs:
 
       - name: Run Pre-Commit Hooks
         run: |
-          pre-commit install
-          pre-commit run --all-files
+          uv run pre-commit run --all-files
 
 #  unit-tests:
 #    runs-on: ubuntu-latest
