@@ -4,7 +4,6 @@ import HABApp.openhab.items
 import pydantic
 import typing_extensions
 
-import habapp_rules.core.exceptions
 import habapp_rules.core.pydantic_base
 
 

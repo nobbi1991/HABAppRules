@@ -6,7 +6,6 @@ import typing
 
 import HABApp
 
-import habapp_rules.actors.config.energy_save_switch
 import habapp_rules.actors.config.light_bathroom
 import habapp_rules.actors.state_observer
 import habapp_rules.core.helper

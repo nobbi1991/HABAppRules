@@ -6,14 +6,9 @@ import unittest.mock
 import HABApp.rule.rule
 import HABApp.rule.scheduler.job_ctrl
 
-import habapp_rules.core.exceptions
-import habapp_rules.core.state_machine_rule
 import habapp_rules.sensors.current_switch
-import habapp_rules.system
-import tests.helper.graph_machines
 import tests.helper.oh_item
 import tests.helper.test_case_base
-import tests.helper.timer
 from habapp_rules.sensors.config.current_switch import CurrentSwitchConfig, CurrentSwitchItems, CurrentSwitchParameter
 
 

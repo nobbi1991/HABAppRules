@@ -5,7 +5,6 @@ import logging
 import HABApp
 
 import habapp_rules.bridge.config.knx_mqtt
-import habapp_rules.core.exceptions
 import habapp_rules.core.logger
 
 LOGGER = logging.getLogger(__name__)

@@ -3,7 +3,6 @@
 import collections
 import datetime
 
-import HABApp.openhab.definitions.helpers.persistence_data
 import HABApp.openhab.items
 
 import habapp_rules.system.config.task

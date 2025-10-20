@@ -3,8 +3,6 @@
 import logging
 import time
 
-import HABApp
-import HABApp.openhab.connection.handler.func_sync
 import HABApp.openhab.items
 
 import habapp_rules.core.exceptions

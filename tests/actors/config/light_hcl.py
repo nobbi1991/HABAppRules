@@ -3,8 +3,6 @@
 import collections
 
 import habapp_rules.actors.config.light_hcl
-import habapp_rules.core.exceptions
-import tests.helper.oh_item
 import tests.helper.test_case_base
 
 

@@ -3,9 +3,7 @@
 import logging
 import typing
 
-import HABApp.openhab.definitions
 import HABApp.openhab.events
-import HABApp.openhab.items
 import HABApp.util
 
 import habapp_rules.core.helper

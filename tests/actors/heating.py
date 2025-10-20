@@ -9,7 +9,6 @@ import HABApp.rule.scheduler.job_ctrl
 
 import habapp_rules.actors.config.heating
 import habapp_rules.actors.heating
-import habapp_rules.core.exceptions
 import tests.helper.oh_item
 import tests.helper.test_case_base
 
