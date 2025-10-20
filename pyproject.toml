@@ -54,6 +54,7 @@ omit = [
     "*/helper/graph_machines.py",
     "*oh_item.py",
     "*rule_runner.py",
+    "*run_unittest.py",
     "tests/helper/async_helper.py"
 ]
 
