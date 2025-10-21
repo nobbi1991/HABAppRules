@@ -45,14 +45,8 @@ repos:
         additional_dependencies:
           - requests
 
-      - id: test-run
-        name: Run unit tests
+      - id: coverage
+        name: Run unit tests with coverage
         language: system
         pass_filenames: false
-        entry: uv run coverage run tests/run_unittest.py > /dev/null 2>&1 || true
-
-      - id: coverage-html
-        name: Generate coverage HTML
-        language: system
-        pass_filenames: false
-        entry: uv run coverage html --skip-covered --fail-under=100
+        entry: uv run scripts/run_tests_with_coverage.py
