@@ -7,7 +7,6 @@ import HABApp
 
 import habapp_rules.sensors.config.sun
 import habapp_rules.sensors.sun
-import tests.helper.graph_machines
 import tests.helper.oh_item
 import tests.helper.test_case_base
 from habapp_rules.system import PresenceState

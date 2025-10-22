@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling", "hatch-requirements-txt"]
+requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
@@ -8,8 +8,27 @@ description = "Basic rules for HABApp"
 long_description = "Basic rules for HABApp"
 authors = [{ name = "Seuling N." }]
 license = "Apache-2.0"
-dynamic = ["dependencies", "optional-dependencies", "version"]
+dynamic = ["version"]
 requires-python = ">=3.10"
+dependencies = [
+    "HABApp==25.7.0",
+    "matplotlib~=3.10.0",
+    "multi-notifier~=0.5.0",
+    "pydantic_extra_types~=2.10.2",
+    "transitions==0.9.1", # > 0.9 creates strange graphs
+    "typing_extensions~=4.14.0", # used for py3.10 support (SelfType)
+    "wakeonlan~=3.1.0"
+]
+
+[dependency-groups]
+dev = [
+    "graphviz~=0.21.0",
+    "pytest~=8.4.1",
+    "ruff~=0.14.0",
+    "pytest~=8.4.1",
+    "pre-commit>=4.3.0",
+    "coverage>=7.11.0",
+]
 
 
 [tool.coverage]
@@ -31,7 +50,13 @@ typing_overload = "@(typing.)?overload"
 [tool.coverage.report]
 fail_under = 100
 skip_covered = true
-omit = ["*/helper/graph_machines.py", "*oh_item.py", "*rule_runner.py", "tests/helper/async_helper.py"]
+omit = [
+    "*/helper/graph_machines.py",
+    "*oh_item.py",
+    "*rule_runner.py",
+    "*run_unittest.py",
+    "tests/helper/async_helper.py"
+]
 
 
 [tool.hatch.build.targets.wheel]
@@ -53,47 +78,17 @@ dependencies = ["coverage", "pytest", "graphviz"]
 [tool.hatch.envs.tests.scripts]
 local = "coverage run tests/run_unittest.py && coverage html --skip-covered --fail-under=100"
 
-
-
-[tool.hatch.metadata.hooks.requirements_txt]
-files = ["requirements.txt"]
-
 [tool.hatch.metadata] # remove when HABApp dev is released
 allow-direct-references = true
 
 [tool.hatch.version]
 path = "habapp_rules/__init__.py"
 
-#[tool.mypy]
-#python_version = 3.12
-#files = "habapp_rules"
-#plugins = "pydantic.mypy"
-#exclude = "tests"
-#check_untyped_defs = true
-#disallow_any_generics = true
-#disallow_incomplete_defs = true
-#disallow_untyped_calls = true
-#extra_checks = true
-#follow_imports = "silent"
-#local_partial_types = true
-#no_implicit_reexport = true
-#show_error_codes = true
-#strict_equality = true
-#warn_redundant_casts = true
-#warn_return_any = true
-#warn_unused_configs = true
-#warn_unused_ignores = true
-
-[[tool.mypy.overrides]]
-module = ["pydantic.*"]
-ignore_missing_imports = true
-no_implicit_reexport = false
-
 [tool.ruff]
 indent-width = 4
 line-length = 250
 preview = true
-exclude=["*rule_runner.py"]
+exclude = ["*rule_runner.py"]
 
 [tool.ruff.format]
 docstring-code-format = true

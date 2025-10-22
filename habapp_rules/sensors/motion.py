@@ -7,7 +7,6 @@ import HABApp
 
 import habapp_rules.common.hysteresis
 import habapp_rules.core.exceptions
-import habapp_rules.core.helper
 import habapp_rules.core.logger
 import habapp_rules.core.state_machine_rule
 import habapp_rules.sensors.config.motion

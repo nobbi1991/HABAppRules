@@ -10,7 +10,6 @@ import HABApp
 
 import habapp_rules.actors.config.light_hcl
 import habapp_rules.actors.light_hcl
-import habapp_rules.core.exceptions
 import habapp_rules.system
 import tests.helper.graph_machines
 import tests.helper.oh_item

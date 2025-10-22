@@ -1,7 +1,6 @@
 """Test astro rules."""
 
 import collections
-import unittest
 import unittest.mock
 
 import HABApp.rule.rule

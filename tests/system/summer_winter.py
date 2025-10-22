@@ -3,7 +3,6 @@
 import collections
 import datetime
 import logging
-import unittest
 import unittest.mock
 
 import HABApp.openhab.definitions.helpers.persistence_data

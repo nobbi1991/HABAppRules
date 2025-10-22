@@ -5,7 +5,6 @@ import datetime
 import unittest
 import unittest.mock
 
-import HABApp.openhab.definitions.helpers.persistence_data
 import HABApp.openhab.items
 import multi_notifier.connectors.connector_mail
 

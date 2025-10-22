@@ -9,19 +9,11 @@ import unittest.mock
 
 import HABApp.rule.rule
 
-import habapp_rules.actors.config.energy_save_switch
 import habapp_rules.actors.config.light_bathroom
-import habapp_rules.actors.config.shading
-import habapp_rules.actors.energy_save_switch
 import habapp_rules.actors.light_bathroom
-import habapp_rules.actors.state_observer
-import habapp_rules.core.exceptions
-import habapp_rules.core.logger
-import habapp_rules.core.state_machine_rule
 import tests.helper.graph_machines
 import tests.helper.oh_item
 import tests.helper.test_case_base
-import tests.helper.timer
 from habapp_rules.system import PresenceState, SleepState
 
 
