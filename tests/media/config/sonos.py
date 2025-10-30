@@ -1,12 +1,10 @@
 """Test config models for sonos rules."""
 
 import unittest
-import unittest.mock
 
 import HABApp
 
 import habapp_rules.core.exceptions
-import habapp_rules.energy.config.monthly_report
 import habapp_rules.media.config.sonos
 import tests.helper.oh_item
 import tests.helper.test_case_base

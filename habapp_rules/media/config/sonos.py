@@ -94,6 +94,17 @@ class SonosParameter(habapp_rules.core.pydantic_base.ParameterBase):
         """
         return next((content for content in self.known_content if isinstance(content, ContentPlayUri) and content.uri == uri), None)
 
+    def get_known_content_by_favorite_id(self, favorite_id: int) -> ContentTuneIn | ContentPlayUri | None:
+        """Get known content instance by favorite ID.
+
+        Args:
+            favorite_id: favorite ID
+
+        Returns:
+            instance of ContentTuneIn or ContentPlayUri (or None if not found)
+        """
+        return next((content for content in self.known_content if content.favorite_id == favorite_id), None)
+
 
 class SonosConfig(habapp_rules.core.pydantic_base.ConfigBase):
     """Config for sonos."""

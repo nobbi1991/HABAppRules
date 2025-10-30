@@ -15,7 +15,7 @@ from habapp_rules.media.config.sonos import ContentPlayUri, ContentTuneIn
 
 LOGGER = logging.getLogger(__name__)
 
-KNOWN_CONTENT_TYPES = ContentTuneIn | ContentPlayUri
+_KNOWN_CONTENT_TYPES = ContentTuneIn | ContentPlayUri
 
 
 class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO think about sonos without switch
@@ -161,7 +161,7 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         self._set_outputs_display_text(known_content)
         self._set_outputs_favorite_id(known_content)
 
-    def _set_outputs_display_text(self, known_content: KNOWN_CONTENT_TYPES | None = None) -> None:
+    def _set_outputs_display_text(self, known_content: _KNOWN_CONTENT_TYPES | None = None) -> None:
         """Set display text."""
         display_str = "Unknown"
 
@@ -172,7 +172,8 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         elif self.state == "Standby":
             display_str = "Standby"
         elif self.state == "Starting":
-            display_str = "Starting"
+            starting_content = self._config.parameter.get_known_content_by_favorite_id(self._config.items.favorite_id.value) if self._config.items.favorite_id else None
+            display_str = f"[{starting_content.display_text}]" if starting_content else "Starting"
         elif self.state == "Playing_LineIn":
             display_str = "TV"
         elif self.state.startswith("Playing_"):
@@ -180,7 +181,7 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         if self._config.items.display_string is not None:
             send_if_different(self._config.items.display_string, display_str)
 
-    def _set_outputs_favorite_id(self, known_content: KNOWN_CONTENT_TYPES | None = None) -> None:
+    def _set_outputs_favorite_id(self, known_content: _KNOWN_CONTENT_TYPES | None = None) -> None:
         """Set favorite id."""
         if self._favorite_id_observer is None:
             return
@@ -196,7 +197,7 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
             # this is used to set the favorite content after booting. E.g. if booted through favorite id (user pressed favorite button and Sonos was in PowerOff state)
             self._set_favorite_content(self._get_favorite_content_by_id())
 
-    def _check_if_known_content(self) -> KNOWN_CONTENT_TYPES | None:
+    def _check_if_known_content(self) -> _KNOWN_CONTENT_TYPES | None:
         """Check if the current content is a known content.
 
         Returns:
@@ -213,7 +214,7 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
 
         return None
 
-    def _set_start_volume(self, known_content: KNOWN_CONTENT_TYPES | None) -> None:
+    def _set_start_volume(self, known_content: _KNOWN_CONTENT_TYPES | None) -> None:
         """Set start volume."""
         if self._config.items.sonos_volume is None or self._volume_locked or not self.state.startswith("Playing_"):
             return
@@ -246,7 +247,7 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         fav_id = fav_id if fav_id is not None else self._config.items.favorite_id.value
         return next((content for content in self._config.parameter.known_content if content.favorite_id == fav_id), None)
 
-    def _set_favorite_content(self, fav_content: KNOWN_CONTENT_TYPES) -> None:
+    def _set_favorite_content(self, fav_content: _KNOWN_CONTENT_TYPES) -> None:
         """Set favorite content.
 
         Args:
@@ -324,6 +325,7 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         if self.state.startswith("Playing_") or self.state in {"Standby", "Starting"}:
             LOGGER.debug("fav ID changed. Setting content.")
             self._config.items.sonos_player.set_value("PAUSE")  # set state before sending command to avoid wrong transitions from "Starting" state to Playing_
+            self._config.items.favorite_id.set_value(event.value)
             self._config.items.sonos_player.oh_send_command("PAUSE")
             self.to_Starting()
             self._set_favorite_content(fav_content)
