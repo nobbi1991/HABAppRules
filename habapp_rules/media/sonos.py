@@ -163,6 +163,9 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
 
     def _set_outputs_display_text(self, known_content: _KNOWN_CONTENT_TYPES | None = None) -> None:
         """Set display text."""
+        if self._config.items.display_string is None:
+            return
+
         display_str = "Unknown"
 
         if self.state == "PowerOff":
@@ -178,8 +181,8 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
             display_str = "TV"
         elif self.state.startswith("Playing_"):
             display_str = known_content.display_text if known_content is not None else "Playing"
-        if self._config.items.display_string is not None:
-            send_if_different(self._config.items.display_string, display_str)
+
+        send_if_different(self._config.items.display_string, display_str)
 
     def _set_outputs_favorite_id(self, known_content: _KNOWN_CONTENT_TYPES | None = None) -> None:
         """Set favorite id."""
@@ -328,6 +331,7 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
             self._config.items.favorite_id.set_value(event.value)
             self._config.items.sonos_player.oh_send_command("PAUSE")
             self.to_Starting()
+            self._set_outputs_display_text()
             self._set_favorite_content(fav_content)
 
         if self.state == "PowerOff":
