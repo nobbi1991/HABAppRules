@@ -212,10 +212,16 @@ class TestSonos(tests.helper.test_case_base.TestCaseBaseStateMachine):
         tests.helper.oh_item.assert_value("Unittest_FavoriteId_max", 0)
         tests.helper.oh_item.assert_value("Unittest_State_max", "PowerOff")
 
-        # playing without known content
+        # playing unknown content
         self.sonos_max.to_Playing_Init()
         self.sonos_max._set_outputs_favorite_id(None)
         tests.helper.oh_item.assert_value("Unittest_FavoriteId_max", -1)
+
+        # playing unknown content (with favorite_id_unknown_content set)
+        self.sonos_max._config.parameter.favorite_id_unknown_content = 255
+        self.sonos_max.to_Playing_Init()
+        self.sonos_max._set_outputs_favorite_id(None)
+        tests.helper.oh_item.assert_value("Unittest_FavoriteId_max", 255)
 
         # playing with known content
         self.sonos_max.to_Playing_Init()
