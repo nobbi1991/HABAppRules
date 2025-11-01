@@ -18,7 +18,9 @@ LOGGER = logging.getLogger(__name__)
 _KNOWN_CONTENT_TYPES = ContentTuneIn | ContentPlayUri
 
 
-class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO think about sonos without switch
+class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):
+    """Rule for controlling and observing Sonos players."""
+
     states: typing.ClassVar = [
         {"name": "PowerOff"},
         {"name": "Booting", "timeout": 300, "on_timeout": "timeout_booting"},
@@ -43,7 +45,7 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         {"trigger": "power_off", "source": ["Booting", "Standby", "Playing"], "dest": "PowerOff"},
         {"trigger": "timeout_booting", "source": "Booting", "dest": "PowerOff"},
         # sonos thing
-        {"trigger": "thing_online", "source": "Booting", "dest": "Standby"},
+        {"trigger": "thing_online", "source": ["PowerOff", "Booting"], "dest": "Standby"},
         # player
         {"trigger": "player_start", "source": ["Standby", "Starting"], "dest": "Playing"},
         {"trigger": "player_end", "source": ["Playing"], "dest": "Standby"},
@@ -82,10 +84,11 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         self._set_initial_state()
 
         # callbacks
-        self._config.items.power_switch.listen_event(self._cb_power_switch, HABApp.openhab.events.ItemStateChangedEventFilter())
         self._config.items.sonos_thing.listen_event(self._cb_thing, HABApp.core.events.EventFilter(HABApp.openhab.events.ThingStatusInfoChangedEvent))
         self._config.items.sonos_player.listen_event(self._cb_player, HABApp.openhab.events.ItemStateChangedEventFilter())
 
+        if self._config.items.power_switch is not None:
+            self._config.items.power_switch.listen_event(self._cb_power_switch, HABApp.openhab.events.ItemStateChangedEventFilter())
         if self._config.items.current_track_uri is not None:
             self._config.items.current_track_uri.listen_event(self._cb_current_track_uri, HABApp.openhab.events.ItemStateChangedEventFilter())
         if self._config.items.presence_state is not None:
@@ -108,9 +111,11 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         Returns:
             if OpenHAB item has a state it will return it, otherwise return the given default value
         """
-        if not self._config.items.power_switch.is_on():
-            return "PowerOff"
         if self._config.items.sonos_thing.status != ThingStatusEnum.ONLINE:
+            if self._config.items.power_switch is None or not self._config.items.power_switch.is_on():
+                # power_switch item is not set, or is set, but off
+                return "PowerOff"
+            # power_switch item is set, and is on
             return "Booting"
         if self._config.items.sonos_player.value == "PLAY":
             return "Playing_Init"

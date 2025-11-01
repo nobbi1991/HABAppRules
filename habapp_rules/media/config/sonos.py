@@ -30,7 +30,7 @@ class SonosItems(habapp_rules.core.pydantic_base.ItemBase):
 
     sonos_thing: HABApp.openhab.items.Thing = pydantic.Field(..., description="sonos thing")
     state: HABApp.openhab.items.StringItem = pydantic.Field(..., description="sonos state")
-    power_switch: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="sonos power switch")
+    power_switch: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="sonos power switch")
     sonos_player: HABApp.openhab.items.PlayerItem = pydantic.Field(..., description="sonos controller")
     current_track_uri: HABApp.openhab.items.StringItem = pydantic.Field(..., description="sonos current track uri item")
     sonos_volume: HABApp.openhab.items.DimmerItem | None = pydantic.Field(None, description="sonos volume")

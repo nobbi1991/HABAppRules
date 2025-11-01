@@ -26,7 +26,6 @@ class TestSonos(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
         tests.helper.oh_item.add_mock_thing("Unittest:SonosMin")
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_State_min", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_PowerSwitch_min", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.PlayerItem, "Unittest_Player_min", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_CurrentTrackUri_min", None)
 
@@ -44,7 +43,7 @@ class TestSonos(tests.helper.test_case_base.TestCaseBaseStateMachine):
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_PresenceState", None)
 
         self._config_min = habapp_rules.media.config.sonos.SonosConfig(
-            items=habapp_rules.media.config.sonos.SonosItems(sonos_thing="Unittest:SonosMin", state="Unittest_State_min", power_switch="Unittest_PowerSwitch_min", sonos_player="Unittest_Player_min", current_track_uri="Unittest_CurrentTrackUri_min"),
+            items=habapp_rules.media.config.sonos.SonosItems(sonos_thing="Unittest:SonosMin", state="Unittest_State_min", sonos_player="Unittest_Player_min", current_track_uri="Unittest_CurrentTrackUri_min"),
             parameter=habapp_rules.media.config.sonos.SonosParameter(),
         )
 
@@ -85,30 +84,29 @@ class TestSonos(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
     def test_initial_state(self) -> None:
         """Test initial state."""
-        TestCase = collections.namedtuple("TestCase", "power_switch, thing_status, player, expected_state")
+        TestCase = collections.namedtuple("TestCase", "power_switch, thing_status, player, expected_state_min, expected_state_max")
 
         test_cases = [
-            TestCase("OFF", ThingStatusEnum.OFFLINE, "PAUSE", "PowerOff"),
-            TestCase("OFF", ThingStatusEnum.OFFLINE, "PLAY", "PowerOff"),
-            TestCase("OFF", ThingStatusEnum.ONLINE, "PAUSE", "PowerOff"),
-            TestCase("OFF", ThingStatusEnum.ONLINE, "PLAY", "PowerOff"),
-            TestCase("ON", ThingStatusEnum.OFFLINE, "PAUSE", "Booting"),
-            TestCase("ON", ThingStatusEnum.OFFLINE, "PLAY", "Booting"),
-            TestCase("ON", ThingStatusEnum.ONLINE, "PAUSE", "Standby"),
-            TestCase("ON", ThingStatusEnum.ONLINE, "PLAY", "Playing_Init"),
+            TestCase("OFF", ThingStatusEnum.OFFLINE, "PAUSE", "PowerOff", "PowerOff"),
+            TestCase("OFF", ThingStatusEnum.OFFLINE, "PLAY", "PowerOff", "PowerOff"),
+            TestCase("OFF", ThingStatusEnum.ONLINE, "PAUSE", "Standby", "Standby"),
+            TestCase("OFF", ThingStatusEnum.ONLINE, "PLAY", "Playing_Init", "Playing_Init"),
+            TestCase("ON", ThingStatusEnum.OFFLINE, "PAUSE", "PowerOff", "Booting"),
+            TestCase("ON", ThingStatusEnum.OFFLINE, "PLAY", "PowerOff", "Booting"),
+            TestCase("ON", ThingStatusEnum.ONLINE, "PAUSE", "Standby", "Standby"),
+            TestCase("ON", ThingStatusEnum.ONLINE, "PLAY", "Playing_Init", "Playing_Init"),
         ]
 
         for test_case in test_cases:
             with self.subTest(test_case=test_case):
-                tests.helper.oh_item.set_state("Unittest_PowerSwitch_min", test_case.power_switch)
                 tests.helper.oh_item.set_state("Unittest_PowerSwitch_max", test_case.power_switch)
                 tests.helper.oh_item.set_thing_state("Unittest:SonosMin", test_case.thing_status)
                 tests.helper.oh_item.set_thing_state("Unittest:SonosMax", test_case.thing_status)
                 tests.helper.oh_item.set_state("Unittest_Player_min", test_case.player)
                 tests.helper.oh_item.set_state("Unittest_Player_max", test_case.player)
 
-                self.assertEqual(test_case.expected_state, self.sonos_min._get_initial_state())
-                self.assertEqual(test_case.expected_state, self.sonos_max._get_initial_state())
+                self.assertEqual(test_case.expected_state_min, self.sonos_min._get_initial_state())
+                self.assertEqual(test_case.expected_state_max, self.sonos_max._get_initial_state())
 
     def test_on_enter_playing_init(self) -> None:
         """Test on_enter_playing_init."""
@@ -568,9 +566,15 @@ class TestSonos(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
     def test_transitions_power_off(self) -> None:
         """Test transitions of PowerOff state."""
+        # power on during power off
         self.sonos_max.to_PowerOff()
         tests.helper.oh_item.item_state_change_event("Unittest_PowerSwitch_max", "ON")
         tests.helper.oh_item.assert_value("Unittest_State_max", "Booting")
+
+        # Sonos Thing online
+        self.sonos_max.to_PowerOff()
+        tests.helper.oh_item.thing_status_info_changed_event("Unittest:SonosMax", ThingStatusEnum.ONLINE)
+        tests.helper.oh_item.assert_value("Unittest_State_max", "Standby")
 
     def test_transitions_booting(self) -> None:
         """Test transitions of Booting state."""
