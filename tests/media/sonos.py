@@ -155,20 +155,6 @@ class TestSonos(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
     def test_set_outputs(self) -> None:
         """Test set_outputs."""
-        # not in playing state
-        with (
-            unittest.mock.patch.object(self.sonos_max, "_check_if_known_content") as mock_check_if_known_content,
-            unittest.mock.patch.object(self.sonos_max, "_set_start_volume") as mock_set_start_volume,
-            unittest.mock.patch.object(self.sonos_max, "_set_outputs_display_text") as mock_set_outputs_display_text,
-            unittest.mock.patch.object(self.sonos_max, "_set_outputs_favorite_id") as mock_set_outputs_favorite_id,
-        ):
-            self.sonos_max._set_outputs()
-            mock_check_if_known_content.assert_not_called()
-            mock_set_start_volume.assert_called_once_with(None)
-            mock_set_outputs_display_text.assert_called_once_with(None)
-            mock_set_outputs_favorite_id.assert_called_once_with(None)
-
-        # in playing state
         self.sonos_max.state = "Playing_UnknownContent"
         with (
             unittest.mock.patch.object(self.sonos_max, "_check_if_known_content") as mock_check_if_known_content,
@@ -204,7 +190,7 @@ class TestSonos(tests.helper.test_case_base.TestCaseBaseStateMachine):
             TestCase("PowerOff", content_tune_in, "Off"),
             TestCase("Booting", content_tune_in, "Booting"),
             TestCase("Standby", content_tune_in, "Standby"),
-            TestCase("Starting", content_tune_in, "Starting"),
+            TestCase("Starting", content_tune_in, "[TuneIn1]"),
             TestCase("Playing_LineIn", content_tune_in, "TV"),
             # known content where it matters
             TestCase("Playing_TuneIn", content_tune_in, "TuneIn1"),

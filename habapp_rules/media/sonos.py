@@ -155,7 +155,7 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
 
     def _set_outputs(self) -> None:
         """Set output states."""
-        known_content = self._check_if_known_content() if self.state.startswith("Playing_") else None
+        known_content = self._check_if_known_content()
 
         self._set_start_volume(known_content)
         self._set_outputs_display_text(known_content)
@@ -175,8 +175,7 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         elif self.state == "Standby":
             display_str = "Standby"
         elif self.state == "Starting":
-            starting_content = self._config.parameter.get_known_content_by_favorite_id(self._config.items.favorite_id.value) if self._config.items.favorite_id else None
-            display_str = f"[{starting_content.display_text}]" if starting_content else "Starting"
+            display_str = f"[{known_content.display_text}]" if known_content else "Starting"
         elif self.state == "Playing_LineIn":
             display_str = "TV"
         elif self.state.startswith("Playing_"):
@@ -206,6 +205,9 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
         Returns:
             known content object if known, otherwise None
         """
+        if self._config.items.favorite_id is not None and (fav_content := self._config.parameter.get_known_content_by_favorite_id(self._config.items.favorite_id.value)):
+            return fav_content
+
         if self.state == "Playing_PlayUri" and (known_content := self._config.parameter.check_if_known_play_uri(self._config.items.current_track_uri.value)):
             return known_content
 
@@ -331,7 +333,8 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
             self._config.items.favorite_id.set_value(event.value)
             self._config.items.sonos_player.oh_send_command("PAUSE")
             self.to_Starting()
-            self._set_outputs_display_text()
+            if self.state == "Starting":  # to ensure correct display text, also if firstly fav X was started and during "Starting" state the favorite id was changed to Y
+                self._set_outputs_display_text(self._check_if_known_content())
             self._set_favorite_content(fav_content)
 
         if self.state == "PowerOff":
