@@ -189,7 +189,7 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):  # TODO thin
             return
 
         if self.state.startswith("Playing_"):
-            fav_id = known_content.favorite_id if known_content is not None else -1
+            fav_id = known_content.favorite_id if known_content is not None else self._config.parameter.favorite_id_unknown_content
             self._favorite_id_observer.send_command(fav_id)
 
         elif self.state == "PowerOff" or (self.state == "Standby" and (self._previous_state is None or self._previous_state.startswith("Playing_"))):

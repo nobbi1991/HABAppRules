@@ -51,6 +51,7 @@ class SonosParameter(habapp_rules.core.pydantic_base.ParameterBase):
     start_volume_unknown: int | None = pydantic.Field(None, description="start volume for unknown content. None means no volume")
     booting_timeout: int = pydantic.Field(300, description="timeout for booting sonos devices. After this timeout the state will fallback to PowerOff if the device did not come online.", gt=0)
     starting_timeout: int = pydantic.Field(60, description="timeout for starting new content in seconds. After this timeout the state will fallback to standby if no content is playing", gt=0)
+    favorite_id_unknown_content: int = pydantic.Field(-1, description="Favorite ID which is set if unknown content is playing. Default is -1, but can be set to another value e.g. to set correct LED state on a KNX device")
 
     @pydantic.field_validator("known_content", mode="after")
     @classmethod
