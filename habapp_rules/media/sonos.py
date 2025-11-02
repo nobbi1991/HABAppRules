@@ -352,8 +352,8 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):
         Args:
             event: event which triggered this event
         """
-        if (event.value and self.state in {"Playing_TuneIn", "Playing_PlayUri"}) or (self.state == "Standby" and "tunein" not in event.value.lower()):
-            LOGGER.debug("Track URI changed in 'Playing_TuneIn' or 'Playing_PlayUri' state. Set state to 'Starting'.")
+        if event.value and (self.state in {"Playing_TuneIn", "Playing_PlayUri"} or (self.state == "Standby" and "tunein" not in event.value.lower())):
+            LOGGER.debug(f"Track URI changed in '{self.state}' state. Set state to 'Starting'.")
             self.to_Starting()
 
     def _cb_presence_state(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:

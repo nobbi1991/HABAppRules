@@ -552,6 +552,27 @@ class TestSonos(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertTrue(self.sonos_max._started_through_favorite_id)
         tests.helper.oh_item.assert_value("Unittest_PowerSwitch_max", "ON")
 
+    def test_cb_current_track_uri(self) -> None:
+        """Test _cb_current_track_uri."""
+        TestCase = collections.namedtuple("TestCase", ["state", "uri", "expected_state"])
+        test_cases = [
+            TestCase("Standby", "http://example.com/track", "Starting"),
+            TestCase("Standby", "", "Standby"),
+            TestCase("Standby", "http://example.com/tunein", "Standby"),
+            TestCase("Playing_UnknownContent", "http://example.com/track", "Playing_UnknownContent"),
+            TestCase("Playing_UnknownContent", "", "Playing_UnknownContent"),
+            TestCase("Playing_TuneIn", "http://example.com/track", "Starting"),
+            TestCase("Playing_TuneIn", "", "Playing_TuneIn"),
+            TestCase("Playing_PlayUri", "http://example.com/track", "Starting"),
+            TestCase("Playing_PlayUri", "", "Playing_PlayUri"),
+        ]
+
+        for test_case in test_cases:
+            with self.subTest(test_case=test_case):
+                self.sonos_max._set_state(test_case.state)
+                tests.helper.oh_item.item_state_change_event("Unittest_CurrentTrackUri_max", test_case.uri)
+                tests.helper.oh_item.assert_value("Unittest_State_max", test_case.expected_state)
+
     def test_cb_presence_state(self) -> None:
         """Test _cb_presence_state."""
         # test if playing is stopped
