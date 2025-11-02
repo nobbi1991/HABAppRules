@@ -105,7 +105,7 @@ class TestStateObserverDimmer(tests.helper.test_case_base.TestCaseBase):
         self._cb_on = unittest.mock.MagicMock()
         self._cb_off = unittest.mock.MagicMock()
         self._cb_changed = unittest.mock.MagicMock()
-        self._observer_dimmer = habapp_rules.actors.state_observer.StateObserverDimmer("Unittest_Dimmer", cb_on=self._cb_on, cb_off=self._cb_off, cb_brightness_change=self._cb_changed, control_names=["Unittest_Dimmer_ctr"])
+        self._observer_dimmer = habapp_rules.actors.state_observer.StateObserverDimmer("Unittest_Dimmer", cb_on=self._cb_on, cb_off=self._cb_off, cb_change=self._cb_changed, control_names=["Unittest_Dimmer_ctr"])
 
     def test_init(self) -> None:
         """Test init of StateObserverDimmer."""
@@ -113,7 +113,7 @@ class TestStateObserverDimmer(tests.helper.test_case_base.TestCaseBase):
         self.assertEqual(1, len(self._observer_dimmer._StateObserverBase__control_items))
         self.assertEqual("Unittest_Dimmer_ctr", self._observer_dimmer._StateObserverBase__control_items[0].name)
 
-        observer_dimmer = habapp_rules.actors.state_observer.StateObserverDimmer("Unittest_Dimmer", cb_on=self._cb_on, cb_off=self._cb_off, cb_brightness_change=self._cb_changed, group_names=["Unittest_Dimmer_ctr"])
+        observer_dimmer = habapp_rules.actors.state_observer.StateObserverDimmer("Unittest_Dimmer", cb_on=self._cb_on, cb_off=self._cb_off, cb_change=self._cb_changed, group_names=["Unittest_Dimmer_ctr"])
         self.assertEqual(1, len(observer_dimmer._StateObserverBase__group_items))
         self.assertEqual("Unittest_Dimmer_ctr", observer_dimmer._StateObserverBase__group_items[0].name)
         self.assertEqual([], observer_dimmer._StateObserverBase__control_items)
@@ -243,7 +243,7 @@ class TestStateObserverDimmer(tests.helper.test_case_base.TestCaseBase):
         with (
             unittest.mock.patch.object(self._observer_dimmer, "_cb_on") as cb_on_mock,
             unittest.mock.patch.object(self._observer_dimmer, "_cb_off") as cb_off_mock,
-            unittest.mock.patch.object(self._observer_dimmer, "_cb_brightness_change") as cb_change_mock,
+            unittest.mock.patch.object(self._observer_dimmer, "_cb_change") as cb_change_mock,
         ):
             for test_case in test_cases:
                 cb_on_mock.reset_mock()

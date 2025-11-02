@@ -1,8 +1,12 @@
-# Version 8.1.6 - dd.10.2025
+# Version 9.0.0 - dd.08.2025
 
-## Bugfix
+## Breaking changes
 
-- add something!
+- renamed `_cb_brightness_change` of `habapp_rules.actors.state_observer.StateObserverDimmer` to `_cb_change`
+
+## Features
+
+- added `habapp_rules.media.sonos.Sonos` to control and monitor Sonos Speaker
 
 # Version 8.1.5 - 20.10.2025
 
