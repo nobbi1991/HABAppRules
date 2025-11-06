@@ -1,8 +1,9 @@
-# Version 8.1.6 - dd.10.2025
+# Version 8.2.0 - dd.10.2025
 
-## Bugfix
+## Features
 
-- add something!
+- added `habapp_rules.system.task.CounterTask` to set a task item to `ON` if a value is exceeded
+- made `last_done` of `habapp_rules.system.task.RecurringTask` optional. If not set, a item will be created by habapp_rules
 
 # Version 8.1.5 - 20.10.2025
 
