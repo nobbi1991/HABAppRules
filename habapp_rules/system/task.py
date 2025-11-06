@@ -121,7 +121,7 @@ class CounterTask(HABApp.Rule):
             event: event, which triggered this callback
         """
         if event.value == "OFF" and event.old_value is not None:
-            self._config.items.last_reset.oh_send_command(self._config.items.observed.value)
+            self._item_last_reset.oh_send_command(self._config.items.observed.value)
 
     def _cb_observed(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
         """Callback, which is called if the "observed" item was changed.
