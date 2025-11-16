@@ -1,4 +1,4 @@
-# Version 9.0.0 - dd.08.2025
+# Version 9.0.0 - 16.11.2025
 
 ## Breaking changes
 
