@@ -70,7 +70,7 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):
 
         # volume
         self._volume_observer = (
-            habapp_rules.actors.state_observer.StateObserverDimmer(self._config.items.sonos_volume.name, cb_on=self._cb_volume_changed, cb_off=self._cb_volume_changed, cb_change=self._cb_volume_changed)
+            habapp_rules.actors.state_observer.StateObserverDimmer(self._config.items.sonos_volume.name, cb_on=self._cb_volume_changed, cb_off=self._cb_volume_changed, cb_change=self._cb_volume_changed, value_tolerance=0.5)
             if self._config.items.sonos_volume is not None
             else None
         )
