@@ -226,7 +226,7 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):
 
     def _set_start_volume(self, known_content: _KNOWN_CONTENT_TYPES | None) -> None:
         """Set start volume."""
-        if self._config.items.sonos_volume is None or self._volume_locked or not self.state.startswith("Playing_"):
+        if self._config.items.sonos_volume is None or self._volume_locked or (not self.state.startswith("Playing_") and self.state != "Starting"):
             return
 
         start_volume = known_content.start_volume if known_content else None
