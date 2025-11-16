@@ -2,7 +2,7 @@
 
 ## Breaking changes
 
-- renamed `_cb_brightness_change` of `habapp_rules.actors.state_observer.StateObserverDimmer` to `_cb_change`
+- renamed `cb_brightness_change` of `habapp_rules.actors.state_observer.StateObserverDimmer` to `cb_change`
 
 ## Features
 
