@@ -7,6 +7,8 @@
 ## Features
 
 - added `habapp_rules.media.sonos.Sonos` to control and monitor Sonos Speaker
+- added `habapp_rules.system.task.CounterTask` to set a task item to `ON` if a value is exceeded
+- made `last_done` of `habapp_rules.system.task.RecurringTask` optional. If not set, a item will be created by habapp_rules
 
 # Version 8.1.5 - 20.10.2025
 

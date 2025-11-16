@@ -10,7 +10,7 @@ class RecurringTaskItems(habapp_rules.core.pydantic_base.ItemBase):
     """Items for recurring task."""
 
     task_active: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="item which is set to ON if task is active")
-    last_done: HABApp.openhab.items.DatetimeItem = pydantic.Field(..., description="item for date/time when task was last marked as done")
+    last_done: HABApp.openhab.items.DatetimeItem | None = pydantic.Field(None, description="item for date/time when task was last marked as done")
 
 
 class RecurringTaskParameter(habapp_rules.core.pydantic_base.ParameterBase):
@@ -44,3 +44,24 @@ class RecurringTaskConfig(habapp_rules.core.pydantic_base.ConfigBase):
 
     items: RecurringTaskItems = pydantic.Field(..., description="items for time task")
     parameter: RecurringTaskParameter = pydantic.Field(..., description="parameter for time task")
+
+
+class CounterTaskItems(habapp_rules.core.pydantic_base.ItemBase):
+    """Items for counter task."""
+
+    task_active: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="item which is set to ON if task is active")
+    observed: HABApp.openhab.items.NumberItem = pydantic.Field(..., description="Number item which will be observed")
+    last_reset: HABApp.openhab.items.NumberItem | None = pydantic.Field(None, description="Item which holds the value of the last reset. If set to None, it will be auto-created")
+
+
+class CounterTaskParameter(habapp_rules.core.pydantic_base.ParameterBase):
+    """Parameter for counter task."""
+
+    max_value: int = pydantic.Field(..., description="value, after which the task will be set to active")
+
+
+class CounterTaskConfig(habapp_rules.core.pydantic_base.ConfigBase):
+    """Config for counter task."""
+
+    items: CounterTaskItems = pydantic.Field(..., description="items for counter task")
+    parameter: CounterTaskParameter = pydantic.Field(..., description="parameter for counter task")
