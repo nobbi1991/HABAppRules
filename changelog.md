@@ -1,7 +1,12 @@
-# Version 8.2.0 - dd.10.2025
+# Version 9.0.0 - 16.11.2025
+
+## Breaking changes
+
+- renamed `cb_brightness_change` of `habapp_rules.actors.state_observer.StateObserverDimmer` to `cb_change`
 
 ## Features
 
+- added `habapp_rules.media.sonos.Sonos` to control and monitor Sonos Speaker
 - added `habapp_rules.system.task.CounterTask` to set a task item to `ON` if a value is exceeded
 - made `last_done` of `habapp_rules.system.task.RecurringTask` optional. If not set, a item will be created by habapp_rules
 

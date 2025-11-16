@@ -19,6 +19,7 @@ class ItemsForTesting(habapp_rules.core.pydantic_base.ItemBase):
     dimmer_list: list[HABApp.openhab.items.DimmerItem] = pydantic.Field(..., description="list of dimmer items for testing")
     optional_contact: HABApp.openhab.items.ContactItem | None = pydantic.Field(None, description="optional contact item for testing")
     not_supported: HABApp.openhab.items.NumberItem = pydantic.Field(..., description="not supported item for testing")
+    thing_item: HABApp.openhab.items.Thing = pydantic.Field(..., description="thing item for testing")
 
 
 class ItemsListCreateException(habapp_rules.core.pydantic_base.ItemBase):
@@ -58,9 +59,39 @@ class TestItemBase(tests.helper.test_case_base.TestCaseBase):
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Dimmer_1", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Dimmer_2", None)
+        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Number", None)
+        tests.helper.oh_item.add_mock_thing("Unittest:Thing")
 
         dimmer = HABApp.openhab.items.DimmerItem.get_item("Unittest_Dimmer_2")
 
+        # good case
+        with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.SwitchItem("Unittest_Switch_Created", "")) as create_item_mock:
+            items_for_testing = ItemsForTesting(
+                switch="Unittest_Switch",  # normal case
+                switch_create="Unittest_Switch_Created",  # item which will be created
+                dimmer_list=["Unittest_Dimmer_1", dimmer],  # mixed list of strings and HABApp.openhab.items.DimmerItem
+                optional_contact=None,  # test if None is OK
+                not_supported="Unittest_Number",  # this causes an exception
+                thing_item="Unittest:Thing",  # thing item
+            )
+
+        self.assertIsInstance(items_for_testing.switch, HABApp.openhab.items.SwitchItem)
+        self.assertIsInstance(items_for_testing.switch_create, HABApp.openhab.items.SwitchItem)
+        self.assertIsInstance(items_for_testing.dimmer_list[0], HABApp.openhab.items.DimmerItem)
+        self.assertIsInstance(items_for_testing.dimmer_list[1], HABApp.openhab.items.DimmerItem)
+        self.assertIsInstance(items_for_testing.not_supported, HABApp.openhab.items.NumberItem)
+        self.assertIsInstance(items_for_testing.thing_item, HABApp.openhab.items.Thing)
+
+        self.assertEqual("Unittest_Switch", items_for_testing.switch.name)
+        self.assertEqual("Unittest_Switch_Created", items_for_testing.switch_create.name)
+        self.assertEqual("Unittest_Dimmer_1", items_for_testing.dimmer_list[0].name)
+        self.assertEqual("Unittest_Dimmer_2", items_for_testing.dimmer_list[1].name)
+        self.assertEqual("Unittest_Number", items_for_testing.not_supported.name)
+        self.assertEqual("Unittest:Thing", items_for_testing.thing_item.name)
+
+        create_item_mock.assert_called_once_with("Unittest_Switch_Created", "Switch")
+
+        # with exception
         with (
             unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.SwitchItem("Unittest_Switch_Created", "")) as create_item_mock,
             self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError),
@@ -71,6 +102,7 @@ class TestItemBase(tests.helper.test_case_base.TestCaseBase):
                 dimmer_list=["Unittest_Dimmer_1", dimmer],  # mixed list of strings and HABApp.openhab.items.DimmerItem
                 optional_contact=None,  # test if None is OK
                 not_supported=5,  # this causes an exception
+                thing_item="Unittest:Thing",  # thing item
             )
 
         create_item_mock.assert_called_once_with("Unittest_Switch_Created", "Switch")
