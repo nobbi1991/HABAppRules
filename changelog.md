@@ -3,6 +3,7 @@
 ## Breaking changes
 
 - dropped support for python 3.10
+- changed to python 3.14 for the docker image
 
 ## Features
 
