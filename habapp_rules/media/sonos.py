@@ -263,6 +263,10 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):
         Args:
             fav_content: instance of ContentTuneIn or ContentPlayUri which should be set
         """
+        self.to_Starting()
+        if self.state == "Starting":  # to ensure correct display text, also if firstly fav X was started and during "Starting" state the favorite id was changed to Y
+            self._set_outputs_display_text(self._check_if_known_content())
+
         if isinstance(fav_content, ContentTuneIn):
             self._config.items.tune_in_station_id.oh_send_command(str(fav_content.tune_in_id))
         elif isinstance(fav_content, ContentPlayUri):
@@ -337,9 +341,6 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):
             self._config.items.sonos_player.set_value("PAUSE")  # set state before sending command to avoid wrong transitions from "Starting" state to Playing_
             self._config.items.favorite_id.set_value(event.value)
             self._config.items.sonos_player.oh_send_command("PAUSE")
-            self.to_Starting()
-            if self.state == "Starting":  # to ensure correct display text, also if firstly fav X was started and during "Starting" state the favorite id was changed to Y
-                self._set_outputs_display_text(self._check_if_known_content())
             self._set_favorite_content(fav_content)
 
         if self.state == "PowerOff":
