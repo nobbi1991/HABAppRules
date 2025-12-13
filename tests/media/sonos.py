@@ -597,6 +597,28 @@ class TestSonos(tests.helper.test_case_base.TestCaseBaseStateMachine):
         tests.helper.oh_item.item_state_change_event("Unittest_PresenceState", habapp_rules.system.PresenceState.PRESENCE.value)
         tests.helper.oh_item.assert_value("Unittest_State_max", "Playing_UnknownContent")
 
+    def test_start_fav_from_power_off(self) -> None:
+        """Test start a favorite from PowerOff state."""
+        # initial state
+        self.sonos_max._config.parameter.known_content = [ContentTuneIn(display_text="TuneIn1", tune_in_id=1, favorite_id=1)]
+        self.sonos_max.to_PowerOff()
+        tests.helper.oh_item.set_thing_state("Unittest:SonosMax", ThingStatusEnum.ONLINE)
+        tests.helper.oh_item.set_state("Unittest_PowerSwitch_max", "OFF")
+
+        # trigger favorite id change
+        tests.helper.oh_item.item_state_change_event("Unittest_FavoriteId_max", 1)
+        tests.helper.oh_item.assert_value("Unittest_State_max", "Booting")
+        self.assertEqual(self.sonos_max._started_through_favorite_id, True)
+
+        # thing becomes online
+        tests.helper.oh_item.thing_status_info_changed_event("Unittest:SonosMax", ThingStatusEnum.ONLINE)
+        tests.helper.oh_item.assert_value("Unittest_State_max", "Starting")
+
+        # player starts
+        tests.helper.oh_item.item_state_change_event("Unittest_CurrentTrackUri_max", "tunein:bla")
+        tests.helper.oh_item.item_state_change_event("Unittest_Player_max", "PLAY")
+        tests.helper.oh_item.assert_value("Unittest_State_max", "Playing_TuneIn")
+
     def test_transitions_power_off(self) -> None:
         """Test transitions of PowerOff state."""
         # power on during power off

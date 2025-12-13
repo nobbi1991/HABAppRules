@@ -1,3 +1,9 @@
+# Version 9.0.1 - dd.12.2025
+
+## Bugfix
+
+- fixed bugs in `habapp_rules.media.sonos.Sonos` which did not set the correct state when switchin on from `PowerOff`
+
 # Version 9.0.0 - 16.11.2025
 
 ## Breaking changes
