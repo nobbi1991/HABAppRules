@@ -84,7 +84,7 @@ class SummerWinter(HABApp.Rule):
         for day in range(self._config.parameter.days):
             try:
                 values.append(self.__get_weighted_mean(day))
-            except SummerWinterError:  # noqa: PERF203
+            except SummerWinterError:
                 self._instance_logger.warning(f"Could not get mean value of day -{day}")
 
         if not values:

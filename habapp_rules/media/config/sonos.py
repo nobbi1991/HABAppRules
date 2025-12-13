@@ -1,6 +1,7 @@
+from typing import Self
+
 import HABApp.openhab.items.thing_item
 import pydantic
-from typing_extensions import Self
 
 import habapp_rules.core.pydantic_base
 
