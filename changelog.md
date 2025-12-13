@@ -1,3 +1,13 @@
+# Version 10.0.0 - dd.12.2025
+
+## Breaking changes
+
+- dropped support for python 3.10
+
+## Features
+
+- updated HABApp to 25.12.0
+
 # Version 9.0.0 - 16.11.2025
 
 ## Breaking changes
