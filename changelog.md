@@ -1,4 +1,13 @@
-# Version 9.0.1 - dd.12.2025
+# Version 10.0.0 - dd.12.2025
+
+## Breaking changes
+
+- dropped support for python 3.10
+- changed to python 3.14 for the docker image
+
+## Features
+
+- updated HABApp to 25.12.0
 
 ## Bugfix
 
