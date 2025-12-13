@@ -10,6 +10,7 @@ import HABApp.core
 import HABApp.openhab.events
 
 if TYPE_CHECKING:
+    from HABApp.openhab.definitions import ThingStatusEnum
     from HABApp.openhab.items import OpenhabItem
 
 NO_VALUE = object()
@@ -29,6 +30,17 @@ def add_mock_item(item_type: type[HABApp.openhab.items.OpenhabItem], name: str, 
         HABApp.core.Items.pop_item(name)
     item = item_type(name, initial_value)
     HABApp.core.Items.add_item(item)
+    _MOCKED_ITEM_NAMES.append(name)
+
+
+def add_mock_thing(name: str) -> None:
+    """Add a mock thing.
+
+    Args:
+        name: name of thing
+    """
+    thing = HABApp.openhab.items.Thing(name)
+    HABApp.core.Items.add_item(thing)
     _MOCKED_ITEM_NAMES.append(name)
 
 
@@ -62,6 +74,17 @@ def set_state(item_name: str, value: StateTypes | None) -> None:
 
     with contextlib.suppress(AssertionError):
         item.set_value(value)
+
+
+def set_thing_state(thing_name: str, value: ThingStatusEnum | None) -> None:
+    """Helper to set state of thing.
+
+    Args:
+        thing_name: name of thing
+        value: state which should be set
+    """
+    thing = HABApp.openhab.items.Thing.get_item(thing_name)
+    thing.status = value
 
 
 def send_command(item_name: str, new_value: StateTypes, old_value: StateTypes = NO_VALUE) -> None:
@@ -135,6 +158,17 @@ def item_state_change_event(item_name: str, value: StateTypes, old_value: StateT
     prev_value = old_value or HABApp.openhab.items.OpenhabItem.get_item(item_name).value
     set_state(item_name, value)
     HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateChangedEvent(item_name, value, prev_value))
+
+
+def thing_status_info_changed_event(thing_name: str, status: ThingStatusEnum) -> None:
+    """Trigger a thing status info changed event.
+
+    Args:
+        thing_name: name of thing
+        status: status
+    """
+    set_thing_state(thing_name, status)
+    HABApp.core.EventBus.post_event(thing_name, HABApp.openhab.events.ThingStatusInfoChangedEvent(thing_name, status))
 
 
 def assert_value(item_name: str, value: StateTypes | None, message: str | None = None) -> None:
