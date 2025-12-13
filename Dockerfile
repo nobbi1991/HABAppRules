@@ -1,4 +1,4 @@
-FROM python:3.13 AS buildimage
+FROM python:3.14 AS buildimage
 
 COPY . /tmp/app_install
 
@@ -7,7 +7,7 @@ RUN set -eux; \
 	cd /tmp/app_install; \
 	pip wheel --wheel-dir=/root/wheels .
 
-FROM python:3.13
+FROM python:3.14
 
 COPY --from=buildimage /root/wheels /root/wheels
 COPY container/entrypoint.sh /entrypoint.sh
