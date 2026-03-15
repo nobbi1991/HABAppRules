@@ -648,6 +648,10 @@ class TestSonos(tests.helper.test_case_base.TestCaseBaseStateMachine):
         tests.helper.oh_item.thing_status_info_changed_event("Unittest:SonosMax", ThingStatusEnum.ONLINE)
         tests.helper.oh_item.assert_value("Unittest_State_max", "Standby")
 
+        # thing online before enter booting
+        self.sonos_max.to_Booting()
+        tests.helper.oh_item.assert_value("Unittest_State_max", "Standby")
+
     def test_transitions_standby(self) -> None:
         """Test transitions of Standby state."""
         # power off

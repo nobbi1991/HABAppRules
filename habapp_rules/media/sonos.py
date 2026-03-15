@@ -121,6 +121,16 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):
             return "Playing_Init"
         return "Standby"
 
+    def on_enter_Booting(self) -> None:  # noqa: N802
+        """Callback which is triggered if "Booting" state is entered."""
+        if self._config.items.sonos_thing.status == ThingStatusEnum.ONLINE:
+            self._set_state("Standby")
+
+    def on_enter_Starting(self) -> None:  # noqa: N802
+        """Callback which is triggered if "Starting" state is entered."""
+        if self._config.items.sonos_player.value == "PLAY":
+            self.player_start()
+
     def on_enter_Playing_Init(self) -> None:  # noqa: N802
         """Go to child state if playing_init state is entered."""
         track_uri = self._config.items.current_track_uri.value
@@ -140,11 +150,6 @@ class Sonos(habapp_rules.core.state_machine_rule.StateMachineRule):
 
         else:
             self._set_state("Playing_UnknownContent")
-
-    def on_enter_Starting(self) -> None:  # noqa: N802
-        """Callback which is triggered if "Starting" state is entered."""
-        if self._config.items.sonos_player.value == "PLAY":
-            self.player_start()
 
     def _update_openhab_state(self) -> None:
         """Update OpenHAB state item and other states.
