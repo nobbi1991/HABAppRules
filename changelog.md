@@ -12,8 +12,8 @@
 ## Bugfix
 
 - fixed bugs in `habapp_rules.media.sonos.Sonos`:
-    - wrong state when switching `ON` from `PowerOff`
-    - unable to switch from `Starting` to `Standby` when relais switch to `ON` and Sonos Thing was already online. This can happen if the relais of Sonos is sticking
+  - wrong state when switching `ON` from `PowerOff`
+  - unable to switch from `Starting` to `Standby` when relais switch to `ON` and Sonos Thing was already online. This can happen if the relais of Sonos is sticking
 
 # Version 9.0.0 - 16.11.2025
 

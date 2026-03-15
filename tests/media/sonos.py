@@ -600,9 +600,9 @@ class TestSonos(tests.helper.test_case_base.TestCaseBaseStateMachine):
     def test_start_fav_from_power_off(self) -> None:
         """Test start a favorite from PowerOff state."""
         # initial state
+        tests.helper.oh_item.thing_status_info_changed_event("Unittest:SonosMax", ThingStatusEnum.OFFLINE)
         self.sonos_max._config.parameter.known_content = [ContentTuneIn(display_text="TuneIn1", tune_in_id=1, favorite_id=1)]
         self.sonos_max.to_PowerOff()
-        tests.helper.oh_item.set_thing_state("Unittest:SonosMax", ThingStatusEnum.ONLINE)
         tests.helper.oh_item.set_state("Unittest_PowerSwitch_max", "OFF")
 
         # trigger favorite id change
