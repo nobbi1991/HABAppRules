@@ -1,0 +1,33 @@
+repos = [
+    {repo = "https://github.com/pre-commit/pre-commit-hooks", rev = "v6.0.0", hooks = [
+        {id = "check-added-large-files", exclude = "uv\\.lock"},
+        {id = "check-ast"},
+        {id = "check-case-conflict"},
+        {id = "check-executables-have-shebangs"},
+        {id = "check-json"},
+        {id = "check-toml"},
+        {id = "check-yaml"},
+        {id = "end-of-file-fixer"},
+        {id = "fix-byte-order-marker"},
+        {id = "trailing-whitespace"}
+    ]},
+    {repo = "https://github.com/astral-sh/ruff-pre-commit", rev = "v0.15.6", hooks = [
+        {id = "ruff", args = ["--fix"]},
+        {id = "ruff-format"}
+    ]},
+    {repo = "https://github.com/google/yamlfmt", rev = "v0.21.0", hooks = [
+        {id = "yamlfmt", args = ["-conf", ".yamlfmt.yaml"]}
+    ]},
+    {repo = "https://github.com/scop/pre-commit-shfmt", rev = "v3.12.0-2", hooks = [
+        {id = "shfmt"}
+    ]},
+    {repo = "https://github.com/executablebooks/mdformat", rev = "1.0.0", hooks = [
+        {id = "mdformat"}
+    ]},
+    {repo = "local", hooks = [
+        {id = "version-check", name = "Check versions", entry = "python version_check.py", language = "python", pass_filenames = false, additional_dependencies = ["requests"]},
+        {id = "coverage", name = "Run unit tests with coverage", language = "system", pass_filenames = false, entry = "uv run scripts/run_tests_with_coverage.py"}
+    ]}
+]
+
+default_install_hook_types = ["pre-push"]

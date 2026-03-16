@@ -26,7 +26,7 @@ dev = [
     "pytest~=8.4.1",
     "ruff~=0.15.0",
     "pytest~=8.4.1",
-    "pre-commit>=4.3.0",
+    "prek>=0.1.0",
     "coverage>=7.11.0",
 ]
 
@@ -64,9 +64,9 @@ include = ["habapp_rules"]
 
 [tool.hatch.envs.lint]
 detached = true
-dependencies = ["pre-commit"]
+dependencies = ["prek"]
 [tool.hatch.envs.lint.scripts]
-check = "pre-commit run --all-files"
+check = "prek run --all-files"
 
 [tool.hatch.envs.publish]
 detached = true

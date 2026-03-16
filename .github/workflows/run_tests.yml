@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  pre-commit:
+  prek:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -28,9 +28,9 @@ jobs:
       - name: Install the project
         run: uv sync --frozen --all-groups
 
-      - name: Run Pre-Commit Hooks
+      - name: Run Prek Hooks
         run: |
-          uv run pre-commit run --all-files
+          uv run prek run --all-files
 
       - name: Upload Coverage Report
         if: always()
