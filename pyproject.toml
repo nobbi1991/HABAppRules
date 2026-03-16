@@ -24,7 +24,7 @@ dependencies = [
 dev = [
     "graphviz~=0.21.0",
     "pytest~=8.4.1",
-    "ruff~=0.14.0",
+    "ruff~=0.15.0",
     "pytest~=8.4.1",
     "pre-commit>=4.3.0",
     "coverage>=7.11.0",
@@ -121,6 +121,7 @@ ignore = [
     "PLR0911", # Too many return statements
     "PLR0913", # Too many arguments in function definition
     "PLR0917", # Too many positional arguments
+    "RUF067", # __init__ should only contain docstrings and re-exports
 ]
 
 [tool.ruff.lint.isort]

@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 class CurrentSwitch(HABApp.Rule):
-    """Rules class to manage basic light states.
+    """Rules class which manages a switch based on electrical current values.
 
     # Items:
     Number    Current              "Current"
