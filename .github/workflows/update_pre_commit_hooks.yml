@@ -1,4 +1,4 @@
-name: Prek auto-update
+name: Pre-commit auto-update
 
 on:
   # every day at midnight
@@ -10,15 +10,15 @@ jobs:
   auto-update:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
-      - uses: browniebroke/prek-autoupdate-action@main
-      - uses: peter-evans/create-pull-request@v7
+      - uses: browniebroke/pre-commit-autoupdate-action@main
+      - uses: peter-evans/create-pull-request@v8
         if: always()
         with:
-          branch: update/prek-hooks
-          title: Update prek hooks
-          labels: 'prek, automated'
-          commit-message: "chore: update prek hooks"
-          body: Update versions of prek hooks to latest version.
-          add-paths: prek.toml
+          branch: update/pre-commit-hooks
+          title: Update pre-commit hooks
+          labels: 'pre-commit, automated'
+          commit-message: "chore: update pre-commit hooks"
+          body: Update versions of pre-commit hooks to latest version.
+          add-paths: .pre-commit-config.yaml
