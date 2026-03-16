@@ -1,28 +1,28 @@
 repos = [
     {repo = "https://github.com/pre-commit/pre-commit-hooks", rev = "v6.0.0", hooks = [
         {id = "check-added-large-files", exclude = "uv\\.lock"},
-        {id = "check-ast"},
+        {id = "check-ast", files = "\\.py$"},
         {id = "check-case-conflict"},
-        {id = "check-executables-have-shebangs"},
-        {id = "check-json"},
-        {id = "check-toml"},
-        {id = "check-yaml"},
+        {id = "check-executables-have-shebangs", files = "\\.(sh|bash|py)$"},
+        {id = "check-json", files = "\\.json$"},
+        {id = "check-toml", files = "\\.toml$"},
+        {id = "check-yaml", files = "\\.(yaml|yml)$"},
         {id = "end-of-file-fixer"},
         {id = "fix-byte-order-marker"},
         {id = "trailing-whitespace"}
     ]},
     {repo = "https://github.com/astral-sh/ruff-pre-commit", rev = "v0.15.6", hooks = [
-        {id = "ruff", args = ["--fix"]},
-        {id = "ruff-format"}
+        {id = "ruff", args = ["--fix"], files = "\\.py$"},
+        {id = "ruff-format", files = "\\.py$"}
     ]},
     {repo = "https://github.com/google/yamlfmt", rev = "v0.21.0", hooks = [
-        {id = "yamlfmt", args = ["-conf", ".yamlfmt.yaml"]}
+        {id = "yamlfmt", args = ["-conf", ".yamlfmt.yaml"], files = "\\.(yaml|yml)$"}
     ]},
     {repo = "https://github.com/scop/pre-commit-shfmt", rev = "v3.12.0-2", hooks = [
-        {id = "shfmt"}
+        {id = "shfmt", files = "\\.(sh|bash)$"}
     ]},
     {repo = "https://github.com/executablebooks/mdformat", rev = "1.0.0", hooks = [
-        {id = "mdformat"}
+        {id = "mdformat", files = "\\.(md|markdown)$"}
     ]},
     {repo = "local", hooks = [
         {id = "version-check", name = "Check versions", entry = "python version_check.py", language = "python", pass_filenames = false, additional_dependencies = ["requests"]},
