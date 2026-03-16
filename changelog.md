@@ -1,4 +1,4 @@
-# Version 10.0.0 - dd.12.2025
+# Version 10.0.0 - 16.03.2026
 
 ## Breaking changes
 
@@ -8,6 +8,7 @@
 ## Features
 
 - updated HABApp to 25.12.0
+- use prek instead of pre-commit for hooks
 
 ## Bugfix
 
