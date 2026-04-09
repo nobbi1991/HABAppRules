@@ -1,3 +1,9 @@
+# Version 10.1.0 - dd.mm.2026
+
+## Features
+
+- updated multi_notifier to 0.6.0 which improves how mails are sent and reduce probability that mails are marked as spam
+
 # Version 10.0.0 - 16.03.2026
 
 ## Breaking changes

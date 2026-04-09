@@ -77,8 +77,6 @@ class MonthlyReport(HABApp.Rule):
         self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, config.items.energy_sum.name)
         self._mail = multi_notifier.connectors.connector_mail.Mail(config.parameter.config_mail)
 
-        self._mail = multi_notifier.connectors.connector_mail.Mail(config.parameter.config_mail)
-
         if config.parameter.persistence_group_name is not None:
             # check if all energy items are in the given persistence group
             items_to_check = [config.items.energy_sum] + [item for share in config.parameter.known_energy_shares for item in share.get_items_as_list]
