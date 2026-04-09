@@ -77,8 +77,6 @@ class MonthlyReport(HABApp.Rule):
         self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, config.items.energy_sum.name)
         self._mail = multi_notifier.connectors.connector_mail.Mail(config.parameter.config_mail)
 
-        self._mail = multi_notifier.connectors.connector_mail.Mail(config.parameter.config_mail)
-
         if config.parameter.persistence_group_name is not None:
             # check if all energy items are in the given persistence group
             items_to_check = [config.items.energy_sum] + [item for share in config.parameter.known_energy_shares for item in share.get_items_as_list]
@@ -140,7 +138,6 @@ class MonthlyReport(HABApp.Rule):
             energy_now=f"{self._config.items.energy_sum.value:.1f}",
             energy_last_month=f"{energy_sum_month:.1f}",
             habapp_version=habapp_rules.__version__,
-            chart="{{ chart }}",  # this is needed to not replace the chart from the mail-template
         )
 
     def _cb_send_energy(self) -> None:
@@ -171,6 +168,6 @@ class MonthlyReport(HABApp.Rule):
             html = self._create_html(energy_sum_month)
 
             # send mail
-            self._mail.send_message(self._config.parameter.recipients, html, f"Stromverbrauch {_get_previous_month_name()}", images={"chart": str(chart_path)})
+            self._mail.send_message(self._config.parameter.recipients, html, f"Stromverbrauch {_get_previous_month_name()}", images={"chart": chart_path})
 
         self._instance_logger.info(f"Successfully sent energy consumption mail to {self._config.parameter.recipients}.")

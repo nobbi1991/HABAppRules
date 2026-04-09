@@ -22,7 +22,7 @@ LOGGER = logging.getLogger(__name__)
 class VersionCheck:
     """Checker to asure that version was updated."""
 
-    def __init__(self, current_version: str, pypi_pkg_name: str, changelog_path: str | None = None) -> None:
+    def __init__(self, current_version: str, pypi_pkg_name: str, changelog_path: pathlib.Path | None = None) -> None:
         """Create checker.
 
         Args:
@@ -32,7 +32,7 @@ class VersionCheck:
         """
         self.current_version = current_version
         self.pypi_pkg_name = pypi_pkg_name
-        self.changelog_path = pathlib.Path(changelog_path) if changelog_path else None
+        self.changelog_path = changelog_path
 
     def __get_pypi_version(self) -> str:
         """Get the newest version from PyPi.
@@ -100,4 +100,4 @@ class VersionCheck:
 
 
 if __name__ == "__main__":
-    sys.exit(VersionCheck(habapp_rules.__version__, "habapp_rules", "changelog.md").check_version())
+    sys.exit(VersionCheck(habapp_rules.__version__, "habapp_rules", pathlib.Path(__file__).parents[1] / "changelog.md").check_version())
