@@ -1,33 +1,53 @@
-repos = [
-    {repo = "https://github.com/pre-commit/pre-commit-hooks", rev = "v6.0.0", hooks = [
-        {id = "check-added-large-files", exclude = "uv\\.lock", priority = 1},
-        {id = "check-ast", files = "\\.py$", priority = 1},
-        {id = "check-case-conflict", priority = 1},
-        {id = "check-executables-have-shebangs", files = "\\.(sh|bash|py)$", priority = 1},
-        {id = "check-json", files = "\\.json$", priority = 1},
-        {id = "check-toml", files = "\\.toml$", priority = 1},
-        {id = "check-yaml", files = "\\.(yaml|yml)$", priority = 1},
-        {id = "end-of-file-fixer"},
-        {id = "fix-byte-order-marker"},
-        {id = "trailing-whitespace"}
-    ]},
-    {repo = "https://github.com/astral-sh/ruff-pre-commit", rev = "v0.15.6", hooks = [
-        {id = "ruff", args = ["--fix"], files = "\\.py$"},
-        {id = "ruff-format", files = "\\.py$"}
-    ]},
-    {repo = "https://github.com/google/yamlfmt", rev = "v0.21.0", hooks = [
-        {id = "yamlfmt", args = ["-conf", ".yamlfmt.yaml"], files = "\\.(yaml|yml)$", priority = 1}
-    ]},
-    {repo = "https://github.com/scop/pre-commit-shfmt", rev = "v3.12.0-2", hooks = [
-        {id = "shfmt", files = "\\.(sh|bash)$", priority = 1}
-    ]},
-    {repo = "https://github.com/executablebooks/mdformat", rev = "1.0.0", hooks = [
-        {id = "mdformat", files = "\\.(md|markdown)$", priority = 1}
-    ]},
-    {repo = "local", hooks = [
-        {id = "coverage", name = "Run unit tests with coverage", language = "system", pass_filenames = false, entry = "uv run scripts/run_tests_with_coverage.py", priority = 1},
-        {id = "version-check", name = "Check versions", entry = "uv run scripts/version_check.py", language = "python", pass_filenames = false, additional_dependencies = ["requests"], priority = 1}
-    ]},
+[[repos]]
+repo = "https://github.com/pre-commit/pre-commit-hooks"
+rev = "v6.0.0"
+hooks = [
+    {id = "check-added-large-files", exclude = "uv\\.lock", priority = 1},
+    {id = "check-ast", files = "\\.py$", priority = 1},
+    {id = "check-case-conflict", priority = 1},
+    {id = "check-executables-have-shebangs", files = "\\.(sh|bash|py)$", priority = 1},
+    {id = "check-json", files = "\\.json$", priority = 1},
+    {id = "check-toml", files = "\\.toml$", priority = 1},
+    {id = "check-yaml", files = "\\.(yaml|yml)$", priority = 1},
+    {id = "end-of-file-fixer"},
+    {id = "fix-byte-order-marker"},
+    {id = "trailing-whitespace"}
+]
+
+[[repos]]
+repo = "https://github.com/astral-sh/ruff-pre-commit"
+rev = "v0.15.10"
+hooks = [
+    {id = "ruff", args = ["--fix"], files = "\\.py$"},
+    {id = "ruff-format", files = "\\.py$"}
+]
+
+[[repos]]
+repo = "https://github.com/google/yamlfmt"
+rev = "v0.21.0"
+hooks = [
+    {id = "yamlfmt", args = ["-conf", ".yamlfmt.yaml"], files = "\\.(yaml|yml)$", priority = 1}
+]
+
+[[repos]]
+repo = "https://github.com/scop/pre-commit-shfmt"
+rev = "v3.13.0-1"
+hooks = [
+    {id = "shfmt", files = "\\.(sh|bash)$", priority = 1}
+]
+
+[[repos]]
+repo = "https://github.com/executablebooks/mdformat"
+rev = "1.0.0"
+hooks = [
+    {id = "mdformat", files = "\\.(md|markdown)$", priority = 1}
+]
+
+[[repos]]
+repo = "local"
+hooks = [
+    {id = "coverage", name = "Run unit tests with coverage", language = "system", pass_filenames = false, entry = "uv run scripts/run_tests_with_coverage.py", priority = 1},
+    {id = "version-check", name = "Check versions", entry = "uv run scripts/version_check.py", language = "python", pass_filenames = false, additional_dependencies = ["requests"], priority = 1}
 ]
 
 default_install_hook_types = ["pre-push"]
