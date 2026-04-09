@@ -121,7 +121,7 @@ class TestMonthlyReport(tests.helper.test_case_base.TestCaseBase):
         with unittest.mock.patch("jinja2.Template", return_value=template_mock), unittest.mock.patch("habapp_rules.energy.monthly_report._get_previous_month_name", return_value="MonthName"):
             self._rule._create_html(10_042.123456)
 
-        template_mock.render.assert_called_once_with(month="MonthName", energy_now="20123.5", energy_last_month="10042.1", habapp_version=habapp_rules.__version__, chart="{{ chart }}")
+        template_mock.render.assert_called_once_with(month="MonthName", energy_now="20123.5", energy_last_month="10042.1", habapp_version=habapp_rules.__version__)
 
     def test_cb_send_energy(self) -> None:
         """Test cb_send_energy."""

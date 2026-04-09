@@ -1,3 +1,5 @@
+default_install_hook_types = ["pre-push"]
+
 [[repos]]
 repo = "https://github.com/pre-commit/pre-commit-hooks"
 rev = "v6.0.0"
@@ -49,5 +51,3 @@ hooks = [
     {id = "coverage", name = "Run unit tests with coverage", language = "system", pass_filenames = false, entry = "uv run scripts/run_tests_with_coverage.py", priority = 1},
     {id = "version-check", name = "Check versions", entry = "uv run scripts/version_check.py", language = "python", pass_filenames = false, additional_dependencies = ["requests"], priority = 1}
 ]
-
-default_install_hook_types = ["pre-push"]
