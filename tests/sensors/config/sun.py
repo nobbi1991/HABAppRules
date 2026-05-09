@@ -3,12 +3,12 @@
 import unittest
 
 import HABApp
-import pydantic
 
 import habapp_rules.core.exceptions
 import habapp_rules.sensors.config.sun
 import tests.helper.oh_item
 import tests.helper.test_case_base
+from habapp_rules.core.exceptions import HabAppRulesConfigurationError
 
 
 class TestTemperatureDifferenceItems(tests.helper.test_case_base.TestCaseBase):
@@ -22,11 +22,11 @@ class TestTemperatureDifferenceItems(tests.helper.test_case_base.TestCaseBase):
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Temperature_3", None)
 
         # no item is given
-        with self.assertRaises(pydantic.ValidationError):
+        with self.assertRaises(HabAppRulesConfigurationError):
             habapp_rules.sensors.config.sun.TemperatureDifferenceItems(temperatures=[], output="Unittest_Output")
 
         # single item is given
-        with self.assertRaises(pydantic.ValidationError):
+        with self.assertRaises(HabAppRulesConfigurationError):
             habapp_rules.sensors.config.sun.TemperatureDifferenceItems(temperatures=["Unittest_Temperature_1"], output="Unittest_Output")
 
         # two items are given

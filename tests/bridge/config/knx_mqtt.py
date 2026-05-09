@@ -5,6 +5,7 @@ import HABApp
 import habapp_rules.bridge.config.knx_mqtt
 import tests.helper.oh_item
 import tests.helper.test_case_base
+from habapp_rules.core.exceptions import HabAppRulesConfigurationError
 
 
 class TestKnxMqttConfig(tests.helper.test_case_base.TestCaseBase):
@@ -35,7 +36,7 @@ class TestKnxMqttConfig(tests.helper.test_case_base.TestCaseBase):
         habapp_rules.bridge.config.knx_mqtt.KnxMqttConfig(items=habapp_rules.bridge.config.knx_mqtt.KnxMqttItems(mqtt_dimmer="Unittest_MQTT_dimmer", knx_dimmer_ctr="Unittest_KNX_dimmer"))
 
         # no KNX item is given
-        with self.assertRaises(ValueError):
+        with self.assertRaises(HabAppRulesConfigurationError):
             habapp_rules.bridge.config.knx_mqtt.KnxMqttConfig(
                 items=habapp_rules.bridge.config.knx_mqtt.KnxMqttItems(
                     mqtt_dimmer="Unittest_MQTT_dimmer",

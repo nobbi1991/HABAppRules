@@ -1,7 +1,6 @@
 """Test light rules."""
 
 import collections
-import pathlib
 import sys
 import time
 import unittest
@@ -12,10 +11,10 @@ import HABApp.rule.rule
 import habapp_rules.actors.light
 import habapp_rules.actors.state_observer
 import habapp_rules.system
-import tests.helper.graph_machines
 import tests.helper.oh_item
 import tests.helper.test_case_base
 from habapp_rules.actors.config.light import BrightnessTimeout, FunctionConfig, LightConfig, LightItems, LightParameter
+from tests.helper.graph_machines import _get_state_names, create_state_graphs, extract_states_from_machine, extract_transitions_from_machine
 
 
 class TestLightBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
@@ -131,16 +130,7 @@ class TestLightBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
     def test_create_graph(self) -> None:  # pragma: no cover
         """Create state machine graph for documentation."""
-        picture_dir = pathlib.Path(__file__).parent / "_state_charts" / "Light"
-        if not picture_dir.is_dir():
-            picture_dir.mkdir(parents=True)
-
-        light_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self.light_base.states, transitions=self.light_base.trans, initial=self.light_base.state, show_conditions=False)
-        light_graph.get_graph().draw(picture_dir / "Light.png", format="png", prog="dot")
-
-        for state_name in [state for state in self._get_state_names(self.light_base.states) if "init" not in state.lower()]:
-            light_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self.light_base.states, transitions=self.light_base.trans, initial=state_name, show_conditions=True)
-            light_graph.get_graph(force_new=True, show_roi=True).draw(picture_dir / f"Light_{state_name}.png", format="png", prog="dot")
+        create_state_graphs(self.light_base, "Light")
 
     @staticmethod
     def get_initial_state_test_cases() -> collections.namedtuple:
@@ -433,7 +423,7 @@ class TestLightBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
         for test_case in test_cases:
             with self.subTest(test_case=test_case):
                 self.light_base._config.items.day = HABApp.openhab.items.SwitchItem("day", "ON" if test_case.day else "OFF")
-                self.light_base._config.items.sleeping_state = _item_sleeping_state = HABApp.openhab.items.SwitchItem("sleeping", "sleeping" if test_case.sleeping else "awake")
+                self.light_base._config.items.sleeping_state = _item_sleeping_state = HABApp.openhab.items.SwitchItem("Sleeping", "Sleeping" if test_case.sleeping else "Awake")
                 self.light_base._config = test_case.config
 
                 self.light_base._set_timeouts()
@@ -781,7 +771,7 @@ class TestLightBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
     def test_cb_presence(self) -> None:
         """Test callback_presence -> only states where nothing should happen."""
-        for state_name in ["presence", "absence", "long_absence"]:
+        for state_name in ["Presence", "Absence", "LongAbsence"]:
             with (
                 unittest.mock.patch.object(self.light_base, "leaving_started") as started_mock,
                 unittest.mock.patch.object(self.light_base, "leaving_aborted") as aborted_mock,
@@ -794,7 +784,7 @@ class TestLightBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
     def test_cb_sleeping(self) -> None:
         """Test callback_presence -> only states where nothing should happen."""
-        for state_name in ["awake", "sleeping", "post_sleeping", "locked"]:
+        for state_name in ["Awake", "Sleeping", "PostSleeping", "Locked"]:
             with (
                 unittest.mock.patch.object(self.light_base, "sleep_started") as started_mock,
                 unittest.mock.patch.object(self.light_base, "sleep_aborted") as aborted_mock,
@@ -947,7 +937,7 @@ class TestLightSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
     def test_update_openhab_state(self) -> None:
         """Test _update_openhab_state."""
-        states = self._get_state_names(self.light_switch.states)
+        states = _get_state_names(self.light_switch.states)
 
         # test auto_preoff state with timeout <= 60
         self.light_switch.state_machine.set_state("auto_preoff")
@@ -1286,54 +1276,65 @@ class TestLightExtended(tests.helper.test_case_base.TestCaseBaseStateMachine):
                 "initial": "init",
                 "children": [
                     {"name": "init"},
-                    {"name": "on", "timeout": 10, "on_timeout": "auto_on_timeout"},
-                    {"name": "preoff", "timeout": 4, "on_timeout": "preoff_timeout"},
+                    {"name": "on", "timeout": 10.0, "on_timeout": "auto_on_timeout"},
+                    {"name": "preoff", "timeout": 7.0, "on_timeout": "preoff_timeout"},
                     {"name": "off"},
-                    {"name": "leaving", "timeout": 5, "on_timeout": "leaving_timeout"},
-                    {"name": "presleep", "timeout": 5, "on_timeout": "presleep_timeout"},
+                    {"name": "leaving", "timeout": 4.0, "on_timeout": "leaving_timeout"},
+                    {"name": "presleep", "timeout": 0, "on_timeout": "presleep_timeout"},
                     {"name": "restoreState"},
-                    {"name": "door", "timeout": 999, "on_timeout": "door_timeout"},
-                    {"name": "motion", "timeout": 999, "on_timeout": "motion_timeout"},
+                    {"name": "door", "timeout": 10.0, "on_timeout": "door_timeout"},
+                    {"name": "motion", "timeout": 10.0, "on_timeout": "motion_timeout"},
                 ],
             },
         ]
-        self.assertEqual(expected_states, self.light_extended.states)
+        self.assertEqual(expected_states, extract_states_from_machine(self.light_extended.state_machine))
 
         expected_trans = [
-            {"trigger": "manual_on", "source": "auto", "dest": "manual"},
-            {"trigger": "manual_off", "source": "manual", "dest": "auto"},
-            {"trigger": "hand_on", "source": ["auto_off", "auto_preoff"], "dest": "auto_on"},
-            {"trigger": "hand_off", "source": ["auto_on", "auto_leaving", "auto_presleep"], "dest": "auto_off"},
-            {"trigger": "hand_off", "source": "auto_preoff", "dest": "auto_on"},
-            {"trigger": "auto_on_timeout", "source": "auto_on", "dest": "auto_preoff", "conditions": "_pre_off_configured"},
-            {"trigger": "auto_on_timeout", "source": "auto_on", "dest": "auto_off", "unless": "_pre_off_configured"},
-            {"trigger": "preoff_timeout", "source": "auto_preoff", "dest": "auto_off"},
-            {"trigger": "leaving_started", "source": ["auto_on", "auto_off", "auto_preoff"], "dest": "auto_leaving", "conditions": "_leaving_configured"},
-            {"trigger": "leaving_aborted", "source": "auto_leaving", "dest": "auto_restoreState"},
-            {"trigger": "leaving_timeout", "source": "auto_leaving", "dest": "auto_off"},
-            {"trigger": "sleep_started", "source": ["auto_on", "auto_off", "auto_preoff"], "dest": "auto_presleep", "conditions": "_pre_sleep_configured"},
-            {"trigger": "sleep_aborted", "source": "auto_presleep", "dest": "auto_restoreState"},
-            {"trigger": "presleep_timeout", "source": "auto_presleep", "dest": "auto_off"},
-            {"trigger": "hand_changed", "source": "auto_on", "dest": "auto_on"},
-            {"trigger": "motion_on", "source": "auto_door", "dest": "auto_motion", "conditions": "_motion_configured"},
-            {"trigger": "motion_on", "source": "auto_off", "dest": "auto_motion", "conditions": ["_motion_configured", "_motion_door_allowed"]},
-            {"trigger": "motion_on", "source": "auto_preoff", "dest": "auto_motion", "conditions": "_motion_configured"},
-            {"trigger": "motion_off", "source": "auto_motion", "dest": "auto_preoff", "conditions": "_pre_off_configured"},
-            {"trigger": "motion_off", "source": "auto_motion", "dest": "auto_off", "unless": "_pre_off_configured"},
-            {"trigger": "motion_timeout", "source": "auto_motion", "dest": "auto_preoff", "conditions": "_pre_off_configured", "before": "_log_motion_timeout_warning"},
-            {"trigger": "motion_timeout", "source": "auto_motion", "dest": "auto_off", "unless": "_pre_off_configured", "before": "_log_motion_timeout_warning"},
-            {"trigger": "hand_off", "source": "auto_motion", "dest": "auto_off"},
-            {"trigger": "door_opened", "source": ["auto_off", "auto_preoff", "auto_door"], "dest": "auto_door", "conditions": ["_door_configured", "_motion_door_allowed"]},
-            {"trigger": "door_timeout", "source": "auto_door", "dest": "auto_preoff", "conditions": "_pre_off_configured"},
-            {"trigger": "door_timeout", "source": "auto_door", "dest": "auto_off", "unless": "_pre_off_configured"},
-            {"trigger": "door_closed", "source": "auto_leaving", "dest": "auto_off", "conditions": "_door_off_leaving_configured"},
-            {"trigger": "hand_off", "source": "auto_door", "dest": "auto_off"},
-            {"trigger": "leaving_started", "source": ["auto_motion", "auto_door"], "dest": "auto_leaving", "conditions": "_leaving_configured"},
-            {"trigger": "sleep_started", "source": ["auto_motion", "auto_door"], "dest": "auto_presleep", "conditions": "_pre_sleep_configured"},
+            {"dest": "manual", "source": "auto", "trigger": "manual_on"},
+            {"dest": "auto", "source": "manual", "trigger": "manual_off"},
+            {"dest": "auto_on", "source": "auto_off", "trigger": "hand_on"},
+            {"dest": "auto_on", "source": "auto_preoff", "trigger": "hand_on"},
+            {"dest": "auto_off", "source": "auto_on", "trigger": "hand_off"},
+            {"dest": "auto_off", "source": "auto_leaving", "trigger": "hand_off"},
+            {"dest": "auto_off", "source": "auto_presleep", "trigger": "hand_off"},
+            {"dest": "auto_on", "source": "auto_preoff", "trigger": "hand_off"},
+            {"dest": "auto_off", "source": "auto_motion", "trigger": "hand_off"},
+            {"dest": "auto_off", "source": "auto_door", "trigger": "hand_off"},
+            {"conditions": "_pre_off_configured", "dest": "auto_preoff", "source": "auto_on", "trigger": "auto_on_timeout"},
+            {"dest": "auto_off", "source": "auto_on", "trigger": "auto_on_timeout", "unless": "_pre_off_configured"},
+            {"dest": "auto_off", "source": "auto_preoff", "trigger": "preoff_timeout"},
+            {"conditions": "_leaving_configured", "dest": "auto_leaving", "source": "auto_on", "trigger": "leaving_started"},
+            {"conditions": "_leaving_configured", "dest": "auto_leaving", "source": "auto_off", "trigger": "leaving_started"},
+            {"conditions": "_leaving_configured", "dest": "auto_leaving", "source": "auto_preoff", "trigger": "leaving_started"},
+            {"conditions": "_leaving_configured", "dest": "auto_leaving", "source": "auto_motion", "trigger": "leaving_started"},
+            {"conditions": "_leaving_configured", "dest": "auto_leaving", "source": "auto_door", "trigger": "leaving_started"},
+            {"dest": "auto_restoreState", "source": "auto_leaving", "trigger": "leaving_aborted"},
+            {"dest": "auto_off", "source": "auto_leaving", "trigger": "leaving_timeout"},
+            {"conditions": "_pre_sleep_configured", "dest": "auto_presleep", "source": "auto_on", "trigger": "sleep_started"},
+            {"conditions": "_pre_sleep_configured", "dest": "auto_presleep", "source": "auto_off", "trigger": "sleep_started"},
+            {"conditions": "_pre_sleep_configured", "dest": "auto_presleep", "source": "auto_preoff", "trigger": "sleep_started"},
+            {"conditions": "_pre_sleep_configured", "dest": "auto_presleep", "source": "auto_motion", "trigger": "sleep_started"},
+            {"conditions": "_pre_sleep_configured", "dest": "auto_presleep", "source": "auto_door", "trigger": "sleep_started"},
+            {"dest": "auto_restoreState", "source": "auto_presleep", "trigger": "sleep_aborted"},
+            {"dest": "auto_off", "source": "auto_presleep", "trigger": "presleep_timeout"},
+            {"dest": "auto_on", "source": "auto_on", "trigger": "hand_changed"},
+            {"conditions": "_motion_configured", "dest": "auto_motion", "source": "auto_door", "trigger": "motion_on"},
+            {"conditions": ["_motion_configured", "_motion_door_allowed"], "dest": "auto_motion", "source": "auto_off", "trigger": "motion_on"},
+            {"conditions": "_motion_configured", "dest": "auto_motion", "source": "auto_preoff", "trigger": "motion_on"},
+            {"conditions": "_pre_off_configured", "dest": "auto_preoff", "source": "auto_motion", "trigger": "motion_off"},
+            {"dest": "auto_off", "source": "auto_motion", "trigger": "motion_off", "unless": "_pre_off_configured"},
+            {"before": "_log_motion_timeout_warning", "conditions": "_pre_off_configured", "dest": "auto_preoff", "source": "auto_motion", "trigger": "motion_timeout"},
+            {"before": "_log_motion_timeout_warning", "dest": "auto_off", "source": "auto_motion", "trigger": "motion_timeout", "unless": "_pre_off_configured"},
+            {"conditions": ["_door_configured", "_motion_door_allowed"], "dest": "auto_door", "source": "auto_off", "trigger": "door_opened"},
+            {"conditions": ["_door_configured", "_motion_door_allowed"], "dest": "auto_door", "source": "auto_preoff", "trigger": "door_opened"},
+            {"conditions": ["_door_configured", "_motion_door_allowed"], "dest": "auto_door", "source": "auto_door", "trigger": "door_opened"},
+            {"conditions": "_pre_off_configured", "dest": "auto_preoff", "source": "auto_door", "trigger": "door_timeout"},
+            {"dest": "auto_off", "source": "auto_door", "trigger": "door_timeout", "unless": "_pre_off_configured"},
+            {"conditions": "_door_off_leaving_configured", "dest": "auto_off", "source": "auto_leaving", "trigger": "door_closed"},
         ]
 
-        self.assertEqual(expected_trans, self.light_extended.trans)
-        self.assertEqual(expected_trans, self.light_extended_2.trans)
+        self.assertEqual(expected_trans, extract_transitions_from_machine(self.light_extended.state_machine))
+        self.assertEqual(expected_trans, extract_transitions_from_machine(self.light_extended_2.state_machine))
 
     def test_init_with_none(self) -> None:
         """Test __init__ with None values."""
@@ -1381,21 +1382,7 @@ class TestLightExtended(tests.helper.test_case_base.TestCaseBaseStateMachine):
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
     def test_create_graph(self) -> None:  # pragma: no cover
         """Create state machine graph for documentation."""
-        picture_dir = pathlib.Path(__file__).parent / "_state_charts" / "LightExtended"
-        if not picture_dir.is_dir():
-            picture_dir.mkdir(parents=True)
-
-        light_extended_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=self.light_extended, states=self.light_extended.states, transitions=self.light_extended.trans, initial=self.light_extended.state, show_conditions=False)
-
-        light_extended_graph.get_graph().draw(picture_dir / "LightExtended.png", format="png", prog="dot")
-
-        for state_name in ["auto_door", "auto_motion", "auto_leaving"]:
-            light_extended_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
-                model=tests.helper.graph_machines.FakeModel(), states=self.light_extended.states, transitions=self.light_extended.trans, initial=self.light_extended.state, show_conditions=True
-            )
-
-            light_extended_graph.set_state(state_name)
-            light_extended_graph.get_graph(force_new=True, show_roi=True).draw(picture_dir / f"LightExtended_{state_name}.png", format="png", prog="dot")
+        create_state_graphs(self.light_extended, "LightExtended")
 
     def test_get_initial_state(self) -> None:
         """Test _get_initial_state."""
@@ -1490,17 +1477,18 @@ class TestLightExtended(tests.helper.test_case_base.TestCaseBaseStateMachine):
         for test_case in test_cases:
             with self.subTest(test_case=test_case):
                 self.light_extended._config.items.day = HABApp.openhab.items.SwitchItem("day", "ON" if test_case.day else "OFF")
-                self.light_extended._config.items.sleeping_state = HABApp.openhab.items.SwitchItem("sleeping", "sleeping" if test_case.sleeping else "awake")
+                self.light_extended._config.items.sleeping_state = HABApp.openhab.items.SwitchItem("Sleeping", "Sleeping" if test_case.sleeping else "Awake")
                 self.light_extended._config = test_case.config
 
                 self.light_extended._set_timeouts()
+                self.light_extended._set_additional_timeouts()
 
-                self.assertEqual(test_case.timeout_on, self.light_extended.state_machine.states["auto"].states["on"].timeout)
-                self.assertEqual(test_case.timeout_pre_off, self.light_extended.state_machine.states["auto"].states["preoff"].timeout)
-                self.assertEqual(test_case.timeout_leaving, self.light_extended.state_machine.states["auto"].states["leaving"].timeout)
-                self.assertEqual(test_case.timeout_pre_sleep, self.light_extended.state_machine.states["auto"].states["presleep"].timeout)
-                self.assertEqual(test_case.timeout_motion, self.light_extended.state_machine.states["auto"].states["motion"].timeout)
-                self.assertEqual(test_case.timeout_door, self.light_extended.state_machine.states["auto"].states["door"].timeout)
+                self.assertEqual(test_case.timeout_on, self.light_extended._get_state_timeout("auto_on"))
+                self.assertEqual(test_case.timeout_pre_off, self.light_extended._get_state_timeout("auto_preoff"))
+                self.assertEqual(test_case.timeout_leaving, self.light_extended._get_state_timeout("auto_leaving"))
+                self.assertEqual(test_case.timeout_pre_sleep, self.light_extended._get_state_timeout("auto_presleep"))
+                self.assertEqual(test_case.timeout_motion, self.light_extended._get_state_timeout("auto_motion"))
+                self.assertEqual(test_case.timeout_door, self.light_extended._get_state_timeout("auto_door"))
 
     def test_get_target_brightness(self) -> None:
         """Test _get_target_brightness."""

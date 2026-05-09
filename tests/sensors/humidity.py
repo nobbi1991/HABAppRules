@@ -1,7 +1,6 @@
 """Tests for motion sensors."""
 
 import collections
-import pathlib
 import sys
 import unittest
 import unittest.mock
@@ -10,10 +9,10 @@ import HABApp
 
 import habapp_rules.sensors.config.humidity
 import habapp_rules.sensors.humidity
-import tests.helper.graph_machines
 import tests.helper.oh_item
 import tests.helper.test_case_base
 import tests.helper.timer
+from tests.helper.graph_machines import create_state_graphs
 
 
 class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
@@ -35,13 +34,7 @@ class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
     def test_create_graph(self) -> None:  # pragma: no cover
         """Create state machine graph for documentation."""
-        picture_dir = pathlib.Path(__file__).parent / "_state_charts" / "Humidity"
-        if not picture_dir.is_dir():
-            picture_dir.mkdir(parents=True)
-
-        humidity_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self.humidity.states, transitions=self.humidity.trans, initial=self.humidity.state, show_conditions=True)
-
-        humidity_graph.get_graph().draw(picture_dir / "Humidity.png", format="png", prog="dot")
+        create_state_graphs(self.humidity, "Humidity")
 
     def test_init(self) -> None:
         """Test init."""
@@ -99,24 +92,20 @@ class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
     def test_cb_humidity(self) -> None:
         """Test _cb_humidity."""
         with (
-            unittest.mock.patch.object(self.humidity, "high_humidity_start") as start_mock,
-            unittest.mock.patch.object(self.humidity, "high_humidity_end") as end_mock,
+            unittest.mock.patch.object(self.humidity, "trigger") as trigger_mock,
             unittest.mock.patch.object(self.humidity, "_check_high_humidity", return_value=True) as check_mock,
         ):
             tests.helper.oh_item.item_state_event("Unittest_Humidity", 99)
             check_mock.assert_called_once_with(99)
-            start_mock.assert_called_once()
-            end_mock.assert_not_called()
+            trigger_mock.assert_called_once_with("high_humidity_start")
 
         with (
-            unittest.mock.patch.object(self.humidity, "high_humidity_start") as start_mock,
-            unittest.mock.patch.object(self.humidity, "high_humidity_end") as end_mock,
+            unittest.mock.patch.object(self.humidity, "trigger") as trigger_mock,
             unittest.mock.patch.object(self.humidity, "_check_high_humidity", return_value=False) as check_mock,
         ):
             tests.helper.oh_item.item_state_event("Unittest_Humidity", 42)
             check_mock.assert_called_once_with(42)
-            start_mock.assert_not_called()
-            end_mock.assert_called_once()
+            trigger_mock.assert_called_once_with("high_humidity_end")
 
     def test_states(self) -> None:
         """Test states."""

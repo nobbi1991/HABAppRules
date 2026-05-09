@@ -64,6 +64,13 @@ class TestCurrentSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertIsInstance(self._rule_extended._extended_countdown, HABApp.rule.scheduler.job_ctrl.CountdownJobControl)
         self.assertIsNone(self._rule_extended._extended_countdown.next_run_datetime)
 
+    def test_countdown_end(self) -> None:
+        """Test countdown end."""
+        with unittest.mock.patch("habapp_rules.sensors.current_switch.send_if_different") as send_if_different_mock:
+            self._rule_extended._countdown_end()
+
+        send_if_different_mock.assert_called_once_with(self._rule_extended._config.items.switch, "OFF")
+
     def test_current_changed_without_extended_time(self) -> None:
         """Test current changed without extended time."""
         TestCase = collections.namedtuple("TestCase", "current, expected_1, expected_2")

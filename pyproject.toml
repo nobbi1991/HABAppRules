@@ -30,6 +30,8 @@ dev = [
     "prek>=0.1.0",
     "coverage>=7.11.0",
     "requests>=2.33.1",
+    "mypy>=1.20.2",
+    "types-python-dateutil>=2.9.0.20260408",
 ]
 
 
@@ -72,13 +74,6 @@ check = "prek run --all-files"
 
 [tool.hatch.envs.publish]
 detached = true
-
-[tool.hatch.envs.tests]
-dependencies = ["coverage", "pytest", "graphviz"]
-
-
-[tool.hatch.envs.tests.scripts]
-local = "coverage run tests/run_unittest.py && coverage html --skip-covered --fail-under=100"
 
 [tool.hatch.metadata] # remove when HABApp dev is released
 allow-direct-references = true
@@ -150,3 +145,6 @@ split-on-trailing-comma = true
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.mypy]
+plugins = ['pydantic.mypy']

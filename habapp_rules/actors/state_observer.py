@@ -9,13 +9,15 @@ import time
 from collections.abc import Callable
 
 import HABApp
-import HABApp.openhab.items
+from HABApp.openhab.events import ItemCommandEvent, ItemStateChangedEvent, ItemStateUpdatedEvent
+from HABApp.openhab.events.event_filters import ItemCommandEventFilter, ItemStateChangedEventFilter, ItemStateUpdatedEventFilter
+from HABApp.openhab.items import OpenhabItem
 
-import habapp_rules.core.logger
+from habapp_rules.core.logger import InstanceLogger
 
 LOGGER = logging.getLogger(__name__)
 
-EventTypes = HABApp.openhab.events.ItemStateChangedEvent | HABApp.openhab.events.ItemCommandEvent
+EventTypes = ItemStateChangedEvent | ItemCommandEvent | ItemStateUpdatedEvent
 CallbackType = Callable[[EventTypes], None]
 
 
@@ -34,24 +36,24 @@ class _StateObserverBase(HABApp.Rule, abc.ABC):
         self._value_tolerance = value_tolerance
 
         HABApp.Rule.__init__(self)
-        self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, item_name)
+        self._instance_logger = InstanceLogger(LOGGER, item_name)
 
-        self._last_manual_event = HABApp.openhab.events.ItemCommandEvent("", None)
+        self._last_manual_event: ItemStateChangedEvent | ItemCommandEvent | ItemStateUpdatedEvent = ItemCommandEvent("", None)  # type:ignore[reportCallIssue]
 
-        self._item = HABApp.openhab.items.OpenhabItem.get_item(item_name)
+        self._item = OpenhabItem.get_item(item_name)
 
-        self.__control_items = [HABApp.openhab.items.OpenhabItem.get_item(name) for name in control_names] if control_names else []
-        self.__group_items = [HABApp.openhab.items.OpenhabItem.get_item(name) for name in group_names] if group_names else []
+        self.__control_items = [OpenhabItem.get_item(name) for name in control_names] if control_names else []
+        self.__group_items = [OpenhabItem.get_item(name) for name in group_names] if group_names else []
         self.__check_item_types()
 
         self._value = self._item.value
-        self._group_last_event = 0
+        self._group_last_event = 0.0
 
-        self._item.listen_event(self._cb_item, HABApp.openhab.events.ItemStateChangedEventFilter())
+        self._item.listen_event(self._cb_item, ItemStateChangedEventFilter())
         for control_item in self.__control_items:
-            control_item.listen_event(self._cb_control_item, HABApp.openhab.events.ItemCommandEventFilter())
+            control_item.listen_event(self._cb_control_item, ItemCommandEventFilter())
         for group_item in self.__group_items:
-            group_item.listen_event(self._cb_group_item, HABApp.openhab.events.ItemStateUpdatedEventFilter())
+            group_item.listen_event(self._cb_group_item, ItemStateUpdatedEventFilter())
 
     @property
     def value(self) -> float | bool:
@@ -96,7 +98,7 @@ class _StateObserverBase(HABApp.Rule, abc.ABC):
             ValueError: if value has wrong format
         """
 
-    def _cb_item(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_item(self, event: ItemStateChangedEvent) -> None:
         """Callback, which is called if a value change of the light item was detected.
 
         Args:
@@ -104,7 +106,7 @@ class _StateObserverBase(HABApp.Rule, abc.ABC):
         """
         self._check_manual(event)
 
-    def _cb_group_item(self, event: HABApp.openhab.events.ItemStateUpdatedEvent) -> None:
+    def _cb_group_item(self, event: ItemStateUpdatedEvent) -> None:
         """Callback, which is called if a value change of the light item was detected.
 
         Args:
@@ -115,7 +117,7 @@ class _StateObserverBase(HABApp.Rule, abc.ABC):
             self._check_manual(event)
 
     @abc.abstractmethod
-    def _cb_control_item(self, event: HABApp.openhab.events.ItemCommandEvent) -> None:
+    def _cb_control_item(self, event: ItemCommandEvent) -> None:
         """Callback, which is called if a command event of one of the control items was detected.
 
         Args:
@@ -123,7 +125,7 @@ class _StateObserverBase(HABApp.Rule, abc.ABC):
         """
 
     @abc.abstractmethod
-    def _check_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
+    def _check_manual(self, event: ItemStateChangedEvent | ItemCommandEvent | ItemStateUpdatedEvent) -> None:
         """Check if light was triggered by a manual action.
 
         Args:
@@ -172,7 +174,7 @@ class StateObserverSwitch(_StateObserverBase):
     Switch    I01_01_Switch    "Switch"      {channel="knx:device:bridge:T00_99_OpenHab_DimmerSwitch:switch"}
 
     # Rule init:
-    habapp_rules.actors.state_observer.StateObserverSwitch("I01_01_Switch", callback_on, callback_off)
+    StateObserverSwitch("I01_01_Switch", callback_on, callback_off)
     """
 
     def __init__(self, item_name: str, cb_on: CallbackType, cb_off: CallbackType) -> None:
@@ -188,7 +190,7 @@ class StateObserverSwitch(_StateObserverBase):
         _StateObserverBase.__init__(self, item_name)
         self._value = self._item.value
 
-    def _check_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
+    def _check_manual(self, event: ItemStateChangedEvent | ItemCommandEvent | ItemStateUpdatedEvent) -> None:
         """Check if light was triggered by a manual action.
 
         Args:
@@ -205,14 +207,14 @@ class StateObserverSwitch(_StateObserverBase):
             self._value = False
             self._trigger_callback("_cb_off", event)
 
-    def _cb_control_item(self, event: HABApp.openhab.events.ItemCommandEvent) -> None:  # not used by StateObserverSwitch
+    def _cb_control_item(self, event: ItemCommandEvent) -> None:  # not used by StateObserverSwitch
         """Callback, which is called if a command event of one of the control items was detected.
 
         Args:
             event: event, which triggered this callback
         """
 
-    def send_command(self, value: str) -> None:
+    def send_command(self, value: float | str) -> None:
         """Send brightness command to light (this should be used by rules, to not trigger a manual action).
 
         Args:
@@ -221,6 +223,9 @@ class StateObserverSwitch(_StateObserverBase):
         Raises:
             ValueError: if value has wrong format
         """
+        if isinstance(value, int | float):
+            self._value = "ON" if value > 0 else "OFF"
+
         if value == "ON":
             self._value = True
 
@@ -252,7 +257,7 @@ class StateObserverDimmer(_StateObserverBase):
     Dimmer    I01_01_Light_group        "Light Group"       {channel="knx:device:bridge:T00_99_OpenHab_DimmerObserver:light_group"}
 
     # Rule init:
-    habapp_rules.actors.state_observer.StateObserverDimmer(
+    StateObserverDimmer(
                     "I01_01_Light",
                     control_names=["I01_01_Light_ctr"],
                     group_names=["I01_01_Light_group"],
@@ -281,7 +286,7 @@ class StateObserverDimmer(_StateObserverBase):
         self._cb_off = cb_off
         self._cb_change = cb_change
 
-    def _check_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
+    def _check_manual(self, event: ItemStateChangedEvent | ItemCommandEvent | ItemStateUpdatedEvent) -> None:
         """Check if light was triggered by a manual action.
 
         Args:
@@ -308,7 +313,7 @@ class StateObserverDimmer(_StateObserverBase):
             self._value = 0
             self._trigger_callback("_cb_off", event)
 
-    def _cb_control_item(self, event: HABApp.openhab.events.ItemCommandEvent) -> None:
+    def _cb_control_item(self, event: ItemCommandEvent) -> None:
         """Callback, which is called if a command event of one of the control items was detected.
 
         Args:
@@ -361,7 +366,7 @@ class StateObserverRollerShutter(_StateObserverBase):
     Rollershutter    I_Rollershutter_group        "Rollershutter Group"       {channel="knx:device:bridge:T00_99_OpenHab_RollershutterObserver:Rollershutter_group"}
 
     # Rule init:
-    habapp_rules.actors.state_observer.StateObserverRollerShutter(
+    StateObserverRollerShutter(
                 "I_Rollershutter",
                 control_names=["I_Rollershutter_ctr"],
                 group_names=["I_Rollershutter_group"],
@@ -384,7 +389,7 @@ class StateObserverRollerShutter(_StateObserverBase):
 
         self._cb_manual = cb_manual
 
-    def _check_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
+    def _check_manual(self, event: ItemStateChangedEvent | ItemCommandEvent | ItemStateUpdatedEvent) -> None:
         """Check if light was triggered by a manual action.
 
         Args:
@@ -397,7 +402,7 @@ class StateObserverRollerShutter(_StateObserverBase):
             self._value = event.value
             self._trigger_callback("_cb_manual", event)
 
-    def _cb_control_item(self, event: HABApp.openhab.events.ItemCommandEvent) -> None:
+    def _cb_control_item(self, event: ItemCommandEvent) -> None:
         """Callback, which is called if a command event of one of the control items was detected.
 
         Args:
@@ -411,7 +416,7 @@ class StateObserverRollerShutter(_StateObserverBase):
             self._value = 0
             self._trigger_callback("_cb_manual", event)
 
-    def send_command(self, value: float) -> None:
+    def send_command(self, value: float | str) -> None:
         """Send brightness command to light (this should be used by rules, to not trigger a manual action).
 
         Args:
@@ -442,7 +447,7 @@ class StateObserverNumber(_StateObserverBase):
     Number    I01_01_Number    "Switch"      {channel="knx:device:bridge:T00_99_OpenHab_DimmerNumber:number"}
 
     # Rule init:
-    habapp_rules.actors.state_observer.StateObserverNumber("I01_01_Number", callback_value_changed)
+    StateObserverNumber("I01_01_Number", callback_value_changed)
     """
 
     def __init__(self, item_name: str, cb_manual: CallbackType, value_tolerance: float = 0) -> None:
@@ -456,7 +461,7 @@ class StateObserverNumber(_StateObserverBase):
         self._cb_manual = cb_manual
         _StateObserverBase.__init__(self, item_name, value_tolerance=value_tolerance)
 
-    def _check_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
+    def _check_manual(self, event: ItemStateChangedEvent | ItemCommandEvent | ItemStateUpdatedEvent) -> None:
         """Check if light was triggered by a manual action.
 
         Args:
@@ -473,14 +478,14 @@ class StateObserverNumber(_StateObserverBase):
             self._value = event.value
             self._trigger_callback("_cb_manual", event)
 
-    def _cb_control_item(self, event: HABApp.openhab.events.ItemCommandEvent) -> None:  # not used by StateObserverNumber
+    def _cb_control_item(self, event: ItemCommandEvent) -> None:  # not used by StateObserverNumber
         """Callback, which is called if a command event of one of the control items was detected.
 
         Args:
             event: event, which triggered this callback
         """
 
-    def send_command(self, value: float) -> None:
+    def send_command(self, value: float | str) -> None:
         """Send brightness command to light (this should be used by rules, to not trigger a manual action).
 
         Args:
@@ -510,7 +515,7 @@ class StateObserverSlat(StateObserverNumber):
         self.__timer_manual: threading.Timer | None = None
         StateObserverNumber.__init__(self, item_name, cb_manual, value_tolerance)
 
-    def _check_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
+    def _check_manual(self, event: ItemStateChangedEvent | ItemCommandEvent | ItemStateUpdatedEvent) -> None:
         """Check if light was triggered by a manual action.
 
         Args:
@@ -526,7 +531,7 @@ class StateObserverSlat(StateObserverNumber):
         else:
             StateObserverNumber._check_manual(self, event)  # noqa: SLF001
 
-    def __cb_check_manual_delayed(self, event: HABApp.openhab.events.ItemStateChangedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:
+    def __cb_check_manual_delayed(self, event: ItemStateChangedEvent | ItemCommandEvent) -> None:
         """Trigger delayed manual check.
 
         Args:

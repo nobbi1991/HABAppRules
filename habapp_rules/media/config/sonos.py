@@ -1,9 +1,9 @@
 from typing import Self
 
-import HABApp.openhab.items.thing_item
 import pydantic
+from HABApp.openhab.items import DimmerItem, NumberItem, PlayerItem, StringItem, SwitchItem, Thing
 
-import habapp_rules.core.pydantic_base
+from habapp_rules.core.pydantic_base import ConfigBase, ItemBase, ParameterBase
 
 
 class _KnownContentBase(pydantic.BaseModel):
@@ -26,23 +26,33 @@ class ContentPlayUri(_KnownContentBase):
     uri: str = pydantic.Field(..., description="uri for play uri content")
 
 
-class SonosItems(habapp_rules.core.pydantic_base.ItemBase):
+class SonosItems(ItemBase):
     """Items for sonos."""
 
-    sonos_thing: HABApp.openhab.items.Thing = pydantic.Field(..., description="sonos thing")
-    state: HABApp.openhab.items.StringItem = pydantic.Field(..., description="sonos state")
-    power_switch: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="sonos power switch")
-    sonos_player: HABApp.openhab.items.PlayerItem = pydantic.Field(..., description="sonos controller")
-    current_track_uri: HABApp.openhab.items.StringItem = pydantic.Field(..., description="sonos current track uri item")
-    sonos_volume: HABApp.openhab.items.DimmerItem | None = pydantic.Field(None, description="sonos volume")
-    play_uri: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="sonos play uri item")
-    tune_in_station_id: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="sonos tune in station id item")
-    favorite_id: HABApp.openhab.items.NumberItem | None = pydantic.Field(None, description="favorite id item")
-    display_string: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="display string item")
-    presence_state: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="presence state item")
+    sonos_thing: Thing = pydantic.Field(..., description="sonos thing")
+    state: StringItem = pydantic.Field(..., description="sonos state")
+    power_switch: SwitchItem | None = pydantic.Field(None, description="sonos power switch")
+    sonos_player: PlayerItem = pydantic.Field(..., description="sonos controller")
+    current_track_uri: StringItem = pydantic.Field(..., description="sonos current track uri item")
+    sonos_volume: DimmerItem | None = pydantic.Field(None, description="sonos volume")
+    play_uri: StringItem | None = pydantic.Field(None, description="sonos play uri item")
+    tune_in_station_id: StringItem | None = pydantic.Field(None, description="sonos tune in station id item")
+    favorite_id: NumberItem | None = pydantic.Field(None, description="favorite id item")
+    display_string: StringItem | None = pydantic.Field(None, description="display string item")
+    presence_state: StringItem | None = pydantic.Field(None, description="presence state item")
+
+    @property
+    def favorite_id_as_int(self) -> int | None:
+        """Get favorite id as int.
+
+        Returns:
+            int | None: favorite id as int or None if not set
+        """
+        config_value = getattr(self.favorite_id, "value", None)
+        return int(config_value) if config_value is not None else None
 
 
-class SonosParameter(habapp_rules.core.pydantic_base.ParameterBase):
+class SonosParameter(ParameterBase):
     """Parameter for sonos."""
 
     known_content: list[ContentTuneIn | ContentPlayUri] = pydantic.Field(default_factory=list, description="known content")
@@ -108,7 +118,7 @@ class SonosParameter(habapp_rules.core.pydantic_base.ParameterBase):
         return next((content for content in self.known_content if content.favorite_id == favorite_id), None)
 
 
-class SonosConfig(habapp_rules.core.pydantic_base.ConfigBase):
+class SonosConfig(ConfigBase):
     """Config for sonos."""
 
     items: SonosItems = pydantic.Field(..., description="sonos items")

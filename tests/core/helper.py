@@ -6,6 +6,7 @@ import unittest.mock
 
 import HABApp
 import whenever
+from HABApp.openhab.items import NumberItem, SwitchItem
 
 import habapp_rules.core.exceptions
 import habapp_rules.core.helper
@@ -20,34 +21,35 @@ class TestHelperFunctions(tests.helper.test_case_base.TestCaseBase):
         """Test create additional item."""
         # check if item is created if NOT existing
         self.item_exists_mock.return_value = False
-        TestCase = collections.namedtuple("TestCase", "item_type, name, label_input, label_call, groups")
+        TestCase = collections.namedtuple("TestCase", "item_class, item_type_name, name, label_input, label_call, groups")
 
         test_cases = [
-            TestCase("Switch", "Item_name", "Some label", "Some label", None),
-            TestCase("Switch", "Item_name", None, "Item name", None),
-            TestCase("String", "Item_name", "Some label", "Some label", None),
-            TestCase("String", "Item_name", "Some label", "Some label", None),
-            TestCase("String", "Item_name", None, "Item name", None),
-            TestCase("String", "Item_name", None, "Item name", ["test_group"]),
+            TestCase(SwitchItem, "Switch", "Item_name", "Some label", "Some label", None),
+            TestCase(SwitchItem, "Switch", "Item_name", None, "Item name", None),
+            TestCase(SwitchItem, "Switch", "Item_name", "Some label", "Some label", None),
+            TestCase(SwitchItem, "Switch", "Item_name", "Some label", "Some label", None),
+            TestCase(SwitchItem, "Switch", "Item_name", None, "Item name", None),
+            TestCase(SwitchItem, "Switch", "Item_name", None, "Item name", ["test_group"]),
+            TestCase(NumberItem, "Number", "Item_name", "Some label", "Some label", None),
         ]
 
-        with unittest.mock.patch("HABApp.openhab.interface_sync.create_item", spec=HABApp.openhab.interface_sync.create_item) as create_mock, unittest.mock.patch("HABApp.openhab.items.OpenhabItem.get_item"):
+        with unittest.mock.patch("habapp_rules.core.helper.create_item", spec=HABApp.openhab.interface_sync.create_item) as create_mock, unittest.mock.patch("HABApp.openhab.items.OpenhabItem.get_item"):
             for test_case in test_cases:
                 create_mock.reset_mock()
-                habapp_rules.core.helper.create_additional_item(test_case.name, test_case.item_type, test_case.label_input, test_case.groups)
-                create_mock.assert_called_once_with(item_type=test_case.item_type, name=f"H_{test_case.name}", label=test_case.label_call, groups=test_case.groups)
+                habapp_rules.core.helper.create_additional_item(test_case.name, test_case.item_class, test_case.label_input, test_case.groups)
+                create_mock.assert_called_once_with(item_type=test_case.item_type_name, name=f"H_{test_case.name}", label=test_case.label_call, groups=test_case.groups)
 
         # check if item is NOT created if existing
         self.item_exists_mock.return_value = True
-        with unittest.mock.patch("HABApp.openhab.interface_sync.create_item", spec=HABApp.openhab.interface_sync.create_item) as create_mock, unittest.mock.patch("HABApp.openhab.items.OpenhabItem.get_item"):
-            habapp_rules.core.helper.create_additional_item("Name_of_Item", "Switch")
+        with unittest.mock.patch("habapp_rules.core.helper.create_item", spec=HABApp.openhab.interface_sync.create_item) as create_mock, unittest.mock.patch("HABApp.openhab.items.OpenhabItem.get_item"):
+            habapp_rules.core.helper.create_additional_item("Name_of_Item", SwitchItem)
             create_mock.assert_not_called()
 
     def test_test_create_additional_item_exception(self) -> None:
         """Test exceptions of _create_additional_item."""
         self.item_exists_mock.return_value = False
-        with unittest.mock.patch("HABApp.openhab.interface_sync.create_item", spec=HABApp.openhab.interface_sync.create_item, return_value=False), self.assertRaises(habapp_rules.core.exceptions.HabAppRulesError):
-            habapp_rules.core.helper.create_additional_item("Name_of_Item", "Switch")
+        with unittest.mock.patch("habapp_rules.core.helper.create_item", spec=HABApp.openhab.interface_sync.create_item, return_value=False), self.assertRaises(habapp_rules.core.exceptions.HabAppRulesError):
+            habapp_rules.core.helper.create_additional_item("Name_of_Item", SwitchItem)
 
     def test_send_if_different(self) -> None:
         """Test send_if_different."""

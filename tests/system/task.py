@@ -4,7 +4,7 @@ import collections
 import datetime
 import unittest.mock
 
-import HABApp.openhab.items
+from HABApp.openhab.items import DatetimeItem, NumberItem, SwitchItem
 
 import habapp_rules.system.config.task
 import habapp_rules.system.task
@@ -19,8 +19,8 @@ class TestRecurringTask(tests.helper.test_case_base.TestCaseBase):
         """Setup test case."""
         tests.helper.test_case_base.TestCaseBase.setUp(self)
 
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Task", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DatetimeItem, "Unittest_Task_last", None)
+        tests.helper.oh_item.add_mock_item(SwitchItem, "Unittest_Task", None)
+        tests.helper.oh_item.add_mock_item(DatetimeItem, "Unittest_Task_last", None)
 
         config_max = habapp_rules.system.config.task.RecurringTaskConfig(
             items=habapp_rules.system.config.task.RecurringTaskItems(task_active="Unittest_Task", last_done="Unittest_Task_last"), parameter=habapp_rules.system.config.task.RecurringTaskParameter(recurrence_time=datetime.timedelta(hours=12))
@@ -41,19 +41,18 @@ class TestRecurringTask(tests.helper.test_case_base.TestCaseBase):
 
     def test_init_with_min_config(self) -> None:
         """Test init with minimal config."""
-        config_min = habapp_rules.system.config.task.RecurringTaskConfig(
-            items=habapp_rules.system.config.task.RecurringTaskItems(
-                task_active="Unittest_Task",
-            ),
-            parameter=habapp_rules.system.config.task.RecurringTaskParameter(recurrence_time=datetime.timedelta(hours=12)),
-        )
+        tests.helper.oh_item.add_mock_item(DatetimeItem, "H_Unittest_Task_last_done", None)
 
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DatetimeItem, "H_Unittest_Task_last_done", None)
-
-        with unittest.mock.patch("habapp_rules.core.helper.create_additional_item") as create_item_mock:
+        with unittest.mock.patch("habapp_rules.system.config.task.create_additional_item", return_value=DatetimeItem("H_Unittest_Task_last_done")) as create_item_mock:
+            config_min = habapp_rules.system.config.task.RecurringTaskConfig(
+                items=habapp_rules.system.config.task.RecurringTaskItems(
+                    task_active="Unittest_Task",
+                ),
+                parameter=habapp_rules.system.config.task.RecurringTaskParameter(recurrence_time=datetime.timedelta(hours=12)),
+            )
             habapp_rules.system.task.RecurringTask(config_min)
 
-        create_item_mock.assert_called_once_with("H_Unittest_Task_last_done", "DateTime")
+        create_item_mock.assert_called_once_with("H_Unittest_Task_last_done", DatetimeItem)
 
     def test__get_check_cycle(self) -> None:
         """Test _get_check_cycle()."""
@@ -107,9 +106,9 @@ class TestCounterTask(tests.helper.test_case_base.TestCaseBase):
         """Setup test case."""
         tests.helper.test_case_base.TestCaseBase.setUp(self)
 
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Counter_Task", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Observed", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Observed_last_reset", None)
+        tests.helper.oh_item.add_mock_item(SwitchItem, "Unittest_Counter_Task", None)
+        tests.helper.oh_item.add_mock_item(NumberItem, "Unittest_Observed", None)
+        tests.helper.oh_item.add_mock_item(NumberItem, "Unittest_Observed_last_reset", None)
 
         config_max = habapp_rules.system.config.task.CounterTaskConfig(
             items=habapp_rules.system.config.task.CounterTaskItems(task_active="Unittest_Counter_Task", observed="Unittest_Observed", last_reset="Unittest_Observed_last_reset"),
@@ -120,16 +119,15 @@ class TestCounterTask(tests.helper.test_case_base.TestCaseBase):
 
     def test_init_with_min_config(self) -> None:
         """Test init with minimal config."""
-        config_min = habapp_rules.system.config.task.CounterTaskConfig(
-            items=habapp_rules.system.config.task.CounterTaskItems(task_active="Unittest_Counter_Task", observed="Unittest_Observed"), parameter=habapp_rules.system.config.task.CounterTaskParameter(max_value=42)
-        )
+        tests.helper.oh_item.add_mock_item(NumberItem, "H_Unittest_Observed_last_reset", None)
 
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "H_Unittest_Observed_last_reset", None)
-
-        with unittest.mock.patch("habapp_rules.core.helper.create_additional_item") as create_item_mock:
+        with unittest.mock.patch("habapp_rules.system.config.task.create_additional_item", return_value=NumberItem("H_Unittest_Observed_last_reset")) as create_item_mock:
+            config_min = habapp_rules.system.config.task.CounterTaskConfig(
+                items=habapp_rules.system.config.task.CounterTaskItems(task_active="Unittest_Counter_Task", observed="Unittest_Observed"), parameter=habapp_rules.system.config.task.CounterTaskParameter(max_value=42)
+            )
             habapp_rules.system.task.CounterTask(config_min)
 
-        create_item_mock.assert_called_once_with("H_Unittest_Observed_last_reset", "Number")
+        create_item_mock.assert_called_once_with("H_Unittest_Observed_last_reset", NumberItem)
 
     def test_overall_behaviour(self) -> None:
         """Test overall behaviour."""

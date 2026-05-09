@@ -6,12 +6,13 @@ import logging
 import re
 import typing
 
-import HABApp
+from HABApp.openhab.events import ItemCommandEvent, ItemStateChangedEvent, ItemStateUpdatedEvent
+from HABApp.openhab.events.event_filters import ItemStateChangedEventFilter
+from HABApp.openhab.items import DatetimeItem, StringItem
 
-import habapp_rules.actors.state_observer
-import habapp_rules.core.logger
-import habapp_rules.core.state_machine_rule
-import habapp_rules.sensors.config.dwd
+from habapp_rules.actors.state_observer import StateObserverSwitch
+from habapp_rules.core.state_machine_rule import HierarchicalStateMachineWithTimeout, StateMachineRule
+from habapp_rules.sensors.config.dwd import WindAlarmConfig
 
 LOGGER = logging.getLogger(__name__)
 
@@ -20,11 +21,11 @@ LOGGER = logging.getLogger(__name__)
 class DwdItems:
     """Dataclass for DWD items needed by DwdWindAlarm."""
 
-    description: HABApp.openhab.items.StringItem
-    warn_type: HABApp.openhab.items.StringItem
-    severity: HABApp.openhab.items.StringItem
-    start_time: HABApp.openhab.items.DatetimeItem
-    end_time: HABApp.openhab.items.DatetimeItem
+    description: StringItem
+    warn_type: StringItem
+    severity: StringItem
+    start_time: DatetimeItem
+    end_time: DatetimeItem
 
     SEVERITY_MAPPING: typing.ClassVar = {"NULL": 0, "Minor": 1, "Moderate": 2, "Severe": 3, "Extreme": 4}
 
@@ -38,11 +39,11 @@ class DwdItems:
         Returns:
             Dataclass with all needed DWD items
         """
-        description = HABApp.openhab.items.StringItem.get_item(f"{prefix}_description")
-        warn_type = HABApp.openhab.items.StringItem.get_item(f"{prefix}_type")
-        severity = HABApp.openhab.items.StringItem.get_item(f"{prefix}_severity")
-        start_time = HABApp.openhab.items.DatetimeItem.get_item(f"{prefix}_start_time")
-        end_time = HABApp.openhab.items.DatetimeItem.get_item(f"{prefix}_end_time")
+        description = StringItem.get_item(f"{prefix}_description")
+        warn_type = StringItem.get_item(f"{prefix}_type")
+        severity = StringItem.get_item(f"{prefix}_severity")
+        start_time = DatetimeItem.get_item(f"{prefix}_start_time")
+        end_time = DatetimeItem.get_item(f"{prefix}_end_time")
 
         return cls(description, warn_type, severity, start_time, end_time)
 
@@ -56,7 +57,7 @@ class DwdItems:
         return self.SEVERITY_MAPPING.get(self.severity.value, 0)
 
 
-class DwdWindAlarm(habapp_rules.core.state_machine_rule.StateMachineRule):
+class DwdWindAlarm(StateMachineRule):
     """Rule for setting wind alarm by DWD warnings.
 
     # Items:
@@ -77,19 +78,20 @@ class DwdWindAlarm(habapp_rules.core.state_machine_rule.StateMachineRule):
     String      I26_99_warning_2_type           "Type"                  {channel="dwdunwetter:dwdwarnings:ingolstadt:event2"}
 
     # Config
-    config = habapp_rules.sensors.config.dwd.WindAlarmConfig(
-            items=habapp_rules.sensors.config.dwd.WindAlarmItems(
+    config = DwdConfig(
+            items=DwdItems(
                     wind_alarm="I26_99_wind_alarm",
                     manual="I26_99_wind_alarm_manual",
                     state="I26_99_wind_alarm_state"
             ),
-            parameter=habapp_rules.sensors.config.dwd.WindAlarmParameter(
-
+            parameter=DwdParameter(
+                    warn_types=["Blizzard", "Gale warning"],
+                    severity_threshold=2,
             )
     )
 
     # Rule init:
-    habapp_rules.sensors.dwd.DwdWindAlarm(config)
+    DwdWindAlarm(config)
     """
 
     states: typing.ClassVar = [{"name": "Manual"}, {"name": "Hand", "timeout": 20 * 3600, "on_timeout": "_auto_hand_timeout"}, {"name": "Auto", "initial": "Init", "children": [{"name": "Init"}, {"name": "On"}, {"name": "Off"}]}]
@@ -102,7 +104,7 @@ class DwdWindAlarm(habapp_rules.core.state_machine_rule.StateMachineRule):
         {"trigger": "wind_alarm_end", "source": "Auto_On", "dest": "Auto_Off"},
     ]
 
-    def __init__(self, config: habapp_rules.sensors.config.dwd.WindAlarmConfig) -> None:
+    def __init__(self, config: WindAlarmConfig) -> None:
         """Init of DWD wind alarm object.
 
         Args:
@@ -112,28 +114,26 @@ class DwdWindAlarm(habapp_rules.core.state_machine_rule.StateMachineRule):
             TypeError: if type of hand_timeout is not supported
         """
         self._config = config
-        habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, self._config.items.state)
-        self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, self._config.items.wind_alarm.name)
+        StateMachineRule.__init__(self, self._config.items.state, self._config.items.wind_alarm.name)
 
         self._items_dwd = [DwdItems.from_prefix(f"{self._config.parameter.dwd_item_prefix}{idx + 1}") for idx in range(self._config.parameter.number_dwd_objects)]
 
         # init state machine
-        self._previous_state = None
-        self.state_machine = habapp_rules.core.state_machine_rule.HierarchicalStateMachineWithTimeout(
-            model=self, states=self.states, transitions=self.trans, ignore_invalid_triggers=True, after_state_change="_update_openhab_state"
-        )  # this function is missing!
+        self._previous_state: str | None = None
+        self.state_machine = HierarchicalStateMachineWithTimeout(model=self, states=self.states, transitions=self.trans, ignore_invalid_triggers=True, after_state_change="_update_openhab_state", initial=self._get_initial_state())
 
-        self._wind_alarm_observer = habapp_rules.actors.state_observer.StateObserverSwitch(self._config.items.wind_alarm.name, self._cb_hand, self._cb_hand)
+        self._wind_alarm_observer = StateObserverSwitch(self._config.items.wind_alarm.name, self._cb_hand, self._cb_hand)
 
         self._set_timeouts()
-        self._set_initial_state()
 
         # callbacks
-        self._config.items.manual.listen_event(self._cb_manual, HABApp.openhab.events.ItemStateChangedEventFilter())
+        self._config.items.manual.listen_event(self._cb_manual, ItemStateChangedEventFilter())
         if self._config.items.hand_timeout is not None:
-            self._config.items.hand_timeout.listen_event(self._cb_hand_timeout, HABApp.openhab.events.ItemStateChangedEventFilter())
+            self._config.items.hand_timeout.listen_event(self._cb_hand_timeout, ItemStateChangedEventFilter())
 
         self.run.at(self.run.trigger.interval(None, 300), self._cb_cyclic_check)
+
+        self._post_init()
 
     def _get_initial_state(self, default_value: str = "") -> str:  # noqa: ARG002
         """Get initial state of state machine.
@@ -150,22 +150,9 @@ class DwdWindAlarm(habapp_rules.core.state_machine_rule.StateMachineRule):
             return "Auto_On"
         return "Auto_Off"
 
-    def _get_hand_timeout(self) -> int:
-        """Get value of hand timeout.
-
-        Returns:
-            hand timeout in seconds (0 is no timeout)
-        """
-        if self._config.items.hand_timeout is not None:
-            if (item_value := self._config.items.hand_timeout.value) is None:
-                self._instance_logger.warning("The value of the hand timeout item is None. Will use 24 hours as default!")
-                return 24 * 3600
-            return item_value
-        return self._config.parameter.hand_timeout
-
     def _set_timeouts(self) -> None:
         """Set timeouts."""
-        self.state_machine.get_state("Hand").timeout = self._get_hand_timeout()
+        self._set_state_timeout("Hand", self._config.hand_timeout)
 
     def _update_openhab_state(self) -> None:
         """Update OpenHAB state item and other states.
@@ -185,28 +172,24 @@ class DwdWindAlarm(habapp_rules.core.state_machine_rule.StateMachineRule):
 
     def on_enter_Auto_Init(self) -> None:  # noqa: N802
         """Is called on entering of init state."""
-        self._set_initial_state()
+        self._set_state(self._get_initial_state())
 
-    def _cb_hand(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:  # noqa: ARG002
-        """Callback, which is triggered by the state observer if a manual change was detected.
+    def _cb_hand(self, _: ItemStateChangedEvent | ItemCommandEvent | ItemStateUpdatedEvent) -> None:
+        """Callback, which is triggered by the state observer if a manual change was detected."""
+        self.trigger("hand")
 
-        Args:
-            event: original trigger event
-        """
-        self.hand()
-
-    def _cb_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_manual(self, event: ItemStateChangedEvent) -> None:
         """Callback, which is triggered if the manual switch has a state change event.
 
         Args:
             event: trigger event
         """
         if event.value == "ON":
-            self.manual_on()
+            self.trigger("manual_on")
         else:
-            self.manual_off()
+            self.trigger("manual_off")
 
-    def _cb_hand_timeout(self, _: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_hand_timeout(self, _: ItemStateChangedEvent) -> None:
         """Callback which is triggered if the timeout item changed."""
         self._set_timeouts()
 
@@ -232,7 +215,7 @@ class DwdWindAlarm(habapp_rules.core.state_machine_rule.StateMachineRule):
             return
 
         if self._wind_alarm_active() and self.state != "Auto_On":
-            self.wind_alarm_start()
+            self.trigger("wind_alarm_start")
 
         elif not self._wind_alarm_active() and self.state != "Auto_Off":
-            self.wind_alarm_end()
+            self.trigger("wind_alarm_end")

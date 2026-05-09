@@ -1,27 +1,27 @@
 """Config models for humidity rules."""
 
-import HABApp
 import pydantic
+from HABApp.openhab.items import NumberItem, StringItem, SwitchItem
 
-import habapp_rules.core.pydantic_base
+from habapp_rules.core.pydantic_base import ConfigBase, ItemBase, ParameterBase
 
 
-class HumiditySwitchItems(habapp_rules.core.pydantic_base.ItemBase):
+class HumiditySwitchItems(ItemBase):
     """Items for humidity switch."""
 
-    humidity: HABApp.openhab.items.NumberItem = pydantic.Field(..., description="item which holds the measured humidity")
-    output: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="item which will be switched on if high humidity is detected")
-    state: HABApp.openhab.items.StringItem = pydantic.Field(..., description="item to store the state")
+    humidity: NumberItem = pydantic.Field(..., description="item which holds the measured humidity")
+    output: SwitchItem = pydantic.Field(..., description="item which will be switched on if high humidity is detected")
+    state: StringItem = pydantic.Field(..., description="item to store the state")
 
 
-class HumiditySwitchParameter(habapp_rules.core.pydantic_base.ParameterBase):
+class HumiditySwitchParameter(ParameterBase):
     """Parameter for humidity switch."""
 
-    absolute_threshold: float = pydantic.Field(65, description="threshold for high humidity")
-    extended_time: int = pydantic.Field(10 * 60, description="extended time in seconds, if humidity is below threshold")
+    absolute_threshold: float = pydantic.Field(default=65, description="threshold for high humidity")
+    extended_time: int = pydantic.Field(default=10 * 60, description="extended time in seconds, if humidity is below threshold")
 
 
-class HumiditySwitchConfig(habapp_rules.core.pydantic_base.ConfigBase):
+class HumiditySwitchConfig(ConfigBase):
     """Config for humidity switch."""
 
     items: HumiditySwitchItems = pydantic.Field(..., description="items for humidity switch")

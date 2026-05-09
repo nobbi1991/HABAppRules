@@ -12,7 +12,6 @@ class TestHysteresis(unittest.TestCase):
     def setUp(self) -> None:
         """Setup for all test cases."""
         self.hysteresis_switch = habapp_rules.common.hysteresis.HysteresisSwitch(42, 2)
-        self.hysteresis_switch_on_off = habapp_rules.common.hysteresis.HysteresisSwitch(42, 2, False)
 
     def test_get_output(self) -> None:
         """Test get_output."""
@@ -65,15 +64,11 @@ class TestHysteresis(unittest.TestCase):
             self.hysteresis_switch._threshold = test_case.threshold
             self.hysteresis_switch._hysteresis = test_case.hysteresis
             self.hysteresis_switch._on_off_state = test_case.state
-            self.hysteresis_switch_on_off._threshold = test_case.threshold
-            self.hysteresis_switch_on_off._hysteresis = test_case.hysteresis
-            self.hysteresis_switch_on_off._on_off_state = test_case.state
 
             self.assertEqual(test_case.expected_result, self.hysteresis_switch.get_output(test_case.value))
-            self.assertEqual("ON" if test_case.expected_result else "OFF", self.hysteresis_switch_on_off.get_output(test_case.value))
+            self.assertEqual("ON" if test_case.expected_result else "OFF", self.hysteresis_switch.get_output_as_string(test_case.value))
 
             self.assertEqual(test_case.expected_result, self.hysteresis_switch._on_off_state)
-            self.assertEqual(test_case.expected_result, self.hysteresis_switch_on_off._on_off_state)
 
     def test_get_output_without_argument(self) -> None:
         """Test get_output without value argument."""
@@ -89,10 +84,5 @@ class TestHysteresis(unittest.TestCase):
     def test_set_threshold(self) -> None:
         """Test set_threshold."""
         self.assertEqual(42, self.hysteresis_switch._threshold)
-        self.assertEqual(42, self.hysteresis_switch_on_off._threshold)
-
         self.hysteresis_switch.set_threshold_on(83)
-        self.hysteresis_switch_on_off.set_threshold_on(83)
-
         self.assertEqual(83, self.hysteresis_switch._threshold)
-        self.assertEqual(83, self.hysteresis_switch_on_off._threshold)

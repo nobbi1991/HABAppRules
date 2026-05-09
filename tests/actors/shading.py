@@ -3,23 +3,21 @@
 import collections
 import copy
 import datetime
-import pathlib
 import sys
 import time
 import unittest
 import unittest.mock
 
 import HABApp.rule.rule
-import pydantic_core
 
 import habapp_rules.actors.config.shading
 import habapp_rules.actors.shading
 import habapp_rules.core.exceptions
 import habapp_rules.system
-import tests.helper.graph_machines
 import tests.helper.oh_item
 import tests.helper.test_case_base
 from habapp_rules.system import PresenceState
+from tests.helper.graph_machines import create_state_graphs
 
 
 class TestShadingBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
@@ -73,7 +71,7 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
         """Test __init__."""
         expected_states = [
             {"name": "WindAlarm"},
-            {"name": "Manual"},
+            {"name": "Manual", "timeout": 99, "on_timeout": "_manual_off"},
             {"name": "Hand", "on_timeout": "_auto_hand_timeout", "timeout": 72000},
             {
                 "name": "Auto",
@@ -144,7 +142,7 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
                 tests.helper.oh_item.add_mock_item(test_case.item_type, "Unittest_Temp", None)
 
                 if test_case.raises_exc:
-                    with self.assertRaises(pydantic_core.ValidationError):
+                    with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
                         habapp_rules.actors.config.shading.ShadingConfig(
                             items=habapp_rules.actors.config.shading.ShadingItems(shading_position="Unittest_Temp", manual="Unittest_Manual_min", state="H_Unittest_Shading_min_state"), parameter=habapp_rules.actors.config.shading.ShadingParameter()
                         )
@@ -158,17 +156,7 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
     def test_create_graph(self) -> None:  # pragma: no cover
         """Create state machine graph for documentation."""
-        picture_dir = pathlib.Path(__file__).parent / "_state_charts" / "Shading"
-        if not picture_dir.is_dir():
-            picture_dir.mkdir(parents=True)
-
-        jal_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self.shading_min.states, transitions=self.shading_min.trans, initial=self.shading_min.state, show_conditions=False)
-
-        jal_graph.get_graph().draw(picture_dir / "Shading.png", format="png", prog="dot")
-
-        for state_name in [state for state in self._get_state_names(self.shading_min.states) if "init" not in state.lower()]:
-            jal_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self.shading_min.states, transitions=self.shading_min.trans, initial=state_name, show_conditions=True)
-            jal_graph.get_graph(force_new=True, show_roi=True).draw(picture_dir / f"Shading_{state_name}.png", format="png", prog="dot")
+        create_state_graphs(self.shading_min, "Shading")
 
     @staticmethod
     def get_initial_state_test_cases() -> list[collections.namedtuple]:
@@ -333,22 +321,22 @@ class TestShadingBase(tests.helper.test_case_base.TestCaseBaseStateMachine):
             TestCase(habapp_rules.system.SleepState.LOCKED, False, False),
         ]
 
-        with unittest.mock.patch.object(self.shading_max, "_sleep_started") as started_mock, unittest.mock.patch.object(self.shading_max, "_sleep_stopped") as stopped_mock:
+        with unittest.mock.patch.object(self.shading_max, "trigger") as trigger_mock:
             for test_case in test_cases:
-                started_mock.reset_mock()
-                stopped_mock.reset_mock()
+                trigger_mock.reset_mock()
 
                 tests.helper.oh_item.item_state_change_event("Unittest_Sleep_state", test_case.sleep_state.value)
 
+                trigger_calls = []
                 if test_case.started_triggered:
-                    started_mock.assert_called_once()
-                else:
-                    started_mock.assert_not_called()
-
+                    trigger_calls.append(unittest.mock.call("_sleep_started"))
                 if test_case.stopped_triggered:
-                    stopped_mock.assert_called_once()
+                    trigger_calls.append(unittest.mock.call("_sleep_stopped"))
+
+                if trigger_calls:
+                    trigger_mock.assert_has_calls(trigger_calls)
                 else:
-                    stopped_mock.assert_not_called()
+                    trigger_mock.assert_not_called()
 
     def test_cb_night(self) -> None:
         """Test _cb_night."""

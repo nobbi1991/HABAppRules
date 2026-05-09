@@ -34,7 +34,7 @@ class TestSetDay(tests.helper.test_case_base.TestCaseBase):
         with unittest.mock.patch("HABApp.rule.scheduler.job_builder.HABAppJobBuilder.soon") as run_soon_mock:
             rule = habapp_rules.sensors.astro.SetDay(config)
 
-        run_soon_mock.assert_called_once_with(rule._set_night)
+        run_soon_mock.assert_called_once_with(rule._set_night, None)
         self.assertEqual(0, rule._elevation_threshold)
 
         # custom threshold
@@ -42,7 +42,7 @@ class TestSetDay(tests.helper.test_case_base.TestCaseBase):
         with unittest.mock.patch("HABApp.rule.scheduler.job_builder.HABAppJobBuilder.soon") as run_soon_mock:
             rule = habapp_rules.sensors.astro.SetDay(config)
 
-        run_soon_mock.assert_called_once_with(rule._set_night)
+        run_soon_mock.assert_called_once_with(rule._set_night, None)
         self.assertEqual(-2, rule._elevation_threshold)
 
     def test_init_with_elevation(self) -> None:
@@ -98,7 +98,7 @@ class TestSetNight(tests.helper.test_case_base.TestCaseBase):
         with unittest.mock.patch("HABApp.rule.scheduler.job_builder.HABAppJobBuilder.soon") as run_soon_mock:
             rule = habapp_rules.sensors.astro.SetNight(config)
 
-        run_soon_mock.assert_called_once_with(rule._set_night)
+        run_soon_mock.assert_called_once_with(rule._set_night, None)
         self.assertEqual(-8, rule._elevation_threshold)
 
         # custom threshold
@@ -106,7 +106,7 @@ class TestSetNight(tests.helper.test_case_base.TestCaseBase):
         with unittest.mock.patch("HABApp.rule.scheduler.job_builder.HABAppJobBuilder.soon") as run_soon_mock:
             rule = habapp_rules.sensors.astro.SetNight(config)
 
-        run_soon_mock.assert_called_once_with(rule._set_night)
+        run_soon_mock.assert_called_once_with(rule._set_night, None)
         self.assertEqual(-10, rule._elevation_threshold)
 
     def test_init_with_elevation(self) -> None:

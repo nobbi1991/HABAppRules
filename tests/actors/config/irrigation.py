@@ -1,11 +1,11 @@
 """Test config models of irrigation rules."""
 
 import HABApp
-import pydantic
 
 import habapp_rules.actors.config.irrigation
 import tests.helper.oh_item
 import tests.helper.test_case_base
+from habapp_rules.core.exceptions import HabAppRulesConfigurationError
 
 
 class TestIrrigationConfig(tests.helper.test_case_base.TestCaseBase):
@@ -21,13 +21,13 @@ class TestIrrigationConfig(tests.helper.test_case_base.TestCaseBase):
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_repetitions", None)
         tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_brake", None)
 
-        with self.assertRaises(pydantic.ValidationError):
+        with self.assertRaises(HabAppRulesConfigurationError):
             # config without repetitions
             habapp_rules.actors.config.irrigation.IrrigationConfig(
                 items=habapp_rules.actors.config.irrigation.IrrigationItems(valve="Unittest_valve", active="Unittest_active", hour="Unittest_hour", minute="Unittest_minute", duration="Unittest_duration", brake="Unittest_brake")
             )
 
-        with self.assertRaises(pydantic.ValidationError):
+        with self.assertRaises(HabAppRulesConfigurationError):
             # config without brake
             habapp_rules.actors.config.irrigation.IrrigationConfig(
                 items=habapp_rules.actors.config.irrigation.IrrigationItems(valve="Unittest_valve", active="Unittest_active", hour="Unittest_hour", minute="Unittest_minute", duration="Unittest_duration", repetitions="Unittest_repetitions")

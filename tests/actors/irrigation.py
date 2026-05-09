@@ -156,6 +156,8 @@ class TestIrrigation(tests.helper.test_case_base.TestCaseBase):
 
     def test_cb_set_valve_state(self) -> None:
         """Test _cb_set_valve_state."""
+        tests.helper.oh_item.set_state("Unittest_active", "ON")
+
         # called from cyclic call
         with unittest.mock.patch.object(self._irrigation_min, "_get_target_valve_state", return_value=True):
             self._irrigation_min._cb_set_valve_state()
@@ -177,3 +179,11 @@ class TestIrrigation(tests.helper.test_case_base.TestCaseBase):
         with unittest.mock.patch.object(self._irrigation_min, "_get_target_valve_state", side_effect=habapp_rules.core.exceptions.HabAppRulesError("Could not get target state")):
             self._irrigation_min._cb_set_valve_state()
         self.assertEqual("OFF", self._irrigation_min._config.items.valve.value)
+
+        # not active (by item)
+        tests.helper.oh_item.set_state("Unittest_active", "OFF")
+        tests.helper.oh_item.set_state("Unittest_valve", "ON")
+        with unittest.mock.patch.object(self._irrigation_min, "_get_target_valve_state", return_value=True) as get_target_state_mock:
+            self._irrigation_min._cb_set_valve_state()
+        get_target_state_mock.assert_not_called()
+        tests.helper.oh_item.assert_value("Unittest_valve", "ON")

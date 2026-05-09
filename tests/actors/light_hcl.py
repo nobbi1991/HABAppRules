@@ -2,7 +2,6 @@
 
 import collections
 import datetime
-import pathlib
 import sys
 import unittest.mock
 
@@ -11,9 +10,9 @@ import HABApp
 import habapp_rules.actors.config.light_hcl
 import habapp_rules.actors.light_hcl
 import habapp_rules.system
-import tests.helper.graph_machines
 import tests.helper.oh_item
 import tests.helper.test_case_base
+from tests.helper.graph_machines import create_state_graphs
 
 
 class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
@@ -60,21 +59,7 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
     def test_create_graph(self) -> None:  # pragma: no cover
         """Create state machine graph for documentation."""
-        picture_dir = pathlib.Path(__file__).parent / "_state_charts" / "Light_HCL"
-        if not picture_dir.is_dir():
-            picture_dir.mkdir(parents=True)
-
-        graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
-            model=tests.helper.graph_machines.FakeModel(), states=self._hcl_elevation_min.states, transitions=self._hcl_elevation_min.trans, initial=self._hcl_elevation_min.state, show_conditions=True
-        )
-
-        graph.get_graph().draw(picture_dir / "HCL_Base.png", format="png", prog="dot")
-
-        for state_name in [state for state in self._get_state_names(self._hcl_elevation_min.states) if "init" not in state.lower()]:
-            light_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
-                model=tests.helper.graph_machines.FakeModel(), states=self._hcl_elevation_min.states, transitions=self._hcl_elevation_min.trans, initial=state_name, show_conditions=True
-            )
-            light_graph.get_graph(force_new=True, show_roi=True).draw(picture_dir / f"HCL_{state_name}.png", format="png", prog="dot")
+        create_state_graphs(self._hcl_elevation_min, "Light_HCL")
 
     def test_set_timeouts(self) -> None:
         """Test _set_timeouts."""
@@ -168,9 +153,9 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
     def test_end_to_end(self) -> None:
         """Test end to end behavior."""
-        tests.helper.oh_item.assert_value("Unittest_Color_min", None)
-        tests.helper.oh_item.item_state_change_event("Unittest_Elevation", 0)
         tests.helper.oh_item.assert_value("Unittest_Color_min", 4200)
+        tests.helper.oh_item.item_state_change_event("Unittest_Elevation", 20)
+        tests.helper.oh_item.assert_value("Unittest_Color_min", 5000)
 
     def test_manual(self) -> None:
         """Test manual."""
@@ -189,8 +174,6 @@ class TestHclElevation(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
     def test_hand(self) -> None:
         """Test hand detection."""
-        tests.helper.oh_item.item_state_change_event("Unittest_Color_min", 1000)
-        tests.helper.oh_item.item_state_change_event("Unittest_Color_max", 1000)
         self.assertEqual("Auto_HCL", self._hcl_elevation_min.state)
         self.assertEqual("Auto_HCL", self._hcl_elevation_max.state)
 
@@ -332,7 +315,7 @@ class TestHclTime(tests.helper.test_case_base.TestCaseBaseStateMachine):
             TestCase(True, datetime.datetime(2023, 12, 19, 5), True, True, False),
         ]
 
-        with unittest.mock.patch("habapp_rules.core.type_of_day.is_holiday") as is_holiday_mock, unittest.mock.patch("habapp_rules.core.type_of_day.is_weekend") as is_weekend_mock:
+        with unittest.mock.patch("habapp_rules.actors.light_hcl.is_holiday") as is_holiday_mock, unittest.mock.patch("habapp_rules.actors.light_hcl.is_weekend") as is_weekend_mock:
             for test_case in test_cases:
                 with self.subTest(test_case=test_case):
                     # test holiday

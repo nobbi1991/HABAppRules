@@ -1,7 +1,6 @@
 """Test bathroom light rule."""
 
 import collections
-import pathlib
 import sys
 import time
 import unittest
@@ -11,10 +10,10 @@ import HABApp.rule.rule
 
 import habapp_rules.actors.config.light_bathroom
 import habapp_rules.actors.light_bathroom
-import tests.helper.graph_machines
 import tests.helper.oh_item
 import tests.helper.test_case_base
 from habapp_rules.system import PresenceState, SleepState
+from tests.helper.graph_machines import create_state_graphs
 
 
 class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine):
@@ -56,17 +55,7 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
     def test_create_graph(self) -> None:  # pragma: no cover
         """Create state machine graph for documentation."""
-        picture_dir = pathlib.Path(__file__).parent / "_state_charts" / "BathroomLight"
-        if not picture_dir.is_dir():
-            picture_dir.mkdir(parents=True)
-
-        graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self._rule.states, transitions=self._rule.trans, initial=self._rule.state, show_conditions=False)
-
-        graph.get_graph().draw(picture_dir / "BathroomLight.png", format="png", prog="dot")
-
-        for state_name in [state for state in self._get_state_names(self._rule.states) if "init" not in state.lower()]:
-            graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self._rule.states, transitions=self._rule.trans, initial=state_name, show_conditions=True)
-            graph.get_graph(force_new=True, show_roi=True).draw(picture_dir / f"BathroomLight_{state_name}.png", format="png", prog="dot")
+        create_state_graphs(self._rule, "BathroomLight")
 
     def test_initial_state(self) -> None:
         """Test initial state."""
@@ -188,7 +177,7 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
             TestCase(on_via_increase=True, state="Auto_On_MainAndMirror", main_initial=90, main_call=90, mirror=None, hcl=None, color=4000),
         ]
 
-        with unittest.mock.patch("habapp_rules.core.helper.send_if_different") as send_if_different_mock, unittest.mock.patch.object(self._rule, "_light_main_observer") as main_observer_mock:
+        with unittest.mock.patch("habapp_rules.actors.light_bathroom.send_if_different") as send_if_different_mock, unittest.mock.patch.object(self._rule, "_light_main_observer") as main_observer_mock:
             for test_case in test_cases:
                 with self.subTest(test_case=test_case):
                     send_if_different_mock.reset_mock()

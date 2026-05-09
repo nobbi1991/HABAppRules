@@ -139,7 +139,7 @@ class TestVirtualEnergyMeterSwitch(tests.helper.test_case_base.TestCaseBase):
             unittest.mock.patch.object(self._rule_max, "_get_energy_countdown_time") as get_countdown_mock,
             unittest.mock.patch.object(self._rule_max, "_reset_countdown") as reset_countdown_mock,
         ):
-            self._rule_max._cb_countdown_end()
+            self._rule_max._cb_energy_countdown_end()
             update_energy_item_mock.assert_called_once_with(get_countdown_mock.return_value)
             reset_countdown_mock.assert_called_once()
 
@@ -169,6 +169,9 @@ class TestVirtualEnergyMeterSwitch(tests.helper.test_case_base.TestCaseBase):
                 self._rule_max._power = test_case.power
                 self._rule_max._update_energy_item(test_case.time_since_last_update)
                 self.assertEqual(test_case.expected_energy, self._rule_max._config.items.energy_output.value)
+
+                # check if it is also working if energy item is not configured
+                self._rule_only_power._update_energy_item(test_case.time_since_last_update)
 
 
 class TestVirtualEnergyMeterNumber(tests.helper.test_case_base.TestCaseBase):

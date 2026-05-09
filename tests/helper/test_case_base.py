@@ -25,7 +25,7 @@ class TestCaseBase(unittest.TestCase):
         self.addCleanup(self.send_command_mock_patcher.stop)
         self.send_command_mock = self.send_command_mock_patcher.start()
 
-        self.item_exists_mock_patcher = unittest.mock.patch("HABApp.openhab.interface_sync.item_exists", return_value=True)
+        self.item_exists_mock_patcher = unittest.mock.patch("habapp_rules.core.helper.item_exists", return_value=True)
         self.addCleanup(self.item_exists_mock_patcher.stop)
         self.item_exists_mock = self.item_exists_mock_patcher.start()
 
@@ -65,25 +65,3 @@ class TestCaseBaseStateMachine(TestCaseBase):
         self.on_rule_removed_mock_patcher = unittest.mock.patch("habapp_rules.core.state_machine_rule.StateMachineRule.on_rule_removed", new_callable=unittest.mock.AsyncMock)
         self.addCleanup(self.on_rule_removed_mock_patcher.stop)
         self.on_rule_removed_mock_patcher.start()
-
-    def _get_state_names(self, states: dict, parent_state: str | None = None) -> list[str]:  # pragma: no cover
-        """Helper function to get all state names (also nested states).
-
-        Args:
-            states: dict of all states or children states
-            parent_state: name of parent state, only if it is a nested state machine
-
-        Returns:
-            list of all state names
-        """
-        state_names = []
-        prefix = f"{parent_state}_" if parent_state else ""
-        if parent_state:
-            states = states["children"]
-
-        for state in states:
-            if "children" in state:
-                state_names += self._get_state_names(state, state["name"])
-            else:
-                state_names.append(f"{prefix}{state['name']}")
-        return state_names

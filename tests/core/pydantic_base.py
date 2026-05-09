@@ -4,6 +4,7 @@ import unittest.mock
 
 import HABApp
 import pydantic
+from HABApp.openhab.items import SwitchItem
 
 import habapp_rules.core.exceptions
 import habapp_rules.core.pydantic_base
@@ -22,22 +23,10 @@ class ItemsForTesting(habapp_rules.core.pydantic_base.ItemBase):
     thing_item: HABApp.openhab.items.Thing = pydantic.Field(..., description="thing item for testing")
 
 
-class ItemsListCreateException(habapp_rules.core.pydantic_base.ItemBase):
-    """Model with list object where create_if_not_exists is set."""
+class CallableTypeException(habapp_rules.core.pydantic_base.ItemBase):
+    """Model with callable type."""
 
-    some_items: list[HABApp.openhab.items.SwitchItem | HABApp.openhab.items.DimmerItem] = pydantic.Field(..., description="list of items for testing", json_schema_extra={"create_if_not_exists": True})
-
-
-class WrongTypeException(habapp_rules.core.pydantic_base.ItemBase):
-    """Model with wrong type."""
-
-    item: str = pydantic.Field(..., description="wrong type for testing")
-
-
-class MultipleTypeForCreateException(habapp_rules.core.pydantic_base.ItemBase):
-    """Model with multiple types where create_if_not_exists is set."""
-
-    item: HABApp.openhab.items.SwitchItem | HABApp.openhab.items.DimmerItem = pydantic.Field(..., description="list of items for testing", json_schema_extra={"create_if_not_exists": True})
+    item: SwitchItem = pydantic.Field(..., description="callable for testing", json_schema_extra=print)
 
 
 class TestItemBase(tests.helper.test_case_base.TestCaseBase):
@@ -45,6 +34,22 @@ class TestItemBase(tests.helper.test_case_base.TestCaseBase):
 
     def test_check_all_fields_oh_items_exceptions(self) -> None:
         """Test all exceptions of check_all_fields_oh_items."""
+
+        class ItemsListCreateException(habapp_rules.core.pydantic_base.ItemBase):
+            """Model with list object where create_if_not_exists is set."""
+
+            some_items: list[HABApp.openhab.items.SwitchItem | HABApp.openhab.items.DimmerItem] = pydantic.Field(..., description="list of items for testing", json_schema_extra={"create_if_not_exists": True})
+
+        class WrongTypeException(habapp_rules.core.pydantic_base.ItemBase):
+            """Model with wrong type."""
+
+            item: str = pydantic.Field(..., description="wrong type for testing")
+
+        class MultipleTypeForCreateException(habapp_rules.core.pydantic_base.ItemBase):
+            """Model with multiple types where create_if_not_exists is set."""
+
+            item: HABApp.openhab.items.SwitchItem | HABApp.openhab.items.DimmerItem = pydantic.Field(..., description="list of items for testing", json_schema_extra={"create_if_not_exists": True})
+
         with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
             ItemsListCreateException(some_items=["Name1", "Name2"])
 
@@ -53,6 +58,9 @@ class TestItemBase(tests.helper.test_case_base.TestCaseBase):
 
         with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
             MultipleTypeForCreateException(item="Name1")
+
+        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
+            CallableTypeException(item="Name1")
 
     def test_convert_to_oh_item(self) -> None:
         """Test convert_to_oh_item."""
@@ -65,7 +73,7 @@ class TestItemBase(tests.helper.test_case_base.TestCaseBase):
         dimmer = HABApp.openhab.items.DimmerItem.get_item("Unittest_Dimmer_2")
 
         # good case
-        with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.SwitchItem("Unittest_Switch_Created", "")) as create_item_mock:
+        with unittest.mock.patch("habapp_rules.core.pydantic_base.create_additional_item", return_value=HABApp.openhab.items.SwitchItem("Unittest_Switch_Created", "")) as create_item_mock:
             items_for_testing = ItemsForTesting(
                 switch="Unittest_Switch",  # normal case
                 switch_create="Unittest_Switch_Created",  # item which will be created
@@ -89,11 +97,11 @@ class TestItemBase(tests.helper.test_case_base.TestCaseBase):
         self.assertEqual("Unittest_Number", items_for_testing.not_supported.name)
         self.assertEqual("Unittest:Thing", items_for_testing.thing_item.name)
 
-        create_item_mock.assert_called_once_with("Unittest_Switch_Created", "Switch")
+        create_item_mock.assert_called_once_with("Unittest_Switch_Created", SwitchItem)
 
         # with exception
         with (
-            unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.SwitchItem("Unittest_Switch_Created", "")) as create_item_mock,
+            unittest.mock.patch("habapp_rules.core.pydantic_base.create_additional_item", return_value=HABApp.openhab.items.SwitchItem("Unittest_Switch_Created", "")) as create_item_mock,
             self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError),
         ):
             ItemsForTesting(
@@ -105,4 +113,4 @@ class TestItemBase(tests.helper.test_case_base.TestCaseBase):
                 thing_item="Unittest:Thing",  # thing item
             )
 
-        create_item_mock.assert_called_once_with("Unittest_Switch_Created", "Switch")
+        create_item_mock.assert_called_once_with("Unittest_Switch_Created", SwitchItem)

@@ -4,10 +4,12 @@ import datetime
 import logging
 
 import HABApp
+from HABApp.openhab.events import ItemStateChangedEvent
+from HABApp.openhab.events.event_filters import ItemStateChangedEventFilter
 
-import habapp_rules.actors.config.irrigation
-import habapp_rules.core.exceptions
-import habapp_rules.core.logger
+from habapp_rules.actors.config.irrigation import IrrigationConfig
+from habapp_rules.core.exceptions import HabAppRulesError
+from habapp_rules.core.logger import InstanceLogger
 
 LOGGER = logging.getLogger(__name__)
 
@@ -23,43 +25,43 @@ class Irrigation(HABApp.Rule):
     Number     I999_irrigation_duration     "Duration"
 
     # Config:
-    config = habapp_rules.actors.config.irrigation.IrrigationConfig(
-            items=habapp_rules.actors.config.irrigation.IrrigationItems(
-                    valve=HABApp.openhab.items.SwitchItem("I999_valve"),
-                    active=HABApp.openhab.items.SwitchItem("I999_irrigation_active"),
-                    hour=HABApp.openhab.items.NumberItem("I999_irrigation_hour"),
-                    minute=HABApp.openhab.items.NumberItem("I999_irrigation_minute"),
-                    duration=HABApp.openhab.items.NumberItem("I999_irrigation_duration"),
+    config = IrrigationConfig(
+            items=IrrigationItems(
+                    valve=SwitchItem("I999_valve"),
+                    active=SwitchItem("I999_irrigation_active"),
+                    hour=NumberItem("I999_irrigation_hour"),
+                    minute=NumberItem("I999_irrigation_minute"),
+                    duration=NumberItem("I999_irrigation_duration"),
                 )
         )
 
     # Rule init:
-    habapp_rules.actors.irrigation.Irrigation(config)
+    Irrigation(config)
     """
 
-    def __init__(self, config: habapp_rules.actors.config.irrigation.IrrigationConfig) -> None:
+    def __init__(self, config: IrrigationConfig) -> None:
         """Init of irrigation object.
 
         Args:
             config: config for the rule
 
         Raises:
-            habapp_rules.core.exceptions.HabAppRulesConfigurationException: if configuration is not correct
+            HabAppRulesConfigurationException: if configuration is not correct
         """
         self._config = config
         HABApp.Rule.__init__(self)
-        self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, self._config.items.valve.name)
+        self._instance_logger = InstanceLogger(LOGGER, self._config.items.valve.name)
 
-        self.run.soon(self._cb_set_valve_state)
+        self.run.soon(self._cb_set_valve_state)  # type:ignore[reportCallIssue]
         self.run.at(self.run.trigger.interval(None, 60), self._cb_set_valve_state)
 
-        self._config.items.active.listen_event(self._cb_set_valve_state, HABApp.openhab.events.ItemStateChangedEventFilter())
-        self._config.items.minute.listen_event(self._cb_set_valve_state, HABApp.openhab.events.ItemStateChangedEventFilter())
-        self._config.items.hour.listen_event(self._cb_set_valve_state, HABApp.openhab.events.ItemStateChangedEventFilter())
+        self._config.items.active.listen_event(self._cb_set_valve_state, ItemStateChangedEventFilter())
+        self._config.items.minute.listen_event(self._cb_set_valve_state, ItemStateChangedEventFilter())
+        self._config.items.hour.listen_event(self._cb_set_valve_state, ItemStateChangedEventFilter())
         if self._config.items.repetitions is not None:
-            self._config.items.repetitions.listen_event(self._cb_set_valve_state, HABApp.openhab.events.ItemStateChangedEventFilter())
+            self._config.items.repetitions.listen_event(self._cb_set_valve_state, ItemStateChangedEventFilter())
         if self._config.items.brake is not None:
-            self._config.items.brake.listen_event(self._cb_set_valve_state, HABApp.openhab.events.ItemStateChangedEventFilter())
+            self._config.items.brake.listen_event(self._cb_set_valve_state, ItemStateChangedEventFilter())
 
         self._instance_logger.debug(f"Init of rule '{self.__class__.__name__}' with name '{self.rule_name}' was successful.")
 
@@ -69,18 +71,15 @@ class Irrigation(HABApp.Rule):
         Returns:
             True if valve should be on, otherwise False
         Raises:
-            habapp_rules.core.exceptions.HabAppRulesError: if value for hour / minute / duration is not valid
+            HabAppRulesConfigurationException: if value for hour / minute / duration is not valid
         """
-        if not self._config.items.active.is_on():
-            return False
-
         if any(item.value is None for item in (self._config.items.hour, self._config.items.minute, self._config.items.duration)):
             self._instance_logger.warning(
                 f"OpenHAB item values are not valid for hour / minute / duration. Will return False. See current values: hour={self._config.items.hour.value} | minute={self._config.items.minute.value} | duration={self._config.items.duration.value}"
             )
             return False
 
-        repetitions = self._config.items.repetitions.value if self._config.items.repetitions else 0
+        repetitions = int(self._config.items.repetitions.value) if self._config.items.repetitions else 0
         brake = int(self._config.items.brake.value) if self._config.items.brake else 0
 
         now = datetime.datetime.now()
@@ -111,11 +110,14 @@ class Irrigation(HABApp.Rule):
             return start_time <= time_to_check or end_time > time_to_check
         return start_time <= time_to_check < end_time
 
-    def _cb_set_valve_state(self, _: HABApp.openhab.events.ItemStateChangedEvent | None = None) -> None:
+    def _cb_set_valve_state(self, _: ItemStateChangedEvent | None = None) -> None:
         """Callback to set the valve state, triggered by cyclic call or item event."""
+        if self._config.items.active.is_off():
+            return
+
         try:
             target_value = self._get_target_valve_state()
-        except habapp_rules.core.exceptions.HabAppRulesError as exc:
+        except HabAppRulesError as exc:
             self._instance_logger.warning(f"Could not get target valve state, set it to false. Error: {exc}")
             target_value = False
 

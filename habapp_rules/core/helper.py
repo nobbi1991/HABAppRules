@@ -2,20 +2,23 @@
 
 import logging
 import time
+from typing import TypeVar
 
-import HABApp.openhab.items
+from HABApp.openhab.connection.handler.func_sync import create_item, item_exists
+from HABApp.openhab.items import CallItem, ColorItem, ContactItem, DatetimeItem, DimmerItem, GroupItem, ImageItem, LocationItem, NumberItem, OpenhabItem, PlayerItem, RollershutterItem, StringItem, SwitchItem
 
-import habapp_rules.core.exceptions
+from habapp_rules.core.exceptions import HabAppRulesError
 
 LOGGER = logging.getLogger(__name__)
+OH_ITEM_TYPE = TypeVar("OH_ITEM_TYPE", CallItem, ColorItem, ContactItem, DatetimeItem, DimmerItem, GroupItem, ImageItem, LocationItem, NumberItem, OpenhabItem, PlayerItem, RollershutterItem, StringItem, SwitchItem)
 
 
-def create_additional_item(name: str, item_type: str, label: str | None = None, groups: list[str] | None = None) -> HABApp.openhab.items.OpenhabItem:
+def create_additional_item(name: str, item_class: type[OH_ITEM_TYPE], label: str | None = None, groups: list[str] | None = None) -> OH_ITEM_TYPE:
     """Create additional item if it does not already exist.
 
     Args:
         name: Name of item
-        item_type: Type of item (e.g. String)
+        item_class: Class of item (e.g. StringItem)
         label: Label of the item
         groups: in which groups is the item
 
@@ -23,23 +26,23 @@ def create_additional_item(name: str, item_type: str, label: str | None = None, 
         returns the created item
 
     Raises:
-        habapp_rules.core.exceptions.HabAppRulesError: if item could not be created
+        HabAppRulesError: if item could not be created
     """
     if not name.startswith("H_"):
         LOGGER.warning(f"Item '{name}' does not start with 'H_'. All automatically created items must start with 'H_'. habapp_rules will add 'H_' automatically.")
         name = f"H_{name}"
 
-    if not HABApp.openhab.interface_sync.item_exists(name):
+    if not item_exists(name):
         if not label:
             label = f"{name.removeprefix('H_').replace('_', ' ')}"
-        if not HABApp.openhab.interface_sync.create_item(item_type=item_type, name=name, label=label, groups=groups):
+        if not create_item(item_type=item_class.__name__.removesuffix("Item"), name=name, label=label, groups=groups):
             msg = f"Could not create item '{name}'"
-            raise habapp_rules.core.exceptions.HabAppRulesError(msg)
+            raise HabAppRulesError(msg)
         time.sleep(0.05)
-    return HABApp.openhab.items.OpenhabItem.get_item(name)
+    return item_class.get_item(name)
 
 
-def send_if_different(item: str | HABApp.openhab.items.OpenhabItem, value: str | float) -> None:
+def send_if_different(item: str | OpenhabItem, value: str | float) -> None:
     """Send command if the target value is different to the current value.
 
     Args:
@@ -47,13 +50,13 @@ def send_if_different(item: str | HABApp.openhab.items.OpenhabItem, value: str |
         value: value to write to OpenHAB item
     """
     if isinstance(item, str):
-        item = HABApp.openhab.items.OpenhabItem.get_item(item)
+        item = OpenhabItem.get_item(item)
 
     if item.value != value:
         item.oh_send_command(value)
 
 
-def filter_updated_items(input_items: list[HABApp.openhab.items.OpenhabItem], filter_time: int | None = None) -> list[HABApp.openhab.items.OpenhabItem]:
+def filter_updated_items(input_items: list[OH_ITEM_TYPE], filter_time: int | None = None) -> list[OH_ITEM_TYPE]:
     """Get input items depending on their last update time and _ignore_old_values_time.
 
     Args:

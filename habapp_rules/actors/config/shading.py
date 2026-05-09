@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import copy
+from typing import Any
 
-import HABApp.openhab.items  # noqa: TC002
 import pydantic
 import typing_extensions
+from HABApp.openhab.items import ContactItem, DatetimeItem, DimmerItem, NumberItem, RollershutterItem, StringItem, SwitchItem  # noqa: TC002
 
-import habapp_rules.core.pydantic_base
+from habapp_rules.core.pydantic_base import ConfigBase, ItemBase, ParameterBase
 
 
 class ShadingPosition(pydantic.BaseModel):
@@ -27,39 +28,39 @@ class ShadingPosition(pydantic.BaseModel):
         super().__init__(position=position, slat=slat)
 
 
-class ShadingItems(habapp_rules.core.pydantic_base.ItemBase):
+class ShadingItems(ItemBase):
     """Items for shading rules."""
 
-    shading_position: HABApp.openhab.items.RollershutterItem | HABApp.openhab.items.DimmerItem = pydantic.Field(..., description="item for setting the shading position")
-    slat: HABApp.openhab.items.DimmerItem | None = pydantic.Field(None, description="item for setting the slat value")
-    manual: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="item to switch to manual mode and disable the automatic functions")
-    shading_position_control: list[HABApp.openhab.items.RollershutterItem | HABApp.openhab.items.DimmerItem] = pydantic.Field([], description="control items to improve manual detection")
-    shading_position_group: list[HABApp.openhab.items.RollershutterItem | HABApp.openhab.items.DimmerItem] = pydantic.Field([], description="")
-    wind_alarm: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="item which is ON when wind alarm is active")
-    sun_protection: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="item which is ON when sun protection is needed")
-    sun_protection_slat: HABApp.openhab.items.DimmerItem | None = pydantic.Field(None, description="value for the slat when sun protection is active")
-    sleeping_state: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="item of the sleeping state set via habapp_rules.system.sleep.Sleep")
-    night: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="item which is ON at night or darkness")
-    door: HABApp.openhab.items.ContactItem | None = pydantic.Field(None, description="item for setting position when door is opened")
-    summer: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="item which is ON during summer")
-    hand_manual_is_active_feedback: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="feedback item which is ON when hand or manual is active")
-    state: HABApp.openhab.items.StringItem = pydantic.Field(..., description="item to store the current state of the state machine")
+    shading_position: RollershutterItem | DimmerItem = pydantic.Field(..., description="item for setting the shading position")
+    slat: DimmerItem | None = pydantic.Field(None, description="item for setting the slat value")
+    manual: SwitchItem = pydantic.Field(..., description="item to switch to manual mode and disable the automatic functions")
+    shading_position_control: list[RollershutterItem | DimmerItem] = pydantic.Field([], description="control items to improve manual detection")
+    shading_position_group: list[RollershutterItem | DimmerItem] = pydantic.Field([], description="")
+    wind_alarm: SwitchItem | None = pydantic.Field(None, description="item which is ON when wind alarm is active")
+    sun_protection: SwitchItem | None = pydantic.Field(None, description="item which is ON when sun protection is needed")
+    sun_protection_slat: DimmerItem | None = pydantic.Field(None, description="value for the slat when sun protection is active")
+    sleeping_state: StringItem | None = pydantic.Field(None, description="item of the sleeping state set via habapp_rules.system.sleep.Sleep")
+    night: SwitchItem | None = pydantic.Field(None, description="item which is ON at night or darkness")
+    door: ContactItem | None = pydantic.Field(None, description="item for setting position when door is opened")
+    summer: SwitchItem | None = pydantic.Field(None, description="item which is ON during summer")
+    hand_manual_is_active_feedback: SwitchItem | None = pydantic.Field(None, description="feedback item which is ON when hand or manual is active")
+    state: StringItem = pydantic.Field(..., description="item to store the current state of the state machine")
 
 
-class ShadingParameter(habapp_rules.core.pydantic_base.ParameterBase):
+class ShadingParameter(ParameterBase):
     """Parameter for shading rules."""
 
-    pos_auto_open: ShadingPosition = pydantic.Field(ShadingPosition(0, 0), description="position for auto open")
-    pos_wind_alarm: ShadingPosition | None = pydantic.Field(ShadingPosition(0, 0), description="position for wind alarm")
-    pos_sleeping_night: ShadingPosition | None = pydantic.Field(ShadingPosition(100, 100), description="position for sleeping at night")
-    pos_sleeping_day: ShadingPosition | None = pydantic.Field(None, description="position for sleeping at day")
-    pos_sun_protection: ShadingPosition | None = pydantic.Field(ShadingPosition(100, None), description="position for sun protection")
-    pos_night_close_summer: ShadingPosition | None = pydantic.Field(None, description="position for night close during summer")
-    pos_night_close_winter: ShadingPosition | None = pydantic.Field(ShadingPosition(100, 100), description="position for night close during winter")
-    pos_door_open: ShadingPosition | None = pydantic.Field(ShadingPosition(0, 0), description="position if door is opened")
-    manual_timeout: int = pydantic.Field(24 * 3600, description="fallback timeout for manual state", gt=0)
-    door_post_time: int = pydantic.Field(5 * 60, description="extended time after door is closed", gt=0)
-    value_tolerance: int = pydantic.Field(0, description="value tolerance for shading position which is allowed without manual detection", ge=0)
+    pos_auto_open: ShadingPosition = pydantic.Field(default=ShadingPosition(0, 0), description="position for auto open")
+    pos_wind_alarm: ShadingPosition | None = pydantic.Field(default=ShadingPosition(0, 0), description="position for wind alarm")
+    pos_sleeping_night: ShadingPosition | None = pydantic.Field(default=ShadingPosition(100, 100), description="position for sleeping at night")
+    pos_sleeping_day: ShadingPosition = pydantic.Field(default=None, description="position for sleeping at day. If not given, the same as pos_sleeping_night is used")  # type:ignore[assignment]  # will be set by pydantic validator
+    pos_sun_protection: ShadingPosition | None = pydantic.Field(default=ShadingPosition(100, None), description="position for sun protection")
+    pos_night_close_summer: ShadingPosition | None = pydantic.Field(default=None, description="position for night close during summer")
+    pos_night_close_winter: ShadingPosition | None = pydantic.Field(default=ShadingPosition(100, 100), description="position for night close during winter")
+    pos_door_open: ShadingPosition | None = pydantic.Field(default=ShadingPosition(0, 0), description="position if door is opened")
+    manual_timeout: int = pydantic.Field(default=24 * 3600, description="fallback timeout for manual state", gt=0)
+    door_post_time: int = pydantic.Field(default=5 * 60, description="extended time after door is closed", gt=0)
+    value_tolerance: int = pydantic.Field(default=0, description="value tolerance for shading position which is allowed without manual detection", ge=0)
 
     @pydantic.model_validator(mode="after")
     def validate_model(self) -> typing_extensions.Self:
@@ -73,7 +74,7 @@ class ShadingParameter(habapp_rules.core.pydantic_base.ParameterBase):
         return self
 
 
-class ShadingConfig(habapp_rules.core.pydantic_base.ConfigBase):
+class ShadingConfig(ConfigBase):
     """Config for shading objects."""
 
     items: ShadingItems = pydantic.Field(..., description="items for shading")
@@ -95,31 +96,31 @@ class ShadingConfig(habapp_rules.core.pydantic_base.ConfigBase):
         return self
 
 
-class ResetAllManualHandItems(habapp_rules.core.pydantic_base.ItemBase):
+class ResetAllManualHandItems(ItemBase):
     """Items for reset all manual hand items."""
 
-    reset_manual_hand: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="item for resetting manual and hand state to automatic state")
+    reset_manual_hand: SwitchItem = pydantic.Field(..., description="item for resetting manual and hand state to automatic state")
 
 
-class ResetAllManualHandParameter(habapp_rules.core.pydantic_base.ParameterBase):
+class ResetAllManualHandParameter(ParameterBase):
     """Parameter for reset all manual hand parameter."""
 
-    shading_objects: list[object] | None = pydantic.Field(None, description="list of shading objects to reset")
+    shading_objects: list[Any] | None = pydantic.Field(default=None, description="list of shading objects to reset")
 
 
-class ResetAllManualHandConfig(habapp_rules.core.pydantic_base.ConfigBase):
+class ResetAllManualHandConfig(ConfigBase):
     """Config for reset all manual hand config."""
 
     items: ResetAllManualHandItems = pydantic.Field(..., description="items for reset all manual hand config")
     parameter: ResetAllManualHandParameter = pydantic.Field(ResetAllManualHandParameter(), description="parameter for reset all manual hand config")
 
 
-class SlatValueItems(habapp_rules.core.pydantic_base.ItemBase):
+class SlatValueItems(ItemBase):
     """Items for slat values for sun protection."""
 
-    sun_elevation: HABApp.openhab.items.NumberItem = pydantic.Field(..., description="item for sun elevation")
-    slat_value: HABApp.openhab.items.NumberItem | HABApp.openhab.items.DimmerItem = pydantic.Field(..., description="item for slat value, which should be set")
-    summer: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="item for summer")
+    sun_elevation: NumberItem = pydantic.Field(..., description="item for sun elevation")
+    slat_value: NumberItem | DimmerItem = pydantic.Field(..., description="item for slat value, which should be set")
+    summer: SwitchItem | None = pydantic.Field(None, description="item for summer")
 
 
 class ElevationSlatMapping(pydantic.BaseModel):
@@ -138,15 +139,15 @@ class ElevationSlatMapping(pydantic.BaseModel):
         super().__init__(elevation=elevation, slat_value=slat_value)
 
 
-class SlatValueParameter(habapp_rules.core.pydantic_base.ParameterBase):
+class SlatValueParameter(ParameterBase):
     """Parameter for slat values for sun protection."""
 
     elevation_slat_characteristic: list[ElevationSlatMapping] = pydantic.Field(
-        [ElevationSlatMapping(0, 100), ElevationSlatMapping(4, 100), ElevationSlatMapping(8, 90), ElevationSlatMapping(18, 80), ElevationSlatMapping(26, 70), ElevationSlatMapping(34, 60), ElevationSlatMapping(41, 50)],
+        default=[ElevationSlatMapping(0, 100), ElevationSlatMapping(4, 100), ElevationSlatMapping(8, 90), ElevationSlatMapping(18, 80), ElevationSlatMapping(26, 70), ElevationSlatMapping(34, 60), ElevationSlatMapping(41, 50)],
         description="list of tuple-mappings from elevation to slat value",
     )
     elevation_slat_characteristic_summer: list[ElevationSlatMapping] = pydantic.Field(
-        [ElevationSlatMapping(0, 100), ElevationSlatMapping(4, 100), ElevationSlatMapping(8, 90), ElevationSlatMapping(18, 80)], description="list of tuple-mappings from elevation to slat value, which is used if summer is active"
+        default=[ElevationSlatMapping(0, 100), ElevationSlatMapping(4, 100), ElevationSlatMapping(8, 90), ElevationSlatMapping(18, 80)], description="list of tuple-mappings from elevation to slat value, which is used if summer is active"
     )
 
     @pydantic.field_validator("elevation_slat_characteristic", "elevation_slat_characteristic_summer")
@@ -172,22 +173,22 @@ class SlatValueParameter(habapp_rules.core.pydantic_base.ParameterBase):
         return values
 
 
-class SlatValueConfig(habapp_rules.core.pydantic_base.ConfigBase):
+class SlatValueConfig(ConfigBase):
     """Config for slat values for sun protection."""
 
     items: SlatValueItems = pydantic.Field(..., description="items for slat values for sun protection")
     parameter: SlatValueParameter = pydantic.Field(SlatValueParameter(), description="parameter for slat values for sun protection")
 
 
-class ReferenceRunItems(habapp_rules.core.pydantic_base.ItemBase):
+class ReferenceRunItems(ItemBase):
     """Items for reference run."""
 
-    trigger_run: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="item for triggering the reference run")
-    last_run: HABApp.openhab.items.DatetimeItem = pydantic.Field(..., description="item for date/time of the last run")
-    presence_state: HABApp.openhab.items.StringItem = pydantic.Field(..., description="item for presence state")
+    trigger_run: SwitchItem = pydantic.Field(..., description="item for triggering the reference run")
+    last_run: DatetimeItem = pydantic.Field(..., description="item for date/time of the last run")
+    presence_state: StringItem = pydantic.Field(..., description="item for presence state")
 
 
-class ReferenceRunConfig(habapp_rules.core.pydantic_base.ConfigBase):
+class ReferenceRunConfig(ConfigBase):
     """Config for reference run."""
 
     items: ReferenceRunItems = pydantic.Field(..., description="items for reference run")

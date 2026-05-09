@@ -1,22 +1,22 @@
 """Config models for irrigation rules."""
 
-import HABApp.openhab.items
 import pydantic
 import typing_extensions
+from HABApp.openhab.items import NumberItem, SwitchItem
 
-import habapp_rules.core.pydantic_base
+from habapp_rules.core.pydantic_base import ConfigBase, ItemBase
 
 
-class IrrigationItems(habapp_rules.core.pydantic_base.ItemBase):
+class IrrigationItems(ItemBase):
     """Items for irrigation rules."""
 
-    valve: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="valve item which will be switched")
-    active: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="item to activate the rule")
-    hour: HABApp.openhab.items.NumberItem = pydantic.Field(..., description="start hour")
-    minute: HABApp.openhab.items.NumberItem = pydantic.Field(..., description="start minute")
-    duration: HABApp.openhab.items.NumberItem = pydantic.Field(..., description="duration in minutes")
-    repetitions: HABApp.openhab.items.NumberItem | None = pydantic.Field(None, description="number of repetitions")
-    brake: HABApp.openhab.items.NumberItem | None = pydantic.Field(None, description="time in minutes between repetitions")
+    valve: SwitchItem = pydantic.Field(..., description="valve item which will be switched")
+    active: SwitchItem = pydantic.Field(..., description="item to activate the rule")
+    hour: NumberItem = pydantic.Field(..., description="start hour")
+    minute: NumberItem = pydantic.Field(..., description="start minute")
+    duration: NumberItem = pydantic.Field(..., description="duration in minutes")
+    repetitions: NumberItem | None = pydantic.Field(None, description="number of repetitions")
+    brake: NumberItem | None = pydantic.Field(None, description="time in minutes between repetitions")
 
     @pydantic.model_validator(mode="after")
     def validate_model(self) -> typing_extensions.Self:
@@ -35,7 +35,7 @@ class IrrigationItems(habapp_rules.core.pydantic_base.ItemBase):
         return self
 
 
-class IrrigationConfig(habapp_rules.core.pydantic_base.ConfigBase):
+class IrrigationConfig(ConfigBase):
     """Config for irrigation actors."""
 
     items: IrrigationItems = pydantic.Field(..., description="items for irrigation rule")

@@ -2,7 +2,6 @@
 
 import collections
 import datetime
-import pathlib
 import sys
 import unittest.mock
 
@@ -10,9 +9,9 @@ import HABApp
 
 import habapp_rules.sensors.config.dwd
 import habapp_rules.sensors.dwd
-import tests.helper.graph_machines
 import tests.helper.oh_item
 import tests.helper.test_case_base
+from tests.helper.graph_machines import create_state_graphs
 
 
 class TestDwdItems(tests.helper.test_case_base.TestCaseBase):
@@ -94,15 +93,7 @@ class TestDwdWindAlarm(tests.helper.test_case_base.TestCaseBaseStateMachine):
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
     def test_create_graph(self) -> None:  # pragma: no cover
         """Create state machine graph for documentation."""
-        picture_dir = pathlib.Path(__file__).parent / "_state_charts" / "DWD_WindAlarm"
-        if not picture_dir.is_dir():
-            picture_dir.mkdir(parents=True)
-
-        graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
-            model=tests.helper.graph_machines.FakeModel(), states=self._wind_alarm_rule_1.states, transitions=self._wind_alarm_rule_1.trans, initial=self._wind_alarm_rule_1.state, show_conditions=True
-        )
-
-        graph.get_graph().draw(picture_dir / "DWD_Wind_Alarm.png", format="png", prog="dot")
+        create_state_graphs(self._wind_alarm_rule_1, "DWD_WindAlarm")
 
     def test_set_timeouts(self) -> None:
         """Test _set_timeouts."""

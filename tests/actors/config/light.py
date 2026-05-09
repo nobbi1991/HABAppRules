@@ -4,13 +4,13 @@ import collections
 import unittest.mock
 
 import HABApp
-import pydantic
 
 import habapp_rules.actors.config.light
 import habapp_rules.core.exceptions
 import tests.helper.oh_item
 import tests.helper.test_case_base
 from habapp_rules.actors.config.light import BrightnessTimeout, FunctionConfig, LightParameter
+from habapp_rules.core.exceptions import HabAppRulesConfigurationError
 
 
 class TestBrightnessTimeout(unittest.TestCase):
@@ -45,7 +45,7 @@ class TestBrightnessTimeout(unittest.TestCase):
                         else:
                             self.assertEqual(0.5, brightness_timeout.timeout)
                 else:
-                    with self.assertRaises(pydantic.ValidationError):
+                    with self.assertRaises(HabAppRulesConfigurationError):
                         BrightnessTimeout(test_case.value, test_case.timeout)
 
 
@@ -89,7 +89,7 @@ class TestLightParameter(unittest.TestCase):
                 if test_case.valid:
                     LightParameter(on=test_case.on, pre_off=test_case.pre_off, leaving=test_case.leaving, pre_sleep=test_case.pre_sleep, pre_sleep_prevent=test_case.pre_sleep_prevent)
                 else:
-                    with self.assertRaises(pydantic.ValidationError):
+                    with self.assertRaises(HabAppRulesConfigurationError):
                         LightParameter(on=test_case.on, pre_off=test_case.pre_off, leaving=test_case.leaving, pre_sleep=test_case.pre_sleep, pre_sleep_prevent=test_case.pre_sleep_prevent)
 
     def test_sleep_of_pre_sleep(self) -> None:

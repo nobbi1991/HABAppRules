@@ -5,12 +5,12 @@ import unittest
 from itertools import starmap
 
 import HABApp
-import pydantic
 
 import habapp_rules.actors.config.shading
 import habapp_rules.core.exceptions
 import tests.helper.oh_item
 import tests.helper.test_case_base
+from habapp_rules.core.exceptions import HabAppRulesConfigurationError
 
 
 class TestShadingConfig(tests.helper.test_case_base.TestCaseBase):
@@ -69,7 +69,7 @@ class TestSlatValueParameter(unittest.TestCase):
                 input_conf = list(starmap(habapp_rules.actors.config.shading.ElevationSlatMapping, test_case.input))
                 output = list(starmap(habapp_rules.actors.config.shading.ElevationSlatMapping, test_case.expected_output)) if test_case.expected_output else None
                 if test_case.raises:
-                    with self.assertRaises(pydantic.ValidationError):
+                    with self.assertRaises(HabAppRulesConfigurationError):
                         habapp_rules.actors.config.shading.SlatValueParameter(elevation_slat_characteristic=input_conf, elevation_slat_characteristic_summer=input_conf)
                 else:
                     config = habapp_rules.actors.config.shading.SlatValueParameter(elevation_slat_characteristic=input_conf, elevation_slat_characteristic_summer=input_conf)

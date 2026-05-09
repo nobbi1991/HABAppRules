@@ -2,7 +2,6 @@
 
 import collections
 import datetime
-import pathlib
 import sys
 import unittest
 import unittest.mock
@@ -13,10 +12,10 @@ import habapp_rules.actors.config.ventilation
 import habapp_rules.actors.ventilation
 import habapp_rules.core.exceptions
 import habapp_rules.system
-import tests.helper.graph_machines
 import tests.helper.oh_item
 import tests.helper.test_case_base
 import tests.helper.timer
+from tests.helper.graph_machines import create_state_graphs
 
 
 class TestGlobalFunctions(unittest.TestCase):
@@ -103,19 +102,7 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
     def test_create_graph(self) -> None:  # pragma: no cover
         """Create state machine graph for documentation."""
-        picture_dir = pathlib.Path(__file__).parent / "_state_charts" / "Ventilation"
-        if not picture_dir.is_dir():
-            picture_dir.mkdir(parents=True)
-
-        graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
-            model=tests.helper.graph_machines.FakeModel(), states=self.ventilation_min.states, transitions=self.ventilation_min.trans, initial=self.ventilation_min.state, show_conditions=False
-        )
-
-        graph.get_graph().draw(picture_dir / "Ventilation.png", format="png", prog="dot")
-
-        for state_name in [state for state in self._get_state_names(self.ventilation_min.states) if "init" not in state.lower()]:
-            graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self.ventilation_min.states, transitions=self.ventilation_min.trans, initial=state_name, show_conditions=True)
-            graph.get_graph(force_new=True, show_roi=True).draw(picture_dir / f"Ventilation_{state_name}.png", format="png", prog="dot")
+        create_state_graphs(self.ventilation_min, "Ventilation")
 
     def test_init(self) -> None:
         """Test __init__."""
@@ -176,7 +163,7 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
             TestCase("Auto_Init", None),
         ]
 
-        with unittest.mock.patch("habapp_rules.core.helper.send_if_different") as send_mock:
+        with unittest.mock.patch("habapp_rules.actors.ventilation.send_if_different") as send_mock:
             for test_case in test_cases:
                 with self.subTest(test_case=test_case):
                     send_mock.reset_mock()
@@ -248,9 +235,10 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
     def test_trigger_long_absence_power_on(self) -> None:
         """Test _trigger_long_absence_power_on."""
-        with unittest.mock.patch.object(self.ventilation_max, "_long_absence_power_on") as power_on_mock:
+        with unittest.mock.patch.object(self.ventilation_max, "trigger") as trigger_mock:
             self.ventilation_max._trigger_long_absence_power_on()
-        power_on_mock.assert_called_once()
+
+        trigger_mock.assert_called_once_with("_long_absence_power_on")
 
     def test__set_hand_display_text(self) -> None:
         """Test __set_hand_display_text."""
@@ -275,6 +263,7 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
         ]
 
         self.ventilation_max.state = "Auto_PowerHand"
+        self.ventilation_min.state = "Auto_PowerHand"
 
         for test_case in test_cases:
             with self.subTest(test_case=test_case):
@@ -284,6 +273,7 @@ class TestVentilation(tests.helper.test_case_base.TestCaseBaseStateMachine):
                 with unittest.mock.patch("datetime.datetime") as datetime_mock:
                     datetime_mock.now.return_value = now_value
                     self.ventilation_max._VentilationBase__set_hand_display_text()
+                    self.ventilation_min._VentilationBase__set_hand_display_text()
                 self.run_at_mock.assert_called_once()
                 tests.helper.oh_item.assert_value("Unittest_Ventilation_max_display_text", test_case.expected_display)
 
@@ -478,19 +468,7 @@ class TestVentilationHeliosTwoStage(tests.helper.test_case_base.TestCaseBaseStat
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
     def test_create_graph(self) -> None:  # pragma: no cover
         """Create state machine graph for documentation."""
-        picture_dir = pathlib.Path(__file__).parent / "_state_charts" / "VentilationHeliosTwoStage"
-        if not picture_dir.is_dir():
-            picture_dir.mkdir(parents=True)
-
-        graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
-            model=tests.helper.graph_machines.FakeModel(), states=self.ventilation_min.states, transitions=self.ventilation_min.trans, initial=self.ventilation_min.state, show_conditions=False
-        )
-
-        graph.get_graph().draw(picture_dir / "Ventilation.png", format="png", prog="dot")
-
-        for state_name in [state for state in self._get_state_names(self.ventilation_min.states) if "init" not in state.lower()]:
-            graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self.ventilation_min.states, transitions=self.ventilation_min.trans, initial=state_name, show_conditions=True)
-            graph.get_graph(force_new=True, show_roi=True).draw(picture_dir / f"Ventilation_{state_name}.png", format="png", prog="dot")
+        create_state_graphs(self.ventilation_min, "VentilationHeliosTwoStage")
 
     def test_set_level(self) -> None:
         """Test _set_level."""
@@ -509,21 +487,19 @@ class TestVentilationHeliosTwoStage(tests.helper.test_case_base.TestCaseBaseStat
 
         self.ventilation_max._config.parameter.state_normal.level = 1
 
-        with unittest.mock.patch("habapp_rules.core.helper.send_if_different") as send_mock:
-            for test_case in test_cases:
-                with self.subTest(test_case=test_case):
-                    send_mock.reset_mock()
-                    self.ventilation_max.state = test_case.state
+        for test_case in test_cases:
+            with self.subTest(test_case=test_case):
+                self.ventilation_max.state = test_case.state
 
-                    self.ventilation_max._set_level()
+                self.ventilation_max._set_level()
 
-                    if test_case.expected_on is not None:
-                        send_mock.assert_any_call(self.ventilation_max._config.items.ventilation_output_on, test_case.expected_on)
+                if test_case.expected_on is not None:
+                    tests.helper.oh_item.assert_value("Unittest_Ventilation_max_output_on", test_case.expected_on)
 
-                    if test_case.expected_power is not None:
-                        send_mock.assert_any_call(self.ventilation_max._config.items.ventilation_output_power, test_case.expected_power)
+                if test_case.expected_power is not None:
+                    tests.helper.oh_item.assert_value("Unittest_Ventilation_max_output_power", test_case.expected_power)
 
-                    tests.helper.oh_item.assert_value("Unittest_Ventilation_max_feedback_ventilation_level", test_case.expected_level)
+                tests.helper.oh_item.assert_value("Unittest_Ventilation_max_feedback_ventilation_level", test_case.expected_level)
 
     def test_set_feedback_states(self) -> None:
         """Test _set_feedback_states."""
@@ -663,7 +639,7 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
 
         self.ventilation_max._config.parameter.state_normal.level = 1
 
-        with unittest.mock.patch("habapp_rules.core.helper.send_if_different") as send_mock:
+        with unittest.mock.patch("habapp_rules.actors.ventilation.send_if_different") as send_mock:
             for test_case in test_cases:
                 with self.subTest(test_case=test_case):
                     send_mock.reset_mock()
@@ -680,19 +656,7 @@ class TestVentilationHeliosTwoStageHumidity(tests.helper.test_case_base.TestCase
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
     def test_create_graph(self) -> None:  # pragma: no cover
         """Create state machine graph for documentation."""
-        picture_dir = pathlib.Path(__file__).parent / "_state_charts" / "VentilationHeliosTwoStageHumidity"
-        if not picture_dir.is_dir():
-            picture_dir.mkdir(parents=True)
-
-        graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(
-            model=tests.helper.graph_machines.FakeModel(), states=self.ventilation_min.states, transitions=self.ventilation_min.trans, initial=self.ventilation_min.state, show_conditions=False
-        )
-
-        graph.get_graph().draw(picture_dir / "Ventilation.png", format="png", prog="dot")
-
-        for state_name in [state for state in self._get_state_names(self.ventilation_min.states) if "init" not in state.lower()]:
-            graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self.ventilation_min.states, transitions=self.ventilation_min.trans, initial=state_name, show_conditions=True)
-            graph.get_graph(force_new=True, show_roi=True).draw(picture_dir / f"Ventilation_{state_name}.png", format="png", prog="dot")
+        create_state_graphs(self.ventilation_min, "VentilationHeliosTwoStageHumidity")
 
     def test_get_initial_state(self) -> None:
         """Test _get_initial_state."""

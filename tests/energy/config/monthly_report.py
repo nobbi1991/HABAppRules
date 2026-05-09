@@ -3,11 +3,11 @@
 import unittest.mock
 
 import HABApp
-import pydantic
 
 import habapp_rules.energy.config.monthly_report
 import tests.helper.oh_item
 import tests.helper.test_case_base
+from habapp_rules.core.exceptions import HabAppRulesConfigurationError
 
 
 class TestEnergyShare(tests.helper.test_case_base.TestCaseBase):
@@ -51,11 +51,11 @@ class TestEnergyShare(tests.helper.test_case_base.TestCaseBase):
         self.assertEqual(0, energy_share.monthly_power)
 
         # invalid init (Item not found)
-        with self.assertRaises(pydantic.ValidationError):
+        with self.assertRaises(HabAppRulesConfigurationError):
             habapp_rules.energy.config.monthly_report.EnergyShare("Number_3", "Second Number")
 
         # invalid init (Item is not a number)
-        with self.assertRaises(pydantic.ValidationError):
+        with self.assertRaises(HabAppRulesConfigurationError):
             habapp_rules.energy.config.monthly_report.EnergyShare("Switch_1", "Second Number")
 
     def test_get_energy_since(self) -> None:
@@ -63,28 +63,28 @@ class TestEnergyShare(tests.helper.test_case_base.TestCaseBase):
         # single item
         single = habapp_rules.energy.config.monthly_report.EnergyShare("Number_1", "First Number")
         tests.helper.oh_item.set_state("Number_1", 42)
-        with unittest.mock.patch("habapp_rules.energy.helper.get_historic_value", side_effect=[12]) as get_historic_value_mock:
+        with unittest.mock.patch("habapp_rules.energy.config.monthly_report.get_historic_value", side_effect=[12]) as get_historic_value_mock:
             time_mock = unittest.mock.MagicMock()
             self.assertEqual(30, single.get_energy_since(time_mock))
-        get_historic_value_mock.assert_called_once_with(single.energy_item, time_mock)
+        get_historic_value_mock.assert_called_once_with(single.energy_item, time_mock, 0)
 
         # multiple items
         multiple = habapp_rules.energy.config.monthly_report.EnergyShare(["Number_1", "Number_2"], "First Number")
         tests.helper.oh_item.set_state("Number_1", 100)
         tests.helper.oh_item.set_state("Number_2", 300)
-        with unittest.mock.patch("habapp_rules.energy.helper.get_historic_value", side_effect=[50, 100]) as get_historic_value_mock:
+        with unittest.mock.patch("habapp_rules.energy.config.monthly_report.get_historic_value", side_effect=[50, 100]) as get_historic_value_mock:
             time_mock = unittest.mock.MagicMock()
             self.assertEqual(250, multiple.get_energy_since(time_mock))
         self.assertEqual(2, get_historic_value_mock.call_count)
-        get_historic_value_mock.assert_has_calls([unittest.mock.call(multiple.energy_item[0], time_mock), unittest.mock.call(multiple.energy_item[1], time_mock)])
+        get_historic_value_mock.assert_has_calls([unittest.mock.call(multiple.energy_item[0], time_mock, 0), unittest.mock.call(multiple.energy_item[1], time_mock, 0)])
 
         # negative_value
         single = habapp_rules.energy.config.monthly_report.EnergyShare("Number_1", "First Number")
         tests.helper.oh_item.set_state("Number_1", 42)
-        with unittest.mock.patch("habapp_rules.energy.helper.get_historic_value", side_effect=[100]) as get_historic_value_mock:
+        with unittest.mock.patch("habapp_rules.energy.config.monthly_report.get_historic_value", side_effect=[100]) as get_historic_value_mock:
             time_mock = unittest.mock.MagicMock()
             self.assertEqual(0, single.get_energy_since(time_mock))
-        get_historic_value_mock.assert_called_once_with(single.energy_item, time_mock)
+        get_historic_value_mock.assert_called_once_with(single.energy_item, time_mock, 0)
 
     def test_get_items_as_list(self) -> None:
         """Test get_items_as_list."""

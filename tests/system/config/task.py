@@ -1,6 +1,7 @@
 import datetime
 import unittest
 
+from habapp_rules.core.exceptions import HabAppRulesConfigurationError
 from habapp_rules.system.config.task import RecurringTaskParameter
 
 
@@ -16,5 +17,5 @@ class TestRecurringTaskParameter(unittest.TestCase):
         RecurringTaskParameter(recurrence_time=datetime.timedelta(hours=12))
 
         # invalid (time less than 12 hours)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(HabAppRulesConfigurationError):
             RecurringTaskParameter(recurrence_time=datetime.timedelta(hours=11))

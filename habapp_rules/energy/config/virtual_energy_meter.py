@@ -1,6 +1,6 @@
-import HABApp
 import pydantic
 import typing_extensions
+from HABApp.openhab.items import DimmerItem, NumberItem, SwitchItem
 from pydantic import model_validator
 
 from habapp_rules.core.exceptions import HabAppRulesConfigurationError
@@ -10,8 +10,8 @@ from habapp_rules.core.pydantic_base import ConfigBase, ItemBase, ParameterBase
 class EnergyMeterBaseItems(ItemBase):
     """Base class for energy meter items."""
 
-    power_output: HABApp.openhab.items.NumberItem | None = pydantic.Field(None, description="power output item, unit is W")
-    energy_output: HABApp.openhab.items.NumberItem | None = pydantic.Field(None, description="energy output item, unit is kWh")
+    power_output: NumberItem | None = pydantic.Field(None, description="power output item, unit is W")
+    energy_output: NumberItem | None = pydantic.Field(None, description="energy output item, unit is kWh")
 
     @pydantic.model_validator(mode="after")
     def validate_items(self) -> typing_extensions.Self:
@@ -32,19 +32,19 @@ class EnergyMeterBaseItems(ItemBase):
 class EnergyMeterSwitchItems(EnergyMeterBaseItems):
     """Items for virtual energy meter for a switch item."""
 
-    monitored_switch: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="switch item, which will be monitored")
+    monitored_switch: SwitchItem = pydantic.Field(..., description="switch item, which will be monitored")
 
 
 class EnergyMeterNumberItems(EnergyMeterBaseItems):
     """Items for virtual energy meter for a dimmer item."""
 
-    monitored_item: HABApp.openhab.items.DimmerItem | HABApp.openhab.items.NumberItem = pydantic.Field(..., description="dimmer item, which will be monitored")
+    monitored_item: DimmerItem | NumberItem = pydantic.Field(..., description="dimmer item, which will be monitored")
 
 
 class EnergyMeterBaseParameter(ParameterBase):
     """Base class for energy meter parameters."""
 
-    energy_update_resolution: int = pydantic.Field(0.010, description="update the energy item every x kWh. Default is 0.01kWh == 10 Wh", gt=0)
+    energy_update_resolution: float = pydantic.Field(0.010, description="update the energy item every x kWh. Default is 0.01kWh == 10 Wh", gt=0)
 
 
 class EnergyMeterSwitchParameter(EnergyMeterBaseParameter):
@@ -145,7 +145,7 @@ class EnergyMeterNumberConfig(ConfigBase):
         Raises:
             HabAppRulesConfigurationError: if config is not valid
         """
-        if isinstance(self.items.monitored_item, HABApp.openhab.items.DimmerItem):
+        if isinstance(self.items.monitored_item, DimmerItem):
             all_values = [mapping.value for mapping in self.parameter.power_mapping]
             if any(value < 0 for value in all_values) or any(value > 100 for value in all_values):  # noqa: PLR2004
                 msg = "power_mapping values for dimmer items must be between 0 and 100"

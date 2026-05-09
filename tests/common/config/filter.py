@@ -5,6 +5,7 @@ import HABApp
 import habapp_rules.common.config.filter
 import tests.helper.oh_item
 import tests.helper.test_case_base
+from habapp_rules.core.exceptions import HabAppRulesConfigurationError
 
 
 class TestExponentialFilterConfig(tests.helper.test_case_base.TestCaseBase):
@@ -38,7 +39,7 @@ class TestExponentialFilterConfig(tests.helper.test_case_base.TestCaseBase):
         )
 
         # instant_increase and instant_decrease is set
-        with self.assertRaises(ValueError):
+        with self.assertRaises(HabAppRulesConfigurationError):
             habapp_rules.common.config.filter.ExponentialFilterConfig(
                 items=habapp_rules.common.config.filter.ExponentialFilterItems(raw="Unittest_Raw", filtered="Unittest_Filtered"),
                 parameter=habapp_rules.common.config.filter.ExponentialFilterParameter(tau=42, instant_increase=True, instant_decrease=True),

@@ -1,7 +1,6 @@
 """Test energy save switch rules."""
 
 import collections
-import pathlib
 import sys
 import unittest.mock
 
@@ -9,11 +8,11 @@ import HABApp.rule.rule
 
 import habapp_rules.actors.config.energy_save_switch
 import habapp_rules.actors.energy_save_switch
-import tests.helper.graph_machines
 import tests.helper.oh_item
 import tests.helper.test_case_base
 import tests.helper.timer
 from habapp_rules.system import PresenceState, SleepState
+from tests.helper.graph_machines import create_state_graphs
 
 
 class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine):
@@ -62,17 +61,7 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
     def test_create_graph(self) -> None:  # pragma: no cover
         """Create state machine graph for documentation."""
-        picture_dir = pathlib.Path(__file__).parent / "_state_charts" / "EnergySaveSwitch"
-        if not picture_dir.is_dir():
-            picture_dir.mkdir(parents=True)
-
-        graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self._rule_min.states, transitions=self._rule_min.trans, initial=self._rule_min.state, show_conditions=False)
-
-        graph.get_graph().draw(picture_dir / "EnergySaveSwitch.png", format="png", prog="dot")
-
-        for state_name in [state for state in self._get_state_names(self._rule_min.states) if "init" not in state.lower()]:
-            graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self._rule_min.states, transitions=self._rule_min.trans, initial=state_name, show_conditions=True)
-            graph.get_graph(force_new=True, show_roi=True).draw(picture_dir / f"EnergySaveSwitch_{state_name}.png", format="png", prog="dot")
+        create_state_graphs(self._rule_min, "EnergySaveSwitch")
 
     def test_set_timeout(self) -> None:
         """Test set timeout."""

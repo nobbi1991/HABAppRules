@@ -1,5 +1,4 @@
 import collections
-import pathlib
 import sys
 import unittest
 import unittest.mock
@@ -10,11 +9,11 @@ from HABApp.openhab.definitions import ThingStatusEnum
 import habapp_rules.media.config.sonos
 import habapp_rules.media.sonos
 import habapp_rules.system
-import tests.helper.graph_machines
 import tests.helper.oh_item
 import tests.helper.test_case_base
 import tests.helper.timer
 from habapp_rules.media.config.sonos import ContentPlayUri, ContentTuneIn, SonosParameter
+from tests.helper.graph_machines import create_state_graphs
 
 
 class TestSonos(tests.helper.test_case_base.TestCaseBaseStateMachine):
@@ -70,17 +69,7 @@ class TestSonos(tests.helper.test_case_base.TestCaseBaseStateMachine):
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
     def test_create_graph(self) -> None:  # pragma: no cover
         """Create state machine graph for documentation."""
-        picture_dir = pathlib.Path(__file__).parent / "_state_charts" / "Sonos"
-        if not picture_dir.is_dir():
-            picture_dir.mkdir(parents=True)
-
-        jal_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self.sonos_min.states, transitions=self.sonos_min.trans, initial=self.sonos_min.state, show_conditions=False)
-
-        jal_graph.get_graph().draw(picture_dir / "Sonos.png", format="png", prog="dot")
-
-        for state_name in [state for state in self._get_state_names(self.sonos_min.states) if "init" not in state.lower()]:
-            jal_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self.sonos_min.states, transitions=self.sonos_min.trans, initial=state_name, show_conditions=True)
-            jal_graph.get_graph(force_new=True, show_roi=True).draw(picture_dir / f"Sonos_{state_name}.png", format="png", prog="dot")
+        create_state_graphs(self.sonos_min, "Sonos")
 
     def test_initial_state(self) -> None:
         """Test initial state."""
@@ -241,6 +230,13 @@ class TestSonos(tests.helper.test_case_base.TestCaseBaseStateMachine):
         with unittest.mock.patch.object(self.sonos_max, "_get_favorite_content_by_id") as mock_get_fav_content_by_id, unittest.mock.patch.object(self.sonos_max, "_set_favorite_content") as mock_set_favorite_content:
             self.sonos_max.to_Standby()
             mock_set_favorite_content.assert_called_once_with(mock_get_fav_content_by_id.return_value)
+
+        # Standby from Booting and _started_through_favorite_id unknown / wrong fav_id
+        self.sonos_max._previous_state = "Booting"
+        self.sonos_max._started_through_favorite_id = True
+        with unittest.mock.patch.object(self.sonos_max, "_get_favorite_content_by_id", return_value=None), unittest.mock.patch.object(self.sonos_max, "_set_favorite_content") as mock_set_favorite_content:
+            self.sonos_max.to_Standby()
+            mock_set_favorite_content.assert_not_called()
 
     def test_check_if_known_content(self) -> None:
         """Test _check_if_known_content."""
@@ -563,6 +559,14 @@ class TestSonos(tests.helper.test_case_base.TestCaseBaseStateMachine):
         get_fav_content_mock.assert_called_once_with(17)
         self.assertTrue(self.sonos_max._started_through_favorite_id)
         tests.helper.oh_item.assert_value("Unittest_PowerSwitch_max", "ON")
+
+        # known content from power off state but Power item is not configured
+        self.sonos_max._config.items.power_switch = None
+        self.sonos_max._started_through_favorite_id = False
+        self.sonos_max.to_PowerOff()
+        with unittest.mock.patch.object(self.sonos_max, "_get_favorite_content_by_id", return_value=fav_content):
+            tests.helper.oh_item.item_state_change_event("Unittest_FavoriteId_max", 17)
+        self.assertFalse(self.sonos_max._started_through_favorite_id)
 
     def test_cb_current_track_uri(self) -> None:
         """Test _cb_current_track_uri."""

@@ -1,18 +1,18 @@
 """Config models for KNX / MQTT bridge."""
 
-import HABApp.openhab.items
 import pydantic
 import typing_extensions
+from HABApp.openhab.items import DimmerItem, SwitchItem
 
-import habapp_rules.core.pydantic_base
+from habapp_rules.core.pydantic_base import ConfigBase, ItemBase, ParameterBase
 
 
-class KnxMqttItems(habapp_rules.core.pydantic_base.ItemBase):
+class KnxMqttItems(ItemBase):
     """Configuration of items for KNX MQTT bridge."""
 
-    mqtt_dimmer: HABApp.openhab.items.DimmerItem = pydantic.Field(..., description="")
-    knx_switch_ctr: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="")
-    knx_dimmer_ctr: HABApp.openhab.items.DimmerItem | None = pydantic.Field(None, description="")
+    mqtt_dimmer: DimmerItem = pydantic.Field(..., description="")
+    knx_switch_ctr: SwitchItem | None = pydantic.Field(default=None, description="")
+    knx_dimmer_ctr: DimmerItem | None = pydantic.Field(default=None, description="")
 
     @pydantic.model_validator(mode="after")
     def validate_knx_items(self) -> typing_extensions.Self:
@@ -29,15 +29,24 @@ class KnxMqttItems(habapp_rules.core.pydantic_base.ItemBase):
             raise ValueError(msg)
         return self
 
+    @property
+    def knx_item_name(self) -> str:
+        """Get name of configured KNX item.
 
-class KnxMqttParameter(habapp_rules.core.pydantic_base.ParameterBase):
+        Returns:
+            name of configured KNX item
+        """
+        return self.knx_switch_ctr.name if self.knx_switch_ctr is not None else self.knx_dimmer_ctr.name  # type: ignore[union-attr]  # pydantic validator ensures that eather switch or dimmer is set
+
+
+class KnxMqttParameter(ParameterBase):
     """Configuration of parameters for KNX MQTT bridge."""
 
-    increase_value: int = pydantic.Field(60, description="")
-    decrease_value: int = pydantic.Field(30, description="")
+    increase_value: int = pydantic.Field(default=60, description="")
+    decrease_value: int = pydantic.Field(default=30, description="")
 
 
-class KnxMqttConfig(habapp_rules.core.pydantic_base.ConfigBase):
+class KnxMqttConfig(ConfigBase):
     """Configuration of KNX MQTT bridge."""
 
     items: KnxMqttItems = pydantic.Field(..., description="Items for KNX MQTT bridge")

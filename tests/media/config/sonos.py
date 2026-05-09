@@ -8,6 +8,7 @@ import habapp_rules.core.exceptions
 import habapp_rules.media.config.sonos
 import tests.helper.oh_item
 import tests.helper.test_case_base
+from habapp_rules.core.exceptions import HabAppRulesConfigurationError
 
 
 class TestSonosParameter(unittest.TestCase):
@@ -28,7 +29,7 @@ class TestSonosParameter(unittest.TestCase):
         habapp_rules.media.config.sonos.SonosParameter(known_content=[self.known_content_uri_1, self.known_content_uri_2])
 
         # overlap
-        with self.assertRaises(ValueError):
+        with self.assertRaises(HabAppRulesConfigurationError):
             habapp_rules.media.config.sonos.SonosParameter(known_content=[self.known_content_uri_1, self.known_content_uri_2, self.known_content_tunein_1])
 
     def test_check_if_known_tune_in(self) -> None:
