@@ -18,7 +18,7 @@ hooks = [
 
 [[repos]]
 repo = "https://github.com/astral-sh/ruff-pre-commit"
-rev = "v0.15.10"
+rev = "v0.15.12"
 hooks = [
     {id = "ruff", args = ["--fix"], files = "\\.py$"},
     {id = "ruff-format", files = "\\.py$"}
@@ -33,7 +33,7 @@ hooks = [
 
 [[repos]]
 repo = "https://github.com/scop/pre-commit-shfmt"
-rev = "v3.13.0-1"
+rev = "v3.13.1-1"
 hooks = [
     {id = "shfmt", files = "\\.(sh|bash)$", priority = 1}
 ]
