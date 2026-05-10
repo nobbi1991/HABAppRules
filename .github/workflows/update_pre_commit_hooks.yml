@@ -19,8 +19,10 @@ jobs:
       - name: Update prek hooks
         id: update-hooks
         run: |
+          git status --porcelain > /tmp/before.txt
           prek autoupdate
-          if git diff --quiet prek.toml; then
+          git status --porcelain > /tmp/after.txt
+          if diff /tmp/before.txt /tmp/after.txt > /dev/null; then
             echo "updated=false" >> $GITHUB_OUTPUT
           else
             echo "updated=true" >> $GITHUB_OUTPUT
@@ -75,7 +77,6 @@ jobs:
           print("Updated changelog")
           EOF
       - uses: peter-evans/create-pull-request@v8
-        if: steps.update-hooks.outputs.updated == 'true'
         with:
           branch: update/prek-hooks
           title: Update prek hooks and increment version
@@ -86,3 +87,4 @@ jobs:
             prek.toml
             habapp_rules/__init__.py
             changelog.md
+          delete-branch: true
