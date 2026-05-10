@@ -25,7 +25,7 @@ jobs:
           else
             echo "updated=true" >> $GITHUB_OUTPUT
           fi
-      - name: Increment minor version
+      - name: Increment bugfix version
         if: steps.update-hooks.outputs.updated == 'true'
         run: |
           python - << 'EOF'
@@ -38,7 +38,7 @@ jobs:
               version_match = re.search(r'__version__ = "(\d+)\.(\d+)\.(\d+)"', content)
               if version_match:
                   major, minor, patch = version_match.groups()
-                  new_version = f"{major}.{int(minor) + 1}.0"
+                  new_version = f"{major}.{minor}.{int(patch) + 1}"
                   content = re.sub(r'__version__ = "\d+\.\d+\.\d+"', f'__version__ = "{new_version}"', content)
                   with open('habapp_rules/__init__.py', 'w') as f:
                       f.write(content)
@@ -80,8 +80,8 @@ jobs:
           branch: update/prek-hooks
           title: Update prek hooks and increment version
           labels: 'prek, automated'
-          commit-message: "chore: update prek hooks and increment minor version"
-          body: Update versions of prek hooks to latest version and increment minor version.
+          commit-message: "chore: update prek hooks and increment patch version"
+          body: Update versions of prek hooks to latest version and increment patch version.
           add-paths: |
             prek.toml
             habapp_rules/__init__.py
