@@ -12,13 +12,15 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
       - name: Install prek
         run: pip install prek
       - name: Update prek hooks
         id: update-hooks
         run: |
           prek autoupdate
-          if git diff --quiet .pre-commit-config.yaml; then
+          if git diff --quiet prek.toml; then
             echo "updated=false" >> $GITHUB_OUTPUT
           else
             echo "updated=true" >> $GITHUB_OUTPUT
@@ -81,6 +83,6 @@ jobs:
           commit-message: "chore: update prek hooks and increment minor version"
           body: Update versions of prek hooks to latest version and increment minor version.
           add-paths: |
-            .pre-commit-config.yaml
+            prek.toml
             habapp_rules/__init__.py
             changelog.md
