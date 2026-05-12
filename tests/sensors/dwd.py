@@ -5,29 +5,34 @@ import datetime
 import sys
 import unittest.mock
 
-import HABApp
+from HABApp.openhab.items import DatetimeItem, NumberItem, StringItem, SwitchItem
 
-import habapp_rules.sensors.config.dwd
-import habapp_rules.sensors.dwd
-import tests.helper.oh_item
-import tests.helper.test_case_base
+from habapp_rules.sensors.config.dwd import WindAlarmConfig, WindAlarmItems, WindAlarmParameter
+from habapp_rules.sensors.dwd import DwdItems, DwdWindAlarm
 from tests.helper.graph_machines import create_state_graphs
+from tests.helper.oh_item import (
+    add_mock_item,
+    assert_item_value,
+    item_state_change_event,
+    set_item_state,
+)
+from tests.helper.test_case_base import TestCaseBase, TestCaseBaseStateMachine
 
 
-class TestDwdItems(tests.helper.test_case_base.TestCaseBase):
+class TestDwdItems(TestCaseBase):
     """Tests for DwdItems."""
 
     def setUp(self) -> None:
         """Setup tests."""
-        tests.helper.test_case_base.TestCaseBase.setUp(self)
+        TestCaseBase.setUp(self)
 
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "I26_99_warning_1_description", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "I26_99_warning_1_type", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "I26_99_warning_1_severity", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DatetimeItem, "I26_99_warning_1_start_time", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DatetimeItem, "I26_99_warning_1_end_time", None)
+        add_mock_item(StringItem, "I26_99_warning_1_description", None)
+        add_mock_item(StringItem, "I26_99_warning_1_type", None)
+        add_mock_item(StringItem, "I26_99_warning_1_severity", None)
+        add_mock_item(DatetimeItem, "I26_99_warning_1_start_time", None)
+        add_mock_item(DatetimeItem, "I26_99_warning_1_end_time", None)
 
-        self._test_dataclass = habapp_rules.sensors.dwd.DwdItems.from_prefix("I26_99_warning_1")
+        self._test_dataclass = DwdItems.from_prefix("I26_99_warning_1")
 
     def test_severity_as_int(self) -> None:
         """Test severity_as_int."""
@@ -45,50 +50,50 @@ class TestDwdItems(tests.helper.test_case_base.TestCaseBase):
 
         for test_case in test_cases:
             with self.subTest(test_case=test_case):
-                tests.helper.oh_item.set_state("I26_99_warning_1_severity", test_case.str_value)
+                set_item_state("I26_99_warning_1_severity", test_case.str_value)
                 self.assertEqual(test_case.expected_int, self._test_dataclass.severity_as_int)
 
 
-class TestDwdWindAlarm(tests.helper.test_case_base.TestCaseBaseStateMachine):
+class TestDwdWindAlarm(TestCaseBaseStateMachine):
     """Tests for DwdWindAlarm."""
 
     def setUp(self) -> None:
         """Setup tests."""
-        tests.helper.test_case_base.TestCaseBaseStateMachine.setUp(self)
+        super().setUp()
 
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Wind_Alarm_1", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual_1", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Unittest_Wind_Alarm_1_state", None)
+        add_mock_item(SwitchItem, "Unittest_Wind_Alarm_1", None)
+        add_mock_item(SwitchItem, "Unittest_Manual_1", None)
+        add_mock_item(StringItem, "H_Unittest_Wind_Alarm_1_state", None)
 
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Wind_Alarm_2", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual_2", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Wind_Alarm_2_state", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Hand_Timeout", None)
+        add_mock_item(SwitchItem, "Unittest_Wind_Alarm_2", None)
+        add_mock_item(SwitchItem, "Unittest_Manual_2", None)
+        add_mock_item(StringItem, "Unittest_Wind_Alarm_2_state", None)
+        add_mock_item(NumberItem, "Unittest_Hand_Timeout", None)
 
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "I26_99_warning_1_description", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "I26_99_warning_1_type", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "I26_99_warning_1_severity", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DatetimeItem, "I26_99_warning_1_start_time", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DatetimeItem, "I26_99_warning_1_end_time", None)
+        add_mock_item(StringItem, "I26_99_warning_1_description", None)
+        add_mock_item(StringItem, "I26_99_warning_1_type", None)
+        add_mock_item(StringItem, "I26_99_warning_1_severity", None)
+        add_mock_item(DatetimeItem, "I26_99_warning_1_start_time", None)
+        add_mock_item(DatetimeItem, "I26_99_warning_1_end_time", None)
 
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "I26_99_warning_2_description", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "I26_99_warning_2_type", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "I26_99_warning_2_severity", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DatetimeItem, "I26_99_warning_2_start_time", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DatetimeItem, "I26_99_warning_2_end_time", None)
+        add_mock_item(StringItem, "I26_99_warning_2_description", None)
+        add_mock_item(StringItem, "I26_99_warning_2_type", None)
+        add_mock_item(StringItem, "I26_99_warning_2_severity", None)
+        add_mock_item(DatetimeItem, "I26_99_warning_2_start_time", None)
+        add_mock_item(DatetimeItem, "I26_99_warning_2_end_time", None)
 
-        config_1 = habapp_rules.sensors.config.dwd.WindAlarmConfig(
-            items=habapp_rules.sensors.config.dwd.WindAlarmItems(wind_alarm="Unittest_Wind_Alarm_1", manual="Unittest_Manual_1", state="H_Unittest_Wind_Alarm_1_state"),
-            parameter=habapp_rules.sensors.config.dwd.WindAlarmParameter(hand_timeout=12 * 3600, number_dwd_objects=2),
+        config_1 = WindAlarmConfig(
+            items=WindAlarmItems(wind_alarm="Unittest_Wind_Alarm_1", manual="Unittest_Manual_1", state="H_Unittest_Wind_Alarm_1_state"),
+            parameter=WindAlarmParameter(hand_timeout=12 * 3600, number_dwd_objects=2),
         )
 
-        config_2 = habapp_rules.sensors.config.dwd.WindAlarmConfig(
-            items=habapp_rules.sensors.config.dwd.WindAlarmItems(wind_alarm="Unittest_Wind_Alarm_2", manual="Unittest_Manual_2", hand_timeout="Unittest_Hand_Timeout", state="Unittest_Wind_Alarm_2_state"),
-            parameter=habapp_rules.sensors.config.dwd.WindAlarmParameter(number_dwd_objects=2),
+        config_2 = WindAlarmConfig(
+            items=WindAlarmItems(wind_alarm="Unittest_Wind_Alarm_2", manual="Unittest_Manual_2", hand_timeout="Unittest_Hand_Timeout", state="Unittest_Wind_Alarm_2_state"),
+            parameter=WindAlarmParameter(number_dwd_objects=2),
         )
 
-        self._wind_alarm_rule_1 = habapp_rules.sensors.dwd.DwdWindAlarm(config_1)
-        self._wind_alarm_rule_2 = habapp_rules.sensors.dwd.DwdWindAlarm(config_2)
+        self._wind_alarm_rule_1 = DwdWindAlarm(config_1)
+        self._wind_alarm_rule_2 = DwdWindAlarm(config_2)
 
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
     def test_create_graph(self) -> None:  # pragma: no cover
@@ -100,7 +105,7 @@ class TestDwdWindAlarm(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertEqual(12 * 3600, self._wind_alarm_rule_1.state_machine.get_state("Hand").timeout)
         self.assertEqual(24 * 3600, self._wind_alarm_rule_2.state_machine.get_state("Hand").timeout)
 
-        tests.helper.oh_item.item_state_change_event("Unittest_Hand_Timeout", 2000)
+        item_state_change_event("Unittest_Hand_Timeout", 2000)
         self.assertEqual(2000, self._wind_alarm_rule_2.state_machine.get_state("Hand").timeout)
 
     def test_get_initial_state(self) -> None:
@@ -117,7 +122,7 @@ class TestDwdWindAlarm(tests.helper.test_case_base.TestCaseBaseStateMachine):
         with unittest.mock.patch.object(self._wind_alarm_rule_1, "_wind_alarm_active") as wind_alarm_active_mock:
             for test_case in test_cases:
                 with self.subTest(test_case=test_case):
-                    tests.helper.oh_item.set_state("Unittest_Manual_1", test_case.manual)
+                    set_item_state("Unittest_Manual_1", test_case.manual)
                     wind_alarm_active_mock.return_value = test_case.wind_alarm_active
 
                     self.assertEqual(test_case.expected_state, self._wind_alarm_rule_1._get_initial_state())
@@ -128,24 +133,24 @@ class TestDwdWindAlarm(tests.helper.test_case_base.TestCaseBaseStateMachine):
         self.assertEqual("Auto_Off", self._wind_alarm_rule_1.state)
         self.assertEqual("Auto_Off", self._wind_alarm_rule_2.state)
 
-        tests.helper.oh_item.item_state_change_event("Unittest_Manual_1", "ON")
-        tests.helper.oh_item.item_state_change_event("Unittest_Manual_2", "ON")
+        item_state_change_event("Unittest_Manual_1", "ON")
+        item_state_change_event("Unittest_Manual_2", "ON")
         self.assertEqual("Manual", self._wind_alarm_rule_1.state)
         self.assertEqual("Manual", self._wind_alarm_rule_2.state)
 
-        tests.helper.oh_item.item_state_change_event("Unittest_Manual_1", "OFF")
-        tests.helper.oh_item.item_state_change_event("Unittest_Manual_2", "OFF")
+        item_state_change_event("Unittest_Manual_1", "OFF")
+        item_state_change_event("Unittest_Manual_2", "OFF")
         self.assertEqual("Auto_Off", self._wind_alarm_rule_1.state)
         self.assertEqual("Auto_Off", self._wind_alarm_rule_2.state)
 
         # from Hand
-        tests.helper.oh_item.item_state_change_event("Unittest_Wind_Alarm_1", "ON")
-        tests.helper.oh_item.item_state_change_event("Unittest_Wind_Alarm_2", "ON")
+        item_state_change_event("Unittest_Wind_Alarm_1", "ON")
+        item_state_change_event("Unittest_Wind_Alarm_2", "ON")
         self.assertEqual("Hand", self._wind_alarm_rule_1.state)
         self.assertEqual("Hand", self._wind_alarm_rule_2.state)
 
-        tests.helper.oh_item.item_state_change_event("Unittest_Manual_1", "ON")
-        tests.helper.oh_item.item_state_change_event("Unittest_Manual_2", "ON")
+        item_state_change_event("Unittest_Manual_1", "ON")
+        item_state_change_event("Unittest_Manual_2", "ON")
         self.assertEqual("Manual", self._wind_alarm_rule_1.state)
         self.assertEqual("Manual", self._wind_alarm_rule_2.state)
 
@@ -175,17 +180,17 @@ class TestDwdWindAlarm(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
         for test_case in test_cases:
             with self.subTest(test_case=test_case):
-                tests.helper.oh_item.set_state("I26_99_warning_1_description", test_case.description_1)
-                tests.helper.oh_item.set_state("I26_99_warning_1_type", test_case.type_1)
-                tests.helper.oh_item.set_state("I26_99_warning_1_severity", test_case.severity_1)
-                tests.helper.oh_item.set_state("I26_99_warning_1_start_time", test_case.start_time_1)
-                tests.helper.oh_item.set_state("I26_99_warning_1_end_time", test_case.end_time_1)
+                set_item_state("I26_99_warning_1_description", test_case.description_1)
+                set_item_state("I26_99_warning_1_type", test_case.type_1)
+                set_item_state("I26_99_warning_1_severity", test_case.severity_1)
+                set_item_state("I26_99_warning_1_start_time", test_case.start_time_1)
+                set_item_state("I26_99_warning_1_end_time", test_case.end_time_1)
 
-                tests.helper.oh_item.set_state("I26_99_warning_2_description", test_case.description_2)
-                tests.helper.oh_item.set_state("I26_99_warning_2_type", test_case.type_2)
-                tests.helper.oh_item.set_state("I26_99_warning_2_severity", test_case.severity_2)
-                tests.helper.oh_item.set_state("I26_99_warning_2_start_time", test_case.start_time_2)
-                tests.helper.oh_item.set_state("I26_99_warning_2_end_time", test_case.end_time_2)
+                set_item_state("I26_99_warning_2_description", test_case.description_2)
+                set_item_state("I26_99_warning_2_type", test_case.type_2)
+                set_item_state("I26_99_warning_2_severity", test_case.severity_2)
+                set_item_state("I26_99_warning_2_start_time", test_case.start_time_2)
+                set_item_state("I26_99_warning_2_end_time", test_case.end_time_2)
 
                 self.assertEqual(test_case.expected_result, self._wind_alarm_rule_1._wind_alarm_active())
 
@@ -217,4 +222,4 @@ class TestDwdWindAlarm(tests.helper.test_case_base.TestCaseBaseStateMachine):
                     self._wind_alarm_rule_1._cb_cyclic_check()
 
                     self.assertEqual(test_case.expected_state, self._wind_alarm_rule_1.state)
-                    tests.helper.oh_item.assert_value("Unittest_Wind_Alarm_1", "ON" if test_case.expected_state == "Auto_On" else "OFF")
+                    assert_item_value("Unittest_Wind_Alarm_1", "ON" if test_case.expected_state == "Auto_On" else "OFF")

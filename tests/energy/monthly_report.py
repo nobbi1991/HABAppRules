@@ -5,15 +5,17 @@ import datetime
 import unittest
 import unittest.mock
 
-import HABApp.openhab.items
-import multi_notifier.connectors.connector_mail
+from HABApp.openhab.items import NumberItem
+from multi_notifier.connectors.connector_mail import MailConfig
 
-import habapp_rules
-import habapp_rules.core.exceptions
-import habapp_rules.energy.config.monthly_report
-import habapp_rules.energy.monthly_report
-import tests.helper.oh_item
-import tests.helper.test_case_base
+from habapp_rules import __version__
+from habapp_rules.core.exceptions import HabAppRulesConfigurationError
+from habapp_rules.energy.config.monthly_report import EnergyShare, MonthlyReportConfig, MonthlyReportItems, MonthlyReportParameter
+from habapp_rules.energy.monthly_report import MonthlyReport, _get_previous_month_name
+from tests.helper.oh_item import (
+    add_mock_item,
+)
+from tests.helper.test_case_base import TestCaseBase
 
 
 class TestFunctions(unittest.TestCase):
@@ -43,32 +45,32 @@ class TestFunctions(unittest.TestCase):
             for test_case in test_cases:
                 with self.subTest(test_case=test_case):
                     datetime_mock.now.return_value = today.replace(month=test_case.month_number, day=1)
-                    self.assertEqual(test_case.expected_name, habapp_rules.energy.monthly_report._get_previous_month_name())
+                    self.assertEqual(test_case.expected_name, _get_previous_month_name())
 
 
-class TestMonthlyReport(tests.helper.test_case_base.TestCaseBase):
+class TestMonthlyReport(TestCaseBase):
     """Test MonthlyReport rule."""
 
     def setUp(self) -> None:
         """Setup test case."""
-        tests.helper.test_case_base.TestCaseBase.setUp(self)
+        TestCaseBase.setUp(self)
 
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Energy_Sum", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Energy_1", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Energy_2", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Energy_3", None)
+        add_mock_item(NumberItem, "Energy_Sum", None)
+        add_mock_item(NumberItem, "Energy_1", None)
+        add_mock_item(NumberItem, "Energy_2", None)
+        add_mock_item(NumberItem, "Energy_3", None)
 
-        self._energy_1 = habapp_rules.energy.config.monthly_report.EnergyShare("Energy_1", "Energy 1")
-        self._energy_2 = habapp_rules.energy.config.monthly_report.EnergyShare("Energy_2", "Energy 2")
-        self._energy_3 = habapp_rules.energy.config.monthly_report.EnergyShare("Energy_3", "Energy 3")
-        self._mail_config = multi_notifier.connectors.connector_mail.MailConfig(user="User", password="Password", smtp_host="smtp.test.de", smtp_port=587)  # noqa: S106
+        self._energy_1 = EnergyShare("Energy_1", "Energy 1")
+        self._energy_2 = EnergyShare("Energy_2", "Energy 2")
+        self._energy_3 = EnergyShare("Energy_3", "Energy 3")
+        self._mail_config = MailConfig(user="User", password="Password", smtp_host="smtp.test.de", smtp_port=587)  # noqa: S106
 
-        config = habapp_rules.energy.config.monthly_report.MonthlyReportConfig(
-            items=habapp_rules.energy.config.monthly_report.MonthlyReportItems(energy_sum="Energy_Sum"),
-            parameter=habapp_rules.energy.config.monthly_report.MonthlyReportParameter(known_energy_shares=[self._energy_1, self._energy_2], config_mail=self._mail_config, recipients=["test@test.de"]),
+        config = MonthlyReportConfig(
+            items=MonthlyReportItems(energy_sum="Energy_Sum"),
+            parameter=MonthlyReportParameter(known_energy_shares=[self._energy_1, self._energy_2], config_mail=self._mail_config, recipients=["test@test.de"]),
         )
 
-        self._rule = habapp_rules.energy.monthly_report.MonthlyReport(config)
+        self._rule = MonthlyReport(config)
 
     def test_init(self) -> None:
         """Test init."""
@@ -91,27 +93,25 @@ class TestMonthlyReport(tests.helper.test_case_base.TestCaseBase):
                 self._energy_2.energy_item.groups = {"PersistenceGroup"} if test_case.item_2_in_group else set()
                 self._rule._config.items.energy_sum.groups = {"PersistenceGroup"} if test_case.sum_in_group else set()
 
-                config = habapp_rules.energy.config.monthly_report.MonthlyReportConfig(
-                    items=habapp_rules.energy.config.monthly_report.MonthlyReportItems(energy_sum="Energy_Sum"),
-                    parameter=habapp_rules.energy.config.monthly_report.MonthlyReportParameter(
-                        known_energy_shares=[self._energy_1, self._energy_2], config_mail=self._mail_config, recipients=["test@test.de"], persistence_group_name="PersistenceGroup"
-                    ),
+                config = MonthlyReportConfig(
+                    items=MonthlyReportItems(energy_sum="Energy_Sum"),
+                    parameter=MonthlyReportParameter(known_energy_shares=[self._energy_1, self._energy_2], config_mail=self._mail_config, recipients=["test@test.de"], persistence_group_name="PersistenceGroup"),
                 )
 
                 if test_case.raises_exception:
-                    with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
-                        habapp_rules.energy.monthly_report.MonthlyReport(config)
+                    with self.assertRaises(HabAppRulesConfigurationError):
+                        MonthlyReport(config)
                 else:
-                    habapp_rules.energy.monthly_report.MonthlyReport(config)
+                    MonthlyReport(config)
 
     def test_init_with_debug_mode(self) -> None:
         """Test init with debug mode."""
-        config = habapp_rules.energy.config.monthly_report.MonthlyReportConfig(
-            items=habapp_rules.energy.config.monthly_report.MonthlyReportItems(energy_sum="Energy_Sum"),
-            parameter=habapp_rules.energy.config.monthly_report.MonthlyReportParameter(known_energy_shares=[self._energy_1, self._energy_2], config_mail=self._mail_config, recipients=["test@test.de"], debug=True),
+        config = MonthlyReportConfig(
+            items=MonthlyReportItems(energy_sum="Energy_Sum"),
+            parameter=MonthlyReportParameter(known_energy_shares=[self._energy_1, self._energy_2], config_mail=self._mail_config, recipients=["test@test.de"], debug=True),
         )
 
-        self._rule = habapp_rules.energy.monthly_report.MonthlyReport(config)
+        self._rule = MonthlyReport(config)
 
     def test_create_html(self) -> None:
         """Test create_html."""
@@ -121,7 +121,7 @@ class TestMonthlyReport(tests.helper.test_case_base.TestCaseBase):
         with unittest.mock.patch("jinja2.Template", return_value=template_mock), unittest.mock.patch("habapp_rules.energy.monthly_report._get_previous_month_name", return_value="MonthName"):
             self._rule._create_html(10_042.123456)
 
-        template_mock.render.assert_called_once_with(month="MonthName", energy_now="20123.5", energy_last_month="10042.1", habapp_version=habapp_rules.__version__)
+        template_mock.render.assert_called_once_with(month="MonthName", energy_now="20123.5", energy_last_month="10042.1", habapp_version=__version__)
 
     def test_cb_send_energy(self) -> None:
         """Test cb_send_energy."""

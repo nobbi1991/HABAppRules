@@ -6,51 +6,55 @@ import sys
 import unittest
 import unittest.mock
 
-import HABApp.rule.rule
+from HABApp.openhab.items import StringItem, SwitchItem
 
-import habapp_rules.system.config.sleep
-import habapp_rules.system.sleep
-import tests.helper.oh_item
-import tests.helper.test_case_base
-import tests.helper.timer
+from habapp_rules.system import SleepState
+from habapp_rules.system.config.sleep import LinkSleepConfig, LinkSleepItems, LinkSleepParameter, SleepConfig, SleepItems
+from habapp_rules.system.sleep import LinkSleep, Sleep
 from tests.helper.graph_machines import create_state_graphs
+from tests.helper.oh_item import (
+    add_mock_item,
+    assert_item_value,
+    item_state_change_event,
+    remove_mocked_item_by_name,
+    send_command,
+    set_item_state,
+)
+from tests.helper.test_case_base import TestCaseBase, TestCaseBaseStateMachine
+from tests.helper.timer import call_timeout
 
 
-class TestSleep(tests.helper.test_case_base.TestCaseBaseStateMachine):
+class TestSleep(TestCaseBaseStateMachine):
     """Tests cases for testing presence rule."""
 
     def setUp(self) -> None:
         """Setup test case."""
-        tests.helper.test_case_base.TestCaseBaseStateMachine.setUp(self)
+        super().setUp()
 
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Sleep", "OFF")
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Sleep_Request", "OFF")
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Lock", "OFF")
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Lock_Request", "OFF")
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Display_Text", "")
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Sleep_Unittest_Sleep_state", "")
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "CustomState", "")
+        add_mock_item(SwitchItem, "Unittest_Sleep", "OFF")
+        add_mock_item(SwitchItem, "Unittest_Sleep_Request", "OFF")
+        add_mock_item(SwitchItem, "Unittest_Lock", "OFF")
+        add_mock_item(SwitchItem, "Unittest_Lock_Request", "OFF")
+        add_mock_item(StringItem, "Unittest_Display_Text", "")
+        add_mock_item(StringItem, "H_Sleep_Unittest_Sleep_state", "")
+        add_mock_item(StringItem, "CustomState", "")
 
-        config = habapp_rules.system.config.sleep.SleepConfig(
-            items=habapp_rules.system.config.sleep.SleepItems(sleep="Unittest_Sleep", sleep_request="Unittest_Sleep_Request", lock="Unittest_Lock", lock_request="Unittest_Lock_Request", display_text="Unittest_Display_Text", state="CustomState")
-        )
+        config = SleepConfig(items=SleepItems(sleep="Unittest_Sleep", sleep_request="Unittest_Sleep_Request", lock="Unittest_Lock", lock_request="Unittest_Lock_Request", display_text="Unittest_Display_Text", state="CustomState"))
 
-        self._sleep = habapp_rules.system.sleep.Sleep(config)
+        self._sleep = Sleep(config)
 
     def test_init_with_none(self) -> None:
         """Test __init__ with None values."""
-        tests.helper.oh_item.set_state("Unittest_Sleep", None)
-        tests.helper.oh_item.set_state("Unittest_Sleep_Request", None)
-        tests.helper.oh_item.set_state("Unittest_Lock", None)
-        tests.helper.oh_item.set_state("Unittest_Lock_Request", None)
-        tests.helper.oh_item.set_state("Unittest_Display_Text", None)
-        tests.helper.oh_item.set_state("CustomState", None)
+        set_item_state("Unittest_Sleep", None)
+        set_item_state("Unittest_Sleep_Request", None)
+        set_item_state("Unittest_Lock", None)
+        set_item_state("Unittest_Lock_Request", None)
+        set_item_state("Unittest_Display_Text", None)
+        set_item_state("CustomState", None)
 
-        config = habapp_rules.system.config.sleep.SleepConfig(
-            items=habapp_rules.system.config.sleep.SleepItems(sleep="Unittest_Sleep", sleep_request="Unittest_Sleep_Request", lock="Unittest_Lock", lock_request="Unittest_Lock_Request", display_text="Unittest_Display_Text", state="CustomState")
-        )
+        config = SleepConfig(items=SleepItems(sleep="Unittest_Sleep", sleep_request="Unittest_Sleep_Request", lock="Unittest_Lock", lock_request="Unittest_Lock_Request", display_text="Unittest_Display_Text", state="CustomState"))
 
-        habapp_rules.system.sleep.Sleep(config)
+        Sleep(config)
 
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
     def test_create_graph(self) -> None:  # pragma: no cover
@@ -60,7 +64,7 @@ class TestSleep(tests.helper.test_case_base.TestCaseBaseStateMachine):
     def test_enums(self) -> None:
         """Test if all enums from __init__.py are implemented."""
         implemented_states = list(self._sleep.state_machine.states)
-        enum_states = [state.value for state in habapp_rules.system.SleepState]
+        enum_states = [state.value for state in SleepState]
         self.assertEqual(len(enum_states), len(implemented_states))
         self.assertTrue(all(state in enum_states for state in implemented_states))
 
@@ -75,21 +79,19 @@ class TestSleep(tests.helper.test_case_base.TestCaseBaseStateMachine):
             TestCase("ON", "ON", "OFF"),
         ]
 
-        config = habapp_rules.system.config.sleep.SleepConfig(
-            items=habapp_rules.system.config.sleep.SleepItems(sleep="Unittest_Sleep", sleep_request="Unittest_Sleep_Request", lock="Unittest_Lock", lock_request="Unittest_Lock_Request", display_text="Unittest_Display_Text", state="CustomState")
-        )
+        config = SleepConfig(items=SleepItems(sleep="Unittest_Sleep", sleep_request="Unittest_Sleep_Request", lock="Unittest_Lock", lock_request="Unittest_Lock_Request", display_text="Unittest_Display_Text", state="CustomState"))
 
         for test_case in test_cases:
             with self.subTest(test_case=test_case):
-                tests.helper.oh_item.set_state("Unittest_Sleep_Request", test_case.sleep_request_state)
-                tests.helper.oh_item.set_state("Unittest_Lock_Request", test_case.lock_request_state)
+                set_item_state("Unittest_Sleep_Request", test_case.sleep_request_state)
+                set_item_state("Unittest_Lock_Request", test_case.lock_request_state)
 
-                sleep = habapp_rules.system.sleep.Sleep(config)
+                sleep = Sleep(config)
 
                 self.assertEqual(sleep.sleep_request_active, test_case.sleep_request_state == "ON", test_case)
                 self.assertEqual(sleep.lock_request_active, test_case.lock_request_state == "ON", test_case)
-                tests.helper.oh_item.assert_value("Unittest_Sleep", test_case.sleep_request_state)
-                tests.helper.oh_item.assert_value("Unittest_Lock", test_case.lock_state)
+                assert_item_value("Unittest_Sleep", test_case.sleep_request_state)
+                assert_item_value("Unittest_Lock", test_case.lock_state)
 
     def test_get_initial_state(self) -> None:
         """Test getting initial state."""
@@ -108,8 +110,8 @@ class TestSleep(tests.helper.test_case_base.TestCaseBaseStateMachine):
         ]
 
         for test_case in test_cases:
-            tests.helper.oh_item.set_state("Unittest_Sleep_Request", test_case.sleep_request)
-            tests.helper.oh_item.set_state("Unittest_Lock_Request", test_case.lock_request)
+            set_item_state("Unittest_Sleep_Request", test_case.sleep_request)
+            set_item_state("Unittest_Lock_Request", test_case.lock_request)
 
             self.assertEqual(self._sleep._get_initial_state("default"), test_case.expected_state, test_case)
 
@@ -125,211 +127,211 @@ class TestSleep(tests.helper.test_case_base.TestCaseBaseStateMachine):
     def test_normal_cycle_all_items(self) -> None:
         """Test normal behavior with all items available."""
         # check initial state
-        tests.helper.oh_item.assert_value("CustomState", "Awake")
+        assert_item_value("CustomState", "Awake")
 
         # start Sleeping
-        tests.helper.oh_item.send_command("Unittest_Sleep_Request", "ON", "OFF")
+        send_command("Unittest_Sleep_Request", "ON", "OFF")
         self.assertEqual(self._sleep.state, "PreSleeping")
-        tests.helper.oh_item.assert_value("CustomState", "PreSleeping")
-        tests.helper.oh_item.assert_value("Unittest_Sleep", "ON")
-        tests.helper.oh_item.assert_value("Unittest_Lock", "ON")
-        tests.helper.oh_item.assert_value("Unittest_Display_Text", "Guten Schlaf")
+        assert_item_value("CustomState", "PreSleeping")
+        assert_item_value("Unittest_Sleep", "ON")
+        assert_item_value("Unittest_Lock", "ON")
+        assert_item_value("Unittest_Display_Text", "Guten Schlaf")
         self.transitions_timer_mock.assert_called_with(3, unittest.mock.ANY, args=unittest.mock.ANY)
 
         # PreSleeping timeout -> sleep
-        tests.helper.timer.call_timeout(self.transitions_timer_mock)
+        call_timeout(self.transitions_timer_mock)
         self.assertEqual(self._sleep.state, "Sleeping")
-        tests.helper.oh_item.assert_value("CustomState", "Sleeping")
-        tests.helper.oh_item.assert_value("Unittest_Sleep", "ON")
-        tests.helper.oh_item.assert_value("Unittest_Lock", "OFF")
-        tests.helper.oh_item.assert_value("Unittest_Display_Text", "Aufstehen")
+        assert_item_value("CustomState", "Sleeping")
+        assert_item_value("Unittest_Sleep", "ON")
+        assert_item_value("Unittest_Lock", "OFF")
+        assert_item_value("Unittest_Display_Text", "Aufstehen")
 
         # stop Sleeping
         self.transitions_timer_mock.reset_mock()
-        tests.helper.oh_item.send_command("Unittest_Sleep_Request", "OFF", "ON")
+        send_command("Unittest_Sleep_Request", "OFF", "ON")
         self.assertEqual(self._sleep.state, "PostSleeping")
-        tests.helper.oh_item.assert_value("CustomState", "PostSleeping")
-        tests.helper.oh_item.assert_value("Unittest_Sleep", "OFF")
-        tests.helper.oh_item.assert_value("Unittest_Lock", "ON")
-        tests.helper.oh_item.assert_value("Unittest_Display_Text", "Guten Morgen")
+        assert_item_value("CustomState", "PostSleeping")
+        assert_item_value("Unittest_Sleep", "OFF")
+        assert_item_value("Unittest_Lock", "ON")
+        assert_item_value("Unittest_Display_Text", "Guten Morgen")
         self.transitions_timer_mock.assert_called_with(3, unittest.mock.ANY, args=unittest.mock.ANY)
 
         # PostSleeping timeout -> Awake
-        tests.helper.timer.call_timeout(self.transitions_timer_mock)
+        call_timeout(self.transitions_timer_mock)
         self.assertEqual(self._sleep.state, "Awake")
-        tests.helper.oh_item.assert_value("CustomState", "Awake")
-        tests.helper.oh_item.assert_value("Unittest_Sleep", "OFF")
-        tests.helper.oh_item.assert_value("Unittest_Lock", "OFF")
-        tests.helper.oh_item.assert_value("Unittest_Display_Text", "Schlafen")
+        assert_item_value("CustomState", "Awake")
+        assert_item_value("Unittest_Sleep", "OFF")
+        assert_item_value("Unittest_Lock", "OFF")
+        assert_item_value("Unittest_Display_Text", "Schlafen")
 
     def test_lock_transitions(self) -> None:
         """Test all transitions from and to Locked state."""
         # check correct initial state
-        tests.helper.oh_item.assert_value("CustomState", "Awake")
-        tests.helper.oh_item.assert_value("Unittest_Lock", "OFF")
+        assert_item_value("CustomState", "Awake")
+        assert_item_value("Unittest_Lock", "OFF")
 
         # set lock_request. expected: Locked state, lock active, sleep off
-        tests.helper.oh_item.send_command("Unittest_Lock_Request", "ON", "OFF")
-        tests.helper.oh_item.assert_value("Unittest_Lock", "ON")
-        tests.helper.oh_item.assert_value("CustomState", "Locked")
-        tests.helper.oh_item.assert_value("Unittest_Sleep", "OFF")
+        send_command("Unittest_Lock_Request", "ON", "OFF")
+        assert_item_value("Unittest_Lock", "ON")
+        assert_item_value("CustomState", "Locked")
+        assert_item_value("Unittest_Sleep", "OFF")
 
         # release lock and come back to Awake state
-        tests.helper.oh_item.send_command("Unittest_Lock_Request", "OFF", "ON")
-        tests.helper.oh_item.assert_value("Unittest_Lock", "OFF")
-        tests.helper.oh_item.assert_value("CustomState", "Awake")
-        tests.helper.oh_item.assert_value("Unittest_Sleep", "OFF")
+        send_command("Unittest_Lock_Request", "OFF", "ON")
+        assert_item_value("Unittest_Lock", "OFF")
+        assert_item_value("CustomState", "Awake")
+        assert_item_value("Unittest_Sleep", "OFF")
 
         # set lock_request and shortly after send sleep request -> Locked expected
-        tests.helper.oh_item.send_command("Unittest_Lock_Request", "ON", "OFF")
-        tests.helper.oh_item.send_command("Unittest_Sleep_Request", "ON", "OFF")
-        tests.helper.oh_item.assert_value("Unittest_Sleep_Request", "OFF")
-        tests.helper.oh_item.assert_value("Unittest_Lock", "ON")
-        tests.helper.oh_item.assert_value("CustomState", "Locked")
-        tests.helper.oh_item.assert_value("Unittest_Sleep", "OFF")
+        send_command("Unittest_Lock_Request", "ON", "OFF")
+        send_command("Unittest_Sleep_Request", "ON", "OFF")
+        assert_item_value("Unittest_Sleep_Request", "OFF")
+        assert_item_value("Unittest_Lock", "ON")
+        assert_item_value("CustomState", "Locked")
+        assert_item_value("Unittest_Sleep", "OFF")
 
         # release lock and jump back to Awake
-        tests.helper.oh_item.send_command("Unittest_Lock_Request", "OFF", "ON")
-        tests.helper.oh_item.assert_value("Unittest_Lock", "OFF")
-        tests.helper.oh_item.assert_value("CustomState", "Awake")
-        tests.helper.oh_item.assert_value("Unittest_Sleep", "OFF")
+        send_command("Unittest_Lock_Request", "OFF", "ON")
+        assert_item_value("Unittest_Lock", "OFF")
+        assert_item_value("CustomState", "Awake")
+        assert_item_value("Unittest_Sleep", "OFF")
 
         # start Sleeping
-        tests.helper.oh_item.send_command("Unittest_Sleep_Request", "ON", "OFF")
-        tests.helper.oh_item.assert_value("CustomState", "PreSleeping")
+        send_command("Unittest_Sleep_Request", "ON", "OFF")
+        assert_item_value("CustomState", "PreSleeping")
 
         # activate lock, remove sleep request and wait all timer -> expected state == Locked
-        tests.helper.oh_item.send_command("Unittest_Lock_Request", "ON", "OFF")
-        tests.helper.oh_item.assert_value("CustomState", "PreSleeping")
-        tests.helper.timer.call_timeout(self.transitions_timer_mock)
-        tests.helper.oh_item.assert_value("CustomState", "Sleeping")
-        tests.helper.oh_item.send_command("Unittest_Sleep_Request", "OFF", "ON")
-        tests.helper.oh_item.assert_value("CustomState", "PostSleeping")
-        tests.helper.timer.call_timeout(self.transitions_timer_mock)
-        tests.helper.oh_item.assert_value("CustomState", "Locked")
+        send_command("Unittest_Lock_Request", "ON", "OFF")
+        assert_item_value("CustomState", "PreSleeping")
+        call_timeout(self.transitions_timer_mock)
+        assert_item_value("CustomState", "Sleeping")
+        send_command("Unittest_Sleep_Request", "OFF", "ON")
+        assert_item_value("CustomState", "PostSleeping")
+        call_timeout(self.transitions_timer_mock)
+        assert_item_value("CustomState", "Locked")
 
         # go back to PreSleeping and check lock + end sleep in PreSleeping -> expected state = Locked
-        tests.helper.oh_item.send_command("Unittest_Sleep_Request", "ON", "OFF")
-        tests.helper.oh_item.assert_value("CustomState", "Locked")
-        tests.helper.oh_item.send_command("Unittest_Lock_Request", "OFF", "ON")
-        tests.helper.oh_item.assert_value("CustomState", "Awake")
-        tests.helper.oh_item.send_command("Unittest_Lock_Request", "ON", "OFF")
-        tests.helper.oh_item.assert_value("CustomState", "Locked")
+        send_command("Unittest_Sleep_Request", "ON", "OFF")
+        assert_item_value("CustomState", "Locked")
+        send_command("Unittest_Lock_Request", "OFF", "ON")
+        assert_item_value("CustomState", "Awake")
+        send_command("Unittest_Lock_Request", "ON", "OFF")
+        assert_item_value("CustomState", "Locked")
 
     def test_request_changed(self) -> None:
         """Test transitions when sleep request is changed at PreSleeping or PostSleeping state."""
-        tests.helper.oh_item.set_state("Unittest_Sleep_Request", "ON")
+        set_item_state("Unittest_Sleep_Request", "ON")
         self._sleep.to_PreSleeping()
-        tests.helper.oh_item.send_command("Unittest_Sleep_Request", "OFF")
-        tests.helper.oh_item.assert_value("CustomState", "Awake")
+        send_command("Unittest_Sleep_Request", "OFF")
+        assert_item_value("CustomState", "Awake")
 
-        tests.helper.oh_item.set_state("Unittest_Sleep_Request", "OFF")
+        set_item_state("Unittest_Sleep_Request", "OFF")
         self._sleep.to_PostSleeping()
-        tests.helper.oh_item.send_command("Unittest_Sleep_Request", "ON")
-        tests.helper.oh_item.assert_value("CustomState", "PreSleeping")
+        send_command("Unittest_Sleep_Request", "ON")
+        assert_item_value("CustomState", "PreSleeping")
 
     def test_minimal_items(self) -> None:
         """Test Sleeping class with minimal set of items."""
         # delete sleep rule from init
         self.unload_rule(self._runner.loaded_rules[0])
 
-        tests.helper.oh_item.remove_mocked_item_by_name("Unittest_Lock")
-        tests.helper.oh_item.remove_mocked_item_by_name("Unittest_Lock_Request")
-        tests.helper.oh_item.remove_mocked_item_by_name("Unittest_Display_Text")
+        remove_mocked_item_by_name("Unittest_Lock")
+        remove_mocked_item_by_name("Unittest_Lock_Request")
+        remove_mocked_item_by_name("Unittest_Display_Text")
 
-        config = habapp_rules.system.config.sleep.SleepConfig(
-            items=habapp_rules.system.config.sleep.SleepItems(
+        config = SleepConfig(
+            items=SleepItems(
                 sleep="Unittest_Sleep",
                 sleep_request="Unittest_Sleep_Request",
                 state="H_Sleep_Unittest_Sleep_state",
             )
         )
 
-        sleep = habapp_rules.system.sleep.Sleep(config)
+        sleep = Sleep(config)
 
         self.assertIsNone(sleep._config.items.display_text)
         self.assertIsNone(sleep._config.items.lock)
         self.assertIsNone(sleep._config.items.lock_request)
 
         # check initial state
-        tests.helper.oh_item.assert_value("CustomState", "Awake")
+        assert_item_value("CustomState", "Awake")
 
         # start Sleeping
-        tests.helper.oh_item.send_command("Unittest_Sleep_Request", "ON", "OFF")
+        send_command("Unittest_Sleep_Request", "ON", "OFF")
         self.assertEqual(sleep.state, "PreSleeping")
-        tests.helper.oh_item.assert_value("H_Sleep_Unittest_Sleep_state", "PreSleeping")
-        tests.helper.oh_item.assert_value("Unittest_Sleep", "ON")
+        assert_item_value("H_Sleep_Unittest_Sleep_state", "PreSleeping")
+        assert_item_value("Unittest_Sleep", "ON")
         self.transitions_timer_mock.assert_called_with(3, unittest.mock.ANY, args=unittest.mock.ANY)
 
         # PreSleeping timeout -> sleep
-        tests.helper.timer.call_timeout(self.transitions_timer_mock)
+        call_timeout(self.transitions_timer_mock)
         self.assertEqual(sleep.state, "Sleeping")
-        tests.helper.oh_item.assert_value("H_Sleep_Unittest_Sleep_state", "Sleeping")
-        tests.helper.oh_item.assert_value("Unittest_Sleep", "ON")
+        assert_item_value("H_Sleep_Unittest_Sleep_state", "Sleeping")
+        assert_item_value("Unittest_Sleep", "ON")
 
         # stop Sleeping
         self.transitions_timer_mock.reset_mock()
-        tests.helper.oh_item.send_command("Unittest_Sleep_Request", "OFF", "ON")
+        send_command("Unittest_Sleep_Request", "OFF", "ON")
         self.assertEqual(sleep.state, "PostSleeping")
-        tests.helper.oh_item.assert_value("H_Sleep_Unittest_Sleep_state", "PostSleeping")
-        tests.helper.oh_item.assert_value("Unittest_Sleep", "OFF")
+        assert_item_value("H_Sleep_Unittest_Sleep_state", "PostSleeping")
+        assert_item_value("Unittest_Sleep", "OFF")
         self.transitions_timer_mock.assert_called_with(3, unittest.mock.ANY, args=unittest.mock.ANY)
 
         # PostSleeping timeout -> Awake
-        tests.helper.timer.call_timeout(self.transitions_timer_mock)
+        call_timeout(self.transitions_timer_mock)
         self.assertEqual(sleep.state, "Awake")
-        tests.helper.oh_item.assert_value("H_Sleep_Unittest_Sleep_state", "Awake")
-        tests.helper.oh_item.assert_value("Unittest_Sleep", "OFF")
+        assert_item_value("H_Sleep_Unittest_Sleep_state", "Awake")
+        assert_item_value("Unittest_Sleep", "OFF")
 
 
-class TestLinkSleep(tests.helper.test_case_base.TestCaseBase):
+class TestLinkSleep(TestCaseBase):
     """Test LinkSleep."""
 
     def setUp(self) -> None:
         """Setup test case."""
-        tests.helper.test_case_base.TestCaseBase.setUp(self)
+        TestCaseBase.setUp(self)
 
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Sleep1", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Sleep2_req", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Sleep3_req", None)
+        add_mock_item(SwitchItem, "Unittest_Sleep1", None)
+        add_mock_item(SwitchItem, "Unittest_Sleep2_req", None)
+        add_mock_item(SwitchItem, "Unittest_Sleep3_req", None)
 
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Sleep4", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Sleep5_req", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Sleep6_req", None)
+        add_mock_item(SwitchItem, "Unittest_Sleep4", None)
+        add_mock_item(SwitchItem, "Unittest_Sleep5_req", None)
+        add_mock_item(SwitchItem, "Unittest_Sleep6_req", None)
 
-        config_full_day = habapp_rules.system.config.sleep.LinkSleepConfig(
-            items=habapp_rules.system.config.sleep.LinkSleepItems(
+        config_full_day = LinkSleepConfig(
+            items=LinkSleepItems(
                 sleep_master="Unittest_Sleep1",
                 sleep_request_slaves=["Unittest_Sleep2_req", "Unittest_Sleep3_req"],
             )
         )
 
-        config_night = habapp_rules.system.config.sleep.LinkSleepConfig(
-            items=habapp_rules.system.config.sleep.LinkSleepItems(
+        config_night = LinkSleepConfig(
+            items=LinkSleepItems(
                 sleep_master="Unittest_Sleep4",
                 sleep_request_slaves=["Unittest_Sleep5_req", "Unittest_Sleep6_req"],
             ),
-            parameter=habapp_rules.system.config.sleep.LinkSleepParameter(
+            parameter=LinkSleepParameter(
                 start_time=datetime.time(22),
                 end_time=datetime.time(10),
             ),
         )
 
-        self._link_full_day = habapp_rules.system.sleep.LinkSleep(config_full_day)
-        self._link_night = habapp_rules.system.sleep.LinkSleep(config_night)
+        self._link_full_day = LinkSleep(config_full_day)
+        self._link_night = LinkSleep(config_night)
 
     def test_init_with_feedback(self) -> None:
         """Test init with feedback item."""
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Link_Active", None)
-        config = habapp_rules.system.config.sleep.LinkSleepConfig(
-            items=habapp_rules.system.config.sleep.LinkSleepItems(
+        add_mock_item(SwitchItem, "Unittest_Link_Active", None)
+        config = LinkSleepConfig(
+            items=LinkSleepItems(
                 sleep_master="Unittest_Sleep1",
                 sleep_request_slaves=["Unittest_Sleep2_req", "Unittest_Sleep3_req"],
                 link_active_feedback="Unittest_Link_Active",
             )
         )
 
-        rule = habapp_rules.system.sleep.LinkSleep(config)
+        rule = LinkSleep(config)
 
         self.assertEqual("Unittest_Link_Active", rule._config.items.link_active_feedback.name)
 
@@ -378,21 +380,21 @@ class TestLinkSleep(tests.helper.test_case_base.TestCaseBase):
         """Test _cb_master."""
         # during active time
         with unittest.mock.patch.object(self._link_full_day, "_check_time_in_window", return_value=True):
-            tests.helper.oh_item.assert_value("Unittest_Sleep2_req", None)
-            tests.helper.oh_item.assert_value("Unittest_Sleep3_req", None)
+            assert_item_value("Unittest_Sleep2_req", None)
+            assert_item_value("Unittest_Sleep3_req", None)
 
-            tests.helper.oh_item.item_state_change_event("Unittest_Sleep1", "ON")
-            tests.helper.oh_item.assert_value("Unittest_Sleep2_req", "ON")
-            tests.helper.oh_item.assert_value("Unittest_Sleep3_req", "ON")
+            item_state_change_event("Unittest_Sleep1", "ON")
+            assert_item_value("Unittest_Sleep2_req", "ON")
+            assert_item_value("Unittest_Sleep3_req", "ON")
 
         # during inactive time
         with unittest.mock.patch.object(self._link_night, "_check_time_in_window", return_value=False):
-            tests.helper.oh_item.assert_value("Unittest_Sleep5_req", None)
-            tests.helper.oh_item.assert_value("Unittest_Sleep6_req", None)
+            assert_item_value("Unittest_Sleep5_req", None)
+            assert_item_value("Unittest_Sleep6_req", None)
 
-            tests.helper.oh_item.item_state_change_event("Unittest_Sleep4", "ON")
-            tests.helper.oh_item.assert_value("Unittest_Sleep5_req", None)
-            tests.helper.oh_item.assert_value("Unittest_Sleep6_req", None)
+            item_state_change_event("Unittest_Sleep4", "ON")
+            assert_item_value("Unittest_Sleep5_req", None)
+            assert_item_value("Unittest_Sleep6_req", None)
 
     def test_set_link_active_feedback(self) -> None:
         """Test _set_link_active_feedback."""

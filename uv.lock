@@ -17,7 +17,7 @@ wheels = [
 
 [[package]]
 name = "aiogram"
-version = "3.28.0"
+version = "3.28.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiofiles" },
@@ -27,9 +27,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6e/ec/3235d6111b4380ad9ea7ed2850ed864871cfb23950dcec3735eb44dbfb5c/aiogram-3.28.0.tar.gz", hash = "sha256:122dd89e47bcaf46ae7a3be428a987f5e9859171f3a467d746cc4d01a24e5cd9", size = 1854675, upload-time = "2026-05-08T22:42:31.679Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/db/3c/72e62c25a7fffedd7dd869e193797b0ed5207041ca90de16bf56fd99e41a/aiogram-3.28.2.tar.gz", hash = "sha256:140913a569516811c4ce576a292491024c8d8a739c47150d64a05aa4adc35310", size = 1855159, upload-time = "2026-05-10T14:20:40.384Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8a/33/3226df39af93c26323ca132ce2d585666a2b2807eff186dbe3e63a16494f/aiogram-3.28.0-py3-none-any.whl", hash = "sha256:928d98955a9fbd78a6cab3e26ce238fac4005f7c92376cb8bedd004a74bb49d5", size = 750694, upload-time = "2026-05-08T22:42:29.498Z" },
+    { url = "https://files.pythonhosted.org/packages/c9/7b/8bc61691b1fc9d1653e12697436b2742dd1408f14c479d15f46d1ab34be1/aiogram-3.28.2-py3-none-any.whl", hash = "sha256:8a90cdf75a64ba629468f73b6e999662943fff39db213bb406afe114a3e8c0f2", size = 751693, upload-time = "2026-05-10T14:20:38.265Z" },
 ]
 
 [[package]]
@@ -881,6 +881,7 @@ dependencies = [
     { name = "pydantic-extra-types" },
     { name = "transitions" },
     { name = "typing-extensions" },
+    { name = "urllib3" },
     { name = "wakeonlan" },
 ]
 
@@ -901,10 +902,11 @@ requires-dist = [
     { name = "habapp", specifier = "==25.12.0" },
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "matplotlib", specifier = "~=3.10.0" },
-    { name = "multi-notifier", specifier = "~=0.6.0" },
+    { name = "multi-notifier", specifier = "~=0.6.2" },
     { name = "pydantic-extra-types", specifier = "~=2.11.0" },
     { name = "transitions", specifier = "==0.9.1" },
     { name = "typing-extensions", specifier = "==4.15.0" },
+    { name = "urllib3", specifier = ">=2.7.0" },
     { name = "wakeonlan", specifier = "~=3.1.0" },
 ]
 
@@ -1446,17 +1448,19 @@ wheels = [
 
 [[package]]
 name = "multi-notifier"
-version = "0.6.1"
+version = "0.6.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiogram" },
     { name = "pydantic" },
     { name = "pyyaml" },
+    { name = "requests" },
     { name = "sulguk" },
+    { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/27/3f/6826857defef09c44d5dcf97dfb7c21d88327fcf4fec87f6cf8cffa87489/multi_notifier-0.6.1.tar.gz", hash = "sha256:d6720905f29ff270c6ac5fdc8ff076ee4347541fc459c3bcc40fcc8880407bd5", size = 124327, upload-time = "2026-04-13T14:36:43.154Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/99/59/7cfe8b2e5b9b45216047532248850c82e3157c04464b4b5d591932a6426e/multi_notifier-0.6.2.tar.gz", hash = "sha256:1bedf9e121ae3c6a70cab4398b6f70a973edb773394c1939608272a0986fd1a8", size = 137509, upload-time = "2026-05-12T20:22:47.342Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f5/f5/e73aec10d877e5b3b4b5f9cdc79818cb6cc69fe7a17a06c157dd797e2ffa/multi_notifier-0.6.1-py3-none-any.whl", hash = "sha256:617259a24285ccf58f349ca6a6f0db59dac992b80f17f3f1cd713e678dd45111", size = 11581, upload-time = "2026-04-13T14:36:42.175Z" },
+    { url = "https://files.pythonhosted.org/packages/7e/c1/c671d86a4949fe8ba822465978b81f829df75280a8b19d80fb52847cce5d/multi_notifier-0.6.2-py3-none-any.whl", hash = "sha256:608f959db1c71d645801547af962f1f17e48be0161f7732ad2db9c5860ffb465", size = 11655, upload-time = "2026-05-12T20:22:46.339Z" },
 ]
 
 [[package]]
@@ -2233,7 +2237,7 @@ wheels = [
 
 [[package]]
 name = "requests"
-version = "2.33.1"
+version = "2.34.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "certifi" },
@@ -2241,9 +2245,9 @@ dependencies = [
     { name = "idna" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5f/a4/98b9c7c6428a668bf7e42ebb7c79d576a1c3c1e3ae2d47e674b468388871/requests-2.33.1.tar.gz", hash = "sha256:18817f8c57c6263968bc123d237e3b8b08ac046f5456bd1e307ee8f4250d3517", size = 134120, upload-time = "2026-03-30T16:09:15.531Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/43/b8/7a707d60fea4c49094e40262cc0e2ca6c768cca21587e34d3f705afec47e/requests-2.34.0.tar.gz", hash = "sha256:7d62fe92f50eb82c529b0916bb445afa1531a566fc8f35ffdc64446e771b856a", size = 142436, upload-time = "2026-05-11T19:29:51.717Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d7/8e/7540e8a2036f79a125c1d2ebadf69ed7901608859186c856fa0388ef4197/requests-2.33.1-py3-none-any.whl", hash = "sha256:4e6d1ef462f3626a1f0a0a9c42dd93c63bad33f9f1c1937509b8c5c8718ab56a", size = 64947, upload-time = "2026-03-30T16:09:13.83Z" },
+    { url = "https://files.pythonhosted.org/packages/ef/e6/e300fce5fe83c30520607a015dabd985df3251e188d234bfe9492e17a389/requests-2.34.0-py3-none-any.whl", hash = "sha256:917520a21b767485ce7c588f4ebb917c436b24a31231b44228715eaeb5a52c60", size = 73021, upload-time = "2026-05-11T19:29:49.923Z" },
 ]
 
 [[package]]

@@ -10,6 +10,7 @@
 ## Features
 
 - added better config validation of `habapp_rules.sensors.config.motion.MotionConfig`
+- updated multi_notifier to 0.6.0 which improves how mails are sent and reduce probability that mails are marked as spam
 
 ## Bugfix
 
@@ -19,12 +20,6 @@
 - fixed bug in `habapp_rules.energy.virtual_energy_meter.VirtualEnergyMeterSwitch` and `habapp_rules.energy.virtual_energy_meter.VirtualEnergyMeterNumber` which raised before, when no energy output item was configured
 - Now, all configs will raise a `HabAppRulesConfigurationError` if a miss-configuration is detected
 - Fixed bug in all shading rules of `habapp_rules.actors.shading` which ignored the `manual_timeout` and thus never went back from manual to automatic state
-
-# Version 10.1.0 - dd.mm.2026
-
-## Features
-
-- updated multi_notifier to 0.6.0 which improves how mails are sent and reduce probability that mails are marked as spam
 
 # Version 10.0.0 - 16.03.2026
 

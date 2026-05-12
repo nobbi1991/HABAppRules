@@ -3,7 +3,7 @@
 import collections
 import unittest
 
-import habapp_rules.common.hysteresis
+from habapp_rules.common.hysteresis import HysteresisSwitch
 
 
 class TestHysteresis(unittest.TestCase):
@@ -11,7 +11,7 @@ class TestHysteresis(unittest.TestCase):
 
     def setUp(self) -> None:
         """Setup for all test cases."""
-        self.hysteresis_switch = habapp_rules.common.hysteresis.HysteresisSwitch(42, 2)
+        self.hysteresis_switch = HysteresisSwitch(42, 2)
 
     def test_get_output(self) -> None:
         """Test get_output."""

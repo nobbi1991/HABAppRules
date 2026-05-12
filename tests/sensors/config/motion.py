@@ -4,24 +4,27 @@ import collections
 
 from HABApp.openhab.items import NumberItem, StringItem, SwitchItem
 
-import habapp_rules.core.exceptions
-import tests.helper.oh_item
-import tests.helper.test_case_base
+from habapp_rules.core.exceptions import HabAppRulesConfigurationError
 from habapp_rules.sensors.config.motion import MotionConfig, MotionItems, MotionParameter
+from tests.helper.oh_item import (
+    add_mock_item,
+    set_item_state,
+)
+from tests.helper.test_case_base import TestCaseBase
 
 
-class TestMotionItems(tests.helper.test_case_base.TestCaseBase):
+class TestMotionItems(TestCaseBase):
     """Test MotionItems."""
 
     def setUp(self) -> None:
         """Setup test environment."""
         super().setUp()
-        tests.helper.oh_item.add_mock_item(SwitchItem, "Unittest_Motion_raw")
-        tests.helper.oh_item.add_mock_item(SwitchItem, "Unittest_Motion_filt")
-        tests.helper.oh_item.add_mock_item(StringItem, "Unittest_Motion_state")
+        add_mock_item(SwitchItem, "Unittest_Motion_raw")
+        add_mock_item(SwitchItem, "Unittest_Motion_filt")
+        add_mock_item(StringItem, "Unittest_Motion_state")
 
-        tests.helper.oh_item.add_mock_item(NumberItem, "Unittest_Brightness")
-        tests.helper.oh_item.add_mock_item(NumberItem, "Unittest_Brightness_threshold")
+        add_mock_item(NumberItem, "Unittest_Brightness")
+        add_mock_item(NumberItem, "Unittest_Brightness_threshold")
 
     def test_check_brightness_threshold(self) -> None:
         """Test brightness and brightness_threshold."""
@@ -29,7 +32,7 @@ class TestMotionItems(tests.helper.test_case_base.TestCaseBase):
         MotionItems(motion_raw="Unittest_Motion_raw", motion_filtered="Unittest_Motion_filt", state="Unittest_Motion_state")
 
         # brightness NOT SET | brightness_threshold SET
-        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
+        with self.assertRaises(HabAppRulesConfigurationError):
             MotionItems(motion_raw="Unittest_Motion_raw", motion_filtered="Unittest_Motion_filt", state="Unittest_Motion_state", brightness_threshold="Unittest_Brightness_threshold")
 
         # brightness SET | brightness_threshold NOT SET
@@ -39,18 +42,18 @@ class TestMotionItems(tests.helper.test_case_base.TestCaseBase):
         MotionItems(motion_raw="Unittest_Motion_raw", motion_filtered="Unittest_Motion_filt", state="Unittest_Motion_state", brightness="Unittest_Brightness", brightness_threshold="Unittest_Brightness_threshold")
 
 
-class TestMotionConfig(tests.helper.test_case_base.TestCaseBase):
+class TestMotionConfig(TestCaseBase):
     """Test MotionConfig."""
 
     def setUp(self) -> None:
         """Setup test environment."""
         super().setUp()
-        tests.helper.oh_item.add_mock_item(SwitchItem, "Unittest_Motion_raw")
-        tests.helper.oh_item.add_mock_item(SwitchItem, "Unittest_Motion_filt")
-        tests.helper.oh_item.add_mock_item(StringItem, "Unittest_Motion_state")
+        add_mock_item(SwitchItem, "Unittest_Motion_raw")
+        add_mock_item(SwitchItem, "Unittest_Motion_filt")
+        add_mock_item(StringItem, "Unittest_Motion_state")
 
-        tests.helper.oh_item.add_mock_item(NumberItem, "Unittest_Brightness")
-        tests.helper.oh_item.add_mock_item(NumberItem, "Unittest_Brightness_threshold")
+        add_mock_item(NumberItem, "Unittest_Brightness")
+        add_mock_item(NumberItem, "Unittest_Brightness_threshold")
 
     def test_brightness_validation(self) -> None:
         """Test brightness validation."""
@@ -74,7 +77,7 @@ class TestMotionConfig(tests.helper.test_case_base.TestCaseBase):
                 threshold_param = 42 if test_case.threshold_param else None
 
                 if test_case.expect_exception:
-                    with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
+                    with self.assertRaises(HabAppRulesConfigurationError):
                         MotionConfig(
                             items=MotionItems(motion_raw="Unittest_Motion_raw", motion_filtered="Unittest_Motion_filt", state="Unittest_Motion_state", brightness=brightness_item, brightness_threshold=threshold_item),
                             parameter=MotionParameter(brightness_threshold=threshold_param),
@@ -95,7 +98,7 @@ class TestMotionConfig(tests.helper.test_case_base.TestCaseBase):
         self.assertEqual(float("inf"), config.brightness_threshold)
 
         # value of threshold item (has value)
-        tests.helper.oh_item.set_state("Unittest_Brightness_threshold", 42)
+        set_item_state("Unittest_Brightness_threshold", 42)
         config = MotionConfig(
             items=MotionItems(motion_raw="Unittest_Motion_raw", motion_filtered="Unittest_Motion_filt", state="Unittest_Motion_state", brightness="Unittest_Brightness", brightness_threshold="Unittest_Brightness_threshold"),
             parameter=MotionParameter(),
@@ -117,5 +120,5 @@ class TestMotionConfig(tests.helper.test_case_base.TestCaseBase):
         )
 
         config.parameter.brightness_threshold = None
-        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
+        with self.assertRaises(HabAppRulesConfigurationError):
             config.brightness_threshold  # noqa: B018

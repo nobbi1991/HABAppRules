@@ -4,29 +4,30 @@ import collections
 import time
 import unittest.mock
 
-import HABApp.openhab.items.switch_item
+from HABApp.openhab.items import StringItem
+from HABApp.rule.rule import Rule
 
-import habapp_rules.core.state_machine_rule
-import tests.helper.oh_item
-import tests.helper.test_case_base
 from habapp_rules.core.exceptions import HabAppRulesError
+from habapp_rules.core.state_machine_rule import StateMachineRule, StateMachineWithTimeout
+from tests.helper.oh_item import add_mock_item
+from tests.helper.test_case_base import TestCaseBase
 
 
-class TestStateMachineRule(tests.helper.test_case_base.TestCaseBase):
+class TestStateMachineRule(TestCaseBase):
     """Tests for StateMachineRule."""
 
     def setUp(self) -> None:
         """Setup unit-tests."""
-        tests.helper.test_case_base.TestCaseBase.setUp(self)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_State", None)
-        self.state_item = HABApp.openhab.items.StringItem.get_item("Unittest_State")
+        TestCaseBase.setUp(self)
+        add_mock_item(StringItem, "Unittest_State", None)
+        self.state_item = StringItem.get_item("Unittest_State")
         self.item_exists_mock.return_value = False
 
-        with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_common_state_machine_rule_StateMachineRule_state", "")):
-            self._state_machine = habapp_rules.core.state_machine_rule.StateMachineRule(self.state_item, "logger_name")
+        with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=StringItem("rules_common_state_machine_rule_StateMachineRule_state", "")):
+            self._state_machine = StateMachineRule(self.state_item, "logger_name")
 
         states = [{"name": "State1"}, {"name": "State2", "timeout": 99, "on_timeout": "trigger_stop"}]
-        self._state_machine.state_machine = habapp_rules.core.state_machine_rule.StateMachineWithTimeout(model=self._state_machine, states=states, ignore_invalid_triggers=True)
+        self._state_machine.state_machine = StateMachineWithTimeout(model=self._state_machine, states=states, ignore_invalid_triggers=True)
 
     def test_get_initial_state(self) -> None:
         """Test getting of initial state."""
@@ -70,16 +71,16 @@ class TestStateMachineRule(tests.helper.test_case_base.TestCaseBase):
     def test_on_rule_removed(self) -> None:
         """Test on_rule_removed."""
         # check if 'on_rule_removed' is still available in HABApp
-        self.assertIsNotNone(HABApp.rule.Rule.on_rule_removed)
+        self.assertIsNotNone(Rule.on_rule_removed)
 
         # check if timer is stopped correctly
         states = [{"name": "stopped"}, {"name": "running", "timeout": 99, "on_timeout": "trigger_stop"}]
 
-        with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=HABApp.openhab.items.string_item.StringItem("rules_common_state_machine_rule_StateMachineRule_state", "")):
+        with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=StringItem("rules_common_state_machine_rule_StateMachineRule_state", "")):
             for initial_state in ["stopped", "running"]:
-                state_machine_rule = habapp_rules.core.state_machine_rule.StateMachineRule(self.state_item, "logger_name")
+                state_machine_rule = StateMachineRule(self.state_item, "logger_name")
 
-                state_machine_rule.state_machine = habapp_rules.core.state_machine_rule.StateMachineWithTimeout(model=state_machine_rule, states=states, ignore_invalid_triggers=True)
+                state_machine_rule.state_machine = StateMachineWithTimeout(model=state_machine_rule, states=states, ignore_invalid_triggers=True)
 
                 state_machine_rule._set_state(initial_state)
 

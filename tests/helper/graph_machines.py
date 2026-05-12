@@ -6,9 +6,10 @@ import typing
 from functools import partial
 from pathlib import Path
 
-import transitions.extensions.states
 from transitions.core import Machine, State, Transition
+from transitions.extensions import GraphMachine, HierarchicalGraphMachine
 from transitions.extensions.diagrams_graphviz import Graph, _filter_states
+from transitions.extensions.states import Timeout, add_state_features
 
 from habapp_rules.core.state_machine_rule import StateMachineRule
 
@@ -161,13 +162,13 @@ def extract_transitions_from_machine(state_machine: Machine) -> list[dict[str, s
     return transitions
 
 
-@transitions.extensions.states.add_state_features(transitions.extensions.states.Timeout)
-class GraphMachineTimer(transitions.extensions.GraphMachine):
+@add_state_features(Timeout)
+class GraphMachineTimer(GraphMachine):
     """GraphMachine with Timer."""
 
 
-@transitions.extensions.states.add_state_features(transitions.extensions.states.Timeout)
-class HierarchicalGraphMachineTimer(transitions.extensions.HierarchicalGraphMachine):
+@add_state_features(Timeout)
+class HierarchicalGraphMachineTimer(HierarchicalGraphMachine):
     """HierarchicalGraphMachine with Timer."""
 
 

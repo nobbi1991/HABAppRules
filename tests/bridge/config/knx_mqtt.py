@@ -1,44 +1,44 @@
 """Test config models for KNX / MQTT bridge rules."""
 
-import HABApp
+from HABApp.openhab.items import DimmerItem, SwitchItem
 
-import habapp_rules.bridge.config.knx_mqtt
-import tests.helper.oh_item
-import tests.helper.test_case_base
+from habapp_rules.bridge.config.knx_mqtt import KnxMqttConfig, KnxMqttItems
 from habapp_rules.core.exceptions import HabAppRulesConfigurationError
+from tests.helper.oh_item import add_mock_item
+from tests.helper.test_case_base import TestCaseBase
 
 
-class TestKnxMqttConfig(tests.helper.test_case_base.TestCaseBase):
+class TestKnxMqttConfig(TestCaseBase):
     """Test KnxMqttConfig."""
 
     def setUp(self) -> None:
         """Setup test case."""
-        tests.helper.test_case_base.TestCaseBase.setUp(self)
+        TestCaseBase.setUp(self)
 
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_MQTT_dimmer", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_KNX_dimmer", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_KNX_switch", None)
+        add_mock_item(DimmerItem, "Unittest_MQTT_dimmer", None)
+        add_mock_item(DimmerItem, "Unittest_KNX_dimmer", None)
+        add_mock_item(SwitchItem, "Unittest_KNX_switch", None)
 
     def test_validate_knx_items(self) -> None:
         """Test validate_knx_items."""
         # Both KNX items are given
-        habapp_rules.bridge.config.knx_mqtt.KnxMqttConfig(items=habapp_rules.bridge.config.knx_mqtt.KnxMqttItems(mqtt_dimmer="Unittest_MQTT_dimmer", knx_switch_ctr="Unittest_KNX_switch", knx_dimmer_ctr="Unittest_KNX_dimmer"))
+        KnxMqttConfig(items=KnxMqttItems(mqtt_dimmer="Unittest_MQTT_dimmer", knx_switch_ctr="Unittest_KNX_switch", knx_dimmer_ctr="Unittest_KNX_dimmer"))
 
         # only KNX switch is given
-        habapp_rules.bridge.config.knx_mqtt.KnxMqttConfig(
-            items=habapp_rules.bridge.config.knx_mqtt.KnxMqttItems(
+        KnxMqttConfig(
+            items=KnxMqttItems(
                 mqtt_dimmer="Unittest_MQTT_dimmer",
                 knx_switch_ctr="Unittest_KNX_switch",
             )
         )
 
         # only KNX dimmer is given
-        habapp_rules.bridge.config.knx_mqtt.KnxMqttConfig(items=habapp_rules.bridge.config.knx_mqtt.KnxMqttItems(mqtt_dimmer="Unittest_MQTT_dimmer", knx_dimmer_ctr="Unittest_KNX_dimmer"))
+        KnxMqttConfig(items=KnxMqttItems(mqtt_dimmer="Unittest_MQTT_dimmer", knx_dimmer_ctr="Unittest_KNX_dimmer"))
 
         # no KNX item is given
         with self.assertRaises(HabAppRulesConfigurationError):
-            habapp_rules.bridge.config.knx_mqtt.KnxMqttConfig(
-                items=habapp_rules.bridge.config.knx_mqtt.KnxMqttItems(
+            KnxMqttConfig(
+                items=KnxMqttItems(
                     mqtt_dimmer="Unittest_MQTT_dimmer",
                 )
             )

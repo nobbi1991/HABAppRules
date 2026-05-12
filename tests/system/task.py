@@ -6,34 +6,37 @@ import unittest.mock
 
 from HABApp.openhab.items import DatetimeItem, NumberItem, SwitchItem
 
-import habapp_rules.system.config.task
-import habapp_rules.system.task
-import tests.helper.oh_item
-import tests.helper.test_case_base
+from habapp_rules.system.config.task import CounterTaskConfig, CounterTaskItems, CounterTaskParameter, RecurringTaskConfig, RecurringTaskItems, RecurringTaskParameter
+from habapp_rules.system.task import CounterTask, RecurringTask
+from tests.helper.oh_item import (
+    add_mock_item,
+    assert_item_value,
+    item_state_change_event,
+    set_item_state,
+)
+from tests.helper.test_case_base import TestCaseBase
 
 
-class TestRecurringTask(tests.helper.test_case_base.TestCaseBase):
+class TestRecurringTask(TestCaseBase):
     """Tests for RecurringTask Rule."""
 
     def setUp(self) -> None:
         """Setup test case."""
-        tests.helper.test_case_base.TestCaseBase.setUp(self)
+        TestCaseBase.setUp(self)
 
-        tests.helper.oh_item.add_mock_item(SwitchItem, "Unittest_Task", None)
-        tests.helper.oh_item.add_mock_item(DatetimeItem, "Unittest_Task_last", None)
+        add_mock_item(SwitchItem, "Unittest_Task", None)
+        add_mock_item(DatetimeItem, "Unittest_Task_last", None)
 
-        config_max = habapp_rules.system.config.task.RecurringTaskConfig(
-            items=habapp_rules.system.config.task.RecurringTaskItems(task_active="Unittest_Task", last_done="Unittest_Task_last"), parameter=habapp_rules.system.config.task.RecurringTaskParameter(recurrence_time=datetime.timedelta(hours=12))
-        )
+        config_max = RecurringTaskConfig(items=RecurringTaskItems(task_active="Unittest_Task", last_done="Unittest_Task_last"), parameter=RecurringTaskParameter(recurrence_time=datetime.timedelta(hours=12)))
 
-        self._rule = habapp_rules.system.task.RecurringTask(config_max)
+        self._rule = RecurringTask(config_max)
 
     def test_init_with_fixed_check_time(self) -> None:
         """Test init with fixed check time."""
-        self._rule = habapp_rules.system.task.RecurringTask(
-            habapp_rules.system.config.task.RecurringTaskConfig(
-                items=habapp_rules.system.config.task.RecurringTaskItems(task_active="Unittest_Task", last_done="Unittest_Task_last"),
-                parameter=habapp_rules.system.config.task.RecurringTaskParameter(recurrence_time=datetime.timedelta(hours=12), fixed_check_time=datetime.time(7)),
+        self._rule = RecurringTask(
+            RecurringTaskConfig(
+                items=RecurringTaskItems(task_active="Unittest_Task", last_done="Unittest_Task_last"),
+                parameter=RecurringTaskParameter(recurrence_time=datetime.timedelta(hours=12), fixed_check_time=datetime.time(7)),
             )
         )
 
@@ -41,16 +44,16 @@ class TestRecurringTask(tests.helper.test_case_base.TestCaseBase):
 
     def test_init_with_min_config(self) -> None:
         """Test init with minimal config."""
-        tests.helper.oh_item.add_mock_item(DatetimeItem, "H_Unittest_Task_last_done", None)
+        add_mock_item(DatetimeItem, "H_Unittest_Task_last_done", None)
 
         with unittest.mock.patch("habapp_rules.system.config.task.create_additional_item", return_value=DatetimeItem("H_Unittest_Task_last_done")) as create_item_mock:
-            config_min = habapp_rules.system.config.task.RecurringTaskConfig(
-                items=habapp_rules.system.config.task.RecurringTaskItems(
+            config_min = RecurringTaskConfig(
+                items=RecurringTaskItems(
                     task_active="Unittest_Task",
                 ),
-                parameter=habapp_rules.system.config.task.RecurringTaskParameter(recurrence_time=datetime.timedelta(hours=12)),
+                parameter=RecurringTaskParameter(recurrence_time=datetime.timedelta(hours=12)),
             )
-            habapp_rules.system.task.RecurringTask(config_min)
+            RecurringTask(config_min)
 
         create_item_mock.assert_called_once_with("H_Unittest_Task_last_done", DatetimeItem)
 
@@ -70,91 +73,89 @@ class TestRecurringTask(tests.helper.test_case_base.TestCaseBase):
 
     def test_last_done_is_set(self) -> None:
         """Test if last done is set correctly."""
-        tests.helper.oh_item.assert_value("Unittest_Task_last", None)
+        assert_item_value("Unittest_Task_last", None)
 
-        tests.helper.oh_item.item_state_change_event("Unittest_Task", "ON")
-        tests.helper.oh_item.assert_value("Unittest_Task_last", None)
+        item_state_change_event("Unittest_Task", "ON")
+        assert_item_value("Unittest_Task_last", None)
 
-        tests.helper.oh_item.item_state_change_event("Unittest_Task", "OFF")
+        item_state_change_event("Unittest_Task", "OFF")
         self.assertTrue(datetime.datetime.now() - self._rule._config.items.last_done.value < datetime.timedelta(seconds=1))
 
     def test_check_and_set_task_undone(self) -> None:
         """Test _check_and_set_task_undone."""
         # last done is None
-        tests.helper.oh_item.assert_value("Unittest_Task_last", None)
-        tests.helper.oh_item.assert_value("Unittest_Task", None)
+        assert_item_value("Unittest_Task_last", None)
+        assert_item_value("Unittest_Task", None)
         self._rule._check_and_set_task_undone()
-        tests.helper.oh_item.assert_value("Unittest_Task", "ON")
+        assert_item_value("Unittest_Task", "ON")
 
         # last done is value that should set task to undone
-        tests.helper.oh_item.item_state_change_event("Unittest_Task", "OFF")
-        tests.helper.oh_item.set_state("Unittest_Task_last", datetime.datetime.now() - datetime.timedelta(days=1))
+        item_state_change_event("Unittest_Task", "OFF")
+        set_item_state("Unittest_Task_last", datetime.datetime.now() - datetime.timedelta(days=1))
         self._rule._check_and_set_task_undone()
-        tests.helper.oh_item.assert_value("Unittest_Task", "ON")
+        assert_item_value("Unittest_Task", "ON")
 
         # last done is value that should not set task to undone
-        tests.helper.oh_item.item_state_change_event("Unittest_Task", "OFF")
-        tests.helper.oh_item.set_state("Unittest_Task_last", datetime.datetime.now() - datetime.timedelta(hours=1))
+        item_state_change_event("Unittest_Task", "OFF")
+        set_item_state("Unittest_Task_last", datetime.datetime.now() - datetime.timedelta(hours=1))
         self._rule._check_and_set_task_undone()
-        tests.helper.oh_item.assert_value("Unittest_Task", "OFF")
+        assert_item_value("Unittest_Task", "OFF")
 
 
-class TestCounterTask(tests.helper.test_case_base.TestCaseBase):
+class TestCounterTask(TestCaseBase):
     """Tests for CounterTask Rule."""
 
     def setUp(self) -> None:
         """Setup test case."""
-        tests.helper.test_case_base.TestCaseBase.setUp(self)
+        TestCaseBase.setUp(self)
 
-        tests.helper.oh_item.add_mock_item(SwitchItem, "Unittest_Counter_Task", None)
-        tests.helper.oh_item.add_mock_item(NumberItem, "Unittest_Observed", None)
-        tests.helper.oh_item.add_mock_item(NumberItem, "Unittest_Observed_last_reset", None)
+        add_mock_item(SwitchItem, "Unittest_Counter_Task", None)
+        add_mock_item(NumberItem, "Unittest_Observed", None)
+        add_mock_item(NumberItem, "Unittest_Observed_last_reset", None)
 
-        config_max = habapp_rules.system.config.task.CounterTaskConfig(
-            items=habapp_rules.system.config.task.CounterTaskItems(task_active="Unittest_Counter_Task", observed="Unittest_Observed", last_reset="Unittest_Observed_last_reset"),
-            parameter=habapp_rules.system.config.task.CounterTaskParameter(max_value=42),
+        config_max = CounterTaskConfig(
+            items=CounterTaskItems(task_active="Unittest_Counter_Task", observed="Unittest_Observed", last_reset="Unittest_Observed_last_reset"),
+            parameter=CounterTaskParameter(max_value=42),
         )
 
-        self._rule = habapp_rules.system.task.CounterTask(config_max)
+        self._rule = CounterTask(config_max)
 
     def test_init_with_min_config(self) -> None:
         """Test init with minimal config."""
-        tests.helper.oh_item.add_mock_item(NumberItem, "H_Unittest_Observed_last_reset", None)
+        add_mock_item(NumberItem, "H_Unittest_Observed_last_reset", None)
 
         with unittest.mock.patch("habapp_rules.system.config.task.create_additional_item", return_value=NumberItem("H_Unittest_Observed_last_reset")) as create_item_mock:
-            config_min = habapp_rules.system.config.task.CounterTaskConfig(
-                items=habapp_rules.system.config.task.CounterTaskItems(task_active="Unittest_Counter_Task", observed="Unittest_Observed"), parameter=habapp_rules.system.config.task.CounterTaskParameter(max_value=42)
-            )
-            habapp_rules.system.task.CounterTask(config_min)
+            config_min = CounterTaskConfig(items=CounterTaskItems(task_active="Unittest_Counter_Task", observed="Unittest_Observed"), parameter=CounterTaskParameter(max_value=42))
+            CounterTask(config_min)
 
         create_item_mock.assert_called_once_with("H_Unittest_Observed_last_reset", NumberItem)
 
     def test_overall_behaviour(self) -> None:
         """Test overall behaviour."""
         # first value
-        tests.helper.oh_item.item_state_change_event("Unittest_Observed", 20)
-        tests.helper.oh_item.assert_value("Unittest_Counter_Task", "OFF")
+        item_state_change_event("Unittest_Observed", 20)
+        assert_item_value("Unittest_Counter_Task", "OFF")
 
         # second value still smaller than threshold
-        tests.helper.oh_item.item_state_change_event("Unittest_Observed", 42)
-        tests.helper.oh_item.assert_value("Unittest_Counter_Task", "OFF")
+        item_state_change_event("Unittest_Observed", 42)
+        assert_item_value("Unittest_Counter_Task", "OFF")
 
         # value greater than threshold
-        tests.helper.oh_item.item_state_change_event("Unittest_Observed", 43)
-        tests.helper.oh_item.assert_value("Unittest_Counter_Task", "ON")
+        item_state_change_event("Unittest_Observed", 43)
+        assert_item_value("Unittest_Counter_Task", "ON")
 
         # second value greater than threshold
-        tests.helper.oh_item.item_state_change_event("Unittest_Observed", 100)
-        tests.helper.oh_item.assert_value("Unittest_Counter_Task", "ON")
+        item_state_change_event("Unittest_Observed", 100)
+        assert_item_value("Unittest_Counter_Task", "ON")
 
         # reset of task
-        tests.helper.oh_item.item_state_change_event("Unittest_Counter_Task", "OFF")
-        tests.helper.oh_item.assert_value("Unittest_Observed_last_reset", 100)
+        item_state_change_event("Unittest_Counter_Task", "OFF")
+        assert_item_value("Unittest_Observed_last_reset", 100)
 
         # first value after reset
-        tests.helper.oh_item.item_state_change_event("Unittest_Observed", 142)
-        tests.helper.oh_item.assert_value("Unittest_Counter_Task", "OFF")
+        item_state_change_event("Unittest_Observed", 142)
+        assert_item_value("Unittest_Counter_Task", "OFF")
 
         # second value after reset
-        tests.helper.oh_item.item_state_change_event("Unittest_Observed", 143)
-        tests.helper.oh_item.assert_value("Unittest_Counter_Task", "ON")
+        item_state_change_event("Unittest_Observed", 143)
+        assert_item_value("Unittest_Counter_Task", "ON")

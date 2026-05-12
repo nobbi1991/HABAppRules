@@ -2,41 +2,45 @@
 
 import unittest.mock
 
-import HABApp.openhab.items
+from HABApp.openhab.items import NumberItem, SwitchItem
 
-import habapp_rules.system.item_watchdog
-import tests.helper.oh_item
-import tests.helper.test_case_base
 from habapp_rules.system.config.item_watchdog import WatchdogConfig, WatchdogItems, WatchdogParameter
+from habapp_rules.system.item_watchdog import ItemWatchdog
+from tests.helper.oh_item import (
+    add_mock_item,
+    assert_item_value,
+    item_state_event,
+)
+from tests.helper.test_case_base import TestCaseBase
 
 
-class TestWatchdog(tests.helper.test_case_base.TestCaseBase):
+class TestWatchdog(TestCaseBase):
     """Tests for Watchdog Rule."""
 
     def setUp(self) -> None:
         """Setup test case."""
-        tests.helper.test_case_base.TestCaseBase.setUp(self)
+        TestCaseBase.setUp(self)
 
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Number", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Number_Warning", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch_Warning", None)
+        add_mock_item(NumberItem, "Unittest_Number", None)
+        add_mock_item(SwitchItem, "Unittest_Switch", None)
+        add_mock_item(SwitchItem, "Unittest_Number_Warning", None)
+        add_mock_item(SwitchItem, "Unittest_Switch_Warning", None)
 
-        self._watchdog_number = habapp_rules.system.item_watchdog.ItemWatchdog(WatchdogConfig(items=WatchdogItems(observed="Unittest_Number", warning="Unittest_Number_Warning")))
+        self._watchdog_number = ItemWatchdog(WatchdogConfig(items=WatchdogItems(observed="Unittest_Number", warning="Unittest_Number_Warning")))
 
-        self._watchdog_switch = habapp_rules.system.item_watchdog.ItemWatchdog(WatchdogConfig(items=WatchdogItems(observed="Unittest_Switch", warning="Unittest_Switch_Warning"), parameter=WatchdogParameter(timeout=10)))
+        self._watchdog_switch = ItemWatchdog(WatchdogConfig(items=WatchdogItems(observed="Unittest_Switch", warning="Unittest_Switch_Warning"), parameter=WatchdogParameter(timeout=10)))
 
     def test_cb_observed_state_updated(self) -> None:
         """Callback which is called if the observed item was updated."""
         with unittest.mock.patch.object(self._watchdog_number, "_countdown") as number_countdown_mock, unittest.mock.patch.object(self._watchdog_switch, "_countdown") as switch_countdown_mock:
-            tests.helper.oh_item.item_state_event("Unittest_Number", 42)
+            item_state_event("Unittest_Number", 42)
             number_countdown_mock.reset.assert_called_once()
             switch_countdown_mock.reset.assert_not_called()
-            tests.helper.oh_item.assert_value("Unittest_Number_Warning", "OFF")
-            tests.helper.oh_item.assert_value("Unittest_Switch_Warning", None)
+            assert_item_value("Unittest_Number_Warning", "OFF")
+            assert_item_value("Unittest_Switch_Warning", None)
 
-            tests.helper.oh_item.item_state_event("Unittest_Switch", "OFF")
+            item_state_event("Unittest_Switch", "OFF")
             number_countdown_mock.reset.assert_called_once()
             switch_countdown_mock.reset.assert_called_once()
-            tests.helper.oh_item.assert_value("Unittest_Number_Warning", "OFF")
-            tests.helper.oh_item.assert_value("Unittest_Switch_Warning", "OFF")
+            assert_item_value("Unittest_Number_Warning", "OFF")
+            assert_item_value("Unittest_Switch_Warning", "OFF")
