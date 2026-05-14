@@ -14,6 +14,7 @@
 
 ## Bugfix
 
+- fixed "Thread usage detected but no thread marker" warning emitted by HABApp for all timeout-based state machine rules. The `threading.Timer` used internally by `transitions.extensions.states.Timeout` now registers its thread via `in_thread` before dispatching callbacks
 - fixed bug in all ventilation rules of `habapp_rules.actors.ventilation`, which crashed before, if no display item was set
 - fixed bug in `habapp_rules.actors.irrigation.Irrigation`, which also controlled the relay if the rule was not active
 - fixed some bugs in `habapp_rules.energy.monthly_report.MonthlyReport`. E.g. Now, unrealistic energy values will be ignored and proper logging if history values could not be extracted.

@@ -7,6 +7,8 @@ import typing
 import HABApp
 import transitions.extensions.states
 from HABApp.openhab.items import StringItem
+from HABApp.rule import in_thread
+from transitions.core import EventData
 
 from habapp_rules.core.exceptions import HabAppRulesError
 from habapp_rules.core.logger import InstanceLogger
@@ -14,12 +16,24 @@ from habapp_rules.core.logger import InstanceLogger
 LOGGER = logging.getLogger(__name__)
 
 
-@transitions.extensions.states.add_state_features(transitions.extensions.states.Timeout)
+class _HabAppTimeout(transitions.extensions.states.Timeout):
+    """Timeout state that registers the timer thread with HABApp before processing callbacks.
+
+    threading.Timer fires _process_timeout from an unregistered thread. Wrapping it with
+    in_thread prevents HABApp from emitting "Thread usage detected" warnings for every
+    timeout-triggered state transition across all state-machine rules.
+    """
+
+    def _process_timeout(self, event_data: EventData) -> None:
+        in_thread(super()._process_timeout)(event_data)
+
+
+@transitions.extensions.states.add_state_features(_HabAppTimeout)
 class StateMachineWithTimeout(transitions.Machine):
     """State machine class with timeout."""
 
 
-@transitions.extensions.states.add_state_features(transitions.extensions.states.Timeout)
+@transitions.extensions.states.add_state_features(_HabAppTimeout)
 class HierarchicalStateMachineWithTimeout(transitions.extensions.HierarchicalMachine):
     """Hierarchical state machine class with timeout."""
 

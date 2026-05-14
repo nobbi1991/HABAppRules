@@ -113,6 +113,7 @@ class Irrigation(HABApp.Rule):
     def _cb_set_valve_state(self, _: ItemStateChangedEvent | None = None) -> None:
         """Callback to set the valve state, triggered by cyclic call or item event."""
         if self._config.items.active.is_off():
+            # do nothing, because rule is not active
             return
 
         try:

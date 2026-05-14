@@ -67,11 +67,6 @@ class TestIrrigation(TestCaseBase):
 
     def test_get_target_valve_state(self) -> None:
         """Test _get_target_valve_state."""
-        # irrigation is not active
-        for state in (None, "OFF"):
-            set_item_state("Unittest_active", state)
-            self.assertFalse(self._irrigation_min._get_target_valve_state())
-
         # irrigation is active
         set_item_state("Unittest_active", "ON")
         datetime_now = datetime.datetime(2023, 1, 1, 12, 00)

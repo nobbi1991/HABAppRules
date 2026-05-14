@@ -140,6 +140,19 @@ class TestMotion(TestCaseBaseStateMachine):
         set_item_state("Unittest_Motion_min_raw", "OFF")
         self.assertFalse(self.motion_min._raw_motion_active())
 
+    def test_brightness_over_threshold(self) -> None:
+        """Test _brightness_over_threshold."""
+        # config min always returns None
+        self.assertFalse(self.motion_min._brightness_over_threshold())
+
+        # config max checks threshold
+        set_item_state("Unittest_Brightness", 0)
+        item_state_change_event("Unittest_Brightness_Threshold", 1000)
+        self.assertFalse(self.motion_max._brightness_over_threshold())
+
+        set_item_state("Unittest_Brightness", 1500)
+        self.assertTrue(self.motion_max._brightness_over_threshold())
+
     def test_initial_unlock_state(self) -> None:
         """Test initial state of unlock state."""
         self.assertEqual(float("inf"), self.motion_max._config.brightness_threshold)

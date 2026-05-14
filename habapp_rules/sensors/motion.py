@@ -171,7 +171,9 @@ class Motion(StateMachineRule):
         Returns:
              True if active, else False
         """
-        return self._hysteresis_switch.get_output(self._config.items.brightness.value)  # type: ignore[union-attr]  # pydantic model will ensure that hysteresis_switch is only created if all needed items are existing
+        if self._hysteresis_switch is None or self._config.items.brightness is None:
+            return False
+        return self._hysteresis_switch.get_output(self._config.items.brightness.value)
 
     def _motion_extended_configured(self) -> bool:
         """Check if extended motion is configured.
