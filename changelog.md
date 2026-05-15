@@ -9,6 +9,7 @@
 
 ## Features
 
+- changed license from Apache-2.0 to EUPL-1.2 for compatibility with HABApp (EUPL-1.2)
 - added better config validation of `habapp_rules.sensors.config.motion.MotionConfig`
 - updated multi_notifier to 0.6.0 which improves how mails are sent and reduce probability that mails are marked as spam
 

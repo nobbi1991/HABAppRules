@@ -13,7 +13,12 @@ from pathlib import Path
 _PATTERN = re.compile(r"\.Field\((?!\s*\.\.\.)(?!\s*\w+=)")
 
 
-def main() -> int:
+def check_default_is_set() -> int:
+    """Run check.
+
+    Returns:
+        int: 0 if no violations, 1 otherwise
+    """
     violations: list[str] = []
     for path in Path("habapp_rules").rglob("*.py"):
         content = path.read_text(encoding="utf-8")
@@ -31,4 +36,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(check_default_is_set())

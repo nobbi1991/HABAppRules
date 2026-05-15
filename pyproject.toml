@@ -7,7 +7,7 @@ name = "habapp_rules"
 description = "Basic rules for HABApp"
 long_description = "Basic rules for HABApp"
 authors = [{ name = "Seuling N." }]
-license = "Apache-2.0"
+license = "EUPL-1.2"
 dynamic = ["version"]
 requires-python = ">=3.11"
 dependencies = [
