@@ -1,48 +1,49 @@
 """Tests for motion sensors."""
 
 import collections
-import pathlib
 import sys
 import unittest
 import unittest.mock
 
-import HABApp
+from HABApp.openhab.items import NumberItem, StringItem, SwitchItem
 
-import habapp_rules.core.exceptions
-import habapp_rules.sensors.config.motion
-import habapp_rules.sensors.motion
-import habapp_rules.system
-import tests.helper.graph_machines
-import tests.helper.oh_item
-import tests.helper.test_case_base
+from habapp_rules.sensors.config.motion import MotionConfig, MotionItems, MotionParameter
+from habapp_rules.sensors.motion import Motion
+from habapp_rules.system import SleepState
+from tests.helper.graph_machines import _get_state_names, create_state_graphs
+from tests.helper.oh_item import (
+    add_mock_item,
+    item_state_change_event,
+    send_command,
+    set_item_state,
+)
+from tests.helper.test_case_base import TestCaseBaseStateMachine
 
 
-class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
+class TestMotion(TestCaseBaseStateMachine):
     """Tests cases for testing motion sensors rule."""
 
     def setUp(self) -> None:
         """Setup test case."""
-        tests.helper.test_case_base.TestCaseBaseStateMachine.setUp(self)
+        super().setUp()
 
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Motion_min_raw", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Motion_min_filtered", None)
+        add_mock_item(SwitchItem, "Unittest_Motion_min_raw", None)
+        add_mock_item(SwitchItem, "Unittest_Motion_min_filtered", None)
 
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Motion_max_raw", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Motion_max_filtered", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Motion_max_lock", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Sleep_state", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Brightness", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Brightness_Threshold", None)
+        add_mock_item(SwitchItem, "Unittest_Motion_max_raw", None)
+        add_mock_item(SwitchItem, "Unittest_Motion_max_filtered", None)
+        add_mock_item(SwitchItem, "Unittest_Motion_max_lock", None)
+        add_mock_item(StringItem, "Unittest_Sleep_state", None)
+        add_mock_item(NumberItem, "Unittest_Brightness", None)
+        add_mock_item(NumberItem, "Unittest_Brightness_Threshold", None)
 
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_Motion_Unittest_Motion_min_raw_state", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "CustomState", None)
+        add_mock_item(StringItem, "H_Motion_Unittest_Motion_min_raw_state", None)
+        add_mock_item(StringItem, "CustomState", None)
 
-        config_min = habapp_rules.sensors.config.motion.MotionConfig(
-            items=habapp_rules.sensors.config.motion.MotionItems(motion_raw="Unittest_Motion_min_raw", motion_filtered="Unittest_Motion_min_filtered", state="H_Motion_Unittest_Motion_min_raw_state")
-        )
+        config_min = MotionConfig(items=MotionItems(motion_raw="Unittest_Motion_min_raw", motion_filtered="Unittest_Motion_min_filtered", state="H_Motion_Unittest_Motion_min_raw_state"))
 
-        config_max = habapp_rules.sensors.config.motion.MotionConfig(
-            items=habapp_rules.sensors.config.motion.MotionItems(
+        config_max = MotionConfig(
+            items=MotionItems(
                 motion_raw="Unittest_Motion_max_raw",
                 motion_filtered="Unittest_Motion_max_filtered",
                 brightness="Unittest_Brightness",
@@ -51,11 +52,11 @@ class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
                 lock="Unittest_Motion_max_lock",
                 state="CustomState",
             ),
-            parameter=habapp_rules.sensors.config.motion.MotionParameter(extended_motion_time=5),
+            parameter=MotionParameter(extended_motion_time=5),
         )
 
-        self.motion_min = habapp_rules.sensors.motion.Motion(config_min)
-        self.motion_max = habapp_rules.sensors.motion.Motion(config_max)
+        self.motion_min = Motion(config_min)
+        self.motion_max = Motion(config_max)
 
     def test__init__(self) -> None:
         """Test __init__."""
@@ -92,80 +93,72 @@ class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
     def test_create_graph(self) -> None:  # pragma: no cover
         """Create state machine graph for documentation."""
-        picture_dir = pathlib.Path(__file__).parent / "_state_charts" / "Motion"
-        if not picture_dir.is_dir():
-            picture_dir.mkdir(parents=True)
-
-        motion_graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self.motion_min.states, transitions=self.motion_min.trans, initial=self.motion_min.state, show_conditions=True)
-
-        motion_graph.get_graph().draw(picture_dir / "Motion.png", format="png", prog="dot")
+        create_state_graphs(self.motion_min, "Motion")
 
     def test_initial_state(self) -> None:
         """Test _get_initial_state."""
-        tests.helper.oh_item.item_state_change_event("Unittest_Brightness", 100)
-        tests.helper.oh_item.item_state_change_event("Unittest_Brightness_Threshold", 1000)
+        item_state_change_event("Unittest_Brightness", 100)
+        item_state_change_event("Unittest_Brightness_Threshold", 1000)
 
         TestCase = collections.namedtuple("TestCase", "locked, sleep_state, brightness, motion_raw, expected_state_max, expected_state_min")
 
         test_cases = [
-            TestCase(locked=False, sleep_state=habapp_rules.system.SleepState.AWAKE.value, brightness=500, motion_raw=False, expected_state_max="Unlocked_Wait", expected_state_min="Unlocked_Wait"),
-            TestCase(locked=False, sleep_state=habapp_rules.system.SleepState.AWAKE.value, brightness=500, motion_raw=True, expected_state_max="Unlocked_Motion", expected_state_min="Unlocked_Motion"),
-            TestCase(locked=False, sleep_state=habapp_rules.system.SleepState.AWAKE.value, brightness=1500, motion_raw=False, expected_state_max="Unlocked_TooBright", expected_state_min="Unlocked_Wait"),
-            TestCase(locked=False, sleep_state=habapp_rules.system.SleepState.AWAKE.value, brightness=1500, motion_raw=True, expected_state_max="Unlocked_TooBright", expected_state_min="Unlocked_Motion"),
-            TestCase(locked=False, sleep_state=habapp_rules.system.SleepState.SLEEPING.value, brightness=500, motion_raw=False, expected_state_max="SleepLocked", expected_state_min="Unlocked_Wait"),
-            TestCase(locked=False, sleep_state=habapp_rules.system.SleepState.SLEEPING.value, brightness=500, motion_raw=True, expected_state_max="SleepLocked", expected_state_min="Unlocked_Motion"),
-            TestCase(locked=False, sleep_state=habapp_rules.system.SleepState.SLEEPING.value, brightness=1500, motion_raw=False, expected_state_max="SleepLocked", expected_state_min="Unlocked_Wait"),
-            TestCase(locked=False, sleep_state=habapp_rules.system.SleepState.SLEEPING.value, brightness=1500, motion_raw=True, expected_state_max="SleepLocked", expected_state_min="Unlocked_Motion"),
-            TestCase(locked=True, sleep_state=habapp_rules.system.SleepState.AWAKE.value, brightness=500, motion_raw=False, expected_state_max="Locked", expected_state_min="Unlocked_Wait"),
-            TestCase(locked=True, sleep_state=habapp_rules.system.SleepState.AWAKE.value, brightness=500, motion_raw=True, expected_state_max="Locked", expected_state_min="Unlocked_Motion"),
-            TestCase(locked=True, sleep_state=habapp_rules.system.SleepState.AWAKE.value, brightness=1500, motion_raw=False, expected_state_max="Locked", expected_state_min="Unlocked_Wait"),
-            TestCase(locked=True, sleep_state=habapp_rules.system.SleepState.AWAKE.value, brightness=1500, motion_raw=True, expected_state_max="Locked", expected_state_min="Unlocked_Motion"),
-            TestCase(locked=True, sleep_state=habapp_rules.system.SleepState.SLEEPING.value, brightness=500, motion_raw=False, expected_state_max="Locked", expected_state_min="Unlocked_Wait"),
-            TestCase(locked=True, sleep_state=habapp_rules.system.SleepState.SLEEPING.value, brightness=500, motion_raw=True, expected_state_max="Locked", expected_state_min="Unlocked_Motion"),
-            TestCase(locked=True, sleep_state=habapp_rules.system.SleepState.SLEEPING.value, brightness=1500, motion_raw=False, expected_state_max="Locked", expected_state_min="Unlocked_Wait"),
-            TestCase(locked=True, sleep_state=habapp_rules.system.SleepState.SLEEPING.value, brightness=1500, motion_raw=True, expected_state_max="Locked", expected_state_min="Unlocked_Motion"),
+            TestCase(locked=False, sleep_state=SleepState.AWAKE.value, brightness=500, motion_raw=False, expected_state_max="Unlocked_Wait", expected_state_min="Unlocked_Wait"),
+            TestCase(locked=False, sleep_state=SleepState.AWAKE.value, brightness=500, motion_raw=True, expected_state_max="Unlocked_Motion", expected_state_min="Unlocked_Motion"),
+            TestCase(locked=False, sleep_state=SleepState.AWAKE.value, brightness=1500, motion_raw=False, expected_state_max="Unlocked_TooBright", expected_state_min="Unlocked_Wait"),
+            TestCase(locked=False, sleep_state=SleepState.AWAKE.value, brightness=1500, motion_raw=True, expected_state_max="Unlocked_TooBright", expected_state_min="Unlocked_Motion"),
+            TestCase(locked=False, sleep_state=SleepState.SLEEPING.value, brightness=500, motion_raw=False, expected_state_max="SleepLocked", expected_state_min="Unlocked_Wait"),
+            TestCase(locked=False, sleep_state=SleepState.SLEEPING.value, brightness=500, motion_raw=True, expected_state_max="SleepLocked", expected_state_min="Unlocked_Motion"),
+            TestCase(locked=False, sleep_state=SleepState.SLEEPING.value, brightness=1500, motion_raw=False, expected_state_max="SleepLocked", expected_state_min="Unlocked_Wait"),
+            TestCase(locked=False, sleep_state=SleepState.SLEEPING.value, brightness=1500, motion_raw=True, expected_state_max="SleepLocked", expected_state_min="Unlocked_Motion"),
+            TestCase(locked=True, sleep_state=SleepState.AWAKE.value, brightness=500, motion_raw=False, expected_state_max="Locked", expected_state_min="Unlocked_Wait"),
+            TestCase(locked=True, sleep_state=SleepState.AWAKE.value, brightness=500, motion_raw=True, expected_state_max="Locked", expected_state_min="Unlocked_Motion"),
+            TestCase(locked=True, sleep_state=SleepState.AWAKE.value, brightness=1500, motion_raw=False, expected_state_max="Locked", expected_state_min="Unlocked_Wait"),
+            TestCase(locked=True, sleep_state=SleepState.AWAKE.value, brightness=1500, motion_raw=True, expected_state_max="Locked", expected_state_min="Unlocked_Motion"),
+            TestCase(locked=True, sleep_state=SleepState.SLEEPING.value, brightness=500, motion_raw=False, expected_state_max="Locked", expected_state_min="Unlocked_Wait"),
+            TestCase(locked=True, sleep_state=SleepState.SLEEPING.value, brightness=500, motion_raw=True, expected_state_max="Locked", expected_state_min="Unlocked_Motion"),
+            TestCase(locked=True, sleep_state=SleepState.SLEEPING.value, brightness=1500, motion_raw=False, expected_state_max="Locked", expected_state_min="Unlocked_Wait"),
+            TestCase(locked=True, sleep_state=SleepState.SLEEPING.value, brightness=1500, motion_raw=True, expected_state_max="Locked", expected_state_min="Unlocked_Motion"),
         ]
 
         for test_case in test_cases:
             with self.subTest(test_case=test_case):
-                tests.helper.oh_item.set_state("Unittest_Motion_max_lock", "ON" if test_case.locked else "OFF")
-                tests.helper.oh_item.set_state("Unittest_Sleep_state", test_case.sleep_state)
-                tests.helper.oh_item.set_state("Unittest_Brightness", test_case.brightness)
-                tests.helper.oh_item.set_state("Unittest_Motion_max_raw", "ON" if test_case.motion_raw else "OFF")
-                tests.helper.oh_item.set_state("Unittest_Motion_min_raw", "ON" if test_case.motion_raw else "OFF")
+                set_item_state("Unittest_Motion_max_lock", "ON" if test_case.locked else "OFF")
+                set_item_state("Unittest_Sleep_state", test_case.sleep_state)
+                set_item_state("Unittest_Brightness", test_case.brightness)
+                set_item_state("Unittest_Motion_max_raw", "ON" if test_case.motion_raw else "OFF")
+                set_item_state("Unittest_Motion_min_raw", "ON" if test_case.motion_raw else "OFF")
 
                 self.assertEqual(test_case.expected_state_max, self.motion_max._get_initial_state("test"))
                 self.assertEqual(test_case.expected_state_min, self.motion_min._get_initial_state("test"))
 
     def test_raw_motion_active(self) -> None:
         """Test _raw_motion_active."""
-        tests.helper.oh_item.set_state("Unittest_Motion_min_raw", "ON")
+        set_item_state("Unittest_Motion_min_raw", "ON")
         self.assertTrue(self.motion_min._raw_motion_active())
 
-        tests.helper.oh_item.set_state("Unittest_Motion_min_raw", "OFF")
+        set_item_state("Unittest_Motion_min_raw", "OFF")
         self.assertFalse(self.motion_min._raw_motion_active())
 
-    def test_get_brightness_threshold(self) -> None:
-        """Test _get_brightness_threshold."""
-        # value of threshold item
-        self.assertEqual(float("inf"), self.motion_max._get_brightness_threshold())
+    def test_brightness_over_threshold(self) -> None:
+        """Test _brightness_over_threshold."""
+        # config min always returns None
+        self.assertFalse(self.motion_min._brightness_over_threshold())
 
-        # value given as parameter
-        self.motion_max._config.parameter.brightness_threshold = 800
-        self.assertEqual(800, self.motion_max._get_brightness_threshold())
+        # config max checks threshold
+        set_item_state("Unittest_Brightness", 0)
+        item_state_change_event("Unittest_Brightness_Threshold", 1000)
+        self.assertFalse(self.motion_max._brightness_over_threshold())
 
-    def test_get_brightness_threshold_exceptions(self) -> None:
-        """Test exceptions of _get_brightness_threshold."""
-        self.motion_max._config.items.brightness_threshold = None
-        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesError):
-            self.motion_max._get_brightness_threshold()
+        set_item_state("Unittest_Brightness", 1500)
+        self.assertTrue(self.motion_max._brightness_over_threshold())
 
     def test_initial_unlock_state(self) -> None:
         """Test initial state of unlock state."""
-        self.assertEqual(float("inf"), self.motion_max._get_brightness_threshold())
-        tests.helper.oh_item.item_state_change_event("Unittest_Brightness", 100)
-        tests.helper.oh_item.item_state_change_event("Unittest_Brightness_Threshold", 1000)
-        self.assertEqual(1000, self.motion_max._get_brightness_threshold())
+        self.assertEqual(float("inf"), self.motion_max._config.brightness_threshold)
+        item_state_change_event("Unittest_Brightness", 100)
+        item_state_change_event("Unittest_Brightness_Threshold", 1000)
+        self.assertEqual(1000, self.motion_max._config.brightness_threshold)
 
         TestCase = collections.namedtuple("TestCase", "brightness_value, motion_raw, expected_state_min, expected_state_max")
 
@@ -178,9 +171,9 @@ class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
         for test_case in test_cases:
             with self.subTest(test_case=test_case):
-                tests.helper.oh_item.set_state("Unittest_Brightness", test_case.brightness_value)
-                tests.helper.oh_item.set_state("Unittest_Motion_min_raw", "ON" if test_case.motion_raw else "OFF")
-                tests.helper.oh_item.set_state("Unittest_Motion_max_raw", "ON" if test_case.motion_raw else "OFF")
+                set_item_state("Unittest_Brightness", test_case.brightness_value)
+                set_item_state("Unittest_Motion_min_raw", "ON" if test_case.motion_raw else "OFF")
+                set_item_state("Unittest_Motion_max_raw", "ON" if test_case.motion_raw else "OFF")
 
                 self.motion_min.to_Unlocked()
                 self.motion_max.to_Unlocked()
@@ -190,10 +183,10 @@ class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
     def test_lock(self) -> None:
         """Test if lock is activated from all states."""
-        for state in self._get_state_names(self.motion_max.states):
-            tests.helper.oh_item.set_state("Unittest_Motion_max_lock", "OFF")
+        for state in _get_state_names(self.motion_max.states):
+            set_item_state("Unittest_Motion_max_lock", "OFF")
             self.motion_max.state = state
-            tests.helper.oh_item.send_command("Unittest_Motion_max_lock", "ON", "OFF")
+            send_command("Unittest_Motion_max_lock", "ON", "OFF")
             self.assertEqual("Locked", self.motion_max.state)
 
     def test_motion_extended_configured(self) -> None:
@@ -220,24 +213,27 @@ class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
     def test_sleep_active(self) -> None:
         """Test _sleep_active."""
-        tests.helper.oh_item.set_state("Unittest_Sleep_state", habapp_rules.system.SleepState.AWAKE.value)
+        set_item_state("Unittest_Sleep_state", SleepState.AWAKE.value)
         self.assertFalse(self.motion_max._sleep_active())
 
-        tests.helper.oh_item.set_state("Unittest_Sleep_state", habapp_rules.system.SleepState.SLEEPING.value)
+        set_item_state("Unittest_Sleep_state", SleepState.SLEEPING.value)
         self.assertTrue(self.motion_max._sleep_active())
+
+        # item not set
+        self.assertFalse(self.motion_min._sleep_active())
 
     def test_transitions_locked(self) -> None:
         """Test leaving transitions of locked state."""
         # to Unlocked
         self.motion_max.state = "Locked"
         with unittest.mock.patch.object(self.motion_max, "_sleep_active", return_value=False):
-            tests.helper.oh_item.send_command("Unittest_Motion_max_lock", "OFF", "ON")
+            send_command("Unittest_Motion_max_lock", "OFF", "ON")
         self.assertEqual("Unlocked_Wait", self.motion_max.state)
 
         # to SleepLocked
         self.motion_max.state = "Locked"
         with unittest.mock.patch.object(self.motion_max, "_sleep_active", return_value=True):
-            tests.helper.oh_item.send_command("Unittest_Motion_max_lock", "OFF", "ON")
+            send_command("Unittest_Motion_max_lock", "OFF", "ON")
         self.assertEqual("SleepLocked", self.motion_max.state)
 
     def test_transitions_sleep_locked(self) -> None:
@@ -271,20 +267,20 @@ class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
         # reset timer if motion off
         self.motion_max.state = "PostSleepLocked"
         self.transitions_timer_mock.reset_mock()
-        tests.helper.oh_item.item_state_change_event("Unittest_Motion_max_raw", "OFF", "ON")
+        item_state_change_event("Unittest_Motion_max_raw", "OFF", "ON")
         self.assertEqual("PostSleepLocked", self.motion_max.state)
         self.assertEqual(1, self.transitions_timer_mock.call_count)
 
         # reset timer if motion on
         self.motion_max.state = "PostSleepLocked"
         self.transitions_timer_mock.reset_mock()
-        tests.helper.oh_item.item_state_change_event("Unittest_Motion_max_raw", "ON", "OFF")
+        item_state_change_event("Unittest_Motion_max_raw", "ON", "OFF")
         self.assertEqual("PostSleepLocked", self.motion_max.state)
         self.assertEqual(1, self.transitions_timer_mock.call_count)
 
         # sleep starts during post sleep
         self.motion_max.state = "PostSleepLocked"
-        tests.helper.oh_item.item_state_change_event("Unittest_Sleep_state", habapp_rules.system.SleepState.SLEEPING.value)
+        item_state_change_event("Unittest_Sleep_state", SleepState.SLEEPING.value)
         self.assertEqual("SleepLocked", self.motion_max.state)
 
     def test_unlocked_wait(self) -> None:
@@ -348,62 +344,47 @@ class TestMotion(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
     def test_check_brightness(self) -> None:
         """Test _check_brightness."""
-        with (
-            unittest.mock.patch.object(self.motion_max._hysteresis_switch, "get_output", return_value=True),
-            unittest.mock.patch.object(self.motion_max, "brightness_over_threshold"),
-            unittest.mock.patch.object(self.motion_max, "brightness_below_threshold"),
-        ):
+        with unittest.mock.patch.object(self.motion_max._hysteresis_switch, "get_output", return_value=True), unittest.mock.patch.object(self.motion_max, "trigger") as trigger_mock:
             self.motion_max._check_brightness()
-            self.motion_max.brightness_over_threshold.assert_called_once()
-            self.motion_max.brightness_below_threshold.assert_not_called()
+            trigger_mock.assert_called_once_with("brightness_over_threshold")
 
-        with (
-            unittest.mock.patch.object(self.motion_max._hysteresis_switch, "get_output", return_value=False),
-            unittest.mock.patch.object(self.motion_max, "brightness_over_threshold"),
-            unittest.mock.patch.object(self.motion_max, "brightness_below_threshold"),
-        ):
+        with unittest.mock.patch.object(self.motion_max._hysteresis_switch, "get_output", return_value=False), unittest.mock.patch.object(self.motion_max, "trigger") as trigger_mock:
             self.motion_max._check_brightness()
-            self.motion_max.brightness_over_threshold.assert_not_called()
-            self.motion_max.brightness_below_threshold.assert_called_once()
+            trigger_mock.assert_called_once_with("brightness_below_threshold")
 
     def test_cb_brightness_threshold_change(self) -> None:
         """Test _cb_threshold_change."""
         with unittest.mock.patch.object(self.motion_max._hysteresis_switch, "set_threshold_on"), unittest.mock.patch.object(self.motion_max, "_check_brightness"):
-            tests.helper.oh_item.item_state_change_event("Unittest_Brightness_Threshold", 42)
+            item_state_change_event("Unittest_Brightness_Threshold", 42)
             self.motion_max._hysteresis_switch.set_threshold_on.assert_called_once_with(42)
             self.motion_max._check_brightness.assert_called_once()
 
     def test_cb_motion_raw(self) -> None:
         """Test _cb_motion_raw."""
-        with unittest.mock.patch.object(self.motion_max, "motion_on"), unittest.mock.patch.object(self.motion_max, "motion_off"):
-            tests.helper.oh_item.item_state_change_event("Unittest_Motion_max_raw", "ON", "OFF")
-            self.motion_max.motion_on.assert_called_once()
-            self.motion_max.motion_off.assert_not_called()
+        with unittest.mock.patch.object(self.motion_max, "trigger") as trigger_mock:
+            item_state_change_event("Unittest_Motion_max_raw", "ON", "OFF")
+            trigger_mock.assert_called_once_with("motion_on")
 
-        with unittest.mock.patch.object(self.motion_max, "motion_on"), unittest.mock.patch.object(self.motion_max, "motion_off"):
-            tests.helper.oh_item.item_state_change_event("Unittest_Motion_max_raw", "OFF", "ON")
-            self.motion_max.motion_on.assert_not_called()
-            self.motion_max.motion_off.assert_called_once()
+        with unittest.mock.patch.object(self.motion_max, "trigger") as trigger_mock:
+            item_state_change_event("Unittest_Motion_max_raw", "OFF", "ON")
+            trigger_mock.assert_called_once_with("motion_off")
 
     def test_cb_brightness_change(self) -> None:
         """Test _cb_threshold_change."""
         with unittest.mock.patch.object(self.motion_max, "_check_brightness"):
-            tests.helper.oh_item.item_state_change_event("Unittest_Brightness", 42)
+            item_state_change_event("Unittest_Brightness", 42)
             self.motion_max._check_brightness.assert_called_once()
 
     def test_cb_sleep(self) -> None:
         """Test _cb_sleep."""
-        for state in habapp_rules.system.SleepState:
-            with unittest.mock.patch.object(self.motion_max, "sleep_started"), unittest.mock.patch.object(self.motion_max, "sleep_end"):
-                tests.helper.oh_item.item_state_change_event("Unittest_Sleep_state", state.value)
-                if state == habapp_rules.system.SleepState.SLEEPING:
-                    self.motion_max.sleep_started.assert_called_once()
-                    self.motion_max.sleep_end.assert_not_called()
+        for state in SleepState:
+            with unittest.mock.patch.object(self.motion_max, "trigger") as trigger_mock:
+                item_state_change_event("Unittest_Sleep_state", state.value)
+                if state == SleepState.SLEEPING:
+                    trigger_mock.assert_called_once_with("sleep_started")
 
-                elif state == habapp_rules.system.SleepState.AWAKE:
-                    self.motion_max.sleep_started.assert_not_called()
-                    self.motion_max.sleep_end.assert_called_once()
+                elif state == SleepState.AWAKE:
+                    trigger_mock.assert_called_once_with("sleep_end")
 
                 else:
-                    self.motion_max.sleep_started.assert_not_called()
-                    self.motion_max.sleep_end.assert_not_called()
+                    trigger_mock.assert_not_called()

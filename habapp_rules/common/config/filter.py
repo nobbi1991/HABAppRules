@@ -1,20 +1,20 @@
 """Config models for filter rules."""
 
-import HABApp.openhab.items
 import pydantic
 import typing_extensions
+from HABApp.openhab.items import NumberItem
 
-import habapp_rules.core.pydantic_base
+from habapp_rules.core.pydantic_base import ConfigBase, ItemBase, ParameterBase
 
 
-class ExponentialFilterItems(habapp_rules.core.pydantic_base.ItemBase):
+class ExponentialFilterItems(ItemBase):
     """Items for exponential filter."""
 
-    raw: HABApp.openhab.items.NumberItem = pydantic.Field(..., description="Item for raw value")
-    filtered: HABApp.openhab.items.NumberItem = pydantic.Field(..., description="Item for filtered value")
+    raw: NumberItem = pydantic.Field(..., description="Item for raw value")
+    filtered: NumberItem = pydantic.Field(..., description="Item for filtered value")
 
 
-class ExponentialFilterParameter(habapp_rules.core.pydantic_base.ParameterBase):
+class ExponentialFilterParameter(ParameterBase):
     """Parameter for exponential filter."""
 
     tau: int = pydantic.Field(..., description="filter time constant in seconds. E.g. step from 0 to 1 | tau = 5 seconds -> after 5 seconds the value will be 0,67")
@@ -37,7 +37,7 @@ class ExponentialFilterParameter(habapp_rules.core.pydantic_base.ParameterBase):
         return self
 
 
-class ExponentialFilterConfig(habapp_rules.core.pydantic_base.ConfigBase):
+class ExponentialFilterConfig(ConfigBase):
     """Config for exponential filter."""
 
     items: ExponentialFilterItems = pydantic.Field(..., description="Items for exponential filter")

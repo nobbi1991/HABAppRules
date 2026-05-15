@@ -4,12 +4,12 @@ import threading
 import unittest
 import unittest.mock
 
-import HABApp.rule.rule
 from HABApp.core.internals import get_current_context
+from HABApp.rule.rule import Rule
 
-import tests.helper.oh_item
-import tests.helper.rule_runner
 from tests.helper.async_helper import call_async_sync
+from tests.helper.oh_item import oh_post_update, oh_send_command, remove_all_mocked_items
+from tests.helper.rule_runner import SimpleRuleRunner
 
 
 class TestCaseBase(unittest.TestCase):
@@ -17,22 +17,22 @@ class TestCaseBase(unittest.TestCase):
 
     def setUp(self) -> None:
         """Setup test case."""
-        self.send_command_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.OpenhabItem.oh_send_command", new=tests.helper.oh_item.oh_send_command)
+        self.send_command_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.OpenhabItem.oh_send_command", new=oh_send_command)
         self.addCleanup(self.send_command_mock_patcher.stop)
         self.send_command_mock = self.send_command_mock_patcher.start()
 
-        self.send_command_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.OpenhabItem.oh_post_update", new=tests.helper.oh_item.oh_post_update)
+        self.send_command_mock_patcher = unittest.mock.patch("HABApp.openhab.items.base_item.OpenhabItem.oh_post_update", new=oh_post_update)
         self.addCleanup(self.send_command_mock_patcher.stop)
         self.send_command_mock = self.send_command_mock_patcher.start()
 
-        self.item_exists_mock_patcher = unittest.mock.patch("HABApp.openhab.interface_sync.item_exists", return_value=True)
+        self.item_exists_mock_patcher = unittest.mock.patch("habapp_rules.core.helper.item_exists", return_value=True)
         self.addCleanup(self.item_exists_mock_patcher.stop)
         self.item_exists_mock = self.item_exists_mock_patcher.start()
 
-        self._runner = tests.helper.rule_runner.SimpleRuleRunner()
+        self._runner = SimpleRuleRunner()
         call_async_sync(self._runner.set_up)
 
-    def unload_rule(self, rule: HABApp.rule.rule.Rule) -> None:
+    def unload_rule(self, rule: Rule) -> None:
         """Unload a rule.
 
         Args:
@@ -43,7 +43,7 @@ class TestCaseBase(unittest.TestCase):
 
     def tearDown(self) -> None:
         """Tear down test case."""
-        tests.helper.oh_item.remove_all_mocked_items()
+        remove_all_mocked_items()
         call_async_sync(self._runner.tear_down)
 
 
@@ -65,25 +65,3 @@ class TestCaseBaseStateMachine(TestCaseBase):
         self.on_rule_removed_mock_patcher = unittest.mock.patch("habapp_rules.core.state_machine_rule.StateMachineRule.on_rule_removed", new_callable=unittest.mock.AsyncMock)
         self.addCleanup(self.on_rule_removed_mock_patcher.stop)
         self.on_rule_removed_mock_patcher.start()
-
-    def _get_state_names(self, states: dict, parent_state: str | None = None) -> list[str]:  # pragma: no cover
-        """Helper function to get all state names (also nested states).
-
-        Args:
-            states: dict of all states or children states
-            parent_state: name of parent state, only if it is a nested state machine
-
-        Returns:
-            list of all state names
-        """
-        state_names = []
-        prefix = f"{parent_state}_" if parent_state else ""
-        if parent_state:
-            states = states["children"]
-
-        for state in states:
-            if "children" in state:
-                state_names += self._get_state_names(state, state["name"])
-            else:
-                state_names.append(f"{prefix}{state['name']}")
-        return state_names

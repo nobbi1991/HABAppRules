@@ -3,9 +3,11 @@
 import logging
 
 import HABApp
+from HABApp.openhab.events import ItemCommandEvent, ItemStateChangedEvent
+from HABApp.openhab.events.event_filters import ItemCommandEventFilter, ItemStateChangedEventFilter
 
-import habapp_rules.bridge.config.knx_mqtt
-import habapp_rules.core.logger
+from habapp_rules.bridge.config.knx_mqtt import KnxMqttConfig
+from habapp_rules.core.logger import InstanceLogger
 
 LOGGER = logging.getLogger(__name__)
 
@@ -21,29 +23,29 @@ class KnxMqttDimmerBridge(HABApp.Rule):
     info: OpenHAB does not support start/stop dimming. Thus, this implementation will set fixed values if INCREASE/DECREASE was received from KNX
     """
 
-    def __init__(self, config: habapp_rules.bridge.config.knx_mqtt.KnxMqttConfig) -> None:
+    def __init__(self, config: KnxMqttConfig) -> None:
         """Create object of KNX to MQTT bridge.
 
         Args:
             config: Configuration of the KNX MQTT bridge
 
         Raises:
-            habapp_rules.core.exceptions.HabAppRulesConfigurationException: If config is not valid
+            HabAppRulesConfigurationException: If config is not valid
         """
         self._config = config
-        knx_name = self._config.items.knx_switch_ctr.name if self._config.items.knx_switch_ctr is not None else self._config.items.knx_dimmer_ctr.name
+        knx_name = self._config.items.knx_item_name
 
         HABApp.Rule.__init__(self)
-        self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, f"{knx_name}__{self._config.items.mqtt_dimmer.name}")
+        self._instance_logger = InstanceLogger(LOGGER, f"{knx_name}__{self._config.items.mqtt_dimmer.name}")
 
-        self._config.items.mqtt_dimmer.listen_event(self._cb_mqtt_event, HABApp.openhab.events.ItemStateChangedEventFilter())
+        self._config.items.mqtt_dimmer.listen_event(self._cb_mqtt_event, ItemStateChangedEventFilter())
         if self._config.items.knx_dimmer_ctr is not None:
-            self._config.items.knx_dimmer_ctr.listen_event(self._cb_knx_event, HABApp.openhab.events.ItemCommandEventFilter())
+            self._config.items.knx_dimmer_ctr.listen_event(self._cb_knx_event, ItemCommandEventFilter())
         if self._config.items.knx_switch_ctr is not None:
-            self._config.items.knx_switch_ctr.listen_event(self._cb_knx_event, HABApp.openhab.events.ItemCommandEventFilter())
+            self._config.items.knx_switch_ctr.listen_event(self._cb_knx_event, ItemCommandEventFilter())
         self._instance_logger.debug("successful!")
 
-    def _cb_knx_event(self, event: HABApp.openhab.events.ItemCommandEvent) -> None:
+    def _cb_knx_event(self, event: ItemCommandEvent) -> None:
         """Callback, which is called if a KNX command received.
 
         Args:
@@ -60,7 +62,7 @@ class KnxMqttDimmerBridge(HABApp.Rule):
         else:
             self._instance_logger.error(f"command '{event.value}' ist not supported!")
 
-    def _cb_mqtt_event(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_mqtt_event(self, event: ItemStateChangedEvent) -> None:
         """Callback, which is called if a MQTT state change event happens.
 
         Args:

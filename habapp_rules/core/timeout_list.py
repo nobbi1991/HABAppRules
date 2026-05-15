@@ -23,9 +23,10 @@ class ValueWithTimeout:
         Returns:
             True if self.value is less than other.value
         """
-        if not isinstance(other, ValueWithTimeout):
-            return NotImplemented
-        return self.value < other.value
+        if isinstance(other, ValueWithTimeout) and isinstance(other.value, (float, int)) and isinstance(self.value, (float, int)):
+            return self.value < other.value
+
+        return NotImplemented
 
     def __eq__(self, other: object) -> bool:
         """Check if equal.

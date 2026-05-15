@@ -1,13 +1,12 @@
 import collections
 import unittest
 
-import HABApp.openhab.items
+from HABApp.openhab.items import DimmerItem, NumberItem
 
-import habapp_rules.core.exceptions
-import tests.helper.oh_item
-import tests.helper.test_case_base
 from habapp_rules.core.exceptions import HabAppRulesConfigurationError
 from habapp_rules.energy.config.virtual_energy_meter import EnergyMeterBaseItems, EnergyMeterNumberConfig, EnergyMeterNumberItems, EnergyMeterNumberParameter, PowerMapping
+from tests.helper.oh_item import add_mock_item
+from tests.helper.test_case_base import TestCaseBase
 
 
 class TestEnergyMeterBaseItems(unittest.TestCase):
@@ -17,8 +16,8 @@ class TestEnergyMeterBaseItems(unittest.TestCase):
         """Test exceptions with missing item."""
         TestCase = collections.namedtuple("TestCase", "power_item, energy_item, raises_exc")
 
-        power_item = HABApp.openhab.items.NumberItem("Power")
-        energy_item = HABApp.openhab.items.NumberItem("Energy")
+        power_item = NumberItem("Power")
+        energy_item = NumberItem("Energy")
 
         test_cases = [
             TestCase(power_item=None, energy_item=None, raises_exc=True),
@@ -30,7 +29,7 @@ class TestEnergyMeterBaseItems(unittest.TestCase):
         for test_case in test_cases:
             with self.subTest(test_case=test_case):
                 if test_case.raises_exc:
-                    with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
+                    with self.assertRaises(HabAppRulesConfigurationError):
                         EnergyMeterBaseItems(power_output=test_case.power_item, energy_output=test_case.energy_item)
                 else:
                     EnergyMeterBaseItems(power_output=test_case.power_item, energy_output=test_case.energy_item)
@@ -78,15 +77,15 @@ class TestEnergyMeterNumberParameter(unittest.TestCase):
             EnergyMeterNumberParameter(power_mapping=[PowerMapping(0, 0)])
 
 
-class TestEnergyMeterNumberConfig(tests.helper.test_case_base.TestCaseBase):
+class TestEnergyMeterNumberConfig(TestCaseBase):
     """Test EnergyMeterNumberConfig."""
 
     def setUp(self) -> None:
         """Set up tests."""
-        tests.helper.test_case_base.TestCaseBase.setUp(self)
+        TestCaseBase.setUp(self)
 
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Dimmer", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Power", None)
+        add_mock_item(DimmerItem, "Unittest_Dimmer", None)
+        add_mock_item(NumberItem, "Unittest_Power", None)
 
     def test_init_exceptions(self) -> None:
         """Test exceptions at initialization."""

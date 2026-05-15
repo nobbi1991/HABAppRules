@@ -6,17 +6,17 @@ import enum
 class SleepState(enum.Enum):
     """Sleep states."""
 
-    AWAKE = "awake"
-    PRE_SLEEPING = "pre_sleeping"
-    SLEEPING = "sleeping"
-    POST_SLEEPING = "post_sleeping"
-    LOCKED = "locked"
+    AWAKE = "Awake"
+    PRE_SLEEPING = "PreSleeping"
+    SLEEPING = "Sleeping"
+    POST_SLEEPING = "PostSleeping"
+    LOCKED = "Locked"
 
 
 class PresenceState(enum.Enum):
     """Presence states."""
 
-    PRESENCE = "presence"
-    LEAVING = "leaving"
-    ABSENCE = "absence"
-    LONG_ABSENCE = "long_absence"
+    PRESENCE = "Presence"
+    LEAVING = "Leaving"
+    ABSENCE = "Absence"
+    LONG_ABSENCE = "LongAbsence"

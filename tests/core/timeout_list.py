@@ -3,7 +3,7 @@
 import unittest
 import unittest.mock
 
-import habapp_rules.core.timeout_list
+from habapp_rules.core.timeout_list import TimeoutList, ValueWithTimeout
 
 
 class TestValueWithTimeout(unittest.TestCase):
@@ -11,21 +11,21 @@ class TestValueWithTimeout(unittest.TestCase):
 
     def test_less_than(self) -> None:
         """Test less than of ValueWithTimeout."""
-        self.assertTrue(habapp_rules.core.timeout_list.ValueWithTimeout(42, 10, 10) < habapp_rules.core.timeout_list.ValueWithTimeout(80, 10, 10))
-        self.assertFalse(habapp_rules.core.timeout_list.ValueWithTimeout(80, 10, 10) < habapp_rules.core.timeout_list.ValueWithTimeout(42, 10, 10))
-        self.assertFalse(habapp_rules.core.timeout_list.ValueWithTimeout(42, 10, 10) < habapp_rules.core.timeout_list.ValueWithTimeout(42, 10, 10))
+        self.assertTrue(ValueWithTimeout(42, 10, 10) < ValueWithTimeout(80, 10, 10))
+        self.assertFalse(ValueWithTimeout(80, 10, 10) < ValueWithTimeout(42, 10, 10))
+        self.assertFalse(ValueWithTimeout(42, 10, 10) < ValueWithTimeout(42, 10, 10))
         with self.assertRaises(TypeError):
-            self.assertEqual(NotImplemented, habapp_rules.core.timeout_list.ValueWithTimeout(42, 10, 10) < 42)
+            self.assertEqual(NotImplemented, ValueWithTimeout(42, 10, 10) < 42)
 
     def test_equal(self) -> None:
         """Test equal of ValueWithTimeout."""
-        self.assertTrue(habapp_rules.core.timeout_list.ValueWithTimeout(42, 10, 10) == habapp_rules.core.timeout_list.ValueWithTimeout(42, 10, 10))
-        self.assertFalse(habapp_rules.core.timeout_list.ValueWithTimeout(42, 10, 10) == habapp_rules.core.timeout_list.ValueWithTimeout(80, 10, 10))
-        self.assertFalse(habapp_rules.core.timeout_list.ValueWithTimeout(42, 10, 10) == 42)
+        self.assertTrue(ValueWithTimeout(42, 10, 10) == ValueWithTimeout(42, 10, 10))
+        self.assertFalse(ValueWithTimeout(42, 10, 10) == ValueWithTimeout(80, 10, 10))
+        self.assertFalse(ValueWithTimeout(42, 10, 10) == 42)
 
     def test_hash(self) -> None:
         """Test hash of ValueWithTimeout."""
-        self.assertEqual(hash(habapp_rules.core.timeout_list.ValueWithTimeout(42, 10, 10)), hash(habapp_rules.core.timeout_list.ValueWithTimeout(42, 10, 10)))
+        self.assertEqual(hash(ValueWithTimeout(42, 10, 10)), hash(ValueWithTimeout(42, 10, 10)))
 
 
 class TestTimeoutList(unittest.TestCase):
@@ -34,7 +34,7 @@ class TestTimeoutList(unittest.TestCase):
     def setUp(self) -> None:
         """Setup Tests."""
         self.normal_list = []
-        self.timeout_list = habapp_rules.core.timeout_list.TimeoutList()
+        self.timeout_list = TimeoutList()
 
     def test_repr(self) -> None:
         """Test repr of TimeoutList."""
@@ -99,7 +99,7 @@ class TestTimeoutList(unittest.TestCase):
     def test_equal(self) -> None:
         """Test equal of TimeoutList."""
         with unittest.mock.patch.object(self.timeout_list, "_TimeoutList__remove_old_items") as remove_old_mock:
-            self.assertEqual(self.timeout_list, habapp_rules.core.timeout_list.TimeoutList())
+            self.assertEqual(self.timeout_list, TimeoutList())
             self.assertEqual(1, remove_old_mock.call_count)
 
             self.assertEqual(self.timeout_list, [])
