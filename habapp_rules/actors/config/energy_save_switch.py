@@ -11,11 +11,11 @@ class EnergySaveSwitchItems(ItemBase):
 
     switch: SwitchItem = pydantic.Field(..., description="switch item, which will be handled")
     state: StringItem = pydantic.Field(..., description="item to store the current state of the state machine")
-    manual: SwitchItem | None = pydantic.Field(None, description="item to switch to manual mode and disable the automatic functions")
-    presence_state: StringItem | None = pydantic.Field(None, description="presence state set via habapp_rules.presence.Presence")
-    sleeping_state: StringItem | None = pydantic.Field(None, description="sleeping state set via habapp_rules.system.sleep.Sleep")
-    external_request: SwitchItem | None = pydantic.Field(None, description="item to request ON state from external. This request will overwrite the target state of presence / sleeping.")
-    current: NumberItem | None = pydantic.Field(None, description="item which measures the current")
+    manual: SwitchItem | None = pydantic.Field(default=None, description="item to switch to manual mode and disable the automatic functions")
+    presence_state: StringItem | None = pydantic.Field(default=None, description="presence state set via habapp_rules.presence.Presence")
+    sleeping_state: StringItem | None = pydantic.Field(default=None, description="sleeping state set via habapp_rules.system.sleep.Sleep")
+    external_request: SwitchItem | None = pydantic.Field(default=None, description="item to request ON state from external. This request will overwrite the target state of presence / sleeping.")
+    current: NumberItem | None = pydantic.Field(default=None, description="item which measures the current")
 
 
 class EnergySaveSwitchParameter(ParameterBase):
@@ -31,4 +31,4 @@ class EnergySaveSwitchConfig(ConfigBase):
     """Config for EnergySaveSwitch rule."""
 
     items: EnergySaveSwitchItems = pydantic.Field(..., description="Config items for power switch rule")
-    parameter: EnergySaveSwitchParameter = pydantic.Field(EnergySaveSwitchParameter(), description="Config parameter for power switch rule")
+    parameter: EnergySaveSwitchParameter = pydantic.Field(default=EnergySaveSwitchParameter(), description="Config parameter for power switch rule")

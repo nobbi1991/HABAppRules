@@ -15,8 +15,8 @@ class IrrigationItems(ItemBase):
     hour: NumberItem = pydantic.Field(..., description="start hour")
     minute: NumberItem = pydantic.Field(..., description="start minute")
     duration: NumberItem = pydantic.Field(..., description="duration in minutes")
-    repetitions: NumberItem | None = pydantic.Field(None, description="number of repetitions")
-    brake: NumberItem | None = pydantic.Field(None, description="time in minutes between repetitions")
+    repetitions: NumberItem | None = pydantic.Field(default=None, description="number of repetitions")
+    brake: NumberItem | None = pydantic.Field(default=None, description="time in minutes between repetitions")
 
     @pydantic.model_validator(mode="after")
     def validate_model(self) -> typing_extensions.Self:

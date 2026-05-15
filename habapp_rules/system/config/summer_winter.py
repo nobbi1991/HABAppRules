@@ -11,7 +11,7 @@ class SummerWinterItems(ItemBase):
 
     outside_temperature: NumberItem = pydantic.Field(..., description="outside temperature item")
     summer: SwitchItem = pydantic.Field(..., description="summer item")
-    last_check: DatetimeItem | None = pydantic.Field(None, description="last check item")
+    last_check: DatetimeItem | None = pydantic.Field(default=None, description="last check item")
 
 
 class SummerWinterParameter(ParameterBase):
@@ -26,4 +26,4 @@ class SummerWinterConfig(ConfigBase):
     """Config for summer/winter detection."""
 
     items: SummerWinterItems = pydantic.Field(..., description="items for summer/winter state")
-    parameter: SummerWinterParameter = pydantic.Field(SummerWinterParameter(), description="parameter for summer/winter")
+    parameter: SummerWinterParameter = pydantic.Field(default=SummerWinterParameter(), description="parameter for summer/winter")

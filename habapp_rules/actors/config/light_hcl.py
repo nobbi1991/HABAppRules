@@ -14,9 +14,9 @@ class HclTimeItems(ItemBase):
 
     color: NumberItem = pydantic.Field(..., description="HCL color which will be set by the HCL rule")
     manual: SwitchItem = pydantic.Field(..., description="switch item to disable all automatic functions")
-    sleep_state: StringItem | None = pydantic.Field(None, description="sleep state item")
-    focus: SwitchItem | None = pydantic.Field(None, description="focus state item")
-    switch_on: SwitchItem | DimmerItem | None = pydantic.Field(None, description="switch item which triggers a color update if switched on")
+    sleep_state: StringItem | None = pydantic.Field(default=None, description="sleep state item")
+    focus: SwitchItem | None = pydantic.Field(default=None, description="focus state item")
+    switch_on: SwitchItem | DimmerItem | None = pydantic.Field(default=None, description="switch item which triggers a color update if switched on")
     state: StringItem = pydantic.Field(..., description="state item for storing the current state")
 
 
@@ -61,11 +61,11 @@ class HclElevationConfig(ConfigBase):
     """Config for HCL color which depends on sun elevation."""
 
     items: HclElevationItems = pydantic.Field(..., description="items for HCL color which depends on sun elevation")
-    parameter: HclElevationParameter = pydantic.Field(HclElevationParameter(), description="parameter for HCL color which depends on sun elevation")
+    parameter: HclElevationParameter = pydantic.Field(default=HclElevationParameter(), description="parameter for HCL color which depends on sun elevation")
 
 
 class HclTimeConfig(ConfigBase):
     """Config for HCL color which depends on time."""
 
     items: HclTimeItems = pydantic.Field(..., description="items for HCL color which depends on time")
-    parameter: HclTimeParameter = pydantic.Field(HclTimeParameter(), description="parameter for HCL color which depends on time")
+    parameter: HclTimeParameter = pydantic.Field(default=HclTimeParameter(), description="parameter for HCL color which depends on time")

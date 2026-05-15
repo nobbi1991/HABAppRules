@@ -16,7 +16,7 @@ class WindAlarmItems(ItemBase):
 
     wind_alarm: SwitchItem = pydantic.Field(..., description="item for wind alarm, which will be set to ON if wind alarm is active")
     manual: SwitchItem = pydantic.Field(..., description="switch item to disable all automatic functions")
-    hand_timeout: NumberItem | None = pydantic.Field(None, description="item to set the hand timeout")
+    hand_timeout: NumberItem | None = pydantic.Field(default=None, description="item to set the hand timeout")
     state: StringItem = pydantic.Field(..., description="item for storing the current state")
 
 
@@ -34,7 +34,7 @@ class WindAlarmConfig(ConfigBase):
     """Config for DWD wind alarm rule."""
 
     items: WindAlarmItems = pydantic.Field(..., description="items for DWD wind alarm rule")
-    parameter: WindAlarmParameter = pydantic.Field(WindAlarmParameter(), description="parameters for DWD wind alarm rule")
+    parameter: WindAlarmParameter = pydantic.Field(default=WindAlarmParameter(), description="parameters for DWD wind alarm rule")
 
     @pydantic.model_validator(mode="after")
     def check_hand_timeout(self) -> typing_extensions.Self:

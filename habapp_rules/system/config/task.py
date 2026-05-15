@@ -12,7 +12,7 @@ class RecurringTaskItems(ItemBase):
     """Items for recurring task."""
 
     task_active: SwitchItem = pydantic.Field(..., description="item which is set to ON if task is active")
-    last_done: DatetimeItem = pydantic.Field(None, description="item for date/time when task was last marked as done")  # type: ignore[assignment]  # item will be set in validator if None is given
+    last_done: DatetimeItem = pydantic.Field(default=None, description="item for date/time when task was last marked as done")  # type: ignore[assignment]  # item will be set in validator if None is given
 
     @pydantic.model_validator(mode="after")
     def create_additional_items(self) -> Self:
@@ -31,7 +31,7 @@ class RecurringTaskParameter(ParameterBase):
     """Parameter for recurring task."""
 
     recurrence_time: datetime.timedelta = pydantic.Field(..., description="recurrence time for task. E.g. if it is set to 10 days, the task will be marked as undone 10 days after it was marked as done")
-    fixed_check_time: datetime.time | None = pydantic.Field(None, description="fixed time to check if task must set to done. If set to None, the check time will be calculated based on the recurrence time")
+    fixed_check_time: datetime.time | None = pydantic.Field(default=None, description="fixed time to check if task must set to done. If set to None, the check time will be calculated based on the recurrence time")
 
     @pydantic.field_validator("recurrence_time")
     @classmethod
@@ -65,7 +65,7 @@ class CounterTaskItems(ItemBase):
 
     task_active: SwitchItem = pydantic.Field(..., description="item which is set to ON if task is active")
     observed: NumberItem = pydantic.Field(..., description="Number item which will be observed")
-    last_reset: NumberItem = pydantic.Field(None, description="Item which holds the value of the last reset. If set to None, it will be auto-created")  # type: ignore[assignment]  # item will be set in validator if None is given
+    last_reset: NumberItem = pydantic.Field(default=None, description="Item which holds the value of the last reset. If set to None, it will be auto-created")  # type: ignore[assignment]  # item will be set in validator if None is given
 
     @pydantic.model_validator(mode="after")
     def create_additional_items(self) -> Self:

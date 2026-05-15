@@ -10,8 +10,8 @@ from habapp_rules.core.pydantic_base import ConfigBase, ItemBase, ParameterBase
 class EnergyMeterBaseItems(ItemBase):
     """Base class for energy meter items."""
 
-    power_output: NumberItem | None = pydantic.Field(None, description="power output item, unit is W")
-    energy_output: NumberItem | None = pydantic.Field(None, description="energy output item, unit is kWh")
+    power_output: NumberItem | None = pydantic.Field(default=None, description="power output item, unit is W")
+    energy_output: NumberItem | None = pydantic.Field(default=None, description="energy output item, unit is kWh")
 
     @pydantic.model_validator(mode="after")
     def validate_items(self) -> typing_extensions.Self:
@@ -44,7 +44,7 @@ class EnergyMeterNumberItems(EnergyMeterBaseItems):
 class EnergyMeterBaseParameter(ParameterBase):
     """Base class for energy meter parameters."""
 
-    energy_update_resolution: float = pydantic.Field(0.010, description="update the energy item every x kWh. Default is 0.01kWh == 10 Wh", gt=0)
+    energy_update_resolution: float = pydantic.Field(default=0.010, description="update the energy item every x kWh. Default is 0.01kWh == 10 Wh", gt=0)
 
 
 class EnergyMeterSwitchParameter(EnergyMeterBaseParameter):
