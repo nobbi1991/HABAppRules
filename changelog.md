@@ -1,4 +1,4 @@
-# Version 11.0.0 - dd.mm.2026
+# Version 11.0.0 - 15.05.2026
 
 ## Breaking changes
 
