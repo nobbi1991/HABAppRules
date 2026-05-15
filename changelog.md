@@ -9,6 +9,8 @@
 
 ## Features
 
+- `MonthlyReport`: added bar chart of the last N completed months' total consumption as a second embedded image in the report email (`history_months` parameter, default 12; set to 0 to disable)
+- `MonthlyReport`: report now uses calendar-month boundaries (start of current month → now) instead of a rolling 30-day lookback, so mid-month debug runs correctly show month-to-date data
 - added better config validation of `habapp_rules.sensors.config.motion.MotionConfig`
 - updated multi_notifier to 0.6.0 which improves how mails are sent and reduce probability that mails are marked as spam
 

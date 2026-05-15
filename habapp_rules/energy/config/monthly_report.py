@@ -115,6 +115,7 @@ class MonthlyReportParameter(ParameterBase):
     config_mail: multi_notifier.connectors.connector_mail.MailConfig = pydantic.Field(..., description="config for sending mails")
     recipients: list[str] = pydantic.Field(..., description="list of recipients who get the mail")
     debug: bool = pydantic.Field(default=False, description="if debug mode is active")
+    history_months: int = pydantic.Field(default=12, ge=0, description="Number of past completed months to show in the history bar chart; 0 disables the feature")
 
 
 class MonthlyReportConfig(ConfigBase):
