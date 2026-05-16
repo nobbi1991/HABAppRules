@@ -73,6 +73,13 @@ class _LightBase(StateMachineRule, abc.ABC):
         """
         self._config = config
 
+        self._brightness_before = -1.0
+        self._timeout_on = 0.0
+        self._timeout_pre_off = 0.0
+        self._timeout_pre_sleep = 0.0
+        self._timeout_leaving = 0.0
+        self.__time_sleep_start = 0.0
+
         StateMachineRule.__init__(self, self._config.items.state, self._config.items.light.name)
 
         # init state machine
@@ -80,12 +87,6 @@ class _LightBase(StateMachineRule, abc.ABC):
         self._restore_state: str | None = None
         self.state_machine = HierarchicalStateMachineWithTimeout(model=self, states=self.states, transitions=self.trans, ignore_invalid_triggers=True, after_state_change="_update_openhab_state", initial=self._get_initial_state())
 
-        self._brightness_before = -1.0
-        self._timeout_on = 0.0
-        self._timeout_pre_off = 0.0
-        self._timeout_pre_sleep = 0.0
-        self._timeout_leaving = 0.0
-        self.__time_sleep_start = 0.0
         self._set_timeouts()
 
         # callbacks
@@ -293,10 +294,7 @@ class _LightBase(StateMachineRule, abc.ABC):
 
     def on_enter_auto_init(self) -> None:
         """Callback, which is called on enter of init state."""
-        if self._config.items.light.is_on():
-            self.trigger("to_auto_on")
-        else:
-            self.trigger("to_auto_off")
+        self._set_state(self._get_initial_state())
 
     def _get_sleeping_activ(self, include_pre_sleep: bool = False) -> bool:
         """Get if sleeping is active.

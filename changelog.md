@@ -1,8 +1,10 @@
-# Version 11.0.1 - 16.05.2026
+# Version 11.0.1 - dd.05.2026
 
-## Project related
+## Bugfix
 
-- updated prek hooks to latest versions
+- fixed bugs in `habapp_rules.actors.light.Light`:
+  - fixed exception during init some special cases. (E.g. DimmerLight is on during init)
+  - fixed wrong state after manual mode if motion or sleep is active. Previously only `auto_on` and `auto_off` where possible states after `manual`
 
 # Version 11.0.0 - 15.05.2026
 
