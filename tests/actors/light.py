@@ -14,7 +14,7 @@ from habapp_rules.actors.light import LightDimmer, LightDimmerExtended, LightSwi
 from habapp_rules.actors.state_observer import StateObserverDimmer
 from habapp_rules.system import PresenceState, SleepState
 from tests.helper.graph_machines import _get_state_names, create_state_graphs, extract_states_from_machine, extract_transitions_from_machine
-from tests.helper.oh_item import add_mock_item, item_state_change_event, send_command, set_item_state
+from tests.helper.oh_item import add_mock_item, item_state_change_event, item_state_event, send_command, set_item_state
 from tests.helper.test_case_base import TestCaseBaseStateMachine
 
 
@@ -134,7 +134,7 @@ class TestLightBase(TestCaseBaseStateMachine):
         create_state_graphs(self.light_base, "Light")
 
     @staticmethod
-    def get_initial_state_test_cases() -> collections.namedtuple:
+    def get_initial_state_test_cases() -> list[tuple]:
         """Get test cases for initial state tests.
 
         Returns:
@@ -435,7 +435,7 @@ class TestLightBase(TestCaseBaseStateMachine):
                 self.assertEqual(test_case.timeout_pre_sleep, self.light_base.state_machine.states["auto"].states["presleep"].timeout)
 
     @staticmethod
-    def get_target_brightness_test_cases() -> collections.namedtuple:
+    def get_target_brightness_test_cases() -> list[type]:
         """Get test cases for target brightness tests.
 
         Returns:
@@ -1604,6 +1604,24 @@ class TestLightExtended(TestCaseBaseStateMachine):
 
         with unittest.mock.patch("time.time", return_value=120), unittest.mock.patch.object(self.light_extended, "_hand_off_timestamp", 100):
             self.assertFalse(self.light_extended._motion_door_allowed())
+
+    def test_manual(self) -> None:
+        """Test correct state after manual."""
+        # light on, but no motion -> auto_on
+        item_state_event("Unittest_Manual", "ON")
+        self.assertEqual("manual", self.light_extended.state)
+        item_state_change_event("Unittest_Light", "ON")
+        item_state_change_event("Unittest_Motion", "OFF")
+        item_state_event("Unittest_Manual", "OFF")
+        self.assertEqual("auto_on", self.light_extended.state)
+
+        # light on, with motion active -> auto_motion
+        item_state_event("Unittest_Manual", "ON")
+        self.assertEqual("manual", self.light_extended.state)
+        item_state_change_event("Unittest_Light", "ON")
+        item_state_change_event("Unittest_Motion", "ON")
+        item_state_event("Unittest_Manual", "OFF")
+        self.assertEqual("auto_motion", self.light_extended.state)
 
     def test_auto_motion(self) -> None:
         """Test transitions of auto_motion."""
