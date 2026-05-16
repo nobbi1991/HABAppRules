@@ -1,25 +1,30 @@
 """Rules to handle sun sensors."""
 
 import logging
+import typing
 
 import HABApp
+from HABApp.openhab.events import ItemStateChangedEvent
+from HABApp.openhab.events.event_filters import ItemStateChangedEventFilter
+from HABApp.openhab.items import NumberItem
 
-import habapp_rules.common.config.filter
-import habapp_rules.common.filter
-import habapp_rules.common.hysteresis
-import habapp_rules.core.helper
-import habapp_rules.core.logger
-import habapp_rules.sensors.config.sun
-from habapp_rules.core.helper import send_if_different
+from habapp_rules.common.config.filter import ExponentialFilterConfig, ExponentialFilterItems, ExponentialFilterParameter
+from habapp_rules.common.filter import ExponentialFilter
+from habapp_rules.common.hysteresis import HysteresisSwitch
+from habapp_rules.core.helper import create_additional_item, filter_updated_items, send_if_different
+from habapp_rules.core.logger import InstanceLogger
+from habapp_rules.sensors.config.sun import BrightnessConfig, SunPositionConfig, TemperatureDifferenceConfig, WinterFilterConfig
 from habapp_rules.system import PresenceState
 
 LOGGER = logging.getLogger(__name__)
 
+_CONFIG_TYPE = typing.TypeVar("_CONFIG_TYPE", bound=BrightnessConfig | TemperatureDifferenceConfig)
 
-class _SensorBase(HABApp.Rule):
+
+class _SensorBase(HABApp.Rule, typing.Generic[_CONFIG_TYPE]):
     """Base class for sun sensors."""
 
-    def __init__(self, config: habapp_rules.sensors.config.sun.BrightnessConfig | habapp_rules.sensors.config.sun.TemperatureDifferenceConfig, item_input: HABApp.openhab.items.NumberItem) -> None:
+    def __init__(self, config: _CONFIG_TYPE, item_input: NumberItem) -> None:
         """Init of base class for sun sensors.
 
         Args:
@@ -30,26 +35,26 @@ class _SensorBase(HABApp.Rule):
 
         # init HABApp Rule
         HABApp.Rule.__init__(self)
-        self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, config.items.output.name)
+        self._instance_logger = InstanceLogger(LOGGER, config.items.output.name)
 
         # init exponential filter
         name_input_exponential_filtered = f"H_{item_input.name.removeprefix('H_')}_filtered"
-        habapp_rules.core.helper.create_additional_item(name_input_exponential_filtered, "Number", name_input_exponential_filtered.replace("_", " "), config.parameter.filtered_signal_groups)
-        item_input_filtered = HABApp.openhab.items.NumberItem.get_item(name_input_exponential_filtered)
+        create_additional_item(name_input_exponential_filtered, NumberItem, name_input_exponential_filtered.replace("_", " "), config.parameter.filtered_signal_groups)
+        item_input_filtered = NumberItem.get_item(name_input_exponential_filtered)
 
-        exponential_filter_config = habapp_rules.common.config.filter.ExponentialFilterConfig(
-            items=habapp_rules.common.config.filter.ExponentialFilterItems(raw=item_input, filtered=item_input_filtered),
-            parameter=habapp_rules.common.config.filter.ExponentialFilterParameter(tau=config.parameter.filter_tau, instant_increase=config.parameter.filter_instant_increase, instant_decrease=config.parameter.filter_instant_decrease),
+        exponential_filter_config = ExponentialFilterConfig(
+            items=ExponentialFilterItems(raw=item_input, filtered=item_input_filtered),
+            parameter=ExponentialFilterParameter(tau=config.parameter.filter_tau, instant_increase=config.parameter.filter_instant_increase, instant_decrease=config.parameter.filter_instant_decrease),
         )
-        habapp_rules.common.filter.ExponentialFilter(exponential_filter_config)
+        ExponentialFilter(exponential_filter_config)
 
         # attributes
-        self._hysteresis_switch = habapp_rules.common.hysteresis.HysteresisSwitch(config.threshold, config.parameter.hysteresis, return_bool=False)
+        self._hysteresis_switch = HysteresisSwitch(config.threshold, config.parameter.hysteresis)
 
         # callbacks
-        item_input_filtered.listen_event(self._cb_input_filtered, HABApp.openhab.events.ItemStateChangedEventFilter())
+        item_input_filtered.listen_event(self._cb_input_filtered, ItemStateChangedEventFilter())
         if config.items.threshold is not None:
-            config.items.threshold.listen_event(self._cb_threshold, HABApp.openhab.events.ItemStateChangedEventFilter())
+            config.items.threshold.listen_event(self._cb_threshold, ItemStateChangedEventFilter())
 
     def _send_output(self, new_value: str) -> None:
         """Send output if different.
@@ -61,16 +66,16 @@ class _SensorBase(HABApp.Rule):
             self._config.items.output.oh_send_command(new_value)
             self._instance_logger.debug(f"Set output '{self._config.items.output.name}' to {new_value}")
 
-    def _cb_input_filtered(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_input_filtered(self, event: ItemStateChangedEvent) -> None:
         """Callback, which is triggered if the filtered input value changed.
 
         Args:
             event: trigger event
         """
-        value = self._hysteresis_switch.get_output(event.value)
+        value = self._hysteresis_switch.get_output_as_string(event.value)
         self._send_output(value)
 
-    def _cb_threshold(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_threshold(self, event: ItemStateChangedEvent) -> None:
         """Callback, which is triggered if the threshold changed.
 
         Args:
@@ -79,7 +84,7 @@ class _SensorBase(HABApp.Rule):
         self._hysteresis_switch.set_threshold_on(event.value)
 
 
-class SensorBrightness(_SensorBase):
+class SensorBrightness(_SensorBase[BrightnessConfig]):
     """Rules class to set sun protection depending on brightness level.
 
     # Items:
@@ -88,8 +93,8 @@ class SensorBrightness(_SensorBase):
     Switch    sun_protection_brightness     "Sun protection brightness"        {channel="..."}
 
     # Config:
-    config = habapp_rules.sensors.config.sun.BrightnessConfig(
-            items=habapp_rules.sensors.config.sun.BrightnessItems(
+    config = BrightnessConfig(
+            items=BrightnessItems(
                     brightness="brightness",
                     output="sun_protection_brightness",
                     brightness_threshold="brightness_threshold"
@@ -100,7 +105,7 @@ class SensorBrightness(_SensorBase):
     habapp_rules.sensors.sun.SensorBrightness(config)
     """
 
-    def __init__(self, config: habapp_rules.sensors.config.sun.BrightnessConfig) -> None:
+    def __init__(self, config: BrightnessConfig) -> None:
         """Init of sun sensor which takes a brightness value.
 
         Args:
@@ -109,7 +114,7 @@ class SensorBrightness(_SensorBase):
         _SensorBase.__init__(self, config, config.items.brightness)
 
 
-class SensorTemperatureDifference(_SensorBase):
+class SensorTemperatureDifference(_SensorBase[TemperatureDifferenceConfig]):
     """Rules class to set sun protection depending on temperature difference. E.g. temperature in the sun / temperature in the shadow.
 
     # Items:
@@ -119,8 +124,8 @@ class SensorTemperatureDifference(_SensorBase):
     Switch    sun_protection_temperature    "Sun protection temperature"    {channel="..."}
 
     # Config:
-    config = habapp_rules.sensors.config.sun.TemperatureDifferenceConfig(
-            items=habapp_rules.sensors.config.sun.TemperatureDifferenceItems(
+    config = TemperatureDifferenceConfig(
+            items=TemperatureDifferenceItems(
                     temperatures=["temperature_sun", "temperature_shadow"],
                     output="sun_protection_temperature",
                     threshold="temperature_threshold"
@@ -131,7 +136,7 @@ class SensorTemperatureDifference(_SensorBase):
     habapp_rules.sensors.sun.SensorTempDiff(config)
     """
 
-    def __init__(self, config: habapp_rules.sensors.config.sun.TemperatureDifferenceConfig) -> None:
+    def __init__(self, config: TemperatureDifferenceConfig) -> None:
         """Init of sun sensor which takes a two or more temperature values (one in the sun and one in the shadow).
 
         Args:
@@ -139,21 +144,21 @@ class SensorTemperatureDifference(_SensorBase):
         """
         self._config = config
         name_temperature_diff = f"H_Temperature_diff_for_{config.items.output.name}"
-        habapp_rules.core.helper.create_additional_item(name_temperature_diff, "Number", name_temperature_diff.replace("_", " "), config.parameter.filtered_signal_groups)
-        self._item_temp_diff = HABApp.openhab.items.NumberItem.get_item(name_temperature_diff)
+        create_additional_item(name_temperature_diff, NumberItem, name_temperature_diff.replace("_", " "), config.parameter.filtered_signal_groups)
+        self._item_temp_diff = NumberItem.get_item(name_temperature_diff)
 
         _SensorBase.__init__(self, config, self._item_temp_diff)
 
         # callbacks
         for temperature_item in self._config.items.temperatures:
-            temperature_item.listen_event(self._cb_temperature, HABApp.openhab.events.ItemStateChangedEventFilter())
+            temperature_item.listen_event(self._cb_temperature, ItemStateChangedEventFilter())
 
         # calculate temperature difference
         self._cb_temperature(None)
 
-    def _cb_temperature(self, _: HABApp.openhab.events.ItemStateChangedEvent | None) -> None:
+    def _cb_temperature(self, _: ItemStateChangedEvent | None) -> None:
         """Callback, which is triggered if a temperature value changed."""
-        filtered_items = [itm for itm in habapp_rules.core.helper.filter_updated_items(self._config.items.temperatures, self._config.parameter.ignore_old_values_time) if itm.value is not None]
+        filtered_items = [itm for itm in filter_updated_items(self._config.items.temperatures, self._config.parameter.ignore_old_values_time) if itm.value is not None]
         if len(filtered_items) < 2:  # noqa: PLR2004
             return
         value_min = min(item.value for item in filtered_items)
@@ -172,15 +177,15 @@ class SunPositionFilter(HABApp.Rule):
     Switch    sun_hits_window       "Sun hits window"
 
     # Config:
-    config = habapp_rules.sensors.config.sun.SunPositionConfig(
-            items=habapp_rules.sensors.config.sun.SunPositionItems(
+    config = SunPositionConfig(
+            items=SunPositionItems(
                     azimuth="sun_azimuth",
                     elevation="sun_elevation",
                     input="sun_shining",
                     output="sun_hits_window"
             ),
-            parameter=habapp_rules.sensors.config.sun.SunPositionParameter(
-                    sun_position_window=habapp_rules.sensors.config.sun.SunPositionWindow(40, 120)
+            parameter=SunPositionParameter(
+                    sun_position_window=SunPositionWindow(40, 120)
             )
     )
 
@@ -189,7 +194,7 @@ class SunPositionFilter(HABApp.Rule):
     habapp_rules.sensors.sun.SunPositionFilter(config)
     """
 
-    def __init__(self, config: habapp_rules.sensors.config.sun.SunPositionConfig) -> None:
+    def __init__(self, config: SunPositionConfig) -> None:
         """Init of sun position filter.
 
         Args:
@@ -199,11 +204,11 @@ class SunPositionFilter(HABApp.Rule):
 
         # init HABApp Rule
         HABApp.Rule.__init__(self)
-        self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, config.items.output.name)
+        self._instance_logger = InstanceLogger(LOGGER, config.items.output.name)
 
         # callbacks
-        config.items.azimuth.listen_event(self._update_output, HABApp.openhab.events.ItemStateChangedEventFilter())  # listen_event for elevation is not needed because elevation and azimuth is updated together
-        config.items.input.listen_event(self._update_output, HABApp.openhab.events.ItemStateChangedEventFilter())
+        config.items.azimuth.listen_event(self._update_output, ItemStateChangedEventFilter())  # listen_event for elevation is not needed because elevation and azimuth is updated together
+        config.items.input.listen_event(self._update_output, ItemStateChangedEventFilter())
 
         self._update_output(None)
 
@@ -224,7 +229,7 @@ class SunPositionFilter(HABApp.Rule):
 
         return sun_in_window
 
-    def _update_output(self, _: HABApp.openhab.events.ItemStateChangedEvent | None) -> None:
+    def _update_output(self, _: ItemStateChangedEvent | None) -> None:
         """Callback, which is triggered if the sun position or input changed."""
         azimuth = self._config.items.azimuth.value
         elevation = self._config.items.elevation.value
@@ -250,8 +255,8 @@ class WinterFilter(HABApp.Rule):
     Switch      sun_filtered    "Sun filtered"
 
     # Config:
-    config = habapp_rules.sensors.config.sun.WinterFilterConfig(
-        items=habapp_rules.sensors.config.sun.WinterFilterItems(
+    config = WinterFilterConfig(
+        items=WinterFilterItems(
             sun="sun",
             heating_active="heating_active",
             output="sun_filtered",
@@ -262,7 +267,7 @@ class WinterFilter(HABApp.Rule):
     habapp_rules.sensors.sun.WinterFilter(config)
     """
 
-    def __init__(self, config: habapp_rules.sensors.config.sun.WinterFilterConfig) -> None:
+    def __init__(self, config: WinterFilterConfig) -> None:
         """Init of sun position filter.
 
         Args:
@@ -272,11 +277,11 @@ class WinterFilter(HABApp.Rule):
         self._config = config
 
         # callbacks
-        config.items.sun.listen_event(self._cb_sun, HABApp.openhab.events.ItemStateChangedEventFilter())
+        config.items.sun.listen_event(self._cb_sun, ItemStateChangedEventFilter())
         if config.items.heating_active is not None:
-            config.items.heating_active.listen_event(self._cb_heating, HABApp.openhab.events.ItemStateChangedEventFilter())
+            config.items.heating_active.listen_event(self._cb_heating, ItemStateChangedEventFilter())
         if config.items.presence_state is not None:
-            config.items.presence_state.listen_event(self.cb_presence_state, HABApp.openhab.events.ItemStateChangedEventFilter())
+            config.items.presence_state.listen_event(self.cb_presence_state, ItemStateChangedEventFilter())
 
         self._check_conditions_and_set_output()
 
@@ -291,26 +296,14 @@ class WinterFilter(HABApp.Rule):
         target_state = self._config.items.sun.is_on() and (not heating_on or not absence)
         send_if_different(self._config.items.output, "ON" if target_state else "OFF")
 
-    def _cb_sun(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:  # noqa: ARG002
-        """Callback which is triggered if sun state changed.
-
-        Args:
-            event: original trigger event
-        """
+    def _cb_sun(self, _: ItemStateChangedEvent) -> None:
+        """Callback which is triggered if sun state changed."""
         self._check_conditions_and_set_output()
 
-    def _cb_heating(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:  # noqa: ARG002
-        """Callback which is triggered if heating state changed.
-
-        Args:
-            event: original trigger event
-        """
+    def _cb_heating(self, _: ItemStateChangedEvent) -> None:
+        """Callback which is triggered if heating state changed."""
         self._check_conditions_and_set_output()
 
-    def cb_presence_state(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:  # noqa: ARG002
-        """Callback which is triggered if presence_state changed.
-
-        Args:
-            event: original trigger event
-        """
+    def cb_presence_state(self, _: ItemStateChangedEvent) -> None:
+        """Callback which is triggered if presence_state changed."""
         self._check_conditions_and_set_output()

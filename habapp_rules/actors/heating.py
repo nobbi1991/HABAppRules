@@ -3,8 +3,10 @@
 import logging
 
 import HABApp
+from HABApp.openhab.events import ItemCommandEvent, ItemStateChangedEvent
+from HABApp.openhab.events.event_filters import ItemCommandEventFilter, ItemStateChangedEventFilter
 
-import habapp_rules.actors.config.heating
+from habapp_rules.actors.config.heating import HeatingActiveConfig, KnxHeatingConfig
 from habapp_rules.core.helper import send_if_different
 
 LOGGER = logging.getLogger(__name__)
@@ -28,18 +30,18 @@ class KnxHeating(HABApp.Rule):
     Number              temperature_offset      "Temperature Offset"     <temperature>                                {channel="knx:device:bridge:heating_actor:temperature_offset", stateDescription=""[pattern="%.1f °C", min=-5, max=5, step=0.5]}
 
     # Config:
-    config = habapp_rules.actors.config.heating.KnxHeatingConfig(
-            items=habapp_rules.actors.config.heating.KnxHeatingItems(
+    config = KnxHeatingConfig(
+            items=KnxHeatingItems(
                     virtual_temperature="target_temperature_OH",
                     actor_feedback_temperature="target_temperature_KNX",
                     temperature_offset="temperature_offset"
     ))
 
     # Rule init:
-    habapp_rules.actors.heating.KnxHeating(config)
+    KnxHeating(config)
     """
 
-    def __init__(self, config: habapp_rules.actors.config.heating.KnxHeatingConfig) -> None:
+    def __init__(self, config: KnxHeatingConfig) -> None:
         """Init of basic light object.
 
         Args:
@@ -52,10 +54,10 @@ class KnxHeating(HABApp.Rule):
         if self._temperature is not None:
             config.items.virtual_temperature.oh_post_update(self._temperature)
 
-        config.items.actor_feedback_temperature.listen_event(self._cb_actor_feedback_temperature_changed, HABApp.openhab.events.ItemStateChangedEventFilter())
-        config.items.virtual_temperature.listen_event(self._cb_virtual_temperature_command, HABApp.openhab.events.ItemCommandEventFilter())
+        config.items.actor_feedback_temperature.listen_event(self._cb_actor_feedback_temperature_changed, ItemStateChangedEventFilter())
+        config.items.virtual_temperature.listen_event(self._cb_virtual_temperature_command, ItemCommandEventFilter())
 
-    def _cb_actor_feedback_temperature_changed(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_actor_feedback_temperature_changed(self, event: ItemStateChangedEvent) -> None:
         """Callback, which is triggered if the actor feedback temperature changed.
 
         Args:
@@ -64,7 +66,7 @@ class KnxHeating(HABApp.Rule):
         self._config.items.virtual_temperature.oh_post_update(event.value)
         self._temperature = event.value
 
-    def _cb_virtual_temperature_command(self, event: HABApp.openhab.events.ItemCommandEvent) -> None:
+    def _cb_virtual_temperature_command(self, event: ItemCommandEvent) -> None:
         """Callback, which is triggered if the virtual temperature received a command.
 
         Args:
@@ -93,17 +95,17 @@ class HeatingActive(HABApp.Rule):
     Switch      heating_active          "Heating Active"
 
     # Config:
-    config = habapp_rules.actors.config.heating.HeatingActiveConfig(
-            items=habapp_rules.actors.config.heating.HeatingActiveItems(
+    config = HeatingActiveConfig(
+            items=HeatingActiveItems(
                     control_values=["control_value_1", "control_value_2"]
                     output="heating_active"
     ))
 
     # Rule init:
-    habapp_rules.actors.heating.HeatingActive(config)
+    HeatingActive(config)
     """
 
-    def __init__(self, config: habapp_rules.actors.config.heating.HeatingActiveConfig) -> None:
+    def __init__(self, config: HeatingActiveConfig) -> None:
         """Initialize the HeatingActive rule.
 
         Args:
@@ -112,12 +114,12 @@ class HeatingActive(HABApp.Rule):
         HABApp.Rule.__init__(self)
         self._config = config
 
-        self._extended_lock = self.run.countdown(self._config.parameter.extended_active_time, self._cb_lock_end)
+        self._extended_lock = self.run.countdown(self._config.parameter.extended_active_time, self._cb_lock_end)  # type:ignore[reportCallIssue]
 
         # callbacks
-        self._config.items.output.listen_event(self._cb_output, HABApp.openhab.events.ItemStateChangedEventFilter())
+        self._config.items.output.listen_event(self._cb_output, ItemStateChangedEventFilter())
         for itm in self._config.items.control_values:
-            itm.listen_event(self._cb_control_value, HABApp.openhab.events.ItemStateChangedEventFilter())
+            itm.listen_event(self._cb_control_value, ItemStateChangedEventFilter())
 
         # reset extended lock if output is on
         if self._config.items.output.is_on():
@@ -131,7 +133,7 @@ class HeatingActive(HABApp.Rule):
             send_if_different(self._config.items.output, "ON" if target_state else "OFF")
 
     @staticmethod
-    def _cb_output(event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_output(event: ItemStateChangedEvent) -> None:
         """Callback which is triggered if the output changed.
 
         Args:
@@ -139,7 +141,7 @@ class HeatingActive(HABApp.Rule):
         """
         LOGGER.debug(f"Heating active output changed to {event.value}")
 
-    def _cb_control_value(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_control_value(self, event: ItemStateChangedEvent) -> None:
         """Callback which is triggered if any of the control values changed.
 
         If the received value of the event or any of the other control values is above 0, it sets the output item to ON.

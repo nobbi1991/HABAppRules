@@ -3,32 +3,32 @@
 import collections.abc
 import logging
 
-import HABApp.openhab.items
 import pydantic
 import typing_extensions
+from HABApp.openhab.items import ContactItem, DimmerItem, StringItem, SwitchItem
 
-import habapp_rules.core.pydantic_base
+from habapp_rules.core.pydantic_base import BaseModel, ConfigBase, ItemBase, ParameterBase
 
 LOGGER = logging.getLogger(__name__)
 
 
-class LightItems(habapp_rules.core.pydantic_base.ItemBase):
+class LightItems(ItemBase):
     """Items for all light rules."""
 
-    light: HABApp.openhab.items.DimmerItem | HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="item which controls the light")
-    light_control: list[HABApp.openhab.items.DimmerItem] = pydantic.Field([], description="control items to improve manual detection")
-    light_groups: list[HABApp.openhab.items.DimmerItem] = pydantic.Field([], description="group items which can additionally set the light state. This can be used to improve the manual detection")
-    manual: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="item to switch to manual mode and disable the automatic functions")
-    presence_state: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="presence state set via habapp_rules.presence.Presence")
-    day: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="item which is ON at day and OFF at night")
-    sleeping_state: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="sleeping state set via habapp_rules.system.sleep.Sleep")
-    pre_sleep_prevent: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="item to prevent pre-sleep (Can be used for example to prevent the pre sleep light when guests are sleeping)")
-    doors: list[HABApp.openhab.items.ContactItem] = pydantic.Field([], description="door items for switching on the light if the door is opening")
-    motion: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="motion sensor to enable light if motion is detected")
-    state: HABApp.openhab.items.StringItem = pydantic.Field(..., description="item to store the current state of the state machine")
+    light: DimmerItem | SwitchItem = pydantic.Field(..., description="item which controls the light")
+    light_control: list[DimmerItem] = pydantic.Field(default=[], description="control items to improve manual detection")
+    light_groups: list[DimmerItem] = pydantic.Field(default=[], description="group items which can additionally set the light state. This can be used to improve the manual detection")
+    manual: SwitchItem = pydantic.Field(..., description="item to switch to manual mode and disable the automatic functions")
+    presence_state: StringItem | None = pydantic.Field(default=None, description="presence state set via habapp_rules.presence.Presence")
+    day: SwitchItem = pydantic.Field(..., description="item which is ON at day and OFF at night")
+    sleeping_state: StringItem | None = pydantic.Field(default=None, description="sleeping state set via habapp_rules.system.sleep.Sleep")
+    pre_sleep_prevent: SwitchItem | None = pydantic.Field(default=None, description="item to prevent pre-sleep (Can be used for example to prevent the pre sleep light when guests are sleeping)")
+    doors: list[ContactItem] = pydantic.Field(default=[], description="door items for switching on the light if the door is opening")
+    motion: SwitchItem | None = pydantic.Field(default=None, description="motion sensor to enable light if motion is detected")
+    state: StringItem = pydantic.Field(..., description="item to store the current state of the state machine")
 
 
-class BrightnessTimeout(pydantic.BaseModel):
+class BrightnessTimeout(BaseModel):
     """Define brightness and timeout for light states."""
 
     brightness: int | bool = pydantic.Field(..., description="brightness which should be set. If bool ON will be sent for True and OFF for False")
@@ -64,7 +64,7 @@ class BrightnessTimeout(pydantic.BaseModel):
         return self
 
 
-class FunctionConfig(pydantic.BaseModel):
+class FunctionConfig(BaseModel):
     """Define brightness and timeout values for one function."""
 
     day: BrightnessTimeout | None = pydantic.Field(..., description="config for day. If None the light will not be switched on during the day")
@@ -72,28 +72,28 @@ class FunctionConfig(pydantic.BaseModel):
     sleeping: BrightnessTimeout | None = pydantic.Field(..., description="config for sleeping. If None the light will not be switched on during sleeping")
 
 
-class LightParameter(habapp_rules.core.pydantic_base.ParameterBase):
+class LightParameter(ParameterBase):
     """Parameter for all light rules.
 
     For all parameter which have the following type: FunctionConfig | None -> If None this state will be disabled for the rule
     """
 
     on: FunctionConfig = pydantic.Field(
-        FunctionConfig(day=BrightnessTimeout(brightness=True, timeout=14 * 3600), night=BrightnessTimeout(80, 10 * 3600), sleeping=BrightnessTimeout(20, 3 * 3600)), description="values which are used if the light is switched on manually"
+        default=FunctionConfig(day=BrightnessTimeout(brightness=True, timeout=14 * 3600), night=BrightnessTimeout(80, 10 * 3600), sleeping=BrightnessTimeout(20, 3 * 3600)), description="values which are used if the light is switched on manually"
     )
-    pre_off: FunctionConfig | None = pydantic.Field(FunctionConfig(day=BrightnessTimeout(50, 10), night=BrightnessTimeout(40, 7), sleeping=BrightnessTimeout(10, 7)), description="values which are used if the light changes pre_off state")
+    pre_off: FunctionConfig | None = pydantic.Field(default=FunctionConfig(day=BrightnessTimeout(50, 10), night=BrightnessTimeout(40, 7), sleeping=BrightnessTimeout(10, 7)), description="values which are used if the light changes pre_off state")
     leaving: FunctionConfig | None = pydantic.Field(
-        FunctionConfig(day=BrightnessTimeout(brightness=False, timeout=0), night=BrightnessTimeout(brightness=False, timeout=0), sleeping=BrightnessTimeout(brightness=False, timeout=0)),
+        default=FunctionConfig(day=BrightnessTimeout(brightness=False, timeout=0), night=BrightnessTimeout(brightness=False, timeout=0), sleeping=BrightnessTimeout(brightness=False, timeout=0)),
         description="values which are used if the light changes to leaving state",
     )
     pre_sleep: FunctionConfig | None = pydantic.Field(
-        FunctionConfig(day=BrightnessTimeout(brightness=False, timeout=10), night=BrightnessTimeout(brightness=False, timeout=10), sleeping=None), description="values which are used if the light changes to pre_sleep state"
+        default=FunctionConfig(day=BrightnessTimeout(brightness=False, timeout=10), night=BrightnessTimeout(brightness=False, timeout=10), sleeping=None), description="values which are used if the light changes to pre_sleep state"
     )
-    pre_sleep_prevent: collections.abc.Callable[[], bool] | HABApp.openhab.items.OpenhabItem | None = pydantic.Field(None, description="Enable pre sleep prevent -> disable pre sleep if True")
-    motion: FunctionConfig | None = pydantic.Field(None, description="values which are used if the light changes to motion state")
-    door: FunctionConfig | None = pydantic.Field(None, description="values which are used if the light is enabled via a door opening")
+    pre_sleep_prevent: collections.abc.Callable[[], bool] | None = pydantic.Field(default=None, description="Enable pre sleep prevent -> disable pre sleep if True")
+    motion: FunctionConfig | None = pydantic.Field(default=None, description="values which are used if the light changes to motion state")
+    door: FunctionConfig | None = pydantic.Field(default=None, description="values which are used if the light is enabled via a door opening")
     off_at_door_closed_during_leaving: bool = pydantic.Field(default=False, description="this can be used to switch lights off, when door is closed in leaving state")
-    hand_off_lock_time: int = pydantic.Field(20, description="time in seconds where door / motion switch on is disabled after a manual OFF")
+    hand_off_lock_time: int = pydantic.Field(default=20, description="time in seconds where door / motion switch on is disabled after a manual OFF")
     leaving_only_if_on: bool = pydantic.Field(default=False, description="switch to leaving only if light is on. If False leaving light is always activated")
 
     @pydantic.field_validator("on", mode="after")
@@ -139,11 +139,11 @@ class LightParameter(habapp_rules.core.pydantic_base.ParameterBase):
         return value
 
 
-class LightConfig(habapp_rules.core.pydantic_base.ConfigBase):
+class LightConfig(ConfigBase):
     """Config for all light rules."""
 
     items: LightItems = pydantic.Field(..., description="items for all light rules")
-    parameter: LightParameter = pydantic.Field(LightParameter(), description="parameter for all light rules")
+    parameter: LightParameter = pydantic.Field(default=LightParameter(), description="parameter for all light rules")
 
     @pydantic.model_validator(mode="after")
     def validate_config(self) -> typing_extensions.Self:

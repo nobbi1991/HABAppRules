@@ -3,18 +3,18 @@
 import logging
 import typing
 
-import HABApp
+from HABApp.openhab.events import ItemCommandEvent, ItemStateChangedEvent, ItemStateUpdatedEvent
+from HABApp.openhab.events.event_filters import ItemStateChangedEventFilter
 
-import habapp_rules.actors.config.energy_save_switch
-import habapp_rules.actors.state_observer
-import habapp_rules.core.logger
-import habapp_rules.core.state_machine_rule
+from habapp_rules.actors.config.energy_save_switch import EnergySaveSwitchConfig
+from habapp_rules.actors.state_observer import StateObserverSwitch
+from habapp_rules.core.state_machine_rule import HierarchicalStateMachineWithTimeout, StateMachineRule
 from habapp_rules.system import PresenceState, SleepState
 
 LOGGER = logging.getLogger(__name__)
 
 
-class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
+class EnergySaveSwitch(StateMachineRule):
     """Rules class to manage energy save switches.
 
     # Items:
@@ -22,7 +22,7 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
     Switch    Switch_State        "State"
 
     # Config:
-    config = habapp_rules.actors.config.energy_save_switch.EnergySaveSwitchConfig(
+    config = EnergySaveSwitchConfig(
             items=EnergySaveSwitchItems(
                     switch="Switch",
                     state="Switch_State"
@@ -30,7 +30,7 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
     ))
 
     # Rule init:
-    habapp_rules.actors.energy_save_switch.EnergySaveSwitch(config)
+    EnergySaveSwitch(config)
     """
 
     states: typing.ClassVar = [
@@ -67,47 +67,45 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
         {"trigger": "max_on_countdown", "source": ["Auto_On", "Auto_WaitCurrent", "Hand"], "dest": "Auto_Off"},
     ]
 
-    def __init__(self, config: habapp_rules.actors.config.energy_save_switch.EnergySaveSwitchConfig) -> None:
+    def __init__(self, config: EnergySaveSwitchConfig) -> None:
         """Init of energy save switch.
 
         Args:
             config: energy save switch config
         """
         self._config = config
-        self._switch_observer = habapp_rules.actors.state_observer.StateObserverSwitch(config.items.switch.name, self._cb_hand, self._cb_hand)
+        self._switch_observer = StateObserverSwitch(config.items.switch.name, self._cb_hand, self._cb_hand)
 
-        habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, self._config.items.state)
-        self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, self._config.items.switch.name)
+        StateMachineRule.__init__(self, self._config.items.state, self._config.items.switch.name)
 
         # init state machine
-        self._previous_state = None
-        self.state_machine = habapp_rules.core.state_machine_rule.HierarchicalStateMachineWithTimeout(model=self, states=self.states, transitions=self.trans, ignore_invalid_triggers=True, after_state_change="_update_openhab_state")
+        self._previous_state: str | None = None
+        self.state_machine = HierarchicalStateMachineWithTimeout(model=self, states=self.states, transitions=self.trans, ignore_invalid_triggers=True, after_state_change="_update_openhab_state", initial=self._get_initial_state())
 
-        self._max_on_countdown = self.run.countdown(self._config.parameter.max_on_time, self._cb_max_on_countdown) if self._config.parameter.max_on_time is not None else None
+        self._max_on_countdown = self.run.countdown(self._config.parameter.max_on_time, self._cb_max_on_countdown) if self._config.parameter.max_on_time is not None else None  # type:ignore[reportCallIssue]
         self._switch_off_after_external_req = False
         self._set_timeouts()
-        self._set_state(self._get_initial_state())
 
         # callbacks
-        self._config.items.switch.listen_event(self._cb_switch, HABApp.openhab.events.ItemStateChangedEventFilter())
+        self._config.items.switch.listen_event(self._cb_switch, ItemStateChangedEventFilter())
 
         if self._config.items.manual is not None:
-            self._config.items.manual.listen_event(self._cb_manual, HABApp.openhab.events.ItemStateChangedEventFilter())
+            self._config.items.manual.listen_event(self._cb_manual, ItemStateChangedEventFilter())
         if self._config.items.presence_state is not None:
-            self._config.items.presence_state.listen_event(self._cb_presence_state, HABApp.openhab.events.ItemStateChangedEventFilter())
+            self._config.items.presence_state.listen_event(self._cb_presence_state, ItemStateChangedEventFilter())
         if self._config.items.sleeping_state is not None:
-            self._config.items.sleeping_state.listen_event(self._cb_sleeping_state, HABApp.openhab.events.ItemStateChangedEventFilter())
+            self._config.items.sleeping_state.listen_event(self._cb_sleeping_state, ItemStateChangedEventFilter())
         if self._config.items.external_request is not None:
-            self._config.items.external_request.listen_event(self._cb_external_request, HABApp.openhab.events.ItemStateChangedEventFilter())
+            self._config.items.external_request.listen_event(self._cb_external_request, ItemStateChangedEventFilter())
         if self._config.items.current is not None:
-            self._config.items.current.listen_event(self._cb_current_changed, HABApp.openhab.events.ItemStateChangedEventFilter())
+            self._config.items.current.listen_event(self._cb_current_changed, ItemStateChangedEventFilter())
 
-        LOGGER.info(self.get_initial_log_message())
+        self._post_init()
 
     def _set_timeouts(self) -> None:
         """Set timeouts."""
-        self.state_machine.states["Hand"].timeout = self._config.parameter.hand_timeout or 0
-        self.state_machine.states["Auto"].states["WaitCurrentExtended"].timeout = self._config.parameter.extended_wait_for_current_time
+        self._set_state_timeout("Hand", self._config.parameter.hand_timeout or 0)
+        self._set_state_timeout("Auto_WaitCurrentExtended", self._config.parameter.extended_wait_for_current_time)
 
     def _get_initial_state(self, default_value: str = "") -> str:  # noqa: ARG002
         """Get initial state of state machine.
@@ -143,9 +141,9 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
     def on_enter_Auto_Init(self) -> None:  # noqa: N802
         """Callback, which is called on enter of init state."""
         if self._get_on_off_conditions_met():
-            self.to_Auto_On()
+            self.trigger("to_Auto_On")
         else:
-            self.to_Auto_Off()
+            self.trigger("to_Auto_Off")
 
     def _set_switch_state(self) -> None:
         """Set switch state."""
@@ -180,9 +178,9 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
     def _conditions_changed(self) -> None:
         """Sleep, presence or external state changed."""
         if self._get_on_off_conditions_met():
-            self.on_conditions_met()
+            self.trigger("on_conditions_met")
         else:
-            self.off_conditions_met()
+            self.trigger("off_conditions_met")
 
     def _cb_max_on_countdown(self) -> None:
         """Callback which is triggered if max on time is reached."""
@@ -190,9 +188,9 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
             if self._config.items.external_request is not None and self._config.items.external_request.is_on():
                 self._switch_off_after_external_req = True
             else:
-                self.max_on_countdown()
+                self.trigger("max_on_countdown")
 
-    def _cb_switch(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_switch(self, event: ItemStateChangedEvent) -> None:
         """Callback which is triggered if switch changed.
 
         Args:
@@ -204,45 +202,41 @@ class EnergySaveSwitch(habapp_rules.core.state_machine_rule.StateMachineRule):
             else:
                 self._max_on_countdown.stop()
 
-    def _cb_hand(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:  # noqa: ARG002
-        """Callback, which is triggered by the state observer if a manual change was detected.
+    def _cb_hand(self, _: ItemStateChangedEvent | ItemCommandEvent | ItemStateUpdatedEvent) -> None:
+        """Callback, which is triggered by the state observer if a manual change was detected."""
+        self.trigger("hand_detected")
 
-        Args:
-          event: event which triggered this callback.
-        """
-        self.hand_detected()
-
-    def _cb_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_manual(self, event: ItemStateChangedEvent) -> None:
         """Callback, which is triggered if the manual switch has a state change event.
 
         Args:
           event: trigger event
         """
         if event.value == "ON":
-            self.manual_on()
+            self.trigger("manual_on")
         else:
-            self.manual_off()
+            self.trigger("manual_off")
 
-    def _cb_presence_state(self, _: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_presence_state(self, _: ItemStateChangedEvent) -> None:
         """Callback which is triggered if presence_state changed."""
         self._conditions_changed()
 
-    def _cb_sleeping_state(self, _: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_sleeping_state(self, _: ItemStateChangedEvent) -> None:
         """Callback which is triggered if sleeping state changed."""
         self._conditions_changed()
 
-    def _cb_external_request(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_external_request(self, event: ItemStateChangedEvent) -> None:
         """Callback which is triggered if external request changed."""
         if event.value == "OFF" and self._switch_off_after_external_req:
-            self.to_Auto_Off()
+            self.trigger("to_Auto_Off")
         else:
             self._conditions_changed()
         self._switch_off_after_external_req = False
 
-    def _cb_current_changed(self, _: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_current_changed(self, _: ItemStateChangedEvent) -> None:
         """Callback which is triggered if the current value changed."""
         if self.state == "Auto_WaitCurrent" and not self._current_above_threshold():
-            self.current_below_threshold()
+            self.trigger("current_below_threshold")
 
         if self.state == "Auto_WaitCurrentExtended" and self._current_above_threshold():
-            self.current_above_threshold()
+            self.trigger("current_above_threshold")

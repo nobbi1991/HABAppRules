@@ -4,18 +4,19 @@ import datetime
 import logging
 import typing
 
-import HABApp.openhab.events
 import HABApp.util
+from HABApp.openhab.events import ItemStateChangedEvent
+from HABApp.openhab.events.event_filters import ItemStateChangedEventFilter
 
-import habapp_rules.core.helper
-import habapp_rules.core.logger
-import habapp_rules.core.state_machine_rule
-import habapp_rules.system.config.sleep
+from habapp_rules.core.helper import send_if_different
+from habapp_rules.core.logger import InstanceLogger
+from habapp_rules.core.state_machine_rule import StateMachineRule, StateMachineWithTimeout
+from habapp_rules.system.config.sleep import LinkSleepConfig, SleepConfig
 
 LOGGER = logging.getLogger(__name__)
 
 
-class Sleep(habapp_rules.core.state_machine_rule.StateMachineRule):
+class Sleep(StateMachineRule):
     """Rules class to manage sleep state.
 
     Example OpenHAB configuration:
@@ -39,8 +40,8 @@ class Sleep(habapp_rules.core.state_machine_rule.StateMachineRule):
     String    I01_02_Sleep_State        "State"                     <state>
 
     # Config:
-    config = habapp_rules.system.config.sleep.SleepConfig(
-            items=habapp_rules.system.config.sleep.SleepItems(
+    config = SleepConfig(
+            items=SleepItems(
                     sleep="I01_02_Sleep",
                     sleep_req="I01_02_Sleep_req",
                     state="I01_02_Sleep_State",
@@ -51,57 +52,53 @@ class Sleep(habapp_rules.core.state_machine_rule.StateMachineRule):
     )
 
     # Rule init:
-    habapp_rules.system.sleep.Sleep(config)
+    Sleep(config)
     """
 
     states: typing.ClassVar = [
-        {"name": "awake"},
-        {"name": "pre_sleeping", "timeout": 3, "on_timeout": "pre_sleeping_timeout"},
-        {"name": "sleeping"},
-        {"name": "post_sleeping", "timeout": 3, "on_timeout": "post_sleeping_timeout"},
-        {"name": "locked"},
+        {"name": "Awake"},
+        {"name": "PreSleeping", "timeout": 3, "on_timeout": "PreSleeping_timeout"},
+        {"name": "Sleeping"},
+        {"name": "PostSleeping", "timeout": 3, "on_timeout": "PostSleeping_timeout"},
+        {"name": "Locked"},
     ]
 
     trans: typing.ClassVar = [
-        {"trigger": "start_sleeping", "source": ["awake", "post_sleeping"], "dest": "pre_sleeping"},
-        {"trigger": "pre_sleeping_timeout", "source": "pre_sleeping", "dest": "sleeping"},
-        {"trigger": "end_sleeping", "source": "sleeping", "dest": "post_sleeping"},
-        {"trigger": "end_sleeping", "source": "pre_sleeping", "dest": "awake", "unless": "lock_request_active"},
-        {"trigger": "end_sleeping", "source": "pre_sleeping", "dest": "locked", "conditions": "lock_request_active"},
-        {"trigger": "post_sleeping_timeout", "source": "post_sleeping", "dest": "awake", "unless": "lock_request_active"},
-        {"trigger": "post_sleeping_timeout", "source": "post_sleeping", "dest": "locked", "conditions": "lock_request_active"},
-        {"trigger": "set_lock", "source": "awake", "dest": "locked"},
-        {"trigger": "release_lock", "source": "locked", "dest": "awake"},
+        {"trigger": "start_Sleeping", "source": ["Awake", "PostSleeping"], "dest": "PreSleeping"},
+        {"trigger": "PreSleeping_timeout", "source": "PreSleeping", "dest": "Sleeping"},
+        {"trigger": "end_Sleeping", "source": "Sleeping", "dest": "PostSleeping"},
+        {"trigger": "end_Sleeping", "source": "PreSleeping", "dest": "Awake", "unless": "lock_request_active"},
+        {"trigger": "end_Sleeping", "source": "PreSleeping", "dest": "Locked", "conditions": "lock_request_active"},
+        {"trigger": "PostSleeping_timeout", "source": "PostSleeping", "dest": "Awake", "unless": "lock_request_active"},
+        {"trigger": "PostSleeping_timeout", "source": "PostSleeping", "dest": "Locked", "conditions": "lock_request_active"},
+        {"trigger": "set_lock", "source": "Awake", "dest": "Locked"},
+        {"trigger": "release_lock", "source": "Locked", "dest": "Awake"},
     ]
 
-    def __init__(self, config: habapp_rules.system.config.sleep.SleepConfig) -> None:
+    def __init__(self, config: SleepConfig) -> None:
         """Init of Sleep object.
 
         Args:
-            config: config for sleeping state
+            config: config for Sleeping state
         """
         self._config = config
-        habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, config.items.state)
-        self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, config.items.sleep.name)
+        StateMachineRule.__init__(self, config.items.state, config.items.sleep.name)
 
         # init attributes
         self._sleep_request_active = config.items.sleep_request.is_on()
         self._lock_request_active = config.items.lock_request.is_on() if config.items.lock_request is not None else False
 
         # init state machine
-        self.state_machine = habapp_rules.core.state_machine_rule.StateMachineWithTimeout(model=self, states=self.states, transitions=self.trans, ignore_invalid_triggers=True, after_state_change="_update_openhab_state")
-        self._set_initial_state()
-
-        self._update_openhab_state()
+        self.state_machine = StateMachineWithTimeout(model=self, states=self.states, transitions=self.trans, ignore_invalid_triggers=True, after_state_change="_update_openhab_state", initial=self._get_initial_state())
 
         # add callbacks
-        config.items.sleep_request.listen_event(self._cb_sleep_request, HABApp.openhab.events.ItemStateChangedEventFilter())
+        config.items.sleep_request.listen_event(self._cb_sleep_request, ItemStateChangedEventFilter())
         if config.items.lock_request is not None:
-            config.items.lock_request.listen_event(self._cb_lock_request, HABApp.openhab.events.ItemStateChangedEventFilter())
+            config.items.lock_request.listen_event(self._cb_lock_request, ItemStateChangedEventFilter())
 
-        self._instance_logger.debug(super().get_initial_log_message())
+        self._post_init()
 
-    def _get_initial_state(self, default_value: str = "awake") -> str:
+    def _get_initial_state(self, default_value: str = "Awake") -> str:
         """Get initial state of state machine.
 
         Args:
@@ -114,11 +111,11 @@ class Sleep(habapp_rules.core.state_machine_rule.StateMachineRule):
         lock_req = self._config.items.lock_request.is_on() if self._config.items.lock_request is not None and self._config.items.lock_request.value is not None else None
 
         if sleep_req:
-            return "sleeping"
+            return "Sleeping"
         if lock_req:
-            return "locked"
+            return "Locked"
         if sleep_req is False:
-            return "awake"
+            return "Awake"
 
         return default_value
 
@@ -145,10 +142,10 @@ class Sleep(habapp_rules.core.state_machine_rule.StateMachineRule):
         super()._update_openhab_state()
 
         # update sleep state
-        if self.state in {"pre_sleeping", "sleeping"}:
-            habapp_rules.core.helper.send_if_different(self._config.items.sleep, "ON")
+        if self.state in {"PreSleeping", "Sleeping"}:
+            send_if_different(self._config.items.sleep, "ON")
         else:
-            habapp_rules.core.helper.send_if_different(self._config.items.sleep, "OFF")
+            send_if_different(self._config.items.sleep, "OFF")
 
         # update lock state
         self.__update_lock_state()
@@ -163,45 +160,45 @@ class Sleep(habapp_rules.core.state_machine_rule.StateMachineRule):
         Returns:
             display text
         """
-        if self.state == "awake":
+        if self.state == "Awake":
             return "Schlafen"
-        if self.state == "pre_sleeping":
+        if self.state == "PreSleeping":
             return "Guten Schlaf"
-        if self.state == "sleeping":
+        if self.state == "Sleeping":
             return "Aufstehen"
-        if self.state == "post_sleeping":
+        if self.state == "PostSleeping":
             return "Guten Morgen"
-        if self.state == "locked":
+        if self.state == "Locked":
             return "Gesperrt"
         return ""
 
     def __update_lock_state(self) -> None:
         """Update the return lock state value of OpenHAB item."""
         if self._config.items.lock is not None:
-            if self.state in {"pre_sleeping", "post_sleeping", "locked"}:
-                habapp_rules.core.helper.send_if_different(self._config.items.lock, "ON")
+            if self.state in {"PreSleeping", "PostSleeping", "Locked"}:
+                send_if_different(self._config.items.lock, "ON")
             else:
-                habapp_rules.core.helper.send_if_different(self._config.items.lock, "OFF")
+                send_if_different(self._config.items.lock, "OFF")
 
-    def _cb_sleep_request(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_sleep_request(self, event: ItemStateChangedEvent) -> None:
         """Callback, which is called if sleep request item changed state.
 
         Args:
             event: Item state change event of sleep_request item
         """
-        if event.value == "ON" and self.state in {"awake", "post_sleeping"}:
-            self._instance_logger.debug("Start sleeping through sleep switch")
+        if event.value == "ON" and self.state in {"Awake", "PostSleeping"}:
+            self._instance_logger.debug("Start Sleeping through sleep switch")
             self._sleep_request_active = True
-            self.start_sleeping()
-        elif event.value == "ON" and self.state == "locked":
+            self.trigger("start_Sleeping")
+        elif event.value == "ON" and self.state == "Locked":
             self._sleep_request_active = False
             self._config.items.sleep_request.oh_send_command("OFF")
-        elif event.value == "OFF" and self.state in {"sleeping", "pre_sleeping"}:
-            self._instance_logger.debug("End sleeping through sleep switch")
+        elif event.value == "OFF" and self.state in {"Sleeping", "PreSleeping"}:
+            self._instance_logger.debug("End Sleeping through sleep switch")
             self._sleep_request_active = True
-            self.end_sleeping()
+            self.trigger("end_Sleeping")
 
-    def _cb_lock_request(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_lock_request(self, event: ItemStateChangedEvent) -> None:
         """Callback, which is called if lock request item changed state.
 
         Args:
@@ -209,10 +206,10 @@ class Sleep(habapp_rules.core.state_machine_rule.StateMachineRule):
         """
         self._lock_request_active = event.value == "ON"
 
-        if self.state == "awake" and event.value == "ON":
-            self.set_lock()
-        elif self.state == "locked" and event.value == "OFF":
-            self.release_lock()
+        if self.state == "Awake" and event.value == "ON":
+            self.trigger("set_lock")
+        elif self.state == "Locked" and event.value == "OFF":
+            self.trigger("release_lock")
         else:
             self.__update_lock_state()
 
@@ -220,7 +217,7 @@ class Sleep(habapp_rules.core.state_machine_rule.StateMachineRule):
 class LinkSleep(HABApp.Rule):
     """Link sleep items depending on current time."""
 
-    def __init__(self, config: habapp_rules.system.config.sleep.LinkSleepConfig) -> None:
+    def __init__(self, config: LinkSleepConfig) -> None:
         """Init rule.
 
         Args:
@@ -228,14 +225,14 @@ class LinkSleep(HABApp.Rule):
         """
         self._config = config
         HABApp.Rule.__init__(self)
-        self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, self.rule_name)
+        self._instance_logger = InstanceLogger(LOGGER, self.rule_name)
 
-        config.items.sleep_master.listen_event(self._cb_master, HABApp.openhab.events.ItemStateChangedEventFilter())
+        config.items.sleep_master.listen_event(self._cb_master, ItemStateChangedEventFilter())
 
         if config.items.link_active_feedback is not None:
             self.run.at(self.run.trigger.time(config.parameter.link_time_start), self._set_link_active_feedback, target_state="ON")
             self.run.at(self.run.trigger.time(config.parameter.link_time_end), self._set_link_active_feedback, target_state="OFF")
-            self.run.soon(self._set_link_active_feedback, target_state=self._check_time_in_window())
+            self.run.soon(self._set_link_active_feedback, target_state=self._check_time_in_window)
 
     def _check_time_in_window(self) -> bool:
         """Check if current time is in the active time window.
@@ -250,7 +247,7 @@ class LinkSleep(HABApp.Rule):
         # cross midnight
         return self._config.parameter.link_time_start <= now or now <= self._config.parameter.link_time_end
 
-    def _cb_master(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_master(self, event: ItemStateChangedEvent) -> None:
         """Callback which is triggered if the state of the master item changes.
 
         Args:
@@ -261,7 +258,7 @@ class LinkSleep(HABApp.Rule):
 
         self._instance_logger.debug(f"Set request of all linked sleep states of {self._config.items.sleep_master.name}")
         for itm in self._config.items.sleep_request_slaves:
-            habapp_rules.core.helper.send_if_different(itm, event.value)
+            send_if_different(itm, event.value)
 
     def _set_link_active_feedback(self, target_state: str) -> None:
         """Set feedback for link is active.
@@ -269,4 +266,4 @@ class LinkSleep(HABApp.Rule):
         Args:
             target_state: Target state which should be set ["ON" / "OFF"]
         """
-        self._config.items.link_active_feedback.oh_send_command(target_state)
+        self._config.items.link_active_feedback.oh_send_command(target_state)  # type: ignore[union-attr]  # _set_link_active_feedback is only called if item is set

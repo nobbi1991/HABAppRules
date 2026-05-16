@@ -4,17 +4,20 @@ import abc
 import logging
 
 import HABApp
+from HABApp.openhab.events import ItemStateChangedEvent
+from HABApp.openhab.events.event_filters import ItemStateChangedEventFilter
+from HABApp.openhab.items import NumberItem, SwitchItem
 
-import habapp_rules.core.helper
-import habapp_rules.sensors.config.astro
+from habapp_rules.core.helper import send_if_different
+from habapp_rules.sensors.config.astro import SetDayConfig, SetNightConfig
 
 LOGGER = logging.getLogger(__name__)
 
 
-class _SetNightDayBase(HABApp.Rule):
+class _SetNightDayBase(abc.ABC, HABApp.Rule):
     """Base class for set night / day."""
 
-    def __init__(self, item_target: HABApp.openhab.items.SwitchItem, item_elevation: HABApp.openhab.items.NumberItem, elevation_threshold: float) -> None:
+    def __init__(self, item_target: SwitchItem, item_elevation: NumberItem, elevation_threshold: float) -> None:
         """Init Rule.
 
         Args:
@@ -28,15 +31,15 @@ class _SetNightDayBase(HABApp.Rule):
         self._item_elevation = item_elevation
         self._elevation_threshold = elevation_threshold
 
-        self._item_elevation.listen_event(self._set_night, HABApp.openhab.events.ItemStateChangedEventFilter())
+        self._item_elevation.listen_event(self._set_night, ItemStateChangedEventFilter())
 
-        self.run.soon(self._set_night)
+        self.run.soon(self._set_night, None)
 
-    def _set_night(self, _: HABApp.openhab.events.ItemStateChangedEvent | None = None) -> None:
+    def _set_night(self, _: ItemStateChangedEvent | None = None) -> None:
         """Callback which sets the state to the night item."""
         if self._item_elevation.value is None:
             return
-        habapp_rules.core.helper.send_if_different(self._item_target, self._get_target_value())
+        send_if_different(self._item_target, self._get_target_value())
 
     @abc.abstractmethod
     def _get_target_value(self) -> str:
@@ -55,21 +58,21 @@ class SetDay(_SetNightDayBase):
     Number    elevation             "Sun elevation"    <sun>     {channel="astro...}
 
     # Config:
-    config = habapp_rules.sensors.config.astro.SetDayConfig(
-            items=habapp_rules.sensors.config.astro.SetDayItems(
+    config = SetDayConfig(
+            items=SetDayItems(
                     day="day",
                     elevation="elevation"
             ),
-            parameter=habapp_rules.sensors.config.astro.SetDayParameter(
+            parameter=SetDayParameter(
                     elevation_threshold=5
             )
     )
 
     # Rule init:
-    habapp_rules.sensors.astro.SetNight(config)
+    SetDay(config)
     """
 
-    def __init__(self, config: habapp_rules.sensors.config.astro.SetDayConfig) -> None:
+    def __init__(self, config: SetDayConfig) -> None:
         """Init Rule.
 
         Args:
@@ -94,21 +97,21 @@ class SetNight(_SetNightDayBase):
     Number    elevation             "Sun elevation"    <sun>     {channel="astro...}
 
     # Config:
-    config = habapp_rules.sensors.config.astro.SetNightConfig(
-            items=habapp_rules.sensors.config.astro.SetNightItems(
-                    night="night_for_shading",
+    config = SetNightConfig(
+            items=SetNightItems(
+                    night="night",
                     elevation="elevation"
             ),
-            parameter=habapp_rules.sensors.config.astro.SetNightParameter(
+            parameter=SetNightParameter(
                     elevation_threshold=5
             )
     )
 
     # Rule init:
-    habapp_rules.sensors.astro.SetNight(config)
+    SetNight(config)
     """
 
-    def __init__(self, config: habapp_rules.sensors.config.astro.SetNightConfig) -> None:
+    def __init__(self, config: SetNightConfig) -> None:
         """Init Rule.
 
         Args:

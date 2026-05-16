@@ -3,28 +3,32 @@
 import collections
 import unittest.mock
 
-import HABApp.rule.rule
-import HABApp.rule.scheduler.job_ctrl
+from HABApp.openhab.items import NumberItem, SwitchItem
+from HABApp.rule.scheduler.job_ctrl import CountdownJobControl
 
-import habapp_rules.sensors.current_switch
-import tests.helper.oh_item
-import tests.helper.test_case_base
 from habapp_rules.sensors.config.current_switch import CurrentSwitchConfig, CurrentSwitchItems, CurrentSwitchParameter
+from habapp_rules.sensors.current_switch import CurrentSwitch
+from tests.helper.oh_item import (
+    add_mock_item,
+    assert_item_value,
+    item_state_change_event,
+)
+from tests.helper.test_case_base import TestCaseBaseStateMachine
 
 
-class TestCurrentSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine):
+class TestCurrentSwitch(TestCaseBaseStateMachine):
     """Tests cases for testing CurrentSwitch rule."""
 
     def setUp(self) -> None:
         """Setup test case."""
-        tests.helper.test_case_base.TestCaseBaseStateMachine.setUp(self)
+        super().setUp()
 
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Current", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch_1", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch_2", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Switch_extended", None)
+        add_mock_item(NumberItem, "Unittest_Current", None)
+        add_mock_item(SwitchItem, "Unittest_Switch_1", None)
+        add_mock_item(SwitchItem, "Unittest_Switch_2", None)
+        add_mock_item(SwitchItem, "Unittest_Switch_extended", None)
 
-        self._rule_1 = habapp_rules.sensors.current_switch.CurrentSwitch(
+        self._rule_1 = CurrentSwitch(
             CurrentSwitchConfig(
                 items=CurrentSwitchItems(
                     current="Unittest_Current",
@@ -33,7 +37,7 @@ class TestCurrentSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine):
             )
         )
 
-        self._rule_2 = habapp_rules.sensors.current_switch.CurrentSwitch(
+        self._rule_2 = CurrentSwitch(
             CurrentSwitchConfig(
                 items=CurrentSwitchItems(
                     current="Unittest_Current",
@@ -43,7 +47,7 @@ class TestCurrentSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine):
             )
         )
 
-        self._rule_extended = habapp_rules.sensors.current_switch.CurrentSwitch(
+        self._rule_extended = CurrentSwitch(
             CurrentSwitchConfig(
                 items=CurrentSwitchItems(
                     current="Unittest_Current",
@@ -55,14 +59,21 @@ class TestCurrentSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
     def test_init(self) -> None:
         """Test __init__."""
-        tests.helper.oh_item.assert_value("Unittest_Switch_1", None)
-        tests.helper.oh_item.assert_value("Unittest_Switch_2", None)
-        tests.helper.oh_item.assert_value("Unittest_Switch_extended", None)
+        assert_item_value("Unittest_Switch_1", None)
+        assert_item_value("Unittest_Switch_2", None)
+        assert_item_value("Unittest_Switch_extended", None)
 
         self.assertIsNone(self._rule_1._extended_countdown)
         self.assertIsNone(self._rule_2._extended_countdown)
-        self.assertIsInstance(self._rule_extended._extended_countdown, HABApp.rule.scheduler.job_ctrl.CountdownJobControl)
+        self.assertIsInstance(self._rule_extended._extended_countdown, CountdownJobControl)
         self.assertIsNone(self._rule_extended._extended_countdown.next_run_datetime)
+
+    def test_countdown_end(self) -> None:
+        """Test countdown end."""
+        with unittest.mock.patch("habapp_rules.sensors.current_switch.send_if_different") as send_if_different_mock:
+            self._rule_extended._countdown_end()
+
+        send_if_different_mock.assert_called_once_with(self._rule_extended._config.items.switch, "OFF")
 
     def test_current_changed_without_extended_time(self) -> None:
         """Test current changed without extended time."""
@@ -83,29 +94,29 @@ class TestCurrentSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine):
 
         for test_case in test_cases:
             with self.subTest(test_case=test_case):
-                tests.helper.oh_item.item_state_change_event("Unittest_Current", test_case.current)
+                item_state_change_event("Unittest_Current", test_case.current)
 
-                tests.helper.oh_item.assert_value("Unittest_Switch_1", test_case.expected_1)
-                tests.helper.oh_item.assert_value("Unittest_Switch_2", test_case.expected_2)
+                assert_item_value("Unittest_Switch_1", test_case.expected_1)
+                assert_item_value("Unittest_Switch_2", test_case.expected_2)
 
     def test_current_changed_with_extended_time(self) -> None:
         """Test current changed with extended time."""
         with unittest.mock.patch.object(self._rule_extended, "_extended_countdown") as countdown_mock:
             # below threshold
-            tests.helper.oh_item.item_state_change_event("Unittest_Current", 0.1)
-            tests.helper.oh_item.assert_value("Unittest_Switch_extended", None)
+            item_state_change_event("Unittest_Current", 0.1)
+            assert_item_value("Unittest_Switch_extended", None)
             countdown_mock.stop.assert_not_called()
             countdown_mock.reset.assert_not_called()
 
             # above threshold
-            tests.helper.oh_item.item_state_change_event("Unittest_Current", 0.3)
-            tests.helper.oh_item.assert_value("Unittest_Switch_extended", "ON")
+            item_state_change_event("Unittest_Current", 0.3)
+            assert_item_value("Unittest_Switch_extended", "ON")
             countdown_mock.stop.assert_called_once()
             countdown_mock.reset.assert_not_called()
 
             # below threshold
             countdown_mock.stop.reset_mock()
-            tests.helper.oh_item.item_state_change_event("Unittest_Current", 0.1)
-            tests.helper.oh_item.assert_value("Unittest_Switch_extended", "ON")
+            item_state_change_event("Unittest_Current", 0.1)
+            assert_item_value("Unittest_Switch_extended", "ON")
             countdown_mock.stop.assert_not_called()
             countdown_mock.reset.assert_called_once()

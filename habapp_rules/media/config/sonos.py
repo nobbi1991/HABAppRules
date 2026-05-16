@@ -1,17 +1,17 @@
 from typing import Self
 
-import HABApp.openhab.items.thing_item
 import pydantic
+from HABApp.openhab.items import DimmerItem, NumberItem, PlayerItem, StringItem, SwitchItem, Thing
 
-import habapp_rules.core.pydantic_base
+from habapp_rules.core.pydantic_base import ConfigBase, ItemBase, ParameterBase
 
 
 class _KnownContentBase(pydantic.BaseModel):
     """Base class for known content."""
 
     display_text: str = pydantic.Field(..., description="display string for known content", max_length=14)
-    favorite_id: int | None = pydantic.Field(None, description="favorite id for known content", gt=0)  # fav id 0 is reserved for OFF
-    start_volume: int | None = pydantic.Field(None, description="start volume. None means no volume")
+    favorite_id: int | None = pydantic.Field(default=None, description="favorite id for known content", gt=0)  # fav id 0 is reserved for OFF
+    start_volume: int | None = pydantic.Field(default=None, description="start volume. None means no volume")
 
 
 class ContentTuneIn(_KnownContentBase):
@@ -26,33 +26,43 @@ class ContentPlayUri(_KnownContentBase):
     uri: str = pydantic.Field(..., description="uri for play uri content")
 
 
-class SonosItems(habapp_rules.core.pydantic_base.ItemBase):
+class SonosItems(ItemBase):
     """Items for sonos."""
 
-    sonos_thing: HABApp.openhab.items.Thing = pydantic.Field(..., description="sonos thing")
-    state: HABApp.openhab.items.StringItem = pydantic.Field(..., description="sonos state")
-    power_switch: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="sonos power switch")
-    sonos_player: HABApp.openhab.items.PlayerItem = pydantic.Field(..., description="sonos controller")
-    current_track_uri: HABApp.openhab.items.StringItem = pydantic.Field(..., description="sonos current track uri item")
-    sonos_volume: HABApp.openhab.items.DimmerItem | None = pydantic.Field(None, description="sonos volume")
-    play_uri: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="sonos play uri item")
-    tune_in_station_id: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="sonos tune in station id item")
-    favorite_id: HABApp.openhab.items.NumberItem | None = pydantic.Field(None, description="favorite id item")
-    display_string: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="display string item")
-    presence_state: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="presence state item")
+    sonos_thing: Thing = pydantic.Field(..., description="sonos thing")
+    state: StringItem = pydantic.Field(..., description="sonos state")
+    power_switch: SwitchItem | None = pydantic.Field(default=None, description="sonos power switch")
+    sonos_player: PlayerItem = pydantic.Field(..., description="sonos controller")
+    current_track_uri: StringItem = pydantic.Field(..., description="sonos current track uri item")
+    sonos_volume: DimmerItem | None = pydantic.Field(default=None, description="sonos volume")
+    play_uri: StringItem | None = pydantic.Field(default=None, description="sonos play uri item")
+    tune_in_station_id: StringItem | None = pydantic.Field(default=None, description="sonos tune in station id item")
+    favorite_id: NumberItem | None = pydantic.Field(default=None, description="favorite id item")
+    display_string: StringItem | None = pydantic.Field(default=None, description="display string item")
+    presence_state: StringItem | None = pydantic.Field(default=None, description="presence state item")
+
+    @property
+    def favorite_id_as_int(self) -> int | None:
+        """Get favorite id as int.
+
+        Returns:
+            int | None: favorite id as int or None if not set
+        """
+        config_value = getattr(self.favorite_id, "value", None)
+        return int(config_value) if config_value is not None else None
 
 
-class SonosParameter(habapp_rules.core.pydantic_base.ParameterBase):
+class SonosParameter(ParameterBase):
     """Parameter for sonos."""
 
     known_content: list[ContentTuneIn | ContentPlayUri] = pydantic.Field(default_factory=list, description="known content")
-    lock_time_volume: int | None = pydantic.Field(None, description="lock time for automatic volume setting in seconds after manual volume change. None means no lock")
-    start_volume_tune_in: int | None = pydantic.Field(None, description="start volume for tune in. None means no volume")
-    start_volume_line_in: int | None = pydantic.Field(None, description="start volume for line in. None means no volume")
-    start_volume_unknown: int | None = pydantic.Field(None, description="start volume for unknown content. None means no volume")
-    booting_timeout: int = pydantic.Field(300, description="timeout for booting sonos devices. After this timeout the state will fallback to PowerOff if the device did not come online.", gt=0)
-    starting_timeout: int = pydantic.Field(60, description="timeout for starting new content in seconds. After this timeout the state will fallback to standby if no content is playing", gt=0)
-    favorite_id_unknown_content: int = pydantic.Field(-1, description="Favorite ID which is set if unknown content is playing. Default is -1, but can be set to another value e.g. to set correct LED state on a KNX device")
+    lock_time_volume: int | None = pydantic.Field(default=None, description="lock time for automatic volume setting in seconds after manual volume change. None means no lock")
+    start_volume_tune_in: int | None = pydantic.Field(default=None, description="start volume for tune in. None means no volume")
+    start_volume_line_in: int | None = pydantic.Field(default=None, description="start volume for line in. None means no volume")
+    start_volume_unknown: int | None = pydantic.Field(default=None, description="start volume for unknown content. None means no volume")
+    booting_timeout: int = pydantic.Field(default=300, description="timeout for booting sonos devices. After this timeout the state will fallback to PowerOff if the device did not come online.", gt=0)
+    starting_timeout: int = pydantic.Field(default=60, description="timeout for starting new content in seconds. After this timeout the state will fallback to standby if no content is playing", gt=0)
+    favorite_id_unknown_content: int = pydantic.Field(default=-1, description="Favorite ID which is set if unknown content is playing. Default is -1, but can be set to another value e.g. to set correct LED state on a KNX device")
 
     @pydantic.field_validator("known_content", mode="after")
     @classmethod
@@ -108,7 +118,7 @@ class SonosParameter(habapp_rules.core.pydantic_base.ParameterBase):
         return next((content for content in self.known_content if content.favorite_id == favorite_id), None)
 
 
-class SonosConfig(habapp_rules.core.pydantic_base.ConfigBase):
+class SonosConfig(ConfigBase):
     """Config for sonos."""
 
     items: SonosItems = pydantic.Field(..., description="sonos items")

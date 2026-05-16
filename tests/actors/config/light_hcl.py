@@ -2,11 +2,11 @@
 
 import collections
 
-import habapp_rules.actors.config.light_hcl
-import tests.helper.test_case_base
+from habapp_rules.actors.config.light_hcl import HclElevationParameter
+from tests.helper.test_case_base import TestCaseBase
 
 
-class TestLightHclConfig(tests.helper.test_case_base.TestCaseBase):
+class TestLightHclConfig(TestCaseBase):
     """Test HCL config."""
 
     def test_sorted_color_config(self) -> None:
@@ -17,5 +17,5 @@ class TestLightHclConfig(tests.helper.test_case_base.TestCaseBase):
 
         for test_case in test_cases:
             with self.subTest(test_case=test_case):
-                parameter = habapp_rules.actors.config.light_hcl.HclElevationParameter(color_map=test_case.input)
+                parameter = HclElevationParameter(color_map=test_case.input)
                 self.assertEqual(test_case.output, parameter.color_map)

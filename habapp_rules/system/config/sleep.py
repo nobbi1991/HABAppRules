@@ -2,24 +2,24 @@
 
 import datetime
 
-import HABApp
 import pydantic
+from HABApp.openhab.items import StringItem, SwitchItem
 
-import habapp_rules.core.pydantic_base
+from habapp_rules.core.pydantic_base import ConfigBase, ItemBase, ParameterBase
 
 
-class SleepItems(habapp_rules.core.pydantic_base.ItemBase):
+class SleepItems(ItemBase):
     """Items for sleep detection."""
 
-    sleep: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="sleep item")
-    sleep_request: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="sleep request item")
-    lock: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="lock item")
-    lock_request: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="lock request item")
-    display_text: HABApp.openhab.items.StringItem | None = pydantic.Field(None, description="display text item")
-    state: HABApp.openhab.items.StringItem = pydantic.Field(..., description="state item")
+    sleep: SwitchItem = pydantic.Field(..., description="sleep item")
+    sleep_request: SwitchItem = pydantic.Field(..., description="sleep request item")
+    lock: SwitchItem | None = pydantic.Field(default=None, description="lock item")
+    lock_request: SwitchItem | None = pydantic.Field(default=None, description="lock request item")
+    display_text: StringItem | None = pydantic.Field(default=None, description="display text item")
+    state: StringItem = pydantic.Field(..., description="state item")
 
 
-class SleepConfig(habapp_rules.core.pydantic_base.ConfigBase):
+class SleepConfig(ConfigBase):
     """Config for sleep detection."""
 
     items: SleepItems = pydantic.Field(..., description="items for sleep state")
@@ -29,23 +29,23 @@ class SleepConfig(habapp_rules.core.pydantic_base.ConfigBase):
 # LINK SLEEP ##############################
 
 
-class LinkSleepItems(habapp_rules.core.pydantic_base.ItemBase):
+class LinkSleepItems(ItemBase):
     """Items for sleep detection."""
 
-    sleep_master: HABApp.openhab.items.SwitchItem = pydantic.Field(..., description="sleep item of the the master item which will link it's state to the slave items")
-    sleep_request_slaves: list[HABApp.openhab.items.SwitchItem] = pydantic.Field(..., description="list of sleep request items of the slaves")
-    link_active_feedback: HABApp.openhab.items.SwitchItem | None = pydantic.Field(None, description="item which is ON if link is active or OFF if link is not active anymore")
+    sleep_master: SwitchItem = pydantic.Field(..., description="sleep item of the the master item which will link it's state to the slave items")
+    sleep_request_slaves: list[SwitchItem] = pydantic.Field(..., description="list of sleep request items of the slaves")
+    link_active_feedback: SwitchItem | None = pydantic.Field(default=None, description="item which is ON if link is active or OFF if link is not active anymore")
 
 
-class LinkSleepParameter(habapp_rules.core.pydantic_base.ParameterBase):
+class LinkSleepParameter(ParameterBase):
     """Config for sleep detection."""
 
-    link_time_start: datetime.time = pydantic.Field(datetime.time(0), description="Start time when the linking is active")
-    link_time_end: datetime.time = pydantic.Field(datetime.time(23, 59, 59), description="End time when the linking is not active anymore")
+    link_time_start: datetime.time = pydantic.Field(default=datetime.time(0), description="Start time when the linking is active")
+    link_time_end: datetime.time = pydantic.Field(default=datetime.time(23, 59, 59), description="End time when the linking is not active anymore")
 
 
-class LinkSleepConfig(habapp_rules.core.pydantic_base.ConfigBase):
+class LinkSleepConfig(ConfigBase):
     """Config for sleep detection."""
 
     items: LinkSleepItems = pydantic.Field(..., description="items for sleep state")
-    parameter: LinkSleepParameter = pydantic.Field(LinkSleepParameter(), description="parameter for link sleep")
+    parameter: LinkSleepParameter = pydantic.Field(default=LinkSleepParameter(), description="parameter for link sleep")

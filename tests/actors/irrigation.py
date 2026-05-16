@@ -4,35 +4,34 @@ import collections
 import datetime
 import unittest.mock
 
-import HABApp
+from HABApp.openhab.events import ItemStateChangedEvent
+from HABApp.openhab.items import NumberItem, SwitchItem
 
-import habapp_rules.actors.config.irrigation
-import habapp_rules.actors.irrigation
-import habapp_rules.core.exceptions
-import tests.helper.oh_item
-import tests.helper.test_case_base
+from habapp_rules.actors.config.irrigation import IrrigationConfig, IrrigationItems
+from habapp_rules.actors.irrigation import Irrigation
+from habapp_rules.core.exceptions import HabAppRulesError
+from tests.helper.oh_item import add_mock_item, assert_item_value, set_item_state
+from tests.helper.test_case_base import TestCaseBase
 
 
-class TestIrrigation(tests.helper.test_case_base.TestCaseBase):
+class TestIrrigation(TestCaseBase):
     """Tests for Irrigation."""
 
     def setUp(self) -> None:
         """Set up test cases."""
-        tests.helper.test_case_base.TestCaseBase.setUp(self)
+        TestCaseBase.setUp(self)
 
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_valve", "OFF")
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_active", "OFF")
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_hour", 12)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_minute", 30)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_duration", 5)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_repetitions", 3)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_brake", 10)
+        add_mock_item(SwitchItem, "Unittest_valve", "OFF")
+        add_mock_item(SwitchItem, "Unittest_active", "OFF")
+        add_mock_item(NumberItem, "Unittest_hour", 12)
+        add_mock_item(NumberItem, "Unittest_minute", 30)
+        add_mock_item(NumberItem, "Unittest_duration", 5)
+        add_mock_item(NumberItem, "Unittest_repetitions", 3)
+        add_mock_item(NumberItem, "Unittest_brake", 10)
 
-        config = habapp_rules.actors.config.irrigation.IrrigationConfig(
-            items=habapp_rules.actors.config.irrigation.IrrigationItems(valve="Unittest_valve", active="Unittest_active", hour="Unittest_hour", minute="Unittest_minute", duration="Unittest_duration"), parameter=None
-        )
+        config = IrrigationConfig(items=IrrigationItems(valve="Unittest_valve", active="Unittest_active", hour="Unittest_hour", minute="Unittest_minute", duration="Unittest_duration"), parameter=None)
 
-        self._irrigation_min = habapp_rules.actors.irrigation.Irrigation(config)
+        self._irrigation_min = Irrigation(config)
 
     def test__init__(self) -> None:
         """Test __init__."""
@@ -40,45 +39,36 @@ class TestIrrigation(tests.helper.test_case_base.TestCaseBase):
         self.assertIsNone(self._irrigation_min._config.items.brake)
 
         # init max
-        config_max = habapp_rules.actors.config.irrigation.IrrigationConfig(
-            items=habapp_rules.actors.config.irrigation.IrrigationItems(
-                valve="Unittest_valve", active="Unittest_active", hour="Unittest_hour", minute="Unittest_minute", duration="Unittest_duration", repetitions="Unittest_repetitions", brake="Unittest_brake"
-            ),
+        config_max = IrrigationConfig(
+            items=IrrigationItems(valve="Unittest_valve", active="Unittest_active", hour="Unittest_hour", minute="Unittest_minute", duration="Unittest_duration", repetitions="Unittest_repetitions", brake="Unittest_brake"),
             parameter=None,
         )
 
-        irrigation_max = habapp_rules.actors.irrigation.Irrigation(config_max)
+        irrigation_max = Irrigation(config_max)
         self.assertEqual(3, irrigation_max._config.items.repetitions.value)
         self.assertEqual(10, irrigation_max._config.items.brake.value)
 
     def test_init_with_none(self) -> None:
         """Test __init__ with None values."""
-        tests.helper.oh_item.set_state("Unittest_valve", None)
-        tests.helper.oh_item.set_state("Unittest_active", None)
-        tests.helper.oh_item.set_state("Unittest_hour", None)
-        tests.helper.oh_item.set_state("Unittest_minute", None)
-        tests.helper.oh_item.set_state("Unittest_duration", None)
-        tests.helper.oh_item.set_state("Unittest_repetitions", None)
-        tests.helper.oh_item.set_state("Unittest_brake", None)
+        set_item_state("Unittest_valve", None)
+        set_item_state("Unittest_active", None)
+        set_item_state("Unittest_hour", None)
+        set_item_state("Unittest_minute", None)
+        set_item_state("Unittest_duration", None)
+        set_item_state("Unittest_repetitions", None)
+        set_item_state("Unittest_brake", None)
 
-        config = habapp_rules.actors.config.irrigation.IrrigationConfig(
-            items=habapp_rules.actors.config.irrigation.IrrigationItems(
-                valve="Unittest_valve", active="Unittest_active", hour="Unittest_hour", minute="Unittest_minute", duration="Unittest_duration", repetitions="Unittest_repetitions", brake="Unittest_brake"
-            ),
+        config = IrrigationConfig(
+            items=IrrigationItems(valve="Unittest_valve", active="Unittest_active", hour="Unittest_hour", minute="Unittest_minute", duration="Unittest_duration", repetitions="Unittest_repetitions", brake="Unittest_brake"),
             parameter=None,
         )
 
-        habapp_rules.actors.irrigation.Irrigation(config)
+        Irrigation(config)
 
     def test_get_target_valve_state(self) -> None:
         """Test _get_target_valve_state."""
-        # irrigation is not active
-        for state in (None, "OFF"):
-            tests.helper.oh_item.set_state("Unittest_active", state)
-            self.assertFalse(self._irrigation_min._get_target_valve_state())
-
         # irrigation is active
-        tests.helper.oh_item.set_state("Unittest_active", "ON")
+        set_item_state("Unittest_active", "ON")
         datetime_now = datetime.datetime(2023, 1, 1, 12, 00)
         with unittest.mock.patch("datetime.datetime") as datetime_mock, unittest.mock.patch.object(self._irrigation_min, "_is_in_time_range", return_value=False):
             datetime_mock.now.return_value = datetime_now
@@ -94,16 +84,14 @@ class TestIrrigation(tests.helper.test_case_base.TestCaseBase):
 
     def test_get_target_valve_state_with_repetitions(self) -> None:
         """Test _get_target_valve_state with repetitions."""
-        config_max = habapp_rules.actors.config.irrigation.IrrigationConfig(
-            items=habapp_rules.actors.config.irrigation.IrrigationItems(
-                valve="Unittest_valve", active="Unittest_active", hour="Unittest_hour", minute="Unittest_minute", duration="Unittest_duration", repetitions="Unittest_repetitions", brake="Unittest_brake"
-            ),
+        config_max = IrrigationConfig(
+            items=IrrigationItems(valve="Unittest_valve", active="Unittest_active", hour="Unittest_hour", minute="Unittest_minute", duration="Unittest_duration", repetitions="Unittest_repetitions", brake="Unittest_brake"),
             parameter=None,
         )
 
-        irrigation_max = habapp_rules.actors.irrigation.Irrigation(config_max)
-        tests.helper.oh_item.set_state("Unittest_active", "ON")
-        tests.helper.oh_item.set_state("Unittest_repetitions", 2)
+        irrigation_max = Irrigation(config_max)
+        set_item_state("Unittest_active", "ON")
+        set_item_state("Unittest_repetitions", 2)
 
         # value of hour item is None
         with unittest.mock.patch.object(self._irrigation_min._config.items.hour, "value", None):
@@ -156,6 +144,8 @@ class TestIrrigation(tests.helper.test_case_base.TestCaseBase):
 
     def test_cb_set_valve_state(self) -> None:
         """Test _cb_set_valve_state."""
+        set_item_state("Unittest_active", "ON")
+
         # called from cyclic call
         with unittest.mock.patch.object(self._irrigation_min, "_get_target_valve_state", return_value=True):
             self._irrigation_min._cb_set_valve_state()
@@ -163,7 +153,7 @@ class TestIrrigation(tests.helper.test_case_base.TestCaseBase):
 
         # called by event
         with unittest.mock.patch.object(self._irrigation_min, "_get_target_valve_state", return_value=False):
-            self._irrigation_min._cb_set_valve_state(HABApp.openhab.events.ItemStateChangedEvent("Unittest_active", "ON", "OFF"))
+            self._irrigation_min._cb_set_valve_state(ItemStateChangedEvent("Unittest_active", "ON", "OFF"))
         self.assertEqual("OFF", self._irrigation_min._config.items.valve.value)
 
         # same state -> no oh command
@@ -173,7 +163,15 @@ class TestIrrigation(tests.helper.test_case_base.TestCaseBase):
         valve_mock.oh_send_command.assert_not_called()
 
         # exception at _get_target_valve_stat
-        tests.helper.oh_item.set_state("Unittest_valve", "ON")
-        with unittest.mock.patch.object(self._irrigation_min, "_get_target_valve_state", side_effect=habapp_rules.core.exceptions.HabAppRulesError("Could not get target state")):
+        set_item_state("Unittest_valve", "ON")
+        with unittest.mock.patch.object(self._irrigation_min, "_get_target_valve_state", side_effect=HabAppRulesError("Could not get target state")):
             self._irrigation_min._cb_set_valve_state()
         self.assertEqual("OFF", self._irrigation_min._config.items.valve.value)
+
+        # not active (by item)
+        set_item_state("Unittest_active", "OFF")
+        set_item_state("Unittest_valve", "ON")
+        with unittest.mock.patch.object(self._irrigation_min, "_get_target_valve_state", return_value=True) as get_target_state_mock:
+            self._irrigation_min._cb_set_valve_state()
+        get_target_state_mock.assert_not_called()
+        assert_item_value("Unittest_valve", "ON")

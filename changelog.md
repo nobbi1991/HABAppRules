@@ -1,4 +1,37 @@
-# Version 10.0.0 - dd.12.2025
+# Version 11.0.1 - dd.05.2026
+
+## Bugfix
+
+- fixed bugs in `habapp_rules.actors.light.Light`:
+  - fixed exception during init some special cases. (E.g. DimmerLight is on during init)
+  - fixed wrong state after manual mode if motion or sleep is active. Previously only `auto_on` and `auto_off` where possible states after `manual`
+
+# Version 11.0.0 - 15.05.2026
+
+## Breaking changes
+
+- Changed `habapp_rules.core.helper.create_additional_item` to expect a type of item_class instead the name as string
+- removed parameter `return_bool` from `habapp_rules.common.hysteresis.HysteresisSwitch`. `get_output` will return a boolean value, added `get_output_as_string` to return the state as string if needed
+- renamed states of `habapp_rules.system.sleep.Sleep` to camel case naming
+- renamed states of `habapp_rules.system.presence.Presence` to camel case naming
+
+## Features
+
+- changed license from Apache-2.0 to EUPL-1.2 for compatibility with HABApp (EUPL-1.2)
+- added better config validation of `habapp_rules.sensors.config.motion.MotionConfig`
+- updated multi_notifier to 0.6.0 which improves how mails are sent and reduce probability that mails are marked as spam
+
+## Bugfix
+
+- fixed "Thread usage detected but no thread marker" warning emitted by HABApp for all timeout-based state machine rules. The `threading.Timer` used internally by `transitions.extensions.states.Timeout` now registers its thread via `in_thread` before dispatching callbacks
+- fixed bug in all ventilation rules of `habapp_rules.actors.ventilation`, which crashed before, if no display item was set
+- fixed bug in `habapp_rules.actors.irrigation.Irrigation`, which also controlled the relay if the rule was not active
+- fixed some bugs in `habapp_rules.energy.monthly_report.MonthlyReport`. E.g. Now, unrealistic energy values will be ignored and proper logging if history values could not be extracted.
+- fixed bug in `habapp_rules.energy.virtual_energy_meter.VirtualEnergyMeterSwitch` and `habapp_rules.energy.virtual_energy_meter.VirtualEnergyMeterNumber` which raised before, when no energy output item was configured
+- Now, all configs will raise a `HabAppRulesConfigurationError` if a miss-configuration is detected
+- Fixed bug in all shading rules of `habapp_rules.actors.shading` which ignored the `manual_timeout` and thus never went back from manual to automatic state
+
+# Version 10.0.0 - 16.03.2026
 
 ## Breaking changes
 
@@ -8,6 +41,13 @@
 ## Features
 
 - updated HABApp to 25.12.0
+- use prek instead of pre-commit for hooks
+
+## Bugfix
+
+- fixed bugs in `habapp_rules.media.sonos.Sonos`:
+  - wrong state when switching `ON` from `PowerOff`
+  - unable to switch from `Starting` to `Standby` when relais switch to `ON` and Sonos Thing was already online. This can happen if the relais of Sonos is sticking
 
 # Version 9.0.0 - 16.11.2025
 

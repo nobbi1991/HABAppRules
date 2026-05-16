@@ -4,12 +4,12 @@ import collections.abc
 import logging
 import typing
 
-import HABApp.config.config
-import HABApp.config.logging
+from HABApp.config.config import CONFIG
+from HABApp.config.logging.handler import MidnightRotatingFileHandler
 
-import habapp_rules
+from habapp_rules import __version__
 
-LOG_PATH = HABApp.config.config.CONFIG.directories.logging.absolute()
+LOG_PATH = CONFIG.directories.logging.absolute()
 
 
 def setup_logger() -> None:
@@ -26,7 +26,7 @@ def setup_logger() -> None:
     if not LOG_PATH.is_dir():
         LOG_PATH.mkdir(parents=True)
 
-    file_handler = HABApp.config.logging.MidnightRotatingFileHandler(LOG_PATH / "habapp_rules.log", encoding="utf-8", maxBytes=1_048_576, backupCount=5)
+    file_handler = MidnightRotatingFileHandler(LOG_PATH / "habapp_rules.log", encoding="utf-8", maxBytes=1_048_576, backupCount=5)
     file_handler.setFormatter(log_formatter)
     file_handler.setLevel(logging.DEBUG)
     habapp_rules_logger.addHandler(file_handler)
@@ -60,4 +60,4 @@ class InstanceLogger(logging.LoggerAdapter):
 
 setup_logger()
 LOGGER = logging.getLogger(__name__)
-LOGGER.info(f"Start logging of habapp_rules. Version = {habapp_rules.__version__}")
+LOGGER.info(f"Start logging of habapp_rules. Version = {__version__}")

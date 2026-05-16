@@ -3,14 +3,12 @@
 import collections
 import unittest.mock
 
-import HABApp
-import pydantic
+from HABApp.openhab.items import ContactItem, DimmerItem, StringItem, SwitchItem
 
-import habapp_rules.actors.config.light
-import habapp_rules.core.exceptions
-import tests.helper.oh_item
-import tests.helper.test_case_base
-from habapp_rules.actors.config.light import BrightnessTimeout, FunctionConfig, LightParameter
+from habapp_rules.actors.config.light import LOGGER, BrightnessTimeout, FunctionConfig, LightConfig, LightItems, LightParameter
+from habapp_rules.core.exceptions import HabAppRulesConfigurationError
+from tests.helper.oh_item import add_mock_item
+from tests.helper.test_case_base import TestCaseBase
 
 
 class TestBrightnessTimeout(unittest.TestCase):
@@ -45,7 +43,7 @@ class TestBrightnessTimeout(unittest.TestCase):
                         else:
                             self.assertEqual(0.5, brightness_timeout.timeout)
                 else:
-                    with self.assertRaises(pydantic.ValidationError):
+                    with self.assertRaises(HabAppRulesConfigurationError):
                         BrightnessTimeout(test_case.value, test_case.timeout)
 
 
@@ -89,7 +87,7 @@ class TestLightParameter(unittest.TestCase):
                 if test_case.valid:
                     LightParameter(on=test_case.on, pre_off=test_case.pre_off, leaving=test_case.leaving, pre_sleep=test_case.pre_sleep, pre_sleep_prevent=test_case.pre_sleep_prevent)
                 else:
-                    with self.assertRaises(pydantic.ValidationError):
+                    with self.assertRaises(HabAppRulesConfigurationError):
                         LightParameter(on=test_case.on, pre_off=test_case.pre_off, leaving=test_case.leaving, pre_sleep=test_case.pre_sleep, pre_sleep_prevent=test_case.pre_sleep_prevent)
 
     def test_sleep_of_pre_sleep(self) -> None:
@@ -101,26 +99,26 @@ class TestLightParameter(unittest.TestCase):
         self.assertIsNone(light_config.pre_sleep.sleeping)
 
 
-class TestLightConfig(tests.helper.test_case_base.TestCaseBase):
+class TestLightConfig(TestCaseBase):
     """Tests for LightConfig."""
 
     def test_validate_config(self) -> None:
         """Test validate_config."""
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "H_CustomState", None)
+        add_mock_item(DimmerItem, "Unittest_Light", None)
+        add_mock_item(SwitchItem, "Unittest_Manual", None)
+        add_mock_item(StringItem, "H_CustomState", None)
 
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Presence_state", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Sleep_state", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Day", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Sleep_prevent", None)
+        add_mock_item(StringItem, "Unittest_Presence_state", None)
+        add_mock_item(StringItem, "Unittest_Sleep_state", None)
+        add_mock_item(SwitchItem, "Unittest_Day", None)
+        add_mock_item(SwitchItem, "Unittest_Sleep_prevent", None)
 
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.ContactItem, "Unittest_Door_1", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Motion", None)
+        add_mock_item(ContactItem, "Unittest_Door_1", None)
+        add_mock_item(SwitchItem, "Unittest_Motion", None)
 
         # ======= min config =======
-        habapp_rules.actors.config.light.LightConfig(
-            items=habapp_rules.actors.config.light.LightItems(
+        LightConfig(
+            items=LightItems(
                 light="Unittest_Light",
                 manual="Unittest_Manual",
                 day="Unittest_Day",
@@ -130,59 +128,59 @@ class TestLightConfig(tests.helper.test_case_base.TestCaseBase):
 
         # ======= validate motion =======
         # motion correctly configured
-        habapp_rules.actors.config.light.LightConfig(
-            items=habapp_rules.actors.config.light.LightItems(light="Unittest_Light", manual="Unittest_Manual", day="Unittest_Day", state="H_CustomState", motion="Unittest_Motion"),
-            parameter=habapp_rules.actors.config.light.LightParameter(motion=FunctionConfig(day=None, night=None, sleeping=None)),
+        LightConfig(
+            items=LightItems(light="Unittest_Light", manual="Unittest_Manual", day="Unittest_Day", state="H_CustomState", motion="Unittest_Motion"),
+            parameter=LightParameter(motion=FunctionConfig(day=None, night=None, sleeping=None)),
         )
 
         # motion parameter is missing
-        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
-            habapp_rules.actors.config.light.LightConfig(items=habapp_rules.actors.config.light.LightItems(light="Unittest_Light", manual="Unittest_Manual", day="Unittest_Day", state="H_CustomState", motion="Unittest_Motion"))
+        with self.assertRaises(HabAppRulesConfigurationError):
+            LightConfig(items=LightItems(light="Unittest_Light", manual="Unittest_Manual", day="Unittest_Day", state="H_CustomState", motion="Unittest_Motion"))
 
         # ======= validate door =======
         # door correctly configured
-        habapp_rules.actors.config.light.LightConfig(
-            items=habapp_rules.actors.config.light.LightItems(light="Unittest_Light", manual="Unittest_Manual", day="Unittest_Day", state="H_CustomState", doors=["Unittest_Door_1"]),
-            parameter=habapp_rules.actors.config.light.LightParameter(door=FunctionConfig(day=None, night=None, sleeping=None)),
+        LightConfig(
+            items=LightItems(light="Unittest_Light", manual="Unittest_Manual", day="Unittest_Day", state="H_CustomState", doors=["Unittest_Door_1"]),
+            parameter=LightParameter(door=FunctionConfig(day=None, night=None, sleeping=None)),
         )
 
         # door parameter is missing
-        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
-            habapp_rules.actors.config.light.LightConfig(items=habapp_rules.actors.config.light.LightItems(light="Unittest_Light", manual="Unittest_Manual", day="Unittest_Day", state="H_CustomState", doors=["Unittest_Door_1"]))
+        with self.assertRaises(HabAppRulesConfigurationError):
+            LightConfig(items=LightItems(light="Unittest_Light", manual="Unittest_Manual", day="Unittest_Day", state="H_CustomState", doors=["Unittest_Door_1"]))
 
         # ======= validate sleep =======
         # sleep correctly configured
-        habapp_rules.actors.config.light.LightConfig(
-            items=habapp_rules.actors.config.light.LightItems(light="Unittest_Light", manual="Unittest_Manual", day="Unittest_Day", state="H_CustomState", sleeping_state="Unittest_Sleep_state"),
-            parameter=habapp_rules.actors.config.light.LightParameter(pre_sleep=FunctionConfig(day=None, night=None, sleeping=None)),
+        LightConfig(
+            items=LightItems(light="Unittest_Light", manual="Unittest_Manual", day="Unittest_Day", state="H_CustomState", sleeping_state="Unittest_Sleep_state"),
+            parameter=LightParameter(pre_sleep=FunctionConfig(day=None, night=None, sleeping=None)),
         )
 
         # sleep parameter is missing
-        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
-            habapp_rules.actors.config.light.LightConfig(
-                items=habapp_rules.actors.config.light.LightItems(light="Unittest_Light", manual="Unittest_Manual", day="Unittest_Day", state="H_CustomState", sleeping_state="Unittest_Sleep_state"),
-                parameter=habapp_rules.actors.config.light.LightParameter(pre_sleep=None),
+        with self.assertRaises(HabAppRulesConfigurationError):
+            LightConfig(
+                items=LightItems(light="Unittest_Light", manual="Unittest_Manual", day="Unittest_Day", state="H_CustomState", sleeping_state="Unittest_Sleep_state"),
+                parameter=LightParameter(pre_sleep=None),
             )
 
         # ======= validate presence =======
         # presence correctly configured
-        habapp_rules.actors.config.light.LightConfig(
-            items=habapp_rules.actors.config.light.LightItems(light="Unittest_Light", manual="Unittest_Manual", day="Unittest_Day", state="H_CustomState", presence_state="Unittest_Presence_state"),
-            parameter=habapp_rules.actors.config.light.LightParameter(leaving=FunctionConfig(day=None, night=None, sleeping=None)),
+        LightConfig(
+            items=LightItems(light="Unittest_Light", manual="Unittest_Manual", day="Unittest_Day", state="H_CustomState", presence_state="Unittest_Presence_state"),
+            parameter=LightParameter(leaving=FunctionConfig(day=None, night=None, sleeping=None)),
         )
 
         # presence parameter is missing
-        with self.assertRaises(habapp_rules.core.exceptions.HabAppRulesConfigurationError):
-            habapp_rules.actors.config.light.LightConfig(
-                items=habapp_rules.actors.config.light.LightItems(light="Unittest_Light", manual="Unittest_Manual", day="Unittest_Day", state="H_CustomState", presence_state="Unittest_Presence_state"),
-                parameter=habapp_rules.actors.config.light.LightParameter(leaving=None),
+        with self.assertRaises(HabAppRulesConfigurationError):
+            LightConfig(
+                items=LightItems(light="Unittest_Light", manual="Unittest_Manual", day="Unittest_Day", state="H_CustomState", presence_state="Unittest_Presence_state"),
+                parameter=LightParameter(leaving=None),
             )
 
         # ======= validate sleep_prevent =======
         # warning if item and parameter are given
-        with unittest.mock.patch.object(habapp_rules.actors.config.light.LOGGER, "warning") as mock_warning:
-            habapp_rules.actors.config.light.LightConfig(
-                items=habapp_rules.actors.config.light.LightItems(light="Unittest_Light", manual="Unittest_Manual", day="Unittest_Day", state="H_CustomState", pre_sleep_prevent="Unittest_Sleep_prevent"),
-                parameter=habapp_rules.actors.config.light.LightParameter(pre_sleep_prevent=unittest.mock.Mock()),
+        with unittest.mock.patch.object(LOGGER, "warning") as mock_warning:
+            LightConfig(
+                items=LightItems(light="Unittest_Light", manual="Unittest_Manual", day="Unittest_Day", state="H_CustomState", pre_sleep_prevent="Unittest_Sleep_prevent"),
+                parameter=LightParameter(pre_sleep_prevent=unittest.mock.Mock()),
             )
         mock_warning.assert_called_once()

@@ -1,5 +1,3 @@
-# noqa: INP001
-
 import subprocess  # noqa: S404
 import sys
 

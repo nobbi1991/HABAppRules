@@ -1,9 +1,11 @@
 import logging
 
 import HABApp
+from HABApp.openhab.events import ItemStateChangedEvent
+from HABApp.openhab.events.event_filters import ItemStateChangedEventFilter
 from wakeonlan import send_magic_packet
 
-import habapp_rules.network.config.wol
+from habapp_rules.network.config.wol import WolConfig
 
 LOGGER = logging.getLogger(__name__)
 
@@ -11,10 +13,10 @@ LOGGER = logging.getLogger(__name__)
 class Wol(HABApp.Rule):
     """Rule for wake up a device via WOL.
 
-    Use habapp_rules.network.config.wol.WolConfig to configure this rule.
+    Use WolConfig to configure this rule.
     """
 
-    def __init__(self, config: habapp_rules.network.config.wol.WolConfig) -> None:
+    def __init__(self, config: WolConfig) -> None:
         """Init Rule.
 
         Args:
@@ -22,9 +24,9 @@ class Wol(HABApp.Rule):
         """
         HABApp.Rule.__init__(self)
         self._config = config
-        self._config.items.trigger_wol.listen_event(self._cb_trigger_wol, HABApp.openhab.events.ItemStateChangedEventFilter())
+        self._config.items.trigger_wol.listen_event(self._cb_trigger_wol, ItemStateChangedEventFilter())
 
-    def _cb_trigger_wol(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_trigger_wol(self, event: ItemStateChangedEvent) -> None:
         """Callback which is triggered if the trigger_wol item changed.
 
         Args:
