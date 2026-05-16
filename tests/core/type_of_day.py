@@ -5,7 +5,7 @@ import datetime
 import unittest
 import unittest.mock
 
-import habapp_rules.core.type_of_day
+from habapp_rules.core.type_of_day import is_holiday, is_weekend
 
 
 class TestTypeOfDay(unittest.TestCase):
@@ -42,7 +42,7 @@ class TestTypeOfDay(unittest.TestCase):
             for test_case in test_cases:
                 with self.subTest(test_case=test_case):
                     datetime_mock.now.return_value = test_case.day
-                    self.assertEqual(test_case.result, habapp_rules.core.type_of_day.is_weekend(test_case.offset))
+                    self.assertEqual(test_case.result, is_weekend(test_case.offset))
 
     def test_is_holiday(self) -> None:
         """Test is_holiday."""
@@ -65,4 +65,4 @@ class TestTypeOfDay(unittest.TestCase):
             for test_case in test_cases:
                 with self.subTest(test_case=test_case):
                     datetime_mock.now.return_value = test_case.day
-                    self.assertEqual(test_case.result, habapp_rules.core.type_of_day.is_holiday(test_case.offset))
+                    self.assertEqual(test_case.result, is_holiday(test_case.offset))

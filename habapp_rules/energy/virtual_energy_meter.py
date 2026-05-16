@@ -1,15 +1,22 @@
 import abc
+import logging
 import time
+from typing import Generic, TypeVar
 
 import HABApp
+from HABApp.openhab.events import ItemStateChangedEvent
+from HABApp.openhab.events.event_filters import ItemStateChangedEventFilter
 
 from habapp_rules.energy.config.virtual_energy_meter import EnergyMeterNumberConfig, EnergyMeterSwitchConfig
 
+LOGGER = logging.getLogger(__name__)
+_CONFIG_TYPE = TypeVar("_CONFIG_TYPE", bound=EnergyMeterSwitchConfig | EnergyMeterNumberConfig)
 
-class _VirtualEnergyMeterBase(HABApp.Rule):
+
+class _VirtualEnergyMeterBase(HABApp.Rule, Generic[_CONFIG_TYPE]):
     """Base class for virtual energy meter classes."""
 
-    def __init__(self, config: EnergyMeterSwitchConfig | EnergyMeterNumberConfig) -> None:
+    def __init__(self, config: _CONFIG_TYPE) -> None:
         HABApp.Rule.__init__(self)
         self._config = config
         self._monitored_item = config.items.monitored_switch if isinstance(config, EnergyMeterSwitchConfig) else config.items.monitored_item
@@ -18,12 +25,12 @@ class _VirtualEnergyMeterBase(HABApp.Rule):
             self._config.items.energy_output.oh_send_command(0)
 
         self._power = self._get_power()
-        self._last_energy_countdown_reset = 0
-        self._send_energy_countdown = self.run.countdown(self._get_energy_countdown_time(), self._cb_countdown_end)
-        self._monitored_item.listen_event(self._cb_monitored_item, HABApp.openhab.events.ItemStateChangedEventFilter())
+        self._last_energy_countdown_reset = 0.0
+        self._send_energy_countdown = self.run.countdown(self._get_energy_countdown_time(), self._cb_energy_countdown_end)
+        self._monitored_item.listen_event(self._cb_monitored_item, ItemStateChangedEventFilter())
 
         if self._is_on():
-            self.run.soon(self._cb_monitored_item, HABApp.openhab.events.ItemStateChangedEvent(self._monitored_item.name, self._monitored_item.value, None))
+            self.run.soon(self._cb_monitored_item, ItemStateChangedEvent(self._monitored_item.name, self._monitored_item.value, None))
 
         if self._config.items.power_output is not None:
             self._config.items.power_output.oh_send_command(self._get_power() if self._is_on() else 0)
@@ -57,7 +64,7 @@ class _VirtualEnergyMeterBase(HABApp.Rule):
 
         return self._config.parameter.energy_update_resolution / self._power * 3_600_000
 
-    def _cb_monitored_item(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:  # noqa:  ARG002
+    def _cb_monitored_item(self, event: ItemStateChangedEvent) -> None:  # noqa:  ARG002
         """Callback which is triggered if the monitored item changed.
 
         Args:
@@ -75,7 +82,7 @@ class _VirtualEnergyMeterBase(HABApp.Rule):
         self._send_energy_countdown.reset()
         self._last_energy_countdown_reset = time.time()
 
-    def _cb_countdown_end(self) -> None:
+    def _cb_energy_countdown_end(self) -> None:
         """Callback which is triggered if _send_energy_countdown ended."""
         self._update_energy_item(self._get_energy_countdown_time())
         self._reset_countdown()
@@ -92,11 +99,14 @@ class _VirtualEnergyMeterBase(HABApp.Rule):
         Args:
             time_since_last_update: time since last update
         """
+        if self._config.items.energy_output is None:
+            # Energy output item is not configured
+            return
         new_energy_value = self._config.items.energy_output.value + self._power * time_since_last_update / 3_600_000
         self._config.items.energy_output.oh_send_command(new_energy_value)
 
 
-class VirtualEnergyMeterSwitch(_VirtualEnergyMeterBase):
+class VirtualEnergyMeterSwitch(_VirtualEnergyMeterBase[EnergyMeterSwitchConfig]):
     """Rule to monitor energy consumption of switch items without a real energy meter.
 
     # Config
@@ -138,9 +148,9 @@ class VirtualEnergyMeterSwitch(_VirtualEnergyMeterBase):
         Returns:
             True if monitored item is on
         """
-        return self._monitored_item.is_on()
+        return self._config.items.monitored_switch.is_on()
 
-    def _cb_monitored_item(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_monitored_item(self, event: ItemStateChangedEvent) -> None:
         """Callback which is triggered if the monitored item changed.
 
         Args:
@@ -155,7 +165,7 @@ class VirtualEnergyMeterSwitch(_VirtualEnergyMeterBase):
                 self._set_energy_from_remaining_time()
 
 
-class VirtualEnergyMeterNumber(_VirtualEnergyMeterBase):
+class VirtualEnergyMeterNumber(_VirtualEnergyMeterBase[EnergyMeterNumberConfig]):
     """Rule to monitor energy consumption of dimmer / number items without a real energy meter.
 
     # Config
@@ -205,7 +215,7 @@ class VirtualEnergyMeterNumber(_VirtualEnergyMeterBase):
         """
         return self._get_power() != 0
 
-    def _cb_monitored_item(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_monitored_item(self, event: ItemStateChangedEvent) -> None:
         """Callback which is triggered if the monitored item changed.
 
         Args:

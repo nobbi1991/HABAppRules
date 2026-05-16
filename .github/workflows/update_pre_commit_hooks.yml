@@ -1,4 +1,4 @@
-name: Pre-commit auto-update
+name: Prek auto-update
 
 on:
   # every day at midnight
@@ -12,13 +12,79 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
-      - uses: browniebroke/pre-commit-autoupdate-action@main
-      - uses: peter-evans/create-pull-request@v8
-        if: always()
         with:
-          branch: update/pre-commit-hooks
-          title: Update pre-commit hooks
-          labels: 'pre-commit, automated'
-          commit-message: "chore: update pre-commit hooks"
-          body: Update versions of pre-commit hooks to latest version.
-          add-paths: .pre-commit-config.yaml
+          python-version: '3.14'
+      - name: Install prek
+        run: pip install prek
+      - name: Update prek hooks
+        id: update-hooks
+        run: |
+          git status --porcelain > /tmp/before.txt
+          prek autoupdate
+          git status --porcelain > /tmp/after.txt
+          if diff /tmp/before.txt /tmp/after.txt > /dev/null; then
+            echo "updated=false" >> $GITHUB_OUTPUT
+          else
+            echo "updated=true" >> $GITHUB_OUTPUT
+          fi
+      - name: Increment bugfix version
+        if: steps.update-hooks.outputs.updated == 'true'
+        run: |
+          python - << 'EOF'
+          import re
+          from datetime import datetime
+
+          # Read current version
+          with open('habapp_rules/__init__.py', 'r') as f:
+              content = f.read()
+              version_match = re.search(r'__version__ = "(\d+)\.(\d+)\.(\d+)"', content)
+              if version_match:
+                  major, minor, patch = version_match.groups()
+                  new_version = f"{major}.{minor}.{int(patch) + 1}"
+                  content = re.sub(r'__version__ = "\d+\.\d+\.\d+"', f'__version__ = "{new_version}"', content)
+                  with open('habapp_rules/__init__.py', 'w') as f:
+                      f.write(content)
+                  print(f"Updated version to {new_version}")
+          EOF
+      - name: Update changelog
+        if: steps.update-hooks.outputs.updated == 'true'
+        run: |
+          python - << 'EOF'
+          import re
+          from datetime import datetime
+
+          # Read current version
+          with open('habapp_rules/__init__.py', 'r') as f:
+              content = f.read()
+              version_match = re.search(r'__version__ = "(\d+\.\d+\.\d+)"', content)
+              if version_match:
+                  version = version_match.group(1)
+
+          # Get today's date
+          today = datetime.now().strftime('%d.%m.%Y')
+
+          # Add new entry to changelog
+          with open('changelog.md', 'r') as f:
+              changelog = f.read()
+
+          new_entry = f"# Version {version} - {today}\n\n## Project related\n\n- updated prek hooks to latest versions\n\n"
+
+          changelog = new_entry + changelog
+
+          with open('changelog.md', 'w') as f:
+              f.write(changelog)
+
+          print("Updated changelog")
+          EOF
+      - uses: peter-evans/create-pull-request@v8
+        with:
+          branch: update/prek-hooks
+          title: Update prek hooks and increment version
+          labels: 'prek, automated'
+          commit-message: "chore: update prek hooks and increment patch version"
+          body: Update versions of prek hooks to latest version and increment patch version.
+          add-paths: |
+            prek.toml
+            habapp_rules/__init__.py
+            changelog.md
+          delete-branch: true

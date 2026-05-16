@@ -7,27 +7,32 @@ name = "habapp_rules"
 description = "Basic rules for HABApp"
 long_description = "Basic rules for HABApp"
 authors = [{ name = "Seuling N." }]
-license = "Apache-2.0"
+license = "EUPL-1.2"
 dynamic = ["version"]
 requires-python = ">=3.11"
 dependencies = [
     "habapp==25.12.0",
+    "jinja2>=3.1.6",
     "matplotlib~=3.10.0",
-    "multi-notifier~=0.5.0",
-    "pydantic_extra_types~=2.10.2",
+    "multi-notifier~=0.6.2",
+    "pydantic_extra_types~=2.11.0",
     "transitions==0.9.1", # > 0.9 creates strange graphs
     "typing-extensions==4.15.0", # used for py3.10 support (SelfType)
     "wakeonlan~=3.1.0",
+    "urllib3>=2.7.0"
 ]
 
 [dependency-groups]
 dev = [
     "graphviz~=0.21.0",
     "pytest~=8.4.1",
-    "ruff>=0.14,<0.16",
+    "ruff~=0.15.0",
     "pytest~=8.4.1",
-    "pre-commit>=4.3.0",
+    "prek>=0.1.0",
     "coverage>=7.11.0",
+    "requests>=2.33.1",
+    "mypy>=1.20.2",
+    "types-python-dateutil>=2.9.0.20260408",
 ]
 
 
@@ -64,19 +69,12 @@ include = ["habapp_rules"]
 
 [tool.hatch.envs.lint]
 detached = true
-dependencies = ["pre-commit"]
+dependencies = ["prek"]
 [tool.hatch.envs.lint.scripts]
-check = "pre-commit run --all-files"
+check = "prek run --all-files"
 
 [tool.hatch.envs.publish]
 detached = true
-
-[tool.hatch.envs.tests]
-dependencies = ["coverage", "pytest", "graphviz"]
-
-
-[tool.hatch.envs.tests.scripts]
-local = "coverage run tests/run_unittest.py && coverage html --skip-covered --fail-under=100"
 
 [tool.hatch.metadata] # remove when HABApp dev is released
 allow-direct-references = true
@@ -121,6 +119,7 @@ ignore = [
     "PLR0911", # Too many return statements
     "PLR0913", # Too many arguments in function definition
     "PLR0917", # Too many positional arguments
+    "RUF067", # __init__ should only contain docstrings and re-exports
 ]
 
 [tool.ruff.lint.isort]
@@ -147,3 +146,6 @@ split-on-trailing-comma = true
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.mypy]
+plugins = ['pydantic.mypy']

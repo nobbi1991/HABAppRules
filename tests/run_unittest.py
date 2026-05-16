@@ -37,8 +37,6 @@ def run_tests() -> unittest.TestResult:
 if __name__ == "__main__":
     result = run_tests()
 
-    # Print a summary of the test results
-
     # If there were failures or errors, print details
     if result.failures or result.errors:
         for _test, _traceback in result.failures + result.errors:

@@ -1,44 +1,43 @@
 """Test bathroom light rule."""
 
 import collections
-import pathlib
 import sys
 import time
 import unittest
 import unittest.mock
 
-import HABApp.rule.rule
+from HABApp.openhab.items import DimmerItem, NumberItem, StringItem, SwitchItem
 
-import habapp_rules.actors.config.light_bathroom
-import habapp_rules.actors.light_bathroom
-import tests.helper.graph_machines
-import tests.helper.oh_item
-import tests.helper.test_case_base
+from habapp_rules.actors.config.light_bathroom import BathroomLightConfig, BathroomLightItems
+from habapp_rules.actors.light_bathroom import BathroomLight
 from habapp_rules.system import PresenceState, SleepState
+from tests.helper.graph_machines import create_state_graphs
+from tests.helper.oh_item import add_mock_item, assert_item_value, item_command_event, item_state_change_event, set_item_state
+from tests.helper.test_case_base import TestCaseBaseStateMachine
 
 
-class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine):
+class TestEnergySaveSwitch(TestCaseBaseStateMachine):
     """Tests cases for testing energy save switch."""
 
     def setUp(self) -> None:
         """Setup test case."""
-        tests.helper.test_case_base.TestCaseBaseStateMachine.setUp(self)
+        super().setUp()
 
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light_Main")
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light_Main_Ctr")
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Light_Main_HCL")
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Light_Main_HCL_Lock")
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Light_Main_Color")
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.DimmerItem, "Unittest_Light_Mirror")
+        add_mock_item(DimmerItem, "Unittest_Light_Main")
+        add_mock_item(DimmerItem, "Unittest_Light_Main_Ctr")
+        add_mock_item(SwitchItem, "Unittest_Light_Main_HCL")
+        add_mock_item(SwitchItem, "Unittest_Light_Main_HCL_Lock")
+        add_mock_item(NumberItem, "Unittest_Light_Main_Color")
+        add_mock_item(DimmerItem, "Unittest_Light_Mirror")
 
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Presence_state")
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_Sleep_state")
+        add_mock_item(StringItem, "Unittest_Presence_state")
+        add_mock_item(StringItem, "Unittest_Sleep_state")
 
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Manual")
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.StringItem, "Unittest_State")
+        add_mock_item(SwitchItem, "Unittest_Manual")
+        add_mock_item(StringItem, "Unittest_State")
 
-        self._config = habapp_rules.actors.config.light_bathroom.BathroomLightConfig(
-            items=habapp_rules.actors.config.light_bathroom.BathroomLightItems(
+        self._config = BathroomLightConfig(
+            items=BathroomLightItems(
                 light_main="Unittest_Light_Main",
                 light_main_ctr="Unittest_Light_Main_Ctr",
                 light_main_hcl="Unittest_Light_Main_HCL",
@@ -51,22 +50,12 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
             )
         )
 
-        self._rule = habapp_rules.actors.light_bathroom.BathroomLight(config=self._config)
+        self._rule = BathroomLight(config=self._config)
 
     @unittest.skipIf(sys.platform != "win32", "Should only run on windows when graphviz is installed")
     def test_create_graph(self) -> None:  # pragma: no cover
         """Create state machine graph for documentation."""
-        picture_dir = pathlib.Path(__file__).parent / "_state_charts" / "BathroomLight"
-        if not picture_dir.is_dir():
-            picture_dir.mkdir(parents=True)
-
-        graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self._rule.states, transitions=self._rule.trans, initial=self._rule.state, show_conditions=False)
-
-        graph.get_graph().draw(picture_dir / "BathroomLight.png", format="png", prog="dot")
-
-        for state_name in [state for state in self._get_state_names(self._rule.states) if "init" not in state.lower()]:
-            graph = tests.helper.graph_machines.HierarchicalGraphMachineTimer(model=tests.helper.graph_machines.FakeModel(), states=self._rule.states, transitions=self._rule.trans, initial=state_name, show_conditions=True)
-            graph.get_graph(force_new=True, show_roi=True).draw(picture_dir / f"BathroomLight_{state_name}.png", format="png", prog="dot")
+        create_state_graphs(self._rule, "BathroomLight")
 
     def test_initial_state(self) -> None:
         """Test initial state."""
@@ -98,11 +87,11 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
         with unittest.mock.patch("habapp_rules.actors.light_bathroom.BathroomLight._is_day") as is_day_mock:
             for test_case in test_cases:
                 with self.subTest(test_case=test_case):
-                    tests.helper.oh_item.set_state("Unittest_Manual", test_case.manual)
-                    tests.helper.oh_item.set_state("Unittest_Light_Main", test_case.main_light)
-                    tests.helper.oh_item.set_state("Unittest_Light_Mirror", test_case.mirror_light)
+                    set_item_state("Unittest_Manual", test_case.manual)
+                    set_item_state("Unittest_Light_Main", test_case.main_light)
+                    set_item_state("Unittest_Light_Mirror", test_case.mirror_light)
                     is_day_mock.return_value = not test_case.sleeping
-                    rule = habapp_rules.actors.light_bathroom.BathroomLight(config=self._config)
+                    rule = BathroomLight(config=self._config)
                     self.assertEqual(test_case.expected_state, rule.state)
                     self.unload_rule(rule)
 
@@ -121,7 +110,7 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
 
         for test_case in test_cases:
             with self.subTest(test_case=test_case):
-                tests.helper.oh_item.set_state("Unittest_Sleep_state", test_case.sleeping_state)
+                set_item_state("Unittest_Sleep_state", test_case.sleeping_state)
                 self._rule._sleep_end_time = test_case.sleep_end_time
                 self.assertEqual(test_case.expected_result, self._rule._is_day())
 
@@ -160,7 +149,7 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
 
         for test_case in test_cases:
             with self.subTest(test_case=test_case):
-                tests.helper.oh_item.set_state("Unittest_Light_Mirror", test_case.mirror_value)
+                set_item_state("Unittest_Light_Mirror", test_case.mirror_value)
                 self.assertEqual(test_case.expected_result, self._rule._mirror_is_on())
 
     def test_set_outputs(self) -> None:
@@ -188,7 +177,7 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
             TestCase(on_via_increase=True, state="Auto_On_MainAndMirror", main_initial=90, main_call=90, mirror=None, hcl=None, color=4000),
         ]
 
-        with unittest.mock.patch("habapp_rules.core.helper.send_if_different") as send_if_different_mock, unittest.mock.patch.object(self._rule, "_light_main_observer") as main_observer_mock:
+        with unittest.mock.patch("habapp_rules.actors.light_bathroom.send_if_different") as send_if_different_mock, unittest.mock.patch.object(self._rule, "_light_main_observer") as main_observer_mock:
             for test_case in test_cases:
                 with self.subTest(test_case=test_case):
                     send_if_different_mock.reset_mock()
@@ -223,66 +212,66 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
         # normal sleep
         with unittest.mock.patch.object(self._rule, "_is_extended_sleep", return_value=False):
             self._rule._set_outputs()
-        tests.helper.oh_item.assert_value("Unittest_Light_Main", 18)
+        assert_item_value("Unittest_Light_Main", 18)
 
         # extended sleep
         with unittest.mock.patch.object(self._rule, "_is_extended_sleep", return_value=True):
             self._rule._set_outputs()
-        tests.helper.oh_item.assert_value("Unittest_Light_Main", 42)
+        assert_item_value("Unittest_Light_Main", 42)
 
     def test_manual_transitions(self) -> None:
         """Test transitions of state Manual."""
         # set Auto as initial state
         self._rule.to_Auto()
 
-        tests.helper.oh_item.item_state_change_event("Unittest_Manual", "ON")
+        item_state_change_event("Unittest_Manual", "ON")
         self.assertEqual("Manual", self._rule.state)
 
-        tests.helper.oh_item.item_state_change_event("Unittest_Manual", "OFF")
+        item_state_change_event("Unittest_Manual", "OFF")
         self.assertEqual("Auto_Off", self._rule.state)
 
     def test_auto_off_transitions(self) -> None:
         """Test transitions of state Auto_Off."""
         # set Auto as initial state
         self._rule.to_Auto()
-        tests.helper.oh_item.assert_value("Unittest_State", "Auto_Off")
+        assert_item_value("Unittest_State", "Auto_Off")
 
         with unittest.mock.patch.object(self._rule, "_is_day", return_value=True) as is_day_mock:
             # main on | day
-            tests.helper.oh_item.item_state_change_event("Unittest_Light_Main", 100)
-            tests.helper.oh_item.assert_value("Unittest_State", "Auto_On_MainDay")
+            item_state_change_event("Unittest_Light_Main", 100)
+            assert_item_value("Unittest_State", "Auto_On_MainDay")
 
             # main on | night
-            tests.helper.oh_item.item_state_change_event("Unittest_Light_Main", 0)
-            tests.helper.oh_item.assert_value("Unittest_State", "Auto_Off")
+            item_state_change_event("Unittest_Light_Main", 0)
+            assert_item_value("Unittest_State", "Auto_Off")
             is_day_mock.return_value = False
-            tests.helper.oh_item.item_state_change_event("Unittest_Light_Main", 100)
-            tests.helper.oh_item.assert_value("Unittest_State", "Auto_On_MainNight")
+            item_state_change_event("Unittest_Light_Main", 100)
+            assert_item_value("Unittest_State", "Auto_On_MainNight")
 
             # main on | night with INCREASE
-            tests.helper.oh_item.item_state_change_event("Unittest_Light_Main", 0)
-            tests.helper.oh_item.assert_value("Unittest_State", "Auto_Off")
+            item_state_change_event("Unittest_Light_Main", 0)
+            assert_item_value("Unittest_State", "Auto_Off")
             is_day_mock.return_value = False
-            tests.helper.oh_item.item_command_event("Unittest_Light_Main_Ctr", "INCREASE")
-            tests.helper.oh_item.assert_value("Unittest_State", "Auto_On_MainNight")
-            tests.helper.oh_item.assert_value("Unittest_Light_Main", 0)  # in reality, this will not be 0
+            item_command_event("Unittest_Light_Main_Ctr", "INCREASE")
+            assert_item_value("Unittest_State", "Auto_On_MainNight")
+            assert_item_value("Unittest_Light_Main", 0)  # in reality, this will not be 0
 
             # main on + mirror on | day
-            tests.helper.oh_item.item_state_change_event("Unittest_Light_Main", 0)
-            tests.helper.oh_item.item_state_change_event("Unittest_Light_Mirror", 100)
-            tests.helper.oh_item.assert_value("Unittest_State", "Auto_Off")
+            item_state_change_event("Unittest_Light_Main", 0)
+            item_state_change_event("Unittest_Light_Mirror", 100)
+            assert_item_value("Unittest_State", "Auto_Off")
             is_day_mock.return_value = True
-            tests.helper.oh_item.item_state_change_event("Unittest_Light_Main", 100)
-            tests.helper.oh_item.assert_value("Unittest_State", "Auto_On_MainAndMirror")
+            item_state_change_event("Unittest_Light_Main", 100)
+            assert_item_value("Unittest_State", "Auto_On_MainAndMirror")
 
             # main on + mirror on | night
-            tests.helper.oh_item.item_state_change_event("Unittest_Light_Main", 0)
-            tests.helper.oh_item.assert_value("Unittest_Light_Mirror", 0)
-            tests.helper.oh_item.item_state_change_event("Unittest_Light_Mirror", 100)
-            tests.helper.oh_item.assert_value("Unittest_State", "Auto_Off")
+            item_state_change_event("Unittest_Light_Main", 0)
+            assert_item_value("Unittest_Light_Mirror", 0)
+            item_state_change_event("Unittest_Light_Mirror", 100)
+            assert_item_value("Unittest_State", "Auto_Off")
             is_day_mock.return_value = True
-            tests.helper.oh_item.item_state_change_event("Unittest_Light_Main", 100)
-            tests.helper.oh_item.assert_value("Unittest_State", "Auto_On_MainAndMirror")
+            item_state_change_event("Unittest_Light_Main", 100)
+            assert_item_value("Unittest_State", "Auto_On_MainAndMirror")
 
     def test_sleeping_started(self) -> None:
         """Test sleeping started."""
@@ -301,7 +290,7 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
                 with self.subTest(test_case=test_case):
                     self._rule._sleep_end_time = 0
                     self._rule.to_Auto_On_MainDay()
-                    tests.helper.oh_item.item_state_change_event("Unittest_Sleep_state", test_case.sleeping_state)
+                    item_state_change_event("Unittest_Sleep_state", test_case.sleeping_state)
                     self.assertEqual(test_case.expected_state, self._rule.state)
                     self.assertEqual(self._rule._sleep_end_time, test_case.expected_sleep_end_time)
 
@@ -321,5 +310,5 @@ class TestEnergySaveSwitch(tests.helper.test_case_base.TestCaseBaseStateMachine)
             with self.subTest(test_case=test_case):
                 self._rule._sleep_end_time = 0
                 self._rule.to_Auto_On_MainDay()
-                tests.helper.oh_item.item_state_change_event("Unittest_Presence_state", test_case.presence_state)
+                item_state_change_event("Unittest_Presence_state", test_case.presence_state)
                 self.assertEqual(test_case.expected_state, self._rule.state)

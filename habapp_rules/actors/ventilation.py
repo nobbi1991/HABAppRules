@@ -6,20 +6,18 @@ import datetime
 import logging
 import typing
 
-import HABApp
+from HABApp.openhab.events import ItemStateChangedEvent, ItemStateUpdatedEvent
+from HABApp.openhab.events.event_filters import ItemStateChangedEventFilter, ItemStateUpdatedEventFilter
 
-import habapp_rules.actors.config.ventilation
-import habapp_rules.core.exceptions
-import habapp_rules.core.helper
-import habapp_rules.core.logger
-import habapp_rules.core.state_machine_rule
-import habapp_rules.system
-from habapp_rules.actors.config.ventilation import VentilationTwoStageItems
+from habapp_rules.actors.config.ventilation import VentilationConfig, VentilationTwoStageConfig
+from habapp_rules.core.exceptions import HabAppRulesConfigurationError
 from habapp_rules.core.helper import send_if_different
+from habapp_rules.core.state_machine_rule import HierarchicalStateMachineWithTimeout, StateMachineRule
+from habapp_rules.system import PresenceState
 
 LOGGER = logging.getLogger(__name__)
-
 LEVEL_POWER = 2
+CONFIG_TYPE = typing.TypeVar("CONFIG_TYPE", bound=VentilationConfig | VentilationTwoStageConfig)
 
 
 def _to_datetime(time_input: datetime.time) -> datetime.datetime:  # this is needed because of https://github.com/spacemanspiff2007/eascheduler/issues
@@ -40,10 +38,8 @@ def _to_datetime(time_input: datetime.time) -> datetime.datetime:  # this is nee
     return result
 
 
-class _VentilationBase(habapp_rules.core.state_machine_rule.StateMachineRule):
+class _VentilationBase(StateMachineRule, typing.Generic[CONFIG_TYPE]):
     """Class for ventilation objects."""
-
-    _config: VentilationTwoStageItems
 
     states: typing.ClassVar = [
         {"name": "Manual"},
@@ -59,7 +55,6 @@ class _VentilationBase(habapp_rules.core.state_machine_rule.StateMachineRule):
             ],
         },
     ]
-
     trans: typing.ClassVar = [
         # manual
         {"trigger": "_manual_on", "source": ["Auto"], "dest": "Manual"},
@@ -78,35 +73,35 @@ class _VentilationBase(habapp_rules.core.state_machine_rule.StateMachineRule):
         {"trigger": "_long_absence_off", "source": "Auto_LongAbsence", "dest": "Auto_Normal"},
     ]
 
-    def __init__(self, config: habapp_rules.actors.config.ventilation.VentilationConfig) -> None:
+    def __init__(self, config: CONFIG_TYPE, instance_logger_name: str) -> None:
         """Init of ventilation base.
 
         Args:
             config: ventilation config
+            instance_logger_name: name for instance logger
         """
         self._config = config
-        self._ventilation_level: int | None = None
+        self._ventilation_level = 0
 
-        habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, self._config.items.state)
+        StateMachineRule.__init__(self, self._config.items.state, instance_logger_name)
 
         # init state machine
-        self._previous_state = None
+        self._previous_state: str | None = None
         self._state_change_time = datetime.datetime.now()
-        self.state_machine = habapp_rules.core.state_machine_rule.HierarchicalStateMachineWithTimeout(model=self, states=self.states, transitions=self.trans, ignore_invalid_triggers=True, after_state_change="_update_openhab_state")
-        self._set_initial_state()
+        self.state_machine = HierarchicalStateMachineWithTimeout(model=self, states=self.states, transitions=self.trans, ignore_invalid_triggers=True, after_state_change="_update_openhab_state", initial=self._get_initial_state())
 
         self._apply_config()
 
         # callbacks
-        self._config.items.manual.listen_event(self._cb_manual, HABApp.openhab.events.ItemStateChangedEventFilter())
+        self._config.items.manual.listen_event(self._cb_manual, ItemStateChangedEventFilter())
         if self._config.items.hand_request is not None:
-            self._config.items.hand_request.listen_event(self._cb_power_hand_request, HABApp.openhab.events.ItemStateChangedEventFilter())
+            self._config.items.hand_request.listen_event(self._cb_power_hand_request, ItemStateChangedEventFilter())
         if self._config.items.external_request is not None:
-            self._config.items.external_request.listen_event(self._cb_external_request, HABApp.openhab.events.ItemStateChangedEventFilter())
+            self._config.items.external_request.listen_event(self._cb_external_request, ItemStateChangedEventFilter())
         if self._config.items.presence_state is not None:
-            self._config.items.presence_state.listen_event(self._cb_presence_state, HABApp.openhab.events.ItemStateChangedEventFilter())
+            self._config.items.presence_state.listen_event(self._cb_presence_state, ItemStateChangedEventFilter())
 
-        self._update_openhab_state()
+        self._post_init()
 
     def _get_initial_state(self, default_value: str = "initial") -> str:  # noqa: ARG002
         """Get initial state of state machine.
@@ -121,7 +116,7 @@ class _VentilationBase(habapp_rules.core.state_machine_rule.StateMachineRule):
             return "Manual"
         if self._config.items.hand_request is not None and self._config.items.hand_request.is_on():
             return "Auto_PowerHand"
-        if self._config.items.presence_state is not None and self._config.items.presence_state.value == habapp_rules.system.PresenceState.LONG_ABSENCE.value:
+        if self._config.items.presence_state is not None and self._config.items.presence_state.value == PresenceState.LONG_ABSENCE.value:
             return "Auto_LongAbsence"
         if self._config.items.external_request is not None and self._config.items.external_request.is_on():
             return "Auto_PowerExternal"
@@ -129,8 +124,8 @@ class _VentilationBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
     def _apply_config(self) -> None:
         """Apply values from config."""
-        self.state_machine.get_state("Auto_PowerHand").timeout = self._config.parameter.state_hand.timeout
-        self.state_machine.get_state("Auto_LongAbsence_On").timeout = self._config.parameter.state_long_absence.duration
+        self._set_state_timeout("Auto_PowerHand", self._config.parameter.state_hand.timeout)
+        self._set_state_timeout("Auto_LongAbsence_On", self._config.parameter.state_long_absence.duration)
 
     def _update_openhab_state(self) -> None:
         """Update OpenHAB state item and other states.
@@ -192,14 +187,14 @@ class _VentilationBase(habapp_rules.core.state_machine_rule.StateMachineRule):
     def _set_feedback_states(self) -> None:
         """Set feedback sates to the OpenHAB items."""
         if self._config.items.hand_request is not None and self._previous_state == "Auto_PowerHand":
-            habapp_rules.core.helper.send_if_different(self._config.items.hand_request, "OFF")
+            send_if_different(self._config.items.hand_request, "OFF")
 
         if self._config.items.feedback_on is not None:
-            habapp_rules.core.helper.send_if_different(self._config.items.feedback_on, "ON" if self._ventilation_level else "OFF")
+            send_if_different(self._config.items.feedback_on, "ON" if self._ventilation_level else "OFF")
 
         if self._config.items.feedback_power is not None:
             target_value = "ON" if self._ventilation_level is not None and self._ventilation_level >= LEVEL_POWER else "OFF"
-            habapp_rules.core.helper.send_if_different(self._config.items.feedback_power, target_value)
+            send_if_different(self._config.items.feedback_power, target_value)
 
         if self._config.items.display_text is not None:
             if self.state == "Auto_PowerHand":
@@ -207,7 +202,7 @@ class _VentilationBase(habapp_rules.core.state_machine_rule.StateMachineRule):
                 return
 
             if (display_text := self._get_display_text()) is not None:
-                habapp_rules.core.helper.send_if_different(self._config.items.display_text, display_text)
+                send_if_different(self._config.items.display_text, display_text)
 
     def __set_hand_display_text(self) -> None:
         """Callback to set display text."""
@@ -215,17 +210,20 @@ class _VentilationBase(habapp_rules.core.state_machine_rule.StateMachineRule):
             # state changed and is not PowerHand anymore
             return
 
+        if not self._config.items.display_text:
+            return
+
         # get the remaining minutes and set display text
         remaining_minutes = round((self._config.parameter.state_hand.timeout - (datetime.datetime.now() - self._state_change_time).seconds) / 60)
         remaining_minutes = max(remaining_minutes, 0)
-        habapp_rules.core.helper.send_if_different(self._config.items.display_text, f"{self._config.parameter.state_hand.display_text} {remaining_minutes}min")
+        send_if_different(self._config.items.display_text, f"{self._config.parameter.state_hand.display_text} {remaining_minutes}min")
 
         # re-trigger this method in 1 minute
         self.run.once(60, self.__set_hand_display_text)
 
     def on_enter_Auto_Init(self) -> None:  # noqa: N802
         """Is called on entering of Auto_Init state."""
-        self._set_initial_state()
+        self._set_state(self._get_initial_state())
 
     def on_enter_Auto_LongAbsence_Off(self) -> None:  # noqa: N802
         """Is called on entering of Auto_LongAbsence_Off state."""
@@ -234,7 +232,7 @@ class _VentilationBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
     def _trigger_long_absence_power_on(self) -> None:
         """Trigger long absence power on."""
-        self._long_absence_power_on()
+        self.trigger("_long_absence_power_on")
 
     def _external_active_and_configured(self) -> bool:
         """Check if external request is active and configured.
@@ -244,52 +242,52 @@ class _VentilationBase(habapp_rules.core.state_machine_rule.StateMachineRule):
         """
         return self._config.items.external_request is not None and self._config.items.external_request.is_on()
 
-    def _cb_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_manual(self, event: ItemStateChangedEvent) -> None:
         """Callback which is triggered if manual mode changed.
 
         Args:
             event: original trigger event
         """
         if event.value == "ON":
-            self._manual_on()
+            self.trigger("_manual_on")
         else:
-            self._manual_off()
+            self.trigger("_manual_off")
 
-    def _cb_power_hand_request(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_power_hand_request(self, event: ItemStateChangedEvent) -> None:
         """Callback which is triggered if power_hand_request changed.
 
         Args:
             event: original trigger event
         """
         if event.value == "ON":
-            self._hand_on()
+            self.trigger("_hand_on")
         else:
-            self._hand_off()
+            self.trigger("_hand_off")
 
-    def _cb_external_request(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_external_request(self, event: ItemStateChangedEvent) -> None:
         """Callback which is triggered if external request changed.
 
         Args:
             event: original trigger event
         """
         if event.value == "ON":
-            self._external_on()
+            self.trigger("_external_on")
         else:
-            self._external_off()
+            self.trigger("_external_off")
 
-    def _cb_presence_state(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_presence_state(self, event: ItemStateChangedEvent) -> None:
         """Callback which is triggered if presence_state changed.
 
         Args:
             event: original trigger event
         """
-        if event.value == habapp_rules.system.PresenceState.LONG_ABSENCE.value:
-            self._long_absence_on()
+        if event.value == PresenceState.LONG_ABSENCE.value:
+            self.trigger("_long_absence_on")
         else:
-            self._long_absence_off()
+            self.trigger("_long_absence_off")
 
 
-class Ventilation(_VentilationBase):
+class Ventilation(_VentilationBase[VentilationConfig]):
     """Rule for managing ventilation systems which can be controlled with ventilation levels.
 
     # Items:
@@ -302,8 +300,8 @@ class Ventilation(_VentilationBase):
     Switch  Feedback_Power              "Feedback is Power"
 
     # Config
-    config = habapp_rules.actors.config.ventilation.VentilationConfig(
-            items=habapp_rules.actors.config.ventilation.VentilationItems(
+    config = VentilationConfig(
+            items=VentilationItems(
                     ventilation_level="Ventilation_level",
                     manual="Manual",
                     hand_request="Hand_Request",
@@ -315,26 +313,23 @@ class Ventilation(_VentilationBase):
     )
 
     # Rule init:
-    habapp_rules.actors.ventilation.Ventilation(config)
+    Ventilation(config)
     """
 
-    def __init__(self, config: habapp_rules.actors.config.ventilation.VentilationConfig) -> None:
+    def __init__(self, config: VentilationConfig) -> None:
         """Init of ventilation object.
 
         Args:
             config: config of the ventilation rule
         """
-        self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, config.items.ventilation_level.name)
-
-        _VentilationBase.__init__(self, config)
-        self._instance_logger.info(habapp_rules.core.state_machine_rule.StateMachineRule.get_initial_log_message(self))
+        _VentilationBase.__init__(self, config, config.items.ventilation_level.name)
 
     def _set_level_to_ventilation_items(self) -> None:
         """Set ventilation to output item(s)."""
-        habapp_rules.core.helper.send_if_different(self._config.items.ventilation_level, self._ventilation_level)
+        send_if_different(self._config.items.ventilation_level, self._ventilation_level)
 
 
-class VentilationHeliosTwoStage(_VentilationBase):
+class VentilationHeliosTwoStage(_VentilationBase[VentilationTwoStageConfig]):
     """Rule for managing Helios ventilation systems with humidity sensor (E.g. Helios ELS).
 
     # Items:
@@ -348,8 +343,8 @@ class VentilationHeliosTwoStage(_VentilationBase):
     Switch  Feedback_Power              "Feedback is Power"
 
     # Config
-    config = habapp_rules.actors.config.ventilation.VentilationTwoStageItems(
-            items=habapp_rules.actors.config.ventilation.VentilationTwoStageItems(
+    config = VentilationTwoStageItems(
+            items=VentilationTwoStageItems(
                     ventilation_output_on="Ventilation_Switch_On",
                     ventilation_output_power="Ventilation_Switch_Power",
                     manual="Manual",
@@ -362,7 +357,7 @@ class VentilationHeliosTwoStage(_VentilationBase):
     )
 
     # Rule init:
-    habapp_rules.actors.ventilation.VentilationHeliosTwoStage(config)
+    VentilationHeliosTwoStage(config)
     """
 
     states = copy.deepcopy(_VentilationBase.states)
@@ -387,19 +382,16 @@ class VentilationHeliosTwoStage(_VentilationBase):
     # add new PowerAfterRun transitions
     trans.append({"trigger": "_after_run_timeout", "source": "Auto_PowerAfterRun", "dest": "Auto_Normal"})
 
-    def __init__(self, config: habapp_rules.actors.config.ventilation.VentilationTwoStageConfig) -> None:
+    def __init__(self, config: VentilationTwoStageConfig) -> None:
         """Init of a Helios ventilation object which uses two switches to set the level.
 
         Args:
             config: config for the ventilation rule
         """
-        self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, config.items.ventilation_output_on.name)
-        _VentilationBase.__init__(self, config)
+        _VentilationBase.__init__(self, config, config.items.ventilation_output_on.name)
 
         # set timeout
-        self.state_machine.get_state("Auto_PowerAfterRun").timeout = config.parameter.after_run_timeout
-
-        self._instance_logger.info(habapp_rules.core.state_machine_rule.StateMachineRule.get_initial_log_message(self))
+        self._set_state_timeout("Auto_PowerAfterRun", config.parameter.after_run_timeout)
 
     def _get_display_text(self) -> str | None:
         """Get Text for display.
@@ -427,12 +419,12 @@ class VentilationHeliosTwoStage(_VentilationBase):
     def _set_level_to_ventilation_items(self) -> None:
         """Set ventilation to output item(s)."""
         if self.state == "Auto_PowerAfterRun":
-            habapp_rules.core.helper.send_if_different(self._config.items.ventilation_output_on, "ON")
-            habapp_rules.core.helper.send_if_different(self._config.items.ventilation_output_power, "OFF")
+            send_if_different(self._config.items.ventilation_output_on, "ON")
+            send_if_different(self._config.items.ventilation_output_power, "OFF")
 
         else:
-            habapp_rules.core.helper.send_if_different(self._config.items.ventilation_output_on, "ON" if self._ventilation_level else "OFF")
-            habapp_rules.core.helper.send_if_different(self._config.items.ventilation_output_power, "ON" if self._ventilation_level >= LEVEL_POWER else "OFF")
+            send_if_different(self._config.items.ventilation_output_on, "ON" if self._ventilation_level else "OFF")
+            send_if_different(self._config.items.ventilation_output_power, "ON" if self._ventilation_level >= LEVEL_POWER else "OFF")
 
 
 class VentilationHeliosTwoStageHumidity(VentilationHeliosTwoStage):
@@ -450,8 +442,8 @@ class VentilationHeliosTwoStageHumidity(VentilationHeliosTwoStage):
     Switch  Feedback_Power              "Feedback is Power"
 
     # Config
-    config = habapp_rules.actors.config.ventilation.VentilationTwoStageItems(
-            items=habapp_rules.actors.config.ventilation.VentilationTwoStageItems(
+    config = VentilationTwoStageItems(
+            items=VentilationTwoStageItems(
                     ventilation_output_on="Ventilation_Switch_On",
                     ventilation_output_power="Ventilation_Switch_Power",
                     current="Ventilation_Current",
@@ -465,7 +457,7 @@ class VentilationHeliosTwoStageHumidity(VentilationHeliosTwoStage):
     )
 
     # Rule init:
-    habapp_rules.actors.ventilation.VentilationHeliosTwoStageHumidity(config)
+    VentilationHeliosTwoStageHumidity(config)
     """
 
     states = copy.deepcopy(VentilationHeliosTwoStage.states)
@@ -487,22 +479,22 @@ class VentilationHeliosTwoStageHumidity(VentilationHeliosTwoStage):
     trans.append({"trigger": "_hand_on", "source": "Auto_PowerHumidity", "dest": "Auto_PowerHand"})
     trans.append({"trigger": "_external_on", "source": "Auto_PowerHumidity", "dest": "Auto_PowerExternal"})
 
-    def __init__(self, config: habapp_rules.actors.config.ventilation.VentilationTwoStageConfig) -> None:
+    def __init__(self, config: VentilationTwoStageConfig) -> None:
         """Init of a Helios ventilation object which uses two switches to set the level, including a humidity sensor.
 
         Args:
             config: configuration of the ventilation rule
 
         Raises:
-            habapp_rules.core.exceptions.HabAppRulesConfigurationError: if config is missing required items
+            HabAppRulesConfigurationError: if config is missing required items
         """
         if config.items.current is None:
             msg = "Missing item 'current'"
-            raise habapp_rules.core.exceptions.HabAppRulesConfigurationError(msg)
+            raise HabAppRulesConfigurationError(msg)
         self._current_threshold_power = config.parameter.current_threshold_power
 
         VentilationHeliosTwoStage.__init__(self, config)
-        config.items.current.listen_event(self._cb_current, HABApp.openhab.events.ItemStateUpdatedEventFilter())
+        config.items.current.listen_event(self._cb_current, ItemStateUpdatedEventFilter())
 
     def _get_initial_state(self, default_value: str = "initial") -> str:
         """Get initial state of state machine.
@@ -529,7 +521,7 @@ class VentilationHeliosTwoStageHumidity(VentilationHeliosTwoStage):
         if self.state == "Auto_PowerHumidity":
             return self._config.parameter.state_humidity.display_text
 
-        return VentilationHeliosTwoStage._get_display_text(self)  # noqa: SLF001
+        return super()._get_display_text()
 
     def _set_level(self) -> None:
         """Set ventilation level."""
@@ -543,8 +535,8 @@ class VentilationHeliosTwoStageHumidity(VentilationHeliosTwoStage):
     def _set_level_to_ventilation_items(self) -> None:
         """Set ventilation to output item(s)."""
         if self.state == "Auto_PowerHumidity":
-            habapp_rules.core.helper.send_if_different(self._config.items.ventilation_output_on, "ON")
-            habapp_rules.core.helper.send_if_different(self._config.items.ventilation_output_power, "OFF")
+            send_if_different(self._config.items.ventilation_output_on, "ON")
+            send_if_different(self._config.items.ventilation_output_power, "OFF")
         else:
             super()._set_level_to_ventilation_items()
 
@@ -557,22 +549,23 @@ class VentilationHeliosTwoStageHumidity(VentilationHeliosTwoStage):
         Returns:
             True if current greater than the threshold, else False
         """
-        current = current if current is not None else self._config.items.current.value
+        current_from_item = self._config.items.current.value if self._config.items.current is not None else None
+        current = current if current is not None else current_from_item
 
         if current is None:
             return False
 
         return current > self._current_threshold_power
 
-    def _cb_current(self, event: HABApp.openhab.events.ItemStateUpdatedEvent) -> None:
+    def _cb_current(self, event: ItemStateUpdatedEvent) -> None:
         """Callback which is triggered if the current changed.
 
         Args:
             event: original trigger event
         """
         if self.state != "Auto_PowerHumidity" and self._current_greater_threshold(event.value):
-            self._humidity_on()
+            self.trigger("_humidity_on")
         elif self.state == "Auto_PowerHumidity" and not self._current_greater_threshold(event.value):
-            self._humidity_off()
+            self.trigger("_humidity_off")
         elif self.state == "Auto_PowerAfterRun" and not self._current_greater_threshold(event.value):
-            self._end_after_run()
+            self.trigger("_end_after_run")

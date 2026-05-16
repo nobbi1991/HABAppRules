@@ -40,7 +40,8 @@ def create_chart(labels: list[str], values: list[float], chart_path: pathlib.Pat
         chart_path: target path for the chart
     """
     _, ax = plt.subplots()
-    _, texts, _ = ax.pie(values, labels=labels, autopct=_auto_percent_format(values), pctdistance=0.7, textprops={"fontsize": 10})
+    pie_result = ax.pie(values, labels=labels, autopct=_auto_percent_format(values), pctdistance=0.7, textprops={"fontsize": 10})
+    texts = pie_result[1]
     for text in texts:
         text.set_backgroundcolor("white")
 

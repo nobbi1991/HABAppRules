@@ -10,12 +10,12 @@ import HABApp
 import jinja2
 import multi_notifier.connectors.connector_mail
 
-import habapp_rules
-import habapp_rules.core.exceptions
-import habapp_rules.core.logger
-import habapp_rules.energy.config.monthly_report
-import habapp_rules.energy.donut_chart
-import habapp_rules.energy.helper
+from habapp_rules import __version__
+from habapp_rules.core.exceptions import HabAppRulesConfigurationError
+from habapp_rules.core.logger import InstanceLogger
+from habapp_rules.energy.config.monthly_report import MonthlyReportConfig
+from habapp_rules.energy.donut_chart import create_chart
+from habapp_rules.energy.helper import get_historic_value
 
 LOGGER = logging.getLogger(__name__)
 
@@ -40,14 +40,14 @@ class MonthlyReport(HABApp.Rule):
     """Rule for sending the monthly energy consumption.
 
     # Config
-    config = habapp_rules.energy.config.monthly_report.MonthlyReportConfig(
-            items=habapp_rules.energy.config.monthly_report.MonthlyReportItems(
+    config = MonthlyReportConfig(
+            items=MonthlyReportItems(
                     energy_sum="Total Energy"
             ),
-            parameter=habapp_rules.energy.config.monthly_report.MonthlyReportParameter(
+            parameter=MonthlyReportParameter(
                     known_energy_shares=[
-                            habapp_rules.energy.config.monthly_report.EnergyShare("Dishwasher_Energy", "Dishwasher"),
-                            habapp_rules.energy.config.monthly_report.EnergyShare("Light", "Light")
+                            EnergyShare("Dishwasher_Energy", "Dishwasher"),
+                            EnergyShare("Light", "Light")
                     ],
                     config_mail=multi_notifier.connectors.connector_mail.MailConfig(
                             user="sender@test.de",
@@ -60,23 +60,21 @@ class MonthlyReport(HABApp.Rule):
     )
 
     # Rule init
-    habapp_rules.energy.monthly_report.MonthlyReport("Total_Energy", known_energy_share, "Group_RRD4J", config_mail, "test@test.de")
+    MonthlyReport("Total_Energy", known_energy_share, "Group_RRD4J", config_mail, "test@test.de")
     """
 
-    def __init__(self, config: habapp_rules.energy.config.monthly_report.MonthlyReportConfig) -> None:
+    def __init__(self, config: MonthlyReportConfig) -> None:
         """Initialize the rule.
 
         Args:
             config: config for the monthly energy report rule
 
         Raises:
-            habapp_rules.core.exceptions.HabAppRulesConfigurationError: if config is not valid
+            HabAppRulesConfigurationError: if config is not valid
         """
         self._config = config
         HABApp.Rule.__init__(self)
-        self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, config.items.energy_sum.name)
-        self._mail = multi_notifier.connectors.connector_mail.Mail(config.parameter.config_mail)
-
+        self._instance_logger = InstanceLogger(LOGGER, config.items.energy_sum.name)
         self._mail = multi_notifier.connectors.connector_mail.Mail(config.parameter.config_mail)
 
         if config.parameter.persistence_group_name is not None:
@@ -85,7 +83,7 @@ class MonthlyReport(HABApp.Rule):
             not_in_persistence_group = [item.name for item in items_to_check if config.parameter.persistence_group_name not in item.groups]
             if not_in_persistence_group:
                 msg = f"The following OpenHAB items are not in the persistence group '{config.parameter.persistence_group_name}': {not_in_persistence_group}"
-                raise habapp_rules.core.exceptions.HabAppRulesConfigurationError(msg)
+                raise HabAppRulesConfigurationError(msg)
 
         self.run.at(self.run.trigger.time("00:00:00").only_on(self.run.filter.days(1)), self._cb_send_energy)
 
@@ -139,8 +137,7 @@ class MonthlyReport(HABApp.Rule):
             month=_get_previous_month_name(),
             energy_now=f"{self._config.items.energy_sum.value:.1f}",
             energy_last_month=f"{energy_sum_month:.1f}",
-            habapp_version=habapp_rules.__version__,
-            chart="{{ chart }}",  # this is needed to not replace the chart from the mail-template
+            habapp_version=__version__,
         )
 
     def _cb_send_energy(self) -> None:
@@ -149,10 +146,17 @@ class MonthlyReport(HABApp.Rule):
         # get values
         now = datetime.datetime.now()
         last_month = now - dateutil.relativedelta.relativedelta(months=1)
+        if not (energy_last_month := get_historic_value(self._config.items.energy_sum, last_month)):
+            LOGGER.error(f"Could not get historic value 'energy_sum' for last month ({last_month}).")
+            return
 
-        energy_sum_month = self._config.items.energy_sum.value - habapp_rules.energy.helper.get_historic_value(self._config.items.energy_sum, last_month)
+        energy_sum_month = self._config.items.energy_sum.value - energy_last_month
         for share in self._config.parameter.known_energy_shares:
-            share.monthly_power = share.get_energy_since(last_month)
+            monthly_power = share.get_energy_since(last_month)
+            if monthly_power > energy_sum_month:
+                self._instance_logger.warning(f"Power of {share.chart_name} is greater than the energy sum. {monthly_power} > {energy_sum_month} -> set it to 0")
+                monthly_power = 0
+            share.monthly_power = monthly_power
 
         # calculate unknown energy share
         energy_unknown = energy_sum_month - sum(share.monthly_power for share in self._config.parameter.known_energy_shares)
@@ -165,12 +169,12 @@ class MonthlyReport(HABApp.Rule):
             labels = [share.chart_name for share in shares_for_chart] + ["Rest"]
             values = [share.monthly_power for share in shares_for_chart] + [energy_unknown]
             chart_path = pathlib.Path(temp_dir_name) / "chart.png"
-            habapp_rules.energy.donut_chart.create_chart(labels, values, chart_path)
+            create_chart(labels, values, chart_path)
 
             # get html
             html = self._create_html(energy_sum_month)
 
             # send mail
-            self._mail.send_message(self._config.parameter.recipients, html, f"Stromverbrauch {_get_previous_month_name()}", images={"chart": str(chart_path)})
+            self._mail.send_message(self._config.parameter.recipients, html, f"Stromverbrauch {_get_previous_month_name()}", images={"chart": chart_path})
 
         self._instance_logger.info(f"Successfully sent energy consumption mail to {self._config.parameter.recipients}.")

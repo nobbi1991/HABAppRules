@@ -2,12 +2,13 @@
 
 import datetime
 
-import HABApp
 import multi_notifier.connectors.connector_mail
 import pydantic
+from HABApp.core.errors import ItemNotFoundException, WrongItemTypeError
+from HABApp.openhab.items import NumberItem, OpenhabItem
 
-import habapp_rules.core.pydantic_base
-import habapp_rules.energy.helper
+from habapp_rules.core.pydantic_base import BaseModel, ConfigBase, ItemBase, ParameterBase
+from habapp_rules.energy.helper import get_historic_value
 
 
 def _calc_difference(start_value: float, end_value: float) -> float:
@@ -23,16 +24,16 @@ def _calc_difference(start_value: float, end_value: float) -> float:
     return max(0.0, start_value - end_value)
 
 
-class EnergyShare(pydantic.BaseModel):
+class EnergyShare(BaseModel):
     """Dataclass for defining energy share objects."""
 
     model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
 
-    energy_item: HABApp.openhab.items.NumberItem | list[HABApp.openhab.items.NumberItem]
+    energy_item: NumberItem | list[NumberItem]
     chart_name: str
     monthly_power: float = 0.0
 
-    def __init__(self, energy_item: str | HABApp.openhab.items.NumberItem | list[HABApp.openhab.items.NumberItem] | list[str], chart_name: str, monthly_power: float = 0.0) -> None:
+    def __init__(self, energy_item: str | NumberItem | list[NumberItem] | list[str], chart_name: str, monthly_power: float = 0.0) -> None:
         """Init energy share object without keywords.
 
         Args:
@@ -43,19 +44,19 @@ class EnergyShare(pydantic.BaseModel):
         super().__init__(energy_item=energy_item, chart_name=chart_name, monthly_power=monthly_power)
 
     @staticmethod
-    def _get_number_item_by_name(name: str) -> HABApp.openhab.items.NumberItem:
+    def _get_number_item_by_name(name: str) -> NumberItem:
         try:
-            return HABApp.openhab.items.NumberItem.get_item(name)
-        except HABApp.core.errors.WrongItemTypeError as exc:
-            msg = f"Item must be of type NumberItem. Given: {type(HABApp.openhab.items.OpenhabItem.get_item(name))}"
+            return NumberItem.get_item(name)
+        except WrongItemTypeError as exc:
+            msg = f"Item must be of type NumberItem. Given: {type(OpenhabItem.get_item(name))}"
             raise ValueError(msg) from exc
-        except HABApp.core.errors.ItemNotFoundException as exc:
+        except ItemNotFoundException as exc:
             msg = f"Could not find any item for given name '{name}'"
             raise ValueError(msg) from exc
 
     @pydantic.field_validator("energy_item", mode="before")
     @classmethod
-    def check_oh_item(cls, data: str | HABApp.openhab.items.NumberItem) -> HABApp.openhab.items.NumberItem | list[HABApp.openhab.items.NumberItem]:
+    def check_oh_item(cls, data: str | NumberItem) -> NumberItem | list[NumberItem]:
         """Check if given item is an OpenHAB item or try to get it from OpenHAB.
 
         Args:
@@ -67,10 +68,10 @@ class EnergyShare(pydantic.BaseModel):
         Raises:
             ValueError: if item could not be found
         """
-        if isinstance(data, HABApp.openhab.items.NumberItem):
+        if isinstance(data, NumberItem):
             return data
         if isinstance(data, list):
-            if all(isinstance(itm, HABApp.openhab.items.NumberItem) for itm in data):
+            if all(isinstance(itm, NumberItem) for itm in data):
                 return data
             return [cls._get_number_item_by_name(itm) for itm in data]
         return cls._get_number_item_by_name(data)
@@ -85,11 +86,11 @@ class EnergyShare(pydantic.BaseModel):
             energy since start time
         """
         if isinstance(self.energy_item, list):
-            return sum(_calc_difference(itm.value, habapp_rules.energy.helper.get_historic_value(itm, start_time)) for itm in self.energy_item)
-        return _calc_difference(self.energy_item.value, habapp_rules.energy.helper.get_historic_value(self.energy_item, start_time))
+            return sum(_calc_difference(itm.value, get_historic_value(itm, start_time, 0)) for itm in self.energy_item)
+        return _calc_difference(self.energy_item.value, get_historic_value(self.energy_item, start_time, 0))
 
     @property
-    def get_items_as_list(self) -> list[HABApp.openhab.items.NumberItem]:
+    def get_items_as_list(self) -> list[NumberItem]:
         """Get energy item(s) as list.
 
         Returns:
@@ -100,23 +101,23 @@ class EnergyShare(pydantic.BaseModel):
         return [self.energy_item]
 
 
-class MonthlyReportItems(habapp_rules.core.pydantic_base.ItemBase):
+class MonthlyReportItems(ItemBase):
     """Items for monthly report."""
 
-    energy_sum: HABApp.openhab.items.NumberItem = pydantic.Field(..., description="item which holds the total energy consumption")
+    energy_sum: NumberItem = pydantic.Field(..., description="item which holds the total energy consumption")
 
 
-class MonthlyReportParameter(habapp_rules.core.pydantic_base.ParameterBase):
+class MonthlyReportParameter(ParameterBase):
     """Parameter for monthly report."""
 
-    known_energy_shares: list[EnergyShare] = pydantic.Field([], description="list of EnergyShare objects which hold the known energy shares. E.g. energy for lights or ventilation")
-    persistence_group_name: str | None = pydantic.Field(None, description="OpenHAB group name which holds all items which are persisted. If the group name is given it will be checked if all energy items are in the group")
+    known_energy_shares: list[EnergyShare] = pydantic.Field(default=[], description="list of EnergyShare objects which hold the known energy shares. E.g. energy for lights or ventilation")
+    persistence_group_name: str | None = pydantic.Field(default=None, description="OpenHAB group name which holds all items which are persisted. If the group name is given it will be checked if all energy items are in the group")
     config_mail: multi_notifier.connectors.connector_mail.MailConfig = pydantic.Field(..., description="config for sending mails")
     recipients: list[str] = pydantic.Field(..., description="list of recipients who get the mail")
     debug: bool = pydantic.Field(default=False, description="if debug mode is active")
 
 
-class MonthlyReportConfig(habapp_rules.core.pydantic_base.ConfigBase):
+class MonthlyReportConfig(ConfigBase):
     """Config for monthly report."""
 
     items: MonthlyReportItems = pydantic.Field(..., description="Items for monthly report")

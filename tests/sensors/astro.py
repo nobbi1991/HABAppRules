@@ -3,46 +3,50 @@
 import collections
 import unittest.mock
 
-import HABApp.rule.rule
+from HABApp.openhab.items import NumberItem, SwitchItem
 
-import habapp_rules.sensors.astro
-import habapp_rules.sensors.config.astro
-import tests.helper.oh_item
-import tests.helper.test_case_base
+from habapp_rules.sensors.astro import SetDay, SetNight
+from habapp_rules.sensors.config.astro import SetDayConfig, SetDayItems, SetDayParameter, SetNightConfig, SetNightItems, SetNightParameter
+from tests.helper.oh_item import (
+    add_mock_item,
+    assert_item_value,
+    item_state_change_event,
+)
+from tests.helper.test_case_base import TestCaseBase
 
 
-class TestSetDay(tests.helper.test_case_base.TestCaseBase):
+class TestSetDay(TestCaseBase):
     """Tests for TestSetDay."""
 
     def setUp(self) -> None:
         """Setup test case."""
-        tests.helper.test_case_base.TestCaseBase.setUp(self)
+        TestCaseBase.setUp(self)
 
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Elevation", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Day", None)
+        add_mock_item(NumberItem, "Unittest_Elevation", None)
+        add_mock_item(SwitchItem, "Unittest_Day", None)
 
     def test_init(self) -> None:
         """Test init without elevation."""
         # default threshold
-        config = habapp_rules.sensors.config.astro.SetDayConfig(
-            items=habapp_rules.sensors.config.astro.SetDayItems(
+        config = SetDayConfig(
+            items=SetDayItems(
                 day="Unittest_Day",
                 elevation="Unittest_Elevation",
             )
         )
 
         with unittest.mock.patch("HABApp.rule.scheduler.job_builder.HABAppJobBuilder.soon") as run_soon_mock:
-            rule = habapp_rules.sensors.astro.SetDay(config)
+            rule = SetDay(config)
 
-        run_soon_mock.assert_called_once_with(rule._set_night)
+        run_soon_mock.assert_called_once_with(rule._set_night, None)
         self.assertEqual(0, rule._elevation_threshold)
 
         # custom threshold
-        config.parameter = habapp_rules.sensors.config.astro.SetDayParameter(elevation_threshold=-2)
+        config.parameter = SetDayParameter(elevation_threshold=-2)
         with unittest.mock.patch("HABApp.rule.scheduler.job_builder.HABAppJobBuilder.soon") as run_soon_mock:
-            rule = habapp_rules.sensors.astro.SetDay(config)
+            rule = SetDay(config)
 
-        run_soon_mock.assert_called_once_with(rule._set_night)
+        run_soon_mock.assert_called_once_with(rule._set_night, None)
         self.assertEqual(-2, rule._elevation_threshold)
 
     def test_init_with_elevation(self) -> None:
@@ -60,53 +64,53 @@ class TestSetDay(tests.helper.test_case_base.TestCaseBase):
             TestCase(10, "ON"),
         ]
 
-        config = habapp_rules.sensors.config.astro.SetDayConfig(
-            items=habapp_rules.sensors.config.astro.SetDayItems(
+        config = SetDayConfig(
+            items=SetDayItems(
                 day="Unittest_Day",
                 elevation="Unittest_Elevation",
             ),
-            parameter=habapp_rules.sensors.config.astro.SetDayParameter(elevation_threshold=1),
+            parameter=SetDayParameter(elevation_threshold=1),
         )
 
-        habapp_rules.sensors.astro.SetDay(config)
+        SetDay(config)
 
         for test_case in test_cases:
-            tests.helper.oh_item.item_state_change_event("Unittest_Elevation", test_case.elevation_value)
-            tests.helper.oh_item.assert_value("Unittest_Day", test_case.night_state)
+            item_state_change_event("Unittest_Elevation", test_case.elevation_value)
+            assert_item_value("Unittest_Day", test_case.night_state)
 
 
-class TestSetNight(tests.helper.test_case_base.TestCaseBase):
+class TestSetNight(TestCaseBase):
     """Tests for TestSetNight."""
 
     def setUp(self) -> None:
         """Setup test case."""
-        tests.helper.test_case_base.TestCaseBase.setUp(self)
+        TestCaseBase.setUp(self)
 
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.NumberItem, "Unittest_Elevation", None)
-        tests.helper.oh_item.add_mock_item(HABApp.openhab.items.SwitchItem, "Unittest_Night", None)
+        add_mock_item(NumberItem, "Unittest_Elevation", None)
+        add_mock_item(SwitchItem, "Unittest_Night", None)
 
     def test_init(self) -> None:
         """Test init without elevation."""
         # default threshold
-        config = habapp_rules.sensors.config.astro.SetNightConfig(
-            items=habapp_rules.sensors.config.astro.SetNightItems(
+        config = SetNightConfig(
+            items=SetNightItems(
                 night="Unittest_Night",
                 elevation="Unittest_Elevation",
             )
         )
 
         with unittest.mock.patch("HABApp.rule.scheduler.job_builder.HABAppJobBuilder.soon") as run_soon_mock:
-            rule = habapp_rules.sensors.astro.SetNight(config)
+            rule = SetNight(config)
 
-        run_soon_mock.assert_called_once_with(rule._set_night)
+        run_soon_mock.assert_called_once_with(rule._set_night, None)
         self.assertEqual(-8, rule._elevation_threshold)
 
         # custom threshold
-        config.parameter = habapp_rules.sensors.config.astro.SetNightParameter(elevation_threshold=-10)
+        config.parameter = SetNightParameter(elevation_threshold=-10)
         with unittest.mock.patch("HABApp.rule.scheduler.job_builder.HABAppJobBuilder.soon") as run_soon_mock:
-            rule = habapp_rules.sensors.astro.SetNight(config)
+            rule = SetNight(config)
 
-        run_soon_mock.assert_called_once_with(rule._set_night)
+        run_soon_mock.assert_called_once_with(rule._set_night, None)
         self.assertEqual(-10, rule._elevation_threshold)
 
     def test_init_with_elevation(self) -> None:
@@ -124,16 +128,16 @@ class TestSetNight(tests.helper.test_case_base.TestCaseBase):
             TestCase(10, "OFF"),
         ]
 
-        config = habapp_rules.sensors.config.astro.SetNightConfig(
-            items=habapp_rules.sensors.config.astro.SetNightItems(
+        config = SetNightConfig(
+            items=SetNightItems(
                 night="Unittest_Night",
                 elevation="Unittest_Elevation",
             ),
-            parameter=habapp_rules.sensors.config.astro.SetNightParameter(elevation_threshold=-8),
+            parameter=SetNightParameter(elevation_threshold=-8),
         )
 
-        habapp_rules.sensors.astro.SetNight(config)
+        SetNight(config)
 
         for test_case in test_cases:
-            tests.helper.oh_item.item_state_change_event("Unittest_Elevation", test_case.elevation_value)
-            tests.helper.oh_item.assert_value("Unittest_Night", test_case.night_state)
+            item_state_change_event("Unittest_Elevation", test_case.elevation_value)
+            assert_item_value("Unittest_Night", test_case.night_state)

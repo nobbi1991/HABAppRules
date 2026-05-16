@@ -1,8 +1,9 @@
 """Watchdog rules."""
 
 import HABApp
+from HABApp.openhab.events import ItemStateUpdatedEvent, ItemStateUpdatedEventFilter
 
-import habapp_rules.core.helper
+from habapp_rules.core.helper import send_if_different
 from habapp_rules.system.config.item_watchdog import WatchdogConfig
 
 
@@ -14,14 +15,14 @@ class ItemWatchdog(HABApp.Rule):
     Switch    Warning           "Warning, item was not updated in time"
 
     # Config:
-    config = habapp_rules.system.config.WatchdogConfig(
-            items=habapp_rules.system.config.WatchdogItems(
+    config = WatchdogConfig(
+            items=WatchdogItems(
                     observed="Item_To_Observe",
                     warning="Warning")
     )
 
     # Rule init:
-    habapp_rules.system.watchdog.Watchdog(config)
+    Watchdog(config)
     """
 
     def __init__(self, config: WatchdogConfig) -> None:
@@ -33,15 +34,11 @@ class ItemWatchdog(HABApp.Rule):
         HABApp.Rule.__init__(self)
         self._config = config
 
-        self._countdown = self.run.countdown(self._config.parameter.timeout, habapp_rules.core.helper.send_if_different, item=self._config.items.warning, value="ON")
+        self._countdown = self.run.countdown(self._config.parameter.timeout, send_if_different, item=self._config.items.warning, value="ON")
         self._countdown.reset()
-        self._config.items.observed.listen_event(self._cb_observed_state_updated, HABApp.openhab.events.ItemStateUpdatedEventFilter())
+        self._config.items.observed.listen_event(self._cb_observed_state_updated, ItemStateUpdatedEventFilter())
 
-    def _cb_observed_state_updated(self, event: HABApp.openhab.events.ItemStateUpdatedEvent) -> None:  # noqa: ARG002
-        """Callback which is called if the observed item was updated.
-
-        Args:
-            event: event which triggered this callback
-        """
-        habapp_rules.core.helper.send_if_different(self._config.items.warning, "OFF")
+    def _cb_observed_state_updated(self, _: ItemStateUpdatedEvent) -> None:
+        """Callback which is called if the observed item was updated."""
+        send_if_different(self._config.items.warning, "OFF")
         self._countdown.reset()

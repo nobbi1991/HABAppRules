@@ -5,19 +5,21 @@ import datetime
 import logging
 import typing
 
-import HABApp
+from HABApp.openhab.events import ItemCommandEvent, ItemStateChangedEvent, ItemStateUpdatedEvent
+from HABApp.openhab.events.event_filters import ItemStateChangedEventFilter
 
-import habapp_rules.actors.config.light_hcl
-import habapp_rules.actors.state_observer
-import habapp_rules.core.logger
-import habapp_rules.core.state_machine_rule
-import habapp_rules.core.type_of_day
-import habapp_rules.system
+from habapp_rules.actors.config.light_hcl import HclElevationConfig, HclTimeConfig
+from habapp_rules.actors.state_observer import StateObserverNumber
+from habapp_rules.core.state_machine_rule import HierarchicalStateMachineWithTimeout, StateMachineRule
+from habapp_rules.core.type_of_day import is_holiday, is_weekend
+from habapp_rules.system import SleepState
 
 LOGGER = logging.getLogger(__name__)
 
+CONFIG_TYPE = typing.TypeVar("CONFIG_TYPE", bound=HclElevationConfig | HclTimeConfig)
 
-class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
+
+class _HclBase(StateMachineRule, typing.Generic[CONFIG_TYPE]):
     """Base class for HCL rules."""
 
     states: typing.ClassVar = [
@@ -43,7 +45,7 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
         {"trigger": "focus_end", "source": "Auto_Focus", "dest": "Auto_HCL", "unless": "_sleep_active"},
     ]
 
-    def __init__(self, config: habapp_rules.actors.config.light_hcl.HclElevationConfig | habapp_rules.actors.config.light_hcl.HclTimeConfig) -> None:
+    def __init__(self, config: CONFIG_TYPE) -> None:
         """Init base class.
 
         Args:
@@ -51,31 +53,31 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
         """
         self._config = config
 
-        habapp_rules.core.state_machine_rule.StateMachineRule.__init__(self, self._config.items.state)
-        self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, self._config.items.color.name)
+        StateMachineRule.__init__(self, self._config.items.state, self._config.items.color.name)
 
-        self._state_observer = habapp_rules.actors.state_observer.StateObserverNumber(self._config.items.color.name, self._cb_hand, value_tolerance=config.parameter.color_tolerance)
+        self._state_observer = StateObserverNumber(self._config.items.color.name, self._cb_hand, value_tolerance=config.parameter.color_tolerance)
 
         # init state machine
-        self._previous_state = None
-        self.state_machine = habapp_rules.core.state_machine_rule.HierarchicalStateMachineWithTimeout(model=self, states=self.states, transitions=self.trans, ignore_invalid_triggers=True, after_state_change="_update_openhab_state")
-        self._set_initial_state()
+        self._previous_state: str | None = None
+        self.state_machine = HierarchicalStateMachineWithTimeout(model=self, states=self.states, transitions=self.trans, ignore_invalid_triggers=True, after_state_change="_update_openhab_state", initial=self._get_initial_state())
 
         self._set_timeouts()
 
         # set callbacks
-        self._config.items.manual.listen_event(self._cb_manual, HABApp.openhab.events.ItemStateChangedEventFilter())
+        self._config.items.manual.listen_event(self._cb_manual, ItemStateChangedEventFilter())
         if self._config.items.sleep_state is not None:
-            self._config.items.sleep_state.listen_event(self._cb_sleep, HABApp.openhab.events.ItemStateChangedEventFilter())
+            self._config.items.sleep_state.listen_event(self._cb_sleep, ItemStateChangedEventFilter())
         if self._config.items.focus is not None:
-            self._config.items.focus.listen_event(self._cb_focus, HABApp.openhab.events.ItemStateChangedEventFilter())
+            self._config.items.focus.listen_event(self._cb_focus, ItemStateChangedEventFilter())
         if self._config.items.switch_on is not None:
-            self._config.items.switch_on.listen_event(self._cb_switch_on, HABApp.openhab.events.ItemStateChangedEventFilter())
+            self._config.items.switch_on.listen_event(self._cb_switch_on, ItemStateChangedEventFilter())
+
+        self._post_init()
 
     def _set_timeouts(self) -> None:
         """Set timeouts."""
-        self.state_machine.get_state("Auto_Sleep_Post").timeout = self._config.parameter.post_sleep_timeout
-        self.state_machine.get_state("Hand").timeout = self._config.parameter.hand_timeout
+        self._set_state_timeout("Auto_Sleep_Post", self._config.parameter.post_sleep_timeout)
+        self._set_state_timeout("Hand", self._config.parameter.hand_timeout)
 
     def _get_initial_state(self, default_value: str = "") -> str:  # noqa: ARG002
         """Get initial state of state machine.
@@ -88,7 +90,7 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
         """
         if self._config.items.manual.is_on():
             return "Manual"
-        if self._config.items.sleep_state is not None and self._config.items.sleep_state.value in {habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value}:
+        if self._config.items.sleep_state is not None and self._config.items.sleep_state.value in {SleepState.PRE_SLEEPING.value, SleepState.SLEEPING.value}:
             return "Auto_Sleep"
         if self._config.items.focus is not None and self._config.items.focus.is_on():
             return "Auto_Focus"
@@ -108,7 +110,7 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
     def _set_light_color(self) -> None:
         """Set light color."""
-        target_color = None
+        target_color: float | None = None
 
         if self.state == "Auto_HCL":
             target_color = self._get_hcl_color()
@@ -122,10 +124,10 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
 
     def on_enter_Auto_Init(self) -> None:  # noqa: N802
         """Is called on entering of init state."""
-        self._set_initial_state()
+        self._set_state(self._get_initial_state())
 
     @abc.abstractmethod
-    def _get_hcl_color(self) -> int | None:
+    def _get_hcl_color(self) -> int:
         """Get HCL color.
 
         Returns:
@@ -157,53 +159,49 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
         """
         if not self._config.items.sleep_state:
             return False
-        return self._config.items.sleep_state.value in {habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.SLEEPING.value}
+        return self._config.items.sleep_state.value in {SleepState.PRE_SLEEPING.value, SleepState.SLEEPING.value}
 
-    def _cb_manual(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_manual(self, event: ItemStateChangedEvent) -> None:
         """Callback, which is triggered if the manual switch has a state change event.
 
         Args:
             event: trigger event
         """
         if event.value == "ON":
-            self.manual_on()
+            self.trigger("manual_on")
         else:
-            self.manual_off()
+            self.trigger("manual_off")
 
-    def _cb_hand(self, event: HABApp.openhab.events.ItemStateUpdatedEvent | HABApp.openhab.events.ItemCommandEvent) -> None:  # noqa: ARG002
-        """Callback, which is triggered by the state observer if a manual change was detected.
-
-        Args:
-            event: original trigger event
-        """
+    def _cb_hand(self, _: ItemStateChangedEvent | ItemCommandEvent | ItemStateUpdatedEvent) -> None:
+        """Callback, which is triggered by the state observer if a manual change was detected."""
         self._instance_logger.debug("Hand detected")
-        self.hand_on()
+        self.trigger("hand_on")
 
-    def _cb_focus(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_focus(self, event: ItemStateChangedEvent) -> None:
         """Callback, which is triggered if the focus switch has a state change event.
 
         Args:
             event: trigger event
         """
         if event.value == "ON":
-            self.focus_start()
+            self.trigger("focus_start")
         else:
-            self.focus_end()
+            self.trigger("focus_end")
 
-    def _cb_sleep(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_sleep(self, event: ItemStateChangedEvent) -> None:
         """Callback, which is triggered if the sleep state has a state change event.
 
         Args:
             event: trigger event
         """
-        if event.value == habapp_rules.system.SleepState.PRE_SLEEPING.value:
-            self.sleep_start()
+        if event.value == SleepState.PRE_SLEEPING.value:
+            self.trigger("sleep_start")
             if self._config.items.focus is not None and self._config.items.focus.is_on():
                 self._config.items.focus.oh_send_command("OFF")
-        elif event.value == habapp_rules.system.SleepState.AWAKE.value:
-            self.sleep_end()
+        elif event.value == SleepState.AWAKE.value:
+            self.trigger("sleep_end")
 
-    def _cb_switch_on(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_switch_on(self, event: ItemStateChangedEvent) -> None:
         """Callback, which is triggered if the switch_on_item has a state change event.
 
         Args:
@@ -213,7 +211,7 @@ class _HclBase(habapp_rules.core.state_machine_rule.StateMachineRule):
             self._set_light_color()
 
 
-class HclElevation(_HclBase):
+class HclElevation(_HclBase[HclElevationConfig]):
     """Sun elevation based HCL.
 
     # Items:
@@ -222,22 +220,22 @@ class HclElevation(_HclBase):
     Switch    HCL_Color_Elevation_manual    "HCL Color Elevation manual"
 
     # Config
-    config = habapp_rules.actors.config.light_hcl.HclElevationConfig(
-            items=habapp_rules.actors.config.light_hcl.HclElevationItems(
+    config = HclElevationConfig(
+            items=HclElevationItems(
                     elevation="Elevation",
                     color="HCL_Color_Elevation",
                     manual="HCL_Color_Elevation_manual",
             ),
-            parameter=habapp_rules.actors.config.light_hcl.HclElevationParameter(
+            parameter=HclElevationParameter(
                     color_map=[(0, 2000), (10, 4000), (30, 5000)]
             )
     )
 
     # Rule init:
-    habapp_rules.actors.light_hcl.HclElevation(config)
+    HclElevation(config)
     """
 
-    def __init__(self, config: habapp_rules.actors.config.light_hcl.HclElevationConfig) -> None:
+    def __init__(self, config: HclElevationConfig) -> None:
         """Init sun elevation based HCL rule.
 
         Args:
@@ -246,10 +244,10 @@ class HclElevation(_HclBase):
         _HclBase.__init__(self, config)
         self._config = config
 
-        self._config.items.elevation.listen_event(self._cb_elevation, HABApp.openhab.events.ItemStateChangedEventFilter())
+        self._config.items.elevation.listen_event(self._cb_elevation, ItemStateChangedEventFilter())
         self._cb_elevation(None)
 
-    def _get_hcl_color(self) -> int | None:
+    def _get_hcl_color(self) -> int:
         """Get HCL color depending on elevation.
 
         Returns:
@@ -258,9 +256,10 @@ class HclElevation(_HclBase):
         elevation = self._config.items.elevation.value
 
         if elevation is None:
-            return None
+            self._instance_logger.warning("Elevation has no value, set it to 0")
+            elevation = 0
 
-        return_value = 0
+        return_value = 0.0
         if elevation <= self._config.parameter.color_map[0][0]:
             return_value = self._config.parameter.color_map[0][1]
 
@@ -275,13 +274,13 @@ class HclElevation(_HclBase):
 
         return round(return_value)
 
-    def _cb_elevation(self, _: HABApp.openhab.events.ItemStateChangedEvent | None) -> None:
+    def _cb_elevation(self, _: ItemStateChangedEvent | None) -> None:
         """Callback which is called if elevation changed."""
         if self.state == "Auto_HCL" and self._config.items.elevation.value is not None:
             self._state_observer.send_command(self._get_hcl_color())
 
 
-class HclTime(_HclBase):
+class HclTime(_HclBase[HclTimeConfig]):
     """Time based HCL.
 
     # Items:
@@ -289,21 +288,21 @@ class HclTime(_HclBase):
     Switch    HCL_Color_Time_manual    "HCL Color Time manual".
 
     # Config
-    config = habapp_rules.actors.config.light_hcl.HclTimeConfig(
-            items=habapp_rules.actors.config.light_hcl.HclTimeItems(
+    config = HclTimeConfig(
+            items=HclTimeItems(
                     color="HCL_Color_Time",
                     manual="HCL_Color_Time_manual",
             ),
-            parameter=habapp_rules.actors.config.light_hcl.HclTimeParameter(
+            parameter=HclTimeParameter(
                     [(6, 2000), (12, 4000), (20, 3000)],
             )
     )
 
     # Rule init:
-    habapp_rules.actors.light_hcl.HclTime(config)
+    HclTime(config)
     """
 
-    def __init__(self, config: habapp_rules.actors.config.light_hcl.HclTimeConfig) -> None:
+    def __init__(self, config: HclTimeConfig) -> None:
         """Init time based HCL rule.
 
         Args:
@@ -324,11 +323,11 @@ class HclTime(_HclBase):
         if not self._config.parameter.shift_weekend_holiday:
             return False
 
-        if current_time.hour > 12 and (habapp_rules.core.type_of_day.is_holiday(1) or habapp_rules.core.type_of_day.is_weekend(1)):  # noqa: PLR2004
+        if current_time.hour > 12 and (is_holiday(1) or is_weekend(1)):  # noqa: PLR2004
             return True
-        return bool(current_time.hour <= 4 and (habapp_rules.core.type_of_day.is_holiday() or habapp_rules.core.type_of_day.is_weekend()))  # noqa: PLR2004
+        return bool(current_time.hour <= 4 and (is_holiday() or is_weekend()))  # noqa: PLR2004
 
-    def _get_hcl_color(self) -> int | None:
+    def _get_hcl_color(self) -> int:
         """Get HCL color depending on time.
 
         Returns:

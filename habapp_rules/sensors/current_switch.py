@@ -3,34 +3,36 @@
 from typing import TYPE_CHECKING
 
 import HABApp
+from HABApp.openhab.events import ItemStateChangedEvent
+from HABApp.openhab.events.event_filters import ItemStateChangedEventFilter
 
-import habapp_rules.core.helper
-import habapp_rules.sensors.config.current_switch
+from habapp_rules.core.helper import send_if_different
+from habapp_rules.sensors.config.current_switch import CurrentSwitchConfig
 
 if TYPE_CHECKING:
-    from eascheduler.jobs.job_countdown import CountdownJob  # pragma: no cover
+    from HABApp.rule.scheduler.job_ctrl import CountdownJobControl
 
 
 class CurrentSwitch(HABApp.Rule):
-    """Rules class to manage basic light states.
+    """Rules class which manages a switch based on electrical current values.
 
     # Items:
     Number    Current              "Current"
     Switch    Something_is_ON      "Something is ON"
 
     # Config:
-    config = habapp_rules.sensors.config.current_switch.CurrentSwitchConfig(
-            items = habapp_rules.actors.config.light.CurrentSwitchItems(
+    config = CurrentSwitchConfig(
+            items = CurrentSwitchItems(
                     current="Current",
                     switch="Something_is_ON"
             )
     )
 
     # Rule init:
-    habapp_rules.actors.power.CurrentSwitch(config)
+    CurrentSwitch(config)
     """
 
-    def __init__(self, config: habapp_rules.sensors.config.current_switch.CurrentSwitchConfig) -> None:
+    def __init__(self, config: CurrentSwitchConfig) -> None:
         """Init current switch rule.
 
         Args:
@@ -38,12 +40,14 @@ class CurrentSwitch(HABApp.Rule):
         """
         HABApp.Rule.__init__(self)
         self._config = config
-        self._extended_countdown: CountdownJob | None = (
-            self.run.countdown(self._config.parameter.extended_time, habapp_rules.core.helper.send_if_different, item=self._config.items.switch, value="OFF") if self._config.parameter.extended_time else None
-        )
+        self._extended_countdown: CountdownJobControl | None = self.run.countdown(self._config.parameter.extended_time, self._countdown_end) if self._config.parameter.extended_time else None
 
         self._check_current_and_set_switch(self._config.items.current.value)
-        self._config.items.current.listen_event(self._cb_current_changed, HABApp.openhab.events.ItemStateChangedEventFilter())
+        self._config.items.current.listen_event(self._cb_current_changed, ItemStateChangedEventFilter())
+
+    def _countdown_end(self) -> None:
+        """Callback which is called if the extended countdown ended."""
+        send_if_different(self._config.items.switch, "OFF")
 
     def _check_current_and_set_switch(self, current: float | None) -> None:
         """Check if current is above the threshold and set switch.
@@ -56,10 +60,10 @@ class CurrentSwitch(HABApp.Rule):
 
         current_above_threshold = current > self._config.parameter.threshold
 
-        if self._config.parameter.extended_time:
+        if self._config.parameter.extended_time and self._extended_countdown is not None:
             if current_above_threshold:
                 self._extended_countdown.stop()
-                habapp_rules.core.helper.send_if_different(self._config.items.switch, "ON")
+                send_if_different(self._config.items.switch, "ON")
 
             elif not current_above_threshold and self._config.items.switch.is_on():
                 # start or reset the countdown
@@ -67,9 +71,9 @@ class CurrentSwitch(HABApp.Rule):
 
         else:
             # extended time is not active
-            habapp_rules.core.helper.send_if_different(self._config.items.switch, "ON" if current_above_threshold else "OFF")
+            send_if_different(self._config.items.switch, "ON" if current_above_threshold else "OFF")
 
-    def _cb_current_changed(self, event: HABApp.openhab.events.ItemStateChangedEvent) -> None:
+    def _cb_current_changed(self, event: ItemStateChangedEvent) -> None:
         """Callback, which is called if the current value changed.
 
         Args:

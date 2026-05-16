@@ -6,9 +6,9 @@ import statistics
 
 import HABApp
 
-import habapp_rules.common.hysteresis
-import habapp_rules.core.logger
-import habapp_rules.system.config.summer_winter
+from habapp_rules.common.hysteresis import HysteresisSwitch
+from habapp_rules.core.logger import InstanceLogger
+from habapp_rules.system.config.summer_winter import SummerWinterConfig
 
 LOGGER = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ class SummerWinterError(Exception):
 class SummerWinter(HABApp.Rule):
     """Rule check if it is summer or winter."""
 
-    def __init__(self, config: habapp_rules.system.config.summer_winter.SummerWinterConfig) -> None:
+    def __init__(self, config: SummerWinterConfig) -> None:
         """Init rule to update summer/winter item.
 
         Args:
@@ -28,10 +28,10 @@ class SummerWinter(HABApp.Rule):
         """
         self._config = config
         HABApp.Rule.__init__(self)
-        self._instance_logger = habapp_rules.core.logger.InstanceLogger(LOGGER, config.items.summer.name)
+        self._instance_logger = InstanceLogger(LOGGER, config.items.summer.name)
 
         # set class variables
-        self._hysteresis_switch = habapp_rules.common.hysteresis.HysteresisSwitch(config.parameter.temperature_threshold, 0.5)
+        self._hysteresis_switch = HysteresisSwitch(config.parameter.temperature_threshold, 0.5)
         self.__now = datetime.datetime.now()
 
         # run at init and every day at 23:00

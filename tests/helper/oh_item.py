@@ -7,11 +7,12 @@ import datetime
 from typing import TYPE_CHECKING
 
 import HABApp.core
-import HABApp.openhab.events
+from HABApp.openhab.events import ItemCommandEvent, ItemStateChangedEvent, ItemStateUpdatedEvent, ThingStatusInfoChangedEvent
 
 if TYPE_CHECKING:
     from HABApp.openhab.definitions import ThingStatusEnum
     from HABApp.openhab.items import OpenhabItem
+
 
 NO_VALUE = object()
 _MOCKED_ITEM_NAMES = []
@@ -61,7 +62,7 @@ def remove_all_mocked_items() -> None:
     _MOCKED_ITEM_NAMES.clear()
 
 
-def set_state(item_name: str, value: StateTypes | None) -> None:
+def set_item_state(item_name: str, value: StateTypes | None) -> None:
     """Helper to set state of item.
 
     Args:
@@ -97,10 +98,10 @@ def send_command(item_name: str, new_value: StateTypes, old_value: StateTypes = 
     """
     old_value = HABApp.openhab.items.OpenhabItem.get_item(item_name).value if old_value is NO_VALUE else old_value
 
-    set_state(item_name, new_value)
+    set_item_state(item_name, new_value)
     if old_value is not NO_VALUE and old_value != new_value:
-        HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateChangedEvent(item_name, new_value, old_value))
-    HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateUpdatedEvent(item_name, new_value))
+        HABApp.core.EventBus.post_event(item_name, ItemStateChangedEvent(item_name, new_value, old_value))
+    HABApp.core.EventBus.post_event(item_name, ItemStateUpdatedEvent(item_name, new_value))
 
 
 def oh_send_command(item: OpenhabItem, new_value: StateTypes, old_value: StateTypes = NO_VALUE) -> None:
@@ -121,7 +122,7 @@ def oh_post_update(item: OpenhabItem, new_value: StateTypes) -> None:
         item: item
         new_value: new value
     """
-    set_state(item.name, new_value)
+    set_item_state(item.name, new_value)
 
 
 def item_command_event(item_name: str, value: StateTypes) -> None:
@@ -132,8 +133,8 @@ def item_command_event(item_name: str, value: StateTypes) -> None:
         value: value of the event
     """
     with contextlib.suppress(HABApp.core.errors.InvalidItemValueError):
-        set_state(item_name, value)
-    HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemCommandEvent(item_name, value))
+        set_item_state(item_name, value)
+    HABApp.core.EventBus.post_event(item_name, ItemCommandEvent(item_name, value))
 
 
 def item_state_event(item_name: str, value: StateTypes) -> None:
@@ -143,8 +144,8 @@ def item_state_event(item_name: str, value: StateTypes) -> None:
         item_name: name of item
         value: value of the event
     """
-    set_state(item_name, value)
-    HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateUpdatedEvent(item_name, value))
+    set_item_state(item_name, value)
+    HABApp.core.EventBus.post_event(item_name, ItemStateUpdatedEvent(item_name, value))
 
 
 def item_state_change_event(item_name: str, value: StateTypes, old_value: StateTypes = None) -> None:
@@ -156,8 +157,8 @@ def item_state_change_event(item_name: str, value: StateTypes, old_value: StateT
         old_value: previous value
     """
     prev_value = old_value or HABApp.openhab.items.OpenhabItem.get_item(item_name).value
-    set_state(item_name, value)
-    HABApp.core.EventBus.post_event(item_name, HABApp.openhab.events.ItemStateChangedEvent(item_name, value, prev_value))
+    set_item_state(item_name, value)
+    HABApp.core.EventBus.post_event(item_name, ItemStateChangedEvent(item_name, value, prev_value))
 
 
 def thing_status_info_changed_event(thing_name: str, status: ThingStatusEnum) -> None:
@@ -168,10 +169,10 @@ def thing_status_info_changed_event(thing_name: str, status: ThingStatusEnum) ->
         status: status
     """
     set_thing_state(thing_name, status)
-    HABApp.core.EventBus.post_event(thing_name, HABApp.openhab.events.ThingStatusInfoChangedEvent(thing_name, status))
+    HABApp.core.EventBus.post_event(thing_name, ThingStatusInfoChangedEvent(thing_name, status))
 
 
-def assert_value(item_name: str, value: StateTypes | None, message: str | None = None) -> None:
+def assert_item_value(item_name: str, value: StateTypes | None, message: str | None = None) -> None:
     """Helper to assert if item has correct state.
 
     Args:
