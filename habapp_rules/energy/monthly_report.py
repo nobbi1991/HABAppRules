@@ -1,6 +1,7 @@
 """Module for sending the monthly energy consumption."""
 
 import datetime
+import json
 import logging
 import pathlib
 import tempfile
@@ -14,7 +15,7 @@ from habapp_rules import __version__
 from habapp_rules.core.exceptions import HabAppRulesConfigurationError
 from habapp_rules.core.logger import InstanceLogger
 from habapp_rules.energy.config.monthly_report import MonthlyReportConfig
-from habapp_rules.energy.donut_chart import create_chart, create_history_chart
+from habapp_rules.energy.charts import create_pie_chart, create_history_chart
 from habapp_rules.energy.helper import get_historic_value
 
 LOGGER = logging.getLogger(__name__)
@@ -139,6 +140,31 @@ class MonthlyReport(HABApp.Rule):
             show_history=show_history,
         )
 
+    def _load_history_cache(self) -> dict[str, float]:
+        """Load cached monthly boundary values from the JSON file.
+
+        Returns:
+            dict mapping "YYYY-MM" keys to energy boundary values, or empty dict if unavailable
+        """
+        path = self._config.parameter.history_cache_path
+        if path is None or not path.exists():
+            return {}
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            self._instance_logger.warning("Could not read history cache, starting fresh.")
+            return {}
+
+    def _save_history_cache(self, cache: dict[str, float]) -> None:
+        """Write monthly boundary values to the JSON cache file.
+
+        Args:
+            cache: dict mapping "YYYY-MM" keys to energy boundary values
+        """
+        if (path := self._config.parameter.history_cache_path) is None:
+            return
+        path.write_text(json.dumps(cache, indent=2), encoding="utf-8")
+
     def _get_monthly_history(self, num_months: int) -> tuple[list[str], list[float]]:
         """Retrieve monthly consumption for the last num_months completed months.
 
@@ -151,10 +177,24 @@ class MonthlyReport(HABApp.Rule):
         now = datetime.datetime.now()
         first_of_this_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
+        cache = self._load_history_cache()
+        cache_updated = False
+
         boundaries: list[float] = []
         for i in range(num_months + 1):
             t = first_of_this_month - dateutil.relativedelta.relativedelta(months=i)
-            boundaries.append(get_historic_value(self._config.items.energy_sum, t))
+            cache_key = t.strftime("%Y-%m")
+            if cache_key in cache:
+                boundaries.append(cache[cache_key])
+            else:
+                value = get_historic_value(self._config.items.energy_sum, t)
+                boundaries.append(value)
+                if value:
+                    cache[cache_key] = value
+                    cache_updated = True
+
+        if cache_updated:
+            self._save_history_cache(cache)
 
         labels: list[str] = []
         values: list[float] = []
@@ -167,7 +207,7 @@ class MonthlyReport(HABApp.Rule):
 
     def _cb_send_energy(self) -> None:
         """Send the mail with the energy consumption of the current month so far."""
-        self._instance_logger.debug("Send energy consumption was triggered.")
+        self._instance_logger.debug("Send energy consumption was triggered.")  # todo check if it is working if triggered at 00:00. maybe the shares are set to 0??
         now = datetime.datetime.now()
         start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         if not (energy_start_of_month := get_historic_value(self._config.items.energy_sum, start_of_month)):
@@ -189,7 +229,7 @@ class MonthlyReport(HABApp.Rule):
             labels = [share.chart_name for share in shares_for_chart] + ["Rest"]
             values = [share.monthly_power for share in shares_for_chart] + [energy_unknown]
             chart_path = pathlib.Path(temp_dir_name) / "chart.png"
-            create_chart(labels, values, chart_path)
+            create_pie_chart(labels, values, chart_path)
 
             images: dict[str, pathlib.Path] = {"chart": chart_path}
             if self._config.parameter.history_months > 0:

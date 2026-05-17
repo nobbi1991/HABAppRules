@@ -2,6 +2,9 @@
 
 import collections
 import datetime
+import json
+import pathlib
+import tempfile
 import unittest
 import unittest.mock
 
@@ -192,3 +195,74 @@ class TestMonthlyReportHistory(TestCaseBase):
 
         self.assertAlmostEqual(0.0, values[0])  # oldest: boundaries[2]=800 truthy, max(0, 0-800)=0
         self.assertAlmostEqual(0.0, values[1])  # recent: boundaries[1]=0 → guard → 0.0
+
+
+class TestMonthlyReportHistoryCache(TestCaseBase):
+    """Test JSON caching in _get_monthly_history."""
+
+    def setUp(self) -> None:
+        """Setup test case."""
+        TestCaseBase.setUp(self)
+        add_mock_item(NumberItem, "Energy_Sum", None)
+        mail_config = MailConfig(user="u", password="p", smtp_host="h", smtp_port=587)  # noqa: S106
+        self._temp_dir = tempfile.TemporaryDirectory()
+        self._cache_path = pathlib.Path(self._temp_dir.name) / "cache.json"
+        self._rule = MonthlyReport(
+            MonthlyReportConfig(
+                items=MonthlyReportItems(energy_sum="Energy_Sum"),
+                parameter=MonthlyReportParameter(config_mail=mail_config, recipients=["r@r.de"], history_cache_path=self._cache_path),
+            )
+        )
+
+    def tearDown(self) -> None:
+        """Teardown test case."""
+        TestCaseBase.tearDown(self)
+        self._temp_dir.cleanup()
+
+    def test_load_history_cache_no_file(self) -> None:
+        """Missing cache file returns empty dict."""
+        self.assertEqual({}, self._rule._load_history_cache())
+
+    def test_load_history_cache_valid(self) -> None:
+        """Valid cache file is loaded correctly."""
+        self._cache_path.write_text('{"2025-01": 1000.0}', encoding="utf-8")
+        self.assertEqual({"2025-01": 1000.0}, self._rule._load_history_cache())
+
+    def test_load_history_cache_invalid_json(self) -> None:
+        """Corrupt cache file returns empty dict and logs a warning."""
+        self._cache_path.write_text("not json", encoding="utf-8")
+        with unittest.mock.patch.object(self._rule._instance_logger, "warning") as warn_mock:
+            result = self._rule._load_history_cache()
+        self.assertEqual({}, result)
+        warn_mock.assert_called_once()
+
+    def test_save_history_cache(self) -> None:
+        """Cache data is written to the JSON file."""
+        data = {"2025-01": 1000.0, "2025-02": 1100.0}
+        self._rule._save_history_cache(data)
+        self.assertEqual(data, json.loads(self._cache_path.read_text(encoding="utf-8")))
+
+    def test_get_monthly_history_cache_miss(self) -> None:
+        """Cache miss queries persistence and writes the values to file."""
+        with unittest.mock.patch("habapp_rules.energy.monthly_report.get_historic_value", side_effect=[1000.0, 900.0, 750.0]):
+            labels, values = self._rule._get_monthly_history(2)
+
+        self.assertEqual(2, len(labels))
+        cache = json.loads(self._cache_path.read_text(encoding="utf-8"))
+        self.assertEqual(3, len(cache))
+
+    def test_get_monthly_history_cache_hit(self) -> None:
+        """Fully cached month boundaries skip persistence and do not rewrite the file."""
+        with unittest.mock.patch("habapp_rules.energy.monthly_report.get_historic_value", side_effect=[1000.0, 900.0, 750.0]):
+            self._rule._get_monthly_history(2)
+
+        with (
+            unittest.mock.patch("habapp_rules.energy.monthly_report.get_historic_value") as get_mock,
+            unittest.mock.patch.object(self._rule, "_save_history_cache") as save_mock,
+        ):
+            labels, values = self._rule._get_monthly_history(2)
+
+        get_mock.assert_not_called()
+        save_mock.assert_not_called()
+        self.assertAlmostEqual(150.0, values[0])  # 900 - 750
+        self.assertAlmostEqual(100.0, values[1])  # 1000 - 900
