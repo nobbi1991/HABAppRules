@@ -16,7 +16,7 @@ class _ItemsBase(ItemBase):
     """Base class for items for sun sensor."""
 
     output: SwitchItem = pydantic.Field(..., description="output item")
-    threshold: NumberItem | None = pydantic.Field(None, description="threshold item")
+    threshold: NumberItem | None = pydantic.Field(default=None, description="threshold item")
 
 
 class BrightnessItems(_ItemsBase):
@@ -105,14 +105,14 @@ class BrightnessConfig(_ConfigBase):
     """Config model for sun sensor which uses brightness as input."""
 
     items: BrightnessItems = pydantic.Field(..., description="items for sun sensor which uses brightness as input")
-    parameter: BrightnessParameter = pydantic.Field(BrightnessParameter(), description="parameter for sun sensor which uses brightness as input")
+    parameter: BrightnessParameter = pydantic.Field(default=BrightnessParameter(), description="parameter for sun sensor which uses brightness as input")
 
 
 class TemperatureDifferenceConfig(_ConfigBase):
     """Config model for sun sensor which uses temperature items as input."""
 
     items: TemperatureDifferenceItems = pydantic.Field(..., description="items for sun sensor which uses temperature items as input")
-    parameter: TemperatureDifferenceParameter = pydantic.Field(TemperatureDifferenceParameter(), description="parameter for sun sensor which uses temperature items as input")
+    parameter: TemperatureDifferenceParameter = pydantic.Field(default=TemperatureDifferenceParameter(), description="parameter for sun sensor which uses temperature items as input")
 
 
 # SunPositionFilter ###############################
@@ -121,8 +121,8 @@ class SunPositionWindow(pydantic.BaseModel):
 
     azimuth_min: float = pydantic.Field(..., description="Starting value for azimuth", ge=0.0, le=360.0)
     azimuth_max: float = pydantic.Field(..., description="End value for azimuth", ge=0.0, le=360.0)
-    elevation_min: float = pydantic.Field(0.0, description="Starting value for elevation", ge=-90.0, le=90.0)
-    elevation_max: float = pydantic.Field(90.0, description="End value for elevation", ge=-90.0, le=90.0)
+    elevation_min: float = pydantic.Field(default=0.0, description="Starting value for elevation", ge=-90.0, le=90.0)
+    elevation_max: float = pydantic.Field(default=90.0, description="End value for elevation", ge=-90.0, le=90.0)
 
     def __init__(self, azimuth_min: float, azimuth_max: float, elevation_min: float = 0.0, elevation_max: float = 90.0) -> None:
         """Init of class for defining min / max values for azimuth and elevation.
@@ -191,11 +191,11 @@ class WinterFilterItems(ItemBase):
     sun: SwitchItem = pydantic.Field(..., description="sun is shining")
     output: SwitchItem = pydantic.Field(..., description="output item")
     heating_active: SwitchItem = pydantic.Field(..., description="heating is active")
-    presence_state: StringItem | None = pydantic.Field(None, description="presence state")
+    presence_state: StringItem | None = pydantic.Field(default=None, description="presence state")
 
 
 class WinterFilterConfig(ConfigBase):
     """Config model for WinterFilter."""
 
     items: WinterFilterItems = pydantic.Field(..., description="items for sun position filter")
-    parameter: None = pydantic.Field(None, description="parameter for sun position filter")
+    parameter: None = pydantic.Field(default=None, description="parameter for sun position filter")

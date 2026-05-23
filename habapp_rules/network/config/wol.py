@@ -15,7 +15,7 @@ class WolParameter(ParameterBase):
     """Parameter for WOL rule."""
 
     mac_address: MacAddress = pydantic.Field(..., description="MAC address of the device to wake up")
-    friendly_name: str | None = pydantic.Field(None, description="Name which is used for logging")
+    friendly_name: str | None = pydantic.Field(default=None, description="Name which is used for logging")
 
     @property
     def log_name(self) -> str:

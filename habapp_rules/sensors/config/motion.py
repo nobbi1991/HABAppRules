@@ -14,10 +14,10 @@ class MotionItems(ItemBase):
 
     motion_raw: SwitchItem = pydantic.Field(..., description="unfiltered motion item")
     motion_filtered: SwitchItem = pydantic.Field(..., description="filtered motion item")
-    brightness: NumberItem | None = pydantic.Field(None, description="brightness item")
-    brightness_threshold: NumberItem | None = pydantic.Field(None, description="brightness threshold item")
-    lock: SwitchItem | None = pydantic.Field(None, description="lock item")
-    sleep_state: StringItem | None = pydantic.Field(None, description="sleep state item")
+    brightness: NumberItem | None = pydantic.Field(default=None, description="brightness item")
+    brightness_threshold: NumberItem | None = pydantic.Field(default=None, description="brightness threshold item")
+    lock: SwitchItem | None = pydantic.Field(default=None, description="lock item")
+    sleep_state: StringItem | None = pydantic.Field(default=None, description="sleep state item")
     state: StringItem = pydantic.Field(..., description="state item")
 
     @model_validator(mode="after")
@@ -49,7 +49,7 @@ class MotionConfig(ConfigBase):
     """Config for motion."""
 
     items: MotionItems = pydantic.Field(..., description="items for motion")
-    parameter: MotionParameter = pydantic.Field(MotionParameter(), description="parameter for motion")
+    parameter: MotionParameter = pydantic.Field(default=MotionParameter(), description="parameter for motion")
 
     @model_validator(mode="after")
     def check_brightness_threshold(self) -> typing_extensions.Self:

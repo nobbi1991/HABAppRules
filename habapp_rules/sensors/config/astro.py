@@ -40,11 +40,11 @@ class SetDayConfig(ConfigBase):
     """Config for setting day."""
 
     items: SetDayItems = pydantic.Field(..., description="Items for setting day")
-    parameter: SetDayParameter = pydantic.Field(SetDayParameter(), description="Parameter for setting day")
+    parameter: SetDayParameter = pydantic.Field(default=SetDayParameter(), description="Parameter for setting day")
 
 
 class SetNightConfig(ConfigBase):
     """Config for setting night."""
 
     items: SetNightItems = pydantic.Field(..., description="Items for setting night")
-    parameter: SetNightParameter = pydantic.Field(SetNightParameter(), description="Parameter for setting night")
+    parameter: SetNightParameter = pydantic.Field(default=SetNightParameter(), description="Parameter for setting night")

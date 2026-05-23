@@ -111,8 +111,8 @@ class MonthlyReportItems(ItemBase):
 class MonthlyReportParameter(ParameterBase):
     """Parameter for monthly report."""
 
-    known_energy_shares: list[EnergyShare] = pydantic.Field([], description="list of EnergyShare objects which hold the known energy shares. E.g. energy for lights or ventilation")
-    persistence_group_name: str | None = pydantic.Field(None, description="OpenHAB group name which holds all items which are persisted. If the group name is given it will be checked if all energy items are in the group")
+    known_energy_shares: list[EnergyShare] = pydantic.Field(default=[], description="list of EnergyShare objects which hold the known energy shares. E.g. energy for lights or ventilation")
+    persistence_group_name: str | None = pydantic.Field(default=None, description="OpenHAB group name which holds all items which are persisted. If the group name is given it will be checked if all energy items are in the group")
     config_mail: multi_notifier.connectors.connector_mail.MailConfig = pydantic.Field(..., description="config for sending mails")
     recipients: list[str] = pydantic.Field(..., description="list of recipients who get the mail")
     debug: bool = pydantic.Field(default=False, description="if debug mode is active")

@@ -18,7 +18,7 @@ hooks = [
 
 [[repos]]
 repo = "https://github.com/astral-sh/ruff-pre-commit"
-rev = "v0.15.12"
+rev = "v0.15.13"
 hooks = [
     {id = "ruff", args = ["--fix"], files = "\\.py$"},
     {id = "ruff-format", files = "\\.py$"}
@@ -50,5 +50,6 @@ repo = "local"
 hooks = [
     {id = "coverage", name = "Run unit tests with coverage", language = "system", pass_filenames = false, entry = "uv run scripts/run_tests_with_coverage.py", priority = 1},
     {id = "version-check", name = "Check versions", entry = "uv run scripts/version_check.py", language = "python", pass_filenames = false, additional_dependencies = ["requests"], priority = 1},
-    {id = "mypy", name = "Run mypy", language = "system", pass_filenames = false, entry = "uv run mypy habapp_rules", priority = 1}
+    {id = "mypy", name = "Run mypy", language = "system", pass_filenames = false, entry = "uv run mypy habapp_rules", priority = 1},
+    {id = "pydantic-field-defaults", name = "Check pydantic Field uses default= keyword", language = "system", pass_filenames = false, entry = "uv run scripts/check_pydantic_field_defaults.py", priority = 1}
 ]

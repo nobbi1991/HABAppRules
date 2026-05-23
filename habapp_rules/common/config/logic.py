@@ -67,7 +67,7 @@ class NumericLogicConfig(ConfigBase):
     """Config for numeric logic."""
 
     items: NumericLogicItems = pydantic.Field(..., description="Items for numeric logic")
-    parameter: NumericLogicParameter = pydantic.Field(NumericLogicParameter(), description="Parameter for numeric logic")
+    parameter: NumericLogicParameter = pydantic.Field(default=NumericLogicParameter(), description="Parameter for numeric logic")
 
 
 class InvertValueItems(ItemBase):
@@ -88,4 +88,4 @@ class InvertValueConfig(ConfigBase):
     """Config for invert value."""
 
     items: InvertValueItems = pydantic.Field(..., description="Items for invert value")
-    parameter: InvertValueParameter = pydantic.Field(InvertValueParameter(), description="Parameter for invert value")
+    parameter: InvertValueParameter = pydantic.Field(default=InvertValueParameter(), description="Parameter for invert value")

@@ -32,12 +32,12 @@ class _VentilationItemsBase(ItemBase):
     """Base class for ventilation items."""
 
     manual: SwitchItem = pydantic.Field(..., description="Item to disable all automatic functions")
-    hand_request: SwitchItem | None = pydantic.Field(None, description="Item to enter the hand state")
-    external_request: SwitchItem | None = pydantic.Field(None, description="Item to enter the external state")
-    presence_state: StringItem | None = pydantic.Field(None, description="Item of presence state to detect long absence")
-    feedback_on: SwitchItem | None = pydantic.Field(None, description="Item which shows that ventilation is on")
-    feedback_power: SwitchItem | None = pydantic.Field(None, description="Item which shows that ventilation is in power mode")
-    display_text: StringItem | None = pydantic.Field(None, description="Item which can be used to set the display text")
+    hand_request: SwitchItem | None = pydantic.Field(default=None, description="Item to enter the hand state")
+    external_request: SwitchItem | None = pydantic.Field(default=None, description="Item to enter the external state")
+    presence_state: StringItem | None = pydantic.Field(default=None, description="Item of presence state to detect long absence")
+    feedback_on: SwitchItem | None = pydantic.Field(default=None, description="Item which shows that ventilation is on")
+    feedback_power: SwitchItem | None = pydantic.Field(default=None, description="Item which shows that ventilation is in power mode")
+    display_text: StringItem | None = pydantic.Field(default=None, description="Item which can be used to set the display text")
     state: StringItem = pydantic.Field(..., description="Item for storing the current state")
 
 
@@ -52,8 +52,8 @@ class VentilationTwoStageItems(_VentilationItemsBase):
 
     ventilation_output_on: SwitchItem = pydantic.Field(..., description="Item to switch on the ventilation")
     ventilation_output_power: SwitchItem = pydantic.Field(..., description="Item to switch on the power mode")
-    current: NumberItem | None = pydantic.Field(None, description="Item to measure the current of the ventilation")
-    feedback_ventilation_level: NumberItem | None = pydantic.Field(None, description="Item feedback current ventilation level")
+    current: NumberItem | None = pydantic.Field(default=None, description="Item to measure the current of the ventilation")
+    feedback_ventilation_level: NumberItem | None = pydantic.Field(default=None, description="Item feedback current ventilation level")
 
 
 class VentilationParameter(ParameterBase):
@@ -78,11 +78,11 @@ class VentilationConfig(ConfigBase):
     """Config for ventilation."""
 
     items: VentilationItems = pydantic.Field(..., description="Items for ventilation")
-    parameter: VentilationParameter = pydantic.Field(VentilationParameter(), description="Parameter for ventilation")
+    parameter: VentilationParameter = pydantic.Field(default=VentilationParameter(), description="Parameter for ventilation")
 
 
 class VentilationTwoStageConfig(ConfigBase):
     """Config for ventilation."""
 
     items: VentilationTwoStageItems = pydantic.Field(..., description="Items for ventilation")
-    parameter: VentilationTwoStageParameter = pydantic.Field(VentilationTwoStageParameter(), description="Parameter for ventilation")
+    parameter: VentilationTwoStageParameter = pydantic.Field(default=VentilationTwoStageParameter(), description="Parameter for ventilation")

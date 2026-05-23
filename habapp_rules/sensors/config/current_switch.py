@@ -24,4 +24,4 @@ class CurrentSwitchConfig(ConfigBase):
     """Config models for current switch the rule."""
 
     items: CurrentSwitchItems = pydantic.Field(..., description="items for current switch rules")
-    parameter: CurrentSwitchParameter = pydantic.Field(CurrentSwitchParameter(), description="parameter for current switch rules")
+    parameter: CurrentSwitchParameter = pydantic.Field(default=CurrentSwitchParameter(), description="parameter for current switch rules")

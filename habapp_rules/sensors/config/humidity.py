@@ -25,4 +25,4 @@ class HumiditySwitchConfig(ConfigBase):
     """Config for humidity switch."""
 
     items: HumiditySwitchItems = pydantic.Field(..., description="items for humidity switch")
-    parameter: HumiditySwitchParameter = pydantic.Field(HumiditySwitchParameter(), description="parameter for humidity switch")
+    parameter: HumiditySwitchParameter = pydantic.Field(default=HumiditySwitchParameter(), description="parameter for humidity switch")

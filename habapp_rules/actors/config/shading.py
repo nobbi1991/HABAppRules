@@ -16,7 +16,7 @@ class ShadingPosition(pydantic.BaseModel):
     """Position of shading object."""
 
     position: float | bool | None = pydantic.Field(..., description="target position")
-    slat: float | None = pydantic.Field(None, description="target slat position")
+    slat: float | None = pydantic.Field(default=None, description="target slat position")
 
     def __init__(self, position: float | bool | None, slat: float | None = None) -> None:
         """Initialize shading position with position and slat.
@@ -32,18 +32,18 @@ class ShadingItems(ItemBase):
     """Items for shading rules."""
 
     shading_position: RollershutterItem | DimmerItem = pydantic.Field(..., description="item for setting the shading position")
-    slat: DimmerItem | None = pydantic.Field(None, description="item for setting the slat value")
+    slat: DimmerItem | None = pydantic.Field(default=None, description="item for setting the slat value")
     manual: SwitchItem = pydantic.Field(..., description="item to switch to manual mode and disable the automatic functions")
-    shading_position_control: list[RollershutterItem | DimmerItem] = pydantic.Field([], description="control items to improve manual detection")
-    shading_position_group: list[RollershutterItem | DimmerItem] = pydantic.Field([], description="")
-    wind_alarm: SwitchItem | None = pydantic.Field(None, description="item which is ON when wind alarm is active")
-    sun_protection: SwitchItem | None = pydantic.Field(None, description="item which is ON when sun protection is needed")
-    sun_protection_slat: DimmerItem | None = pydantic.Field(None, description="value for the slat when sun protection is active")
-    sleeping_state: StringItem | None = pydantic.Field(None, description="item of the sleeping state set via habapp_rules.system.sleep.Sleep")
-    night: SwitchItem | None = pydantic.Field(None, description="item which is ON at night or darkness")
-    door: ContactItem | None = pydantic.Field(None, description="item for setting position when door is opened")
-    summer: SwitchItem | None = pydantic.Field(None, description="item which is ON during summer")
-    hand_manual_is_active_feedback: SwitchItem | None = pydantic.Field(None, description="feedback item which is ON when hand or manual is active")
+    shading_position_control: list[RollershutterItem | DimmerItem] = pydantic.Field(default=[], description="control items to improve manual detection")
+    shading_position_group: list[RollershutterItem | DimmerItem] = pydantic.Field(default=[], description="")
+    wind_alarm: SwitchItem | None = pydantic.Field(default=None, description="item which is ON when wind alarm is active")
+    sun_protection: SwitchItem | None = pydantic.Field(default=None, description="item which is ON when sun protection is needed")
+    sun_protection_slat: DimmerItem | None = pydantic.Field(default=None, description="value for the slat when sun protection is active")
+    sleeping_state: StringItem | None = pydantic.Field(default=None, description="item of the sleeping state set via habapp_rules.system.sleep.Sleep")
+    night: SwitchItem | None = pydantic.Field(default=None, description="item which is ON at night or darkness")
+    door: ContactItem | None = pydantic.Field(default=None, description="item for setting position when door is opened")
+    summer: SwitchItem | None = pydantic.Field(default=None, description="item which is ON during summer")
+    hand_manual_is_active_feedback: SwitchItem | None = pydantic.Field(default=None, description="feedback item which is ON when hand or manual is active")
     state: StringItem = pydantic.Field(..., description="item to store the current state of the state machine")
 
 
@@ -78,7 +78,7 @@ class ShadingConfig(ConfigBase):
     """Config for shading objects."""
 
     items: ShadingItems = pydantic.Field(..., description="items for shading")
-    parameter: ShadingParameter = pydantic.Field(ShadingParameter(), description="parameter for shading")
+    parameter: ShadingParameter = pydantic.Field(default=ShadingParameter(), description="parameter for shading")
 
     @pydantic.model_validator(mode="after")
     def validate_model(self) -> typing_extensions.Self:
@@ -112,7 +112,7 @@ class ResetAllManualHandConfig(ConfigBase):
     """Config for reset all manual hand config."""
 
     items: ResetAllManualHandItems = pydantic.Field(..., description="items for reset all manual hand config")
-    parameter: ResetAllManualHandParameter = pydantic.Field(ResetAllManualHandParameter(), description="parameter for reset all manual hand config")
+    parameter: ResetAllManualHandParameter = pydantic.Field(default=ResetAllManualHandParameter(), description="parameter for reset all manual hand config")
 
 
 class SlatValueItems(ItemBase):
@@ -120,7 +120,7 @@ class SlatValueItems(ItemBase):
 
     sun_elevation: NumberItem = pydantic.Field(..., description="item for sun elevation")
     slat_value: NumberItem | DimmerItem = pydantic.Field(..., description="item for slat value, which should be set")
-    summer: SwitchItem | None = pydantic.Field(None, description="item for summer")
+    summer: SwitchItem | None = pydantic.Field(default=None, description="item for summer")
 
 
 class ElevationSlatMapping(pydantic.BaseModel):
@@ -177,7 +177,7 @@ class SlatValueConfig(ConfigBase):
     """Config for slat values for sun protection."""
 
     items: SlatValueItems = pydantic.Field(..., description="items for slat values for sun protection")
-    parameter: SlatValueParameter = pydantic.Field(SlatValueParameter(), description="parameter for slat values for sun protection")
+    parameter: SlatValueParameter = pydantic.Field(default=SlatValueParameter(), description="parameter for slat values for sun protection")
 
 
 class ReferenceRunItems(ItemBase):

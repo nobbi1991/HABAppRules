@@ -23,4 +23,4 @@ class WatchdogConfig(ConfigBase):
     """Config for watchdog rule."""
 
     items: WatchdogItems = pydantic.Field(..., description="items for watchdog rule")
-    parameter: WatchdogParameter = pydantic.Field(WatchdogParameter(), description="parameters for watchdog rule")
+    parameter: WatchdogParameter = pydantic.Field(default=WatchdogParameter(), description="parameters for watchdog rule")

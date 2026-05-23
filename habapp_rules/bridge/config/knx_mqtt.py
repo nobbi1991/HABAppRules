@@ -50,4 +50,4 @@ class KnxMqttConfig(ConfigBase):
     """Configuration of KNX MQTT bridge."""
 
     items: KnxMqttItems = pydantic.Field(..., description="Items for KNX MQTT bridge")
-    parameter: KnxMqttParameter = pydantic.Field(KnxMqttParameter(), description="Parameters for KNX MQTT bridge")
+    parameter: KnxMqttParameter = pydantic.Field(default=KnxMqttParameter(), description="Parameters for KNX MQTT bridge")

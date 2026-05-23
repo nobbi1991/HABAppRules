@@ -1,4 +1,17 @@
-# Version 11.0.0 - dd.mm.2026
+# Version 11.1.0 - dd.05.2026
+
+## Features
+
+- `MonthlyReport`: added bar chart of the last N completed months' total consumption as a second embedded image in the report email (`history_months` parameter, default 12; set to 0 to disable)
+- `MonthlyReport`: report now uses calendar-month boundaries (start of current month → now) instead of a rolling 30-day lookback, so mid-month debug runs correctly show month-to-date data
+
+## Bugfix
+
+- fixed bugs in `habapp_rules.actors.light.Light`:
+  - fixed exception during init some special cases. (E.g. DimmerLight is on during init)
+  - fixed wrong state after manual mode if motion or sleep is active. Previously only `auto_on` and `auto_off` where possible states after `manual`
+
+# Version 11.0.0 - 15.05.2026
 
 ## Breaking changes
 
@@ -9,8 +22,7 @@
 
 ## Features
 
-- `MonthlyReport`: added bar chart of the last N completed months' total consumption as a second embedded image in the report email (`history_months` parameter, default 12; set to 0 to disable)
-- `MonthlyReport`: report now uses calendar-month boundaries (start of current month → now) instead of a rolling 30-day lookback, so mid-month debug runs correctly show month-to-date data
+- changed license from Apache-2.0 to EUPL-1.2 for compatibility with HABApp (EUPL-1.2)
 - added better config validation of `habapp_rules.sensors.config.motion.MotionConfig`
 - updated multi_notifier to 0.6.0 which improves how mails are sent and reduce probability that mails are marked as spam
 

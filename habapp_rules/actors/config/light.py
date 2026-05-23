@@ -16,15 +16,15 @@ class LightItems(ItemBase):
     """Items for all light rules."""
 
     light: DimmerItem | SwitchItem = pydantic.Field(..., description="item which controls the light")
-    light_control: list[DimmerItem] = pydantic.Field([], description="control items to improve manual detection")
-    light_groups: list[DimmerItem] = pydantic.Field([], description="group items which can additionally set the light state. This can be used to improve the manual detection")
+    light_control: list[DimmerItem] = pydantic.Field(default=[], description="control items to improve manual detection")
+    light_groups: list[DimmerItem] = pydantic.Field(default=[], description="group items which can additionally set the light state. This can be used to improve the manual detection")
     manual: SwitchItem = pydantic.Field(..., description="item to switch to manual mode and disable the automatic functions")
-    presence_state: StringItem | None = pydantic.Field(None, description="presence state set via habapp_rules.presence.Presence")
+    presence_state: StringItem | None = pydantic.Field(default=None, description="presence state set via habapp_rules.presence.Presence")
     day: SwitchItem = pydantic.Field(..., description="item which is ON at day and OFF at night")
-    sleeping_state: StringItem | None = pydantic.Field(None, description="sleeping state set via habapp_rules.system.sleep.Sleep")
-    pre_sleep_prevent: SwitchItem | None = pydantic.Field(None, description="item to prevent pre-sleep (Can be used for example to prevent the pre sleep light when guests are sleeping)")
-    doors: list[ContactItem] = pydantic.Field([], description="door items for switching on the light if the door is opening")
-    motion: SwitchItem | None = pydantic.Field(None, description="motion sensor to enable light if motion is detected")
+    sleeping_state: StringItem | None = pydantic.Field(default=None, description="sleeping state set via habapp_rules.system.sleep.Sleep")
+    pre_sleep_prevent: SwitchItem | None = pydantic.Field(default=None, description="item to prevent pre-sleep (Can be used for example to prevent the pre sleep light when guests are sleeping)")
+    doors: list[ContactItem] = pydantic.Field(default=[], description="door items for switching on the light if the door is opening")
+    motion: SwitchItem | None = pydantic.Field(default=None, description="motion sensor to enable light if motion is detected")
     state: StringItem = pydantic.Field(..., description="item to store the current state of the state machine")
 
 
@@ -143,7 +143,7 @@ class LightConfig(ConfigBase):
     """Config for all light rules."""
 
     items: LightItems = pydantic.Field(..., description="items for all light rules")
-    parameter: LightParameter = pydantic.Field(LightParameter(), description="parameter for all light rules")
+    parameter: LightParameter = pydantic.Field(default=LightParameter(), description="parameter for all light rules")
 
     @pydantic.model_validator(mode="after")
     def validate_config(self) -> typing_extensions.Self:

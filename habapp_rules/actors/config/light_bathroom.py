@@ -9,7 +9,7 @@ class BathroomLightItems(ItemBase):
 
     # lights
     light_main: DimmerItem = pydantic.Field(..., description="main light item")
-    light_main_ctr: DimmerItem | None = pydantic.Field(None, description="control item for main light, this can be used to detect switch on via dimming")
+    light_main_ctr: DimmerItem | None = pydantic.Field(default=None, description="control item for main light, this can be used to detect switch on via dimming")
     light_main_color: NumberItem = pydantic.Field(..., description="main light color (Kelvin)")
     light_main_hcl: SwitchItem = pydantic.Field(..., description="set HCL mode from KNX actor active for main light")
     light_mirror: DimmerItem = pydantic.Field(..., description="mirror light item")
@@ -38,4 +38,4 @@ class BathroomLightConfig(ConfigBase):
     """Config for bathroom light."""
 
     items: BathroomLightItems = pydantic.Field(..., description="items for the switch")
-    parameter: BathroomLightParameter = pydantic.Field(BathroomLightParameter(), description="parameter for the switch")
+    parameter: BathroomLightParameter = pydantic.Field(default=BathroomLightParameter(), description="parameter for the switch")

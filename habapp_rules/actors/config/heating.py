@@ -41,4 +41,4 @@ class HeatingActiveConfig(ConfigBase):
     """Config for active heating rule."""
 
     items: HeatingActiveItems = pydantic.Field(..., description="items for active heating rule")
-    parameter: HeatingActiveParameter = pydantic.Field(HeatingActiveParameter(), description="parameters for active heating rule")
+    parameter: HeatingActiveParameter = pydantic.Field(default=HeatingActiveParameter(), description="parameters for active heating rule")
