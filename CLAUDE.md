@@ -88,6 +88,10 @@ Tests mirror this layout under `tests/<domain>/`.
 - `oh_item.py` — helpers to create and manipulate mocked items.
 - `rule_runner.py` — runs rules in an isolated environment.
 
+### Test class convention
+
+One test class per production class — `TestFoo` for `Foo`. Do **not** create extra test classes to group methods of the same production class (e.g. no `TestFooHistory` alongside `TestFoo`); put all tests for `Foo` inside `TestFoo`.
+
 ## Changelog
 
 Always add an entry to `CHANGELOG.md` for every change. Entries go under the topmost (unreleased) version block, in the appropriate section (`Breaking changes`, `Features`, or `Bugfix`).

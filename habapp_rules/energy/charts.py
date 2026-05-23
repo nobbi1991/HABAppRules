@@ -58,7 +58,7 @@ def create_history_chart(months: list[str], values: list[float], chart_path: pat
         values: monthly consumption in kWh, matching months
         chart_path: target path for the chart
     """
-    _, ax = plt.subplots(figsize=(10, 4))
+    _, ax = plt.subplots(figsize=(6, 2.4))
     bars = ax.bar(months, values, color=CHART_COLORS[0])
     ax.set_ylabel("kWh")
     for bar_label in ax.bar_label(bars, fmt="{:.1f}", padding=3, fontsize=9):

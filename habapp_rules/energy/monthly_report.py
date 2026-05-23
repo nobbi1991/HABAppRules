@@ -5,17 +5,19 @@ import json
 import logging
 import pathlib
 import tempfile
+from datetime import timedelta
 
 import dateutil.relativedelta
 import HABApp
 import jinja2
 import multi_notifier.connectors.connector_mail
+from HABApp.openhab.items import NumberItem
 
 from habapp_rules import __version__
 from habapp_rules.core.exceptions import HabAppRulesConfigurationError
 from habapp_rules.core.logger import InstanceLogger
+from habapp_rules.energy.charts import create_history_chart, create_pie_chart
 from habapp_rules.energy.config.monthly_report import MonthlyReportConfig
-from habapp_rules.energy.charts import create_pie_chart, create_history_chart
 from habapp_rules.energy.helper import get_historic_value
 
 LOGGER = logging.getLogger(__name__)
@@ -33,6 +35,64 @@ def _get_current_month_name() -> str:
         name of current month
     """
     return MONTH_MAPPING[datetime.datetime.now().month]
+
+
+class HistoricValueProvider:
+    """Fetches and caches energy meter readings at the start of each month."""
+
+    def __init__(self, item: NumberItem, cache_path: pathlib.Path | None) -> None:
+        """Initialize the provider.
+
+        Args:
+            item: OpenHAB NumberItem holding the cumulative energy meter reading
+            cache_path: path to a JSON cache file; None disables caching
+        """
+        self._item = item
+        self._cache_path = cache_path
+        self._cached_values: dict[str, float] = self._load_cache()  # keys are "YYYY-MM"
+
+    def _load_cache(self) -> dict[str, float]:
+        """Load cached values from JSON file.
+
+        Returns:
+            mapping of "YYYY-MM" keys to energy boundary values, empty dict on error
+        """
+        if self._cache_path is None or not self._cache_path.exists():
+            return {}
+        try:
+            return json.loads(self._cache_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            LOGGER.warning("Could not read history cache, starting fresh.")
+            return {}
+
+    def _save_cache(self) -> None:
+        """Persist cached values to the JSON file."""
+        if self._cache_path is None:
+            return
+        self._cache_path.write_text(json.dumps(self._cached_values, indent=2), encoding="utf-8")
+
+    def get_start_of_month_value(self, year: int, month: int) -> float:
+        """Return the meter reading at the start of the given month, using the cache.
+
+        Args:
+            year: calendar year
+            month: calendar month (1-12)
+
+        Returns:
+            energy meter value at midnight on the first of the month
+        """
+        request_time = datetime.datetime(year, month, 1)
+        cache_key = request_time.strftime("%Y-%m")
+
+        if cache_key in self._cached_values:
+            return self._cached_values[cache_key]
+
+        value = get_historic_value(self._item, request_time)
+
+        self._cached_values[cache_key] = value
+        self._save_cache()
+
+        return value
 
 
 class MonthlyReport(HABApp.Rule):
@@ -84,6 +144,8 @@ class MonthlyReport(HABApp.Rule):
                 msg = f"The following OpenHAB items are not in the persistence group '{config.parameter.persistence_group_name}': {not_in_persistence_group}"
                 raise HabAppRulesConfigurationError(msg)
 
+        self._historic_value_provider_sum = HistoricValueProvider(config.items.energy_sum, config.parameter.history_cache_path)
+
         self.run.at(self.run.trigger.time("00:00:00").only_on(self.run.filter.days(1)), self._cb_send_energy)
 
         if config.parameter.debug:
@@ -125,6 +187,7 @@ class MonthlyReport(HABApp.Rule):
 
         Args:
             energy_sum_month: sum value for the current month
+            show_history: if True, the history chart section is rendered in the HTML
 
         Returns:
             html with replaced values
@@ -140,31 +203,6 @@ class MonthlyReport(HABApp.Rule):
             show_history=show_history,
         )
 
-    def _load_history_cache(self) -> dict[str, float]:
-        """Load cached monthly boundary values from the JSON file.
-
-        Returns:
-            dict mapping "YYYY-MM" keys to energy boundary values, or empty dict if unavailable
-        """
-        path = self._config.parameter.history_cache_path
-        if path is None or not path.exists():
-            return {}
-        try:
-            return json.loads(path.read_text(encoding="utf-8"))
-        except Exception:
-            self._instance_logger.warning("Could not read history cache, starting fresh.")
-            return {}
-
-    def _save_history_cache(self, cache: dict[str, float]) -> None:
-        """Write monthly boundary values to the JSON cache file.
-
-        Args:
-            cache: dict mapping "YYYY-MM" keys to energy boundary values
-        """
-        if (path := self._config.parameter.history_cache_path) is None:
-            return
-        path.write_text(json.dumps(cache, indent=2), encoding="utf-8")
-
     def _get_monthly_history(self, num_months: int) -> tuple[list[str], list[float]]:
         """Retrieve monthly consumption for the last num_months completed months.
 
@@ -177,43 +215,42 @@ class MonthlyReport(HABApp.Rule):
         now = datetime.datetime.now()
         first_of_this_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
-        cache = self._load_history_cache()
-        cache_updated = False
-
-        boundaries: list[float] = []
+        energy_values: list[float] = []
         for i in range(num_months + 1):
             t = first_of_this_month - dateutil.relativedelta.relativedelta(months=i)
-            cache_key = t.strftime("%Y-%m")
-            if cache_key in cache:
-                boundaries.append(cache[cache_key])
-            else:
-                value = get_historic_value(self._config.items.energy_sum, t)
-                boundaries.append(value)
-                if value:
-                    cache[cache_key] = value
-                    cache_updated = True
+            energy_values.append(self._historic_value_provider_sum.get_start_of_month_value(t.year, t.month))
 
-        if cache_updated:
-            self._save_history_cache(cache)
+        for i in range(len(energy_values) - 1):
+            newer, older = energy_values[i], energy_values[i + 1]
+            if older and newer and older > newer:
+                t_newer = first_of_this_month - dateutil.relativedelta.relativedelta(months=i)
+                t_older = first_of_this_month - dateutil.relativedelta.relativedelta(months=i + 1)
+                self._instance_logger.warning(f"Energy meter value is not monotonically increasing: {t_older.strftime('%Y-%m')} ({older:.1f} kWh) > {t_newer.strftime('%Y-%m')} ({newer:.1f} kWh)")
 
         labels: list[str] = []
         values: list[float] = []
         for i in range(num_months, 0, -1):
             month_dt = first_of_this_month - dateutil.relativedelta.relativedelta(months=i)
             labels.append(SHORT_MONTH_MAPPING[month_dt.month])
-            values.append(max(0.0, boundaries[i - 1] - boundaries[i]) if boundaries[i] else 0.0)
+            values.append(max(0.0, energy_values[i - 1] - energy_values[i]) if energy_values[i] else 0.0)
 
         return labels, values
 
     def _cb_send_energy(self) -> None:
         """Send the mail with the energy consumption of the current month so far."""
-        self._instance_logger.debug("Send energy consumption was triggered.")  # todo check if it is working if triggered at 00:00. maybe the shares are set to 0??
+        self._instance_logger.debug("Send energy consumption was triggered.")
+
+        # get start of month -> normal case: if triggered at 00:00 of the first day of the month, start_of_month is the start of the previous month, otherwise get first day of current month
         now = datetime.datetime.now()
-        start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        if not (energy_start_of_month := get_historic_value(self._config.items.energy_sum, start_of_month)):
+        first_of_current = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        start_of_month = (first_of_current - timedelta(days=1)).replace(day=1) if now.day == 1 else first_of_current
+
+        # get energy sum at start of month
+        if not (energy_start_of_month := self._historic_value_provider_sum.get_start_of_month_value(start_of_month.year, start_of_month.month)):
             LOGGER.error(f"Could not get historic value 'energy_sum' for start of month ({start_of_month}).")
             return
 
+        # get energy since start of month + energy of every share
         energy_sum_month = self._config.items.energy_sum.value - energy_start_of_month
         for share in self._config.parameter.known_energy_shares:
             monthly_power = share.get_energy_since(start_of_month)
@@ -225,10 +262,11 @@ class MonthlyReport(HABApp.Rule):
         energy_unknown = energy_sum_month - sum(share.monthly_power for share in self._config.parameter.known_energy_shares)
         shares_for_chart = [share for share in self._config.parameter.known_energy_shares if share.monthly_power > 0]
 
+        # create images / charts
         with tempfile.TemporaryDirectory() as temp_dir_name:
             labels = [share.chart_name for share in shares_for_chart] + ["Rest"]
             values = [share.monthly_power for share in shares_for_chart] + [energy_unknown]
-            chart_path = pathlib.Path(temp_dir_name) / "chart.png"
+            chart_path = pathlib.Path(temp_dir_name) / "pie_chart.png"
             create_pie_chart(labels, values, chart_path)
 
             images: dict[str, pathlib.Path] = {"chart": chart_path}

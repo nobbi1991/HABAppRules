@@ -3,7 +3,7 @@
 import unittest
 import unittest.mock
 
-from habapp_rules.energy.charts import CHART_COLORS, _auto_percent_format, create_pie_chart, create_history_chart
+from habapp_rules.energy.charts import CHART_COLORS, _auto_percent_format, create_history_chart, create_pie_chart
 
 
 class TestDonutFunctions(unittest.TestCase):
@@ -69,7 +69,7 @@ class TestHistoryChart(unittest.TestCase):
 
             create_history_chart(months, values, path)
 
-        pyplot_mock.subplots.assert_called_once_with(figsize=(10, 4))
+        pyplot_mock.subplots.assert_called_once_with(figsize=(6, 2.4))
         ax_mock.bar.assert_called_once_with(months, values, color=CHART_COLORS[0])
         ax_mock.set_ylabel.assert_called_once_with("kWh")
         ax_mock.bar_label.assert_called_once_with(bars_mock, fmt="{:.1f}", padding=3, fontsize=9)

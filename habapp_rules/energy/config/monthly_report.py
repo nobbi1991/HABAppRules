@@ -117,7 +117,7 @@ class MonthlyReportParameter(ParameterBase):
     recipients: list[str] = pydantic.Field(..., description="list of recipients who get the mail")
     debug: bool = pydantic.Field(default=False, description="if debug mode is active")
     history_months: int = pydantic.Field(default=12, ge=0, description="Number of past completed months to show in the history bar chart; 0 disables the feature")
-    history_cache_path: pathlib.Path | None = pydantic.Field(default=None, description="Path to a JSON file used to cache monthly energy boundary values; None disables caching")  # todo save file next to rule file if set to None, or global cache path? or only path and generate name?
+    history_cache_path: pathlib.Path | None = pydantic.Field(default=None, description="Path to a JSON file used to cache monthly energy boundary values; None disables caching")
 
 
 class MonthlyReportConfig(ConfigBase):
