@@ -1,4 +1,11 @@
-# Version 11.0.1 - dd.05.2026
+# Version 11.1.0 - 24.05.2026
+
+## Features
+
+- `habapp_rules.energy.monthly_report.MonthlyReport`:
+  - added bar chart of the last N completed months' total consumption as a second embedded image in the report email (`history_months` parameter, default 12; set to 0 to disable)
+  - report now uses calendar-month boundaries (start of current month → now) instead of a rolling 30-day lookback, so mid-month debug runs correctly show month-to-date data
+  - added monotonicity check in `_get_monthly_history` — logs a warning when a cached energy meter boundary is greater than the more-recent boundary, indicating corrupt persistence data
 
 ## Bugfix
 

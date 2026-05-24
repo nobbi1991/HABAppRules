@@ -28,26 +28,44 @@ jobs:
             echo "updated=true" >> $GITHUB_OUTPUT
           fi
       - name: Increment bugfix version
+        id: version-bump
         if: steps.update-hooks.outputs.updated == 'true'
         run: |
           python - << 'EOF'
+          import json
+          import os
           import re
-          from datetime import datetime
+          import urllib.request
 
-          # Read current version
+          with urllib.request.urlopen('https://pypi.org/pypi/habapp_rules/json') as response:
+              pypi_version = json.loads(response.read())['info']['version']
+
           with open('habapp_rules/__init__.py', 'r') as f:
               content = f.read()
-              version_match = re.search(r'__version__ = "(\d+)\.(\d+)\.(\d+)"', content)
-              if version_match:
+
+          version_match = re.search(r'__version__ = "(\d+)\.(\d+)\.(\d+)"', content)
+          if not version_match:
+              print("Could not find version in __init__.py")
+              bumped = False
+          else:
+              current_version = f"{version_match.group(1)}.{version_match.group(2)}.{version_match.group(3)}"
+              if current_version != pypi_version:
+                  print(f"Branch version ({current_version}) differs from PyPI version ({pypi_version}), skipping bump")
+                  bumped = False
+              else:
                   major, minor, patch = version_match.groups()
                   new_version = f"{major}.{minor}.{int(patch) + 1}"
                   content = re.sub(r'__version__ = "\d+\.\d+\.\d+"', f'__version__ = "{new_version}"', content)
                   with open('habapp_rules/__init__.py', 'w') as f:
                       f.write(content)
                   print(f"Updated version to {new_version}")
+                  bumped = True
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f"bumped={'true' if bumped else 'false'}\n")
           EOF
       - name: Update changelog
-        if: steps.update-hooks.outputs.updated == 'true'
+        if: steps.update-hooks.outputs.updated == 'true' && steps.version-bump.outputs.bumped == 'true'
         run: |
           python - << 'EOF'
           import re

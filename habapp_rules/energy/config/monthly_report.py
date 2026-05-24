@@ -1,6 +1,7 @@
 """Config models for monthly energy report."""
 
 import datetime
+import pathlib
 
 import multi_notifier.connectors.connector_mail
 import pydantic
@@ -115,6 +116,8 @@ class MonthlyReportParameter(ParameterBase):
     config_mail: multi_notifier.connectors.connector_mail.MailConfig = pydantic.Field(..., description="config for sending mails")
     recipients: list[str] = pydantic.Field(..., description="list of recipients who get the mail")
     debug: bool = pydantic.Field(default=False, description="if debug mode is active")
+    history_months: int = pydantic.Field(default=12, ge=0, description="Number of past completed months to show in the history bar chart; 0 disables the feature")
+    history_cache_path: pathlib.Path | None = pydantic.Field(default=None, description="Path to a JSON file used to cache monthly energy boundary values; None disables caching")
 
 
 class MonthlyReportConfig(ConfigBase):
