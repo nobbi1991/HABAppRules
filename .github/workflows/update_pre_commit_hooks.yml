@@ -9,13 +9,16 @@ on:
 jobs:
   auto-update:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: astral-sh/setup-uv@v7
         with:
           python-version: '3.14'
       - name: Install prek
-        run: pip install prek
+        run: uv tool install prek
       - name: Update prek hooks
         id: update-hooks
         run: |
@@ -95,6 +98,7 @@ jobs:
           print("Updated changelog")
           EOF
       - uses: peter-evans/create-pull-request@v8
+        if: steps.update-hooks.outputs.updated == 'true'
         with:
           branch: update/prek-hooks
           title: Update prek hooks and increment version

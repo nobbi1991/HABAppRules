@@ -1,3 +1,9 @@
+# Version 11.1.1 - dd.mm.2026
+
+## Bugfix
+
+- improved GitHub Actions workflows
+
 # Version 11.1.0 - 24.05.2026
 
 ## Features

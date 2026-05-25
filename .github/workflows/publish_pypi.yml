@@ -14,17 +14,13 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - name: Check out code
-        uses: actions/checkout@v6
-
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Install uv
+      - name: Install uv and Python
         uses: astral-sh/setup-uv@v7
-
-      - name: Install Python 3.13
-        run: uv python install 3.13
+        with:
+          python-version: "3.13"
 
       - name: Build
         run: uv build
