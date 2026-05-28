@@ -1,3 +1,11 @@
+# Version 11.2.0 - dd.05.2026
+
+## Features
+
+- `habapp_rules.actors.shading.ResetAllManualHand`:
+  - dynamically registers / cancels HABApp event listeners as shading objects are added or removed (one listener per object, no duplicates)
+  - added `any_hand_manual_is_active_feedback` item support: set to ON when any tracked shading object is in `Hand`, `Manual`, or a state from `parameter.custom_hand_state`; OFF otherwise
+
 # Version 11.1.0 - 24.05.2026
 
 ## Features

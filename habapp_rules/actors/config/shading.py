@@ -100,12 +100,14 @@ class ResetAllManualHandItems(ItemBase):
     """Items for reset all manual hand items."""
 
     reset_manual_hand: SwitchItem = pydantic.Field(..., description="item for resetting manual and hand state to automatic state")
+    any_hand_manual_is_active_feedback: SwitchItem | None = pydantic.Field(default=None, description="item which is set to ON if any hand state is active")
 
 
 class ResetAllManualHandParameter(ParameterBase):
     """Parameter for reset all manual hand parameter."""
 
-    shading_objects: list[Any] | None = pydantic.Field(default=None, description="list of shading objects to reset")
+    shading_objects: list[Any] | None = pydantic.Field(default=None, description="list of shading objects to reset, if set to None, all shading objects are reset")
+    custom_hand_state: list[str] = pydantic.Field(default_factory=list, description="list of custom hand states to reset. E.g. ['Auto_Open_PostOpen']")
 
 
 class ResetAllManualHandConfig(ConfigBase):

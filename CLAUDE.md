@@ -94,7 +94,11 @@ One test class per production class — `TestFoo` for `Foo`. Do **not** create e
 
 ## Changelog
 
-Always add an entry to `CHANGELOG.md` for every change. Entries go under the topmost (unreleased) version block, in the appropriate section (`Breaking changes`, `Features`, or `Bugfix`).
+Always add an entry to `CHANGELOG.md` for every change. Add a **new** version block at the top for the new version; never edit or move content from already-released version blocks below it. Each released version block is immutable once published. Entries for the current branch go under the new topmost version block, in the appropriate section (`Breaking changes`, `Features`, or `Bugfix`).
+
+## Merging Requirements
+
+`uv run prek run --all-files` must pass completely before merging. It runs format, lint, type check, tests, coverage, and a version check. One common failure: the `version-check` hook requires the version in `habapp_rules/__init__.py` (and the matching `CHANGELOG.md` header) to be higher than the currently published PyPI version. Bump both when starting work on a new branch.
 
 ## Code Quality Requirements
 

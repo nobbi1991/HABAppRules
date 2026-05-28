@@ -7,6 +7,7 @@ import time
 import typing
 
 import HABApp
+from HABApp.core.internals.event_bus_listener import EventBusListener  # noqa: TC002
 from HABApp.openhab.events import ItemCommandEvent, ItemStateChangedEvent, ItemStateUpdatedEvent
 from HABApp.openhab.events.event_filters import ItemStateChangedEventFilter, ItemStateUpdatedEventFilter
 from HABApp.openhab.items import RollershutterItem
@@ -567,9 +568,54 @@ class ResetAllManualHand(HABApp.Rule):
         self._config = config
         HABApp.Rule.__init__(self)
 
+        self._shading_subscriptions: dict[_ShadingBase, EventBusListener] = {}
+        self._update_shading_objects()
+
         self._config.items.reset_manual_hand.listen_event(self._cb_reset_all, ItemStateUpdatedEventFilter())
 
-    def __get_shading_objects(self) -> list[_ShadingBase]:
+    def _update_shading_objects(self) -> None:
+        """Update the tracked shading objects and synchronize event listeners.
+
+        Adds listeners for newly discovered objects and cancels listeners for objects that are no longer present.
+        Each shading object gets at most one listener. _shading_subscriptions is the single source of truth
+        for which objects are currently tracked.
+        """
+        new_set = set(self._get_shading_objects())
+        old_set = set(self._shading_subscriptions)
+
+        if old_set == new_set:
+            return
+
+        for removed_obj in old_set - new_set:
+            self._shading_subscriptions.pop(removed_obj).cancel()
+
+        for added_obj in new_set - old_set:
+            self._shading_subscriptions[added_obj] = added_obj._config.items.state.listen_event(self._cb_shading_state_changed, ItemStateChangedEventFilter())  # noqa: SLF001
+
+        self._update_any_hand_manual_feedback()
+
+    def _update_any_hand_manual_feedback(self) -> None:
+        """Update the any-hand-or-manual-is-active feedback item.
+
+        Sets the feedback item to ON when at least one tracked shading object is in Hand, Manual,
+        or any state listed in parameter.custom_hand_state. Sets it to OFF otherwise.
+        Does nothing if any_hand_manual_is_active_feedback is not configured.
+        """
+        if self._config.items.any_hand_manual_is_active_feedback is None:
+            return
+        active_states = {"Hand", "Manual"} | set(self._config.parameter.custom_hand_state)
+        is_active = any(obj.state in active_states for obj in self._shading_subscriptions)
+        self._config.items.any_hand_manual_is_active_feedback.oh_send_command("ON" if is_active else "OFF")
+
+    def _cb_shading_state_changed(self, _event: ItemStateChangedEvent) -> None:
+        """Callback which is triggered if a tracked shading object's state changed.
+
+        Args:
+            _event: trigger event (unused; the state is read directly from the shading objects)
+        """
+        self._update_any_hand_manual_feedback()
+
+    def _get_shading_objects(self) -> list[_ShadingBase]:
         """Get all shading objects.
 
         Returns:
@@ -592,14 +638,14 @@ class ResetAllManualHand(HABApp.Rule):
         if event.value == "OFF":
             return
 
-        for shading_object in self.__get_shading_objects():
+        for shading_object in self._get_shading_objects():
             state = shading_object.state
             manual_item = shading_object._config.items.manual  # noqa: SLF001
 
             if state == "Manual":
                 manual_item.oh_send_command("OFF")
 
-            elif state == "Hand":
+            elif state == "Hand" or state in self._config.parameter.custom_hand_state:
                 manual_item.oh_send_command("ON")
                 manual_item.oh_send_command("OFF")
 
