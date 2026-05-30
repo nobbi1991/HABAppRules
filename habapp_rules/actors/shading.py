@@ -574,9 +574,11 @@ class ResetAllManualHand(HABApp.Rule):
         HABApp.Rule.__init__(self)
 
         self._shading_subscriptions: dict[_ShadingBase, EventBusListener] = {}
-        self._update_shading_objects()
-
         self._config.items.reset_manual_hand.listen_event(self._cb_reset_all, ItemStateUpdatedEventFilter())
+
+    def on_rule_loaded(self) -> None:
+        """Discover shading objects once all rules in the file are registered."""
+        self._update_shading_objects()
 
     def _update_shading_objects(self) -> None:
         """Update the tracked shading objects and synchronize event listeners.
@@ -611,14 +613,6 @@ class ResetAllManualHand(HABApp.Rule):
         is_active = any(obj.state in {"Hand", "Manual"} | set(obj.config.parameter.custom_hand_state) for obj in self._shading_subscriptions)
         self._config.items.any_hand_manual_is_active_feedback.oh_send_command("ON" if is_active else "OFF")
 
-    def _cb_shading_state_changed(self, _event: ItemStateChangedEvent) -> None:
-        """Callback which is triggered if a tracked shading object's state changed.
-
-        Args:
-            _event: trigger event (unused; the state is read directly from the shading objects)
-        """
-        self._update_any_hand_manual_feedback()
-
     def _get_shading_objects(self) -> list[_ShadingBase]:
         """Get all shading objects.
 
@@ -632,6 +626,14 @@ class ResetAllManualHand(HABApp.Rule):
         if not isinstance(all_rules, list):
             all_rules = [all_rules]
         return [rule for rule in all_rules if isinstance(rule, _ShadingBase)]
+
+    def _cb_shading_state_changed(self, _event: ItemStateChangedEvent) -> None:
+        """Callback which is triggered if a tracked shading object's state changed.
+
+        Args:
+            _event: trigger event (unused; the state is read directly from the shading objects)
+        """
+        self._update_any_hand_manual_feedback()
 
     def _cb_reset_all(self, event: ItemCommandEvent) -> None:
         """Callback which is called if reset is requested.

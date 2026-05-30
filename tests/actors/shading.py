@@ -1002,8 +1002,7 @@ class TestResetAllManualHand(TestCaseBase):
             )
         )
 
-        with unittest.mock.patch.object(ResetAllManualHand, "get_rule", return_value=[]):
-            self.reset_shading_rule = ResetAllManualHand(config)
+        self.reset_shading_rule = ResetAllManualHand(config)
 
     def test_get_shading_objects(self) -> None:
         """Test _get_shading_objects."""
@@ -1026,6 +1025,12 @@ class TestResetAllManualHand(TestCaseBase):
             self.reset_shading_rule._get_shading_objects()
 
         get_rule_mock.assert_called_once_with(None)
+
+    def test_on_rule_loaded(self) -> None:
+        """Test on_rule_loaded."""
+        with unittest.mock.patch.object(self.reset_shading_rule, "_update_shading_objects") as mock_update:
+            self.reset_shading_rule.on_rule_loaded()
+        mock_update.assert_called_once()
 
     def test_update_shading_objects(self) -> None:
         """Test _update_shading_objects."""
