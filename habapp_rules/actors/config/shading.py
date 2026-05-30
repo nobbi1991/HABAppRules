@@ -61,6 +61,7 @@ class ShadingParameter(ParameterBase):
     manual_timeout: int = pydantic.Field(default=24 * 3600, description="fallback timeout for manual state", gt=0)
     door_post_time: int = pydantic.Field(default=5 * 60, description="extended time after door is closed", gt=0)
     value_tolerance: int = pydantic.Field(default=0, description="value tolerance for shading position which is allowed without manual detection", ge=0)
+    custom_hand_state: list[str] = pydantic.Field(default_factory=list, description="additional states that are treated as hand / manual active (e.g. ['WindAlarm'])")
 
     @pydantic.model_validator(mode="after")
     def validate_model(self) -> typing_extensions.Self:
@@ -100,12 +101,13 @@ class ResetAllManualHandItems(ItemBase):
     """Items for reset all manual hand items."""
 
     reset_manual_hand: SwitchItem = pydantic.Field(..., description="item for resetting manual and hand state to automatic state")
+    any_hand_manual_is_active_feedback: SwitchItem | None = pydantic.Field(default=None, description="item which is set to ON if any hand state is active")
 
 
 class ResetAllManualHandParameter(ParameterBase):
     """Parameter for reset all manual hand parameter."""
 
-    shading_objects: list[Any] | None = pydantic.Field(default=None, description="list of shading objects to reset")
+    shading_objects: list[Any] | None = pydantic.Field(default=None, description="list of shading objects to reset, if set to None, all shading objects are reset")
 
 
 class ResetAllManualHandConfig(ConfigBase):

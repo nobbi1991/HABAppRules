@@ -5,6 +5,7 @@ import threading
 import typing
 
 import HABApp
+import transitions.extensions
 import transitions.extensions.states
 from HABApp.openhab.items import StringItem
 from HABApp.rule import in_thread
@@ -29,13 +30,13 @@ class _HabAppTimeout(transitions.extensions.states.Timeout):
 
 
 @transitions.extensions.states.add_state_features(_HabAppTimeout)
-class StateMachineWithTimeout(transitions.Machine):
-    """State machine class with timeout."""
+class StateMachineWithTimeout(transitions.extensions.LockedMachine):
+    """Thread-safe state machine class with timeout."""
 
 
 @transitions.extensions.states.add_state_features(_HabAppTimeout)
-class HierarchicalStateMachineWithTimeout(transitions.extensions.HierarchicalMachine):
-    """Hierarchical state machine class with timeout."""
+class HierarchicalStateMachineWithTimeout(transitions.extensions.LockedHierarchicalMachine):
+    """Thread-safe hierarchical state machine class with timeout."""
 
 
 class StateMachineRule(HABApp.Rule):

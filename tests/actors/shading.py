@@ -129,6 +129,7 @@ class TestShadingBase(TestCaseBaseStateMachine):
 
         self.assertEqual(300, self.shading_max.state_machine.states["Auto"].states["DoorOpen"].states["PostOpen"].timeout)
         self.assertEqual(86400, self.shading_max.state_machine.states["Manual"].timeout)
+        self.assertIs(self.shading_max.config, self.shading_max._config)
 
     def test_init_exceptions(self) -> None:
         """Test exceptions of __init__."""
@@ -657,6 +658,32 @@ class TestShadingBase(TestCaseBaseStateMachine):
         send_command("Unittest_Sleep_state", habapp_rules.system.SleepState.PRE_SLEEPING.value, habapp_rules.system.SleepState.AWAKE.value)
         self.assertEqual("Auto_SleepingClose", self.shading_max.state)
 
+    def test_hand_manual_is_active_feedback(self) -> None:
+        """Test that hand_manual_is_active_feedback reflects Manual, Hand, and custom states."""
+        add_mock_item(StringItem, "H_Unittest_Custom_state", "")
+        config = habapp_rules.actors.config.shading.ShadingConfig(
+            items=habapp_rules.actors.config.shading.ShadingItems(
+                shading_position="Unittest_Shading_min",
+                manual="Unittest_Manual_min",
+                hand_manual_is_active_feedback="Unittest_Hand_Manual_active",
+                state="H_Unittest_Custom_state",
+            ),
+            parameter=habapp_rules.actors.config.shading.ShadingParameter(custom_hand_state=["WindAlarm"]),
+        )
+        shading = _ShadingBase(config)
+
+        shading.to_Manual()
+        assert_item_value("Unittest_Hand_Manual_active", "ON")
+
+        shading.to_Hand()
+        assert_item_value("Unittest_Hand_Manual_active", "ON")
+
+        shading.to_Auto_Open()
+        assert_item_value("Unittest_Hand_Manual_active", "OFF")
+
+        shading.to_WindAlarm()
+        assert_item_value("Unittest_Hand_Manual_active", "ON")
+
 
 class TestShadingShutter(TestCaseBaseStateMachine):
     """Tests cases for testing Raffstore class."""
@@ -966,13 +993,19 @@ class TestResetAllManualHand(TestCaseBase):
         TestCaseBase.setUp(self)
 
         add_mock_item(SwitchItem, "Unittest_Reset", None)
+        add_mock_item(SwitchItem, "Unittest_AnyHandManual", None)
 
-        config = habapp_rules.actors.config.shading.ResetAllManualHandConfig(items=habapp_rules.actors.config.shading.ResetAllManualHandItems(reset_manual_hand="Unittest_Reset"))
+        config = habapp_rules.actors.config.shading.ResetAllManualHandConfig(
+            items=habapp_rules.actors.config.shading.ResetAllManualHandItems(
+                reset_manual_hand="Unittest_Reset",
+                any_hand_manual_is_active_feedback="Unittest_AnyHandManual",
+            )
+        )
 
         self.reset_shading_rule = ResetAllManualHand(config)
 
-    def test__get_shading_objects(self) -> None:
-        """Test __get_shading_objects."""
+    def test_get_shading_objects(self) -> None:
+        """Test _get_shading_objects."""
         # shading objects where given
         shading_object_1 = unittest.mock.MagicMock()
         shading_object_2 = unittest.mock.MagicMock()
@@ -985,39 +1018,110 @@ class TestResetAllManualHand(TestCaseBase):
         )
 
         reset_shading_rule_2 = ResetAllManualHand(config_2)
-        self.assertEqual([shading_object_1, shading_object_2], reset_shading_rule_2._ResetAllManualHand__get_shading_objects())
+        self.assertEqual([shading_object_1, shading_object_2], reset_shading_rule_2._get_shading_objects())
 
         # shading objects are not set via __init__
         with unittest.mock.patch.object(self.reset_shading_rule, "get_rule") as get_rule_mock:
-            self.reset_shading_rule._ResetAllManualHand__get_shading_objects()
+            self.reset_shading_rule._get_shading_objects()
 
         get_rule_mock.assert_called_once_with(None)
 
-    def test_cb_reset_all(self) -> None:
-        """Test _cb_reset_all."""
-        TestCase = collections.namedtuple("TestCase", "event, state, manual_commands")
+    def test_on_rule_loaded(self) -> None:
+        """Test on_rule_loaded."""
+        with unittest.mock.patch.object(self.reset_shading_rule, "_update_shading_objects") as mock_update:
+            self.reset_shading_rule.on_rule_loaded()
+        mock_update.assert_called_once()
+
+    def test_update_shading_objects(self) -> None:
+        """Test _update_shading_objects."""
+        mock_obj_1 = unittest.mock.MagicMock()
+        mock_obj_2 = unittest.mock.MagicMock()
+
+        # no change -> return early, no subscriptions added
+        with unittest.mock.patch.object(self.reset_shading_rule, "_get_shading_objects", return_value=[]):
+            self.reset_shading_rule._update_shading_objects()
+        self.assertEqual({}, self.reset_shading_rule._shading_subscriptions)
+
+        # add object -> listener registered
+        with unittest.mock.patch.object(self.reset_shading_rule, "_get_shading_objects", return_value=[mock_obj_1]):
+            self.reset_shading_rule._update_shading_objects()
+        mock_obj_1.config.items.state.listen_event.assert_called_once()
+        self.assertIn(mock_obj_1, self.reset_shading_rule._shading_subscriptions)
+
+        # swap object: old listener cancelled, new listener registered
+        with unittest.mock.patch.object(self.reset_shading_rule, "_get_shading_objects", return_value=[mock_obj_2]):
+            self.reset_shading_rule._update_shading_objects()
+        mock_obj_1.config.items.state.listen_event.return_value.cancel.assert_called_once()
+        self.assertNotIn(mock_obj_1, self.reset_shading_rule._shading_subscriptions)
+        self.assertIn(mock_obj_2, self.reset_shading_rule._shading_subscriptions)
+
+    def test_update_any_hand_manual_feedback(self) -> None:
+        """Test _update_any_hand_manual_feedback."""
+        TestCase = collections.namedtuple("TestCase", "state_1, custom_states_1, state_2, custom_states_2, expected_value")
 
         test_cases = [
-            TestCase("OFF", "Auto", []),
-            TestCase("OFF", "Hand", []),
-            TestCase("OFF", "Manual", []),
-            TestCase("ON", "Auto", []),
-            TestCase("ON", "Hand", [unittest.mock.call("ON"), unittest.mock.call("OFF")]),
-            TestCase("ON", "Manual", [unittest.mock.call("OFF")]),
+            TestCase("Auto_Open", [], "Auto_NightClose", [], "OFF"),
+            TestCase("Hand", [], "Auto_Open", [], "ON"),
+            TestCase("Manual", [], "Auto_Open", [], "ON"),
+            TestCase("CustomState", ["CustomState"], "Auto_Open", [], "ON"),
+            TestCase("Auto_Open", ["CustomState"], "Auto_Open", [], "OFF"),
+        ]
+
+        mock_rule_1 = unittest.mock.MagicMock()
+        mock_rule_2 = unittest.mock.MagicMock()
+        self.reset_shading_rule._shading_subscriptions = {mock_rule_1: unittest.mock.MagicMock(), mock_rule_2: unittest.mock.MagicMock()}
+
+        # feedback item not configured -> no command sent
+        config_no_feedback = habapp_rules.actors.config.shading.ResetAllManualHandConfig(items=habapp_rules.actors.config.shading.ResetAllManualHandItems(reset_manual_hand="Unittest_Reset"))
+        with unittest.mock.patch.object(ResetAllManualHand, "get_rule", return_value=[]):
+            rule_no_feedback = ResetAllManualHand(config_no_feedback)
+        rule_no_feedback._shading_subscriptions = {mock_rule_1: unittest.mock.MagicMock()}
+        rule_no_feedback._update_any_hand_manual_feedback()
+        mock_rule_1.config.items.state.listen_event.assert_not_called()  # feedback returned early
+
+        # feedback item configured; custom_hand_state is per shading object
+        for test_case in test_cases:
+            mock_rule_1.state = test_case.state_1
+            mock_rule_1.config.parameter.custom_hand_state = test_case.custom_states_1
+            mock_rule_2.state = test_case.state_2
+            mock_rule_2.config.parameter.custom_hand_state = test_case.custom_states_2
+            self.reset_shading_rule._update_any_hand_manual_feedback()
+            assert_item_value("Unittest_AnyHandManual", test_case.expected_value)
+
+    def test_cb_shading_state_changed(self) -> None:
+        """Test _cb_shading_state_changed."""
+        with unittest.mock.patch.object(self.reset_shading_rule, "_update_any_hand_manual_feedback") as mock_update:
+            self.reset_shading_rule._cb_shading_state_changed(unittest.mock.MagicMock())
+        mock_update.assert_called_once()
+
+    def test_cb_reset_all(self) -> None:
+        """Test _cb_reset_all."""
+        TestCase = collections.namedtuple("TestCase", "event, state, custom_hand_states, manual_commands")
+
+        test_cases = [
+            TestCase("OFF", "Auto", [], []),
+            TestCase("OFF", "Hand", [], []),
+            TestCase("OFF", "Manual", [], []),
+            TestCase("ON", "Auto", [], []),
+            TestCase("ON", "Hand", [], [unittest.mock.call("ON"), unittest.mock.call("OFF")]),
+            TestCase("ON", "Manual", [], [unittest.mock.call("OFF")]),
+            TestCase("ON", "CustomState", ["CustomState"], [unittest.mock.call("ON"), unittest.mock.call("OFF")]),
+            TestCase("ON", "Auto", ["CustomState"], []),
         ]
 
         shading_rule_mock = unittest.mock.MagicMock()
-        shading_rule_mock._config.items.manual = unittest.mock.MagicMock(spec=SwitchItem)
+        shading_rule_mock.config.items.manual = unittest.mock.MagicMock(spec=SwitchItem)
 
-        with unittest.mock.patch.object(self.reset_shading_rule, "_ResetAllManualHand__get_shading_objects", return_value=[shading_rule_mock]):
-            for test_case in test_cases:
-                shading_rule_mock.state = test_case.state
-                shading_rule_mock._config.items.manual.oh_send_command.reset_mock()
+        for test_case in test_cases:
+            shading_rule_mock.state = test_case.state
+            shading_rule_mock.config.parameter.custom_hand_state = test_case.custom_hand_states
+            shading_rule_mock.config.items.manual.oh_send_command.reset_mock()
 
+            with unittest.mock.patch.object(self.reset_shading_rule, "_get_shading_objects", return_value=[shading_rule_mock]):
                 self.reset_shading_rule._cb_reset_all(HABApp.openhab.events.ItemCommandEvent("name", test_case.event))
 
-                self.assertEqual(len(test_case.manual_commands), shading_rule_mock._config.items.manual.oh_send_command.call_count)
-                shading_rule_mock._config.items.manual.oh_send_command.assert_has_calls(test_case.manual_commands)
+            self.assertEqual(len(test_case.manual_commands), shading_rule_mock.config.items.manual.oh_send_command.call_count)
+            shading_rule_mock.config.items.manual.oh_send_command.assert_has_calls(test_case.manual_commands)
 
 
 class TestSlatValueSun(TestCaseBase):
