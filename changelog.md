@@ -1,4 +1,4 @@
-# Version 11.2.0 - dd.05.2026
+# Version 11.2.0 - 30.05.2026
 
 ## Features
 
