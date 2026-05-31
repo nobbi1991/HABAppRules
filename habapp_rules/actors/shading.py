@@ -15,6 +15,7 @@ from HABApp.openhab.items import RollershutterItem
 from habapp_rules.actors.config.shading import ReferenceRunConfig, ResetAllManualHandConfig, ShadingConfig, ShadingPosition, SlatValueConfig
 from habapp_rules.actors.state_observer import StateObserverDimmer, StateObserverRollerShutter, StateObserverSlat
 from habapp_rules.core.exceptions import HabAppRulesConfigurationError
+from habapp_rules.core.helper import send_if_different
 from habapp_rules.core.logger import InstanceLogger
 from habapp_rules.core.state_machine_rule import HierarchicalStateMachineWithTimeout, StateMachineRule
 from habapp_rules.system import PresenceState, SleepState
@@ -611,7 +612,7 @@ class ResetAllManualHand(HABApp.Rule):
         if self._config.items.any_hand_manual_is_active_feedback is None:
             return
         is_active = any(obj.state in {"Hand", "Manual"} | set(obj.config.parameter.custom_hand_state) for obj in self._shading_subscriptions)
-        self._config.items.any_hand_manual_is_active_feedback.oh_send_command("ON" if is_active else "OFF")
+        send_if_different(self._config.items.any_hand_manual_is_active_feedback, "ON" if is_active else "OFF")
 
     def _get_shading_objects(self) -> list[_ShadingBase]:
         """Get all shading objects.

@@ -1,3 +1,9 @@
+# Version 11.2.1 - 31.05.2026
+
+## Bugfix
+
+- `habapp_rules.actors.shading.ResetAllManualHand`: only send a command to `any_hand_manual_is_active_feedback` when the value actually changes (uses `send_if_different`), avoiding redundant commands when many tracked shading objects change state at once (e.g. at end of sleep)
+
 # Version 11.2.0 - 30.05.2026
 
 ## Features
