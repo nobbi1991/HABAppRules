@@ -1,20 +1,17 @@
 """Rules for astro actions."""
 
 import abc
-import logging
 
-import HABApp
 from HABApp.openhab.events import ItemStateChangedEvent
 from HABApp.openhab.events.event_filters import ItemStateChangedEventFilter
 from HABApp.openhab.items import NumberItem, SwitchItem
 
+from habapp_rules.core.base import RuleBase
 from habapp_rules.core.helper import send_if_different
 from habapp_rules.sensors.config.astro import SetDayConfig, SetNightConfig
 
-LOGGER = logging.getLogger(__name__)
 
-
-class _SetNightDayBase(abc.ABC, HABApp.Rule):
+class _SetNightDayBase(abc.ABC, RuleBase):
     """Base class for set night / day."""
 
     def __init__(self, item_target: SwitchItem, item_elevation: NumberItem, elevation_threshold: float) -> None:
@@ -25,7 +22,7 @@ class _SetNightDayBase(abc.ABC, HABApp.Rule):
             item_elevation: OpenHAB item of sun elevation (NumberItem)
             elevation_threshold: Threshold value for elevation.
         """
-        HABApp.Rule.__init__(self)
+        RuleBase.__init__(self, item_target.name)
 
         self._item_target = item_target
         self._item_elevation = item_elevation
@@ -34,6 +31,7 @@ class _SetNightDayBase(abc.ABC, HABApp.Rule):
         self._item_elevation.listen_event(self._set_night, ItemStateChangedEventFilter())
 
         self.run.soon(self._set_night, None)
+        self._log_init_done()
 
     def _set_night(self, _: ItemStateChangedEvent | None = None) -> None:
         """Callback which sets the state to the night item."""

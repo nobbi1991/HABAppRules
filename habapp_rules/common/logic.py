@@ -1,10 +1,8 @@
 """Implementations of logical functions."""
 
 import abc
-import logging
 from typing import cast
 
-import HABApp
 from HABApp.openhab.events import ItemStateChangedEvent, ItemStateUpdatedEvent
 from HABApp.openhab.events.event_filters import ItemStateChangedEventFilter, ItemStateUpdatedEventFilter
 from HABApp.openhab.items import ContactItem, DimmerItem, SwitchItem
@@ -12,13 +10,11 @@ from HABApp.util.functions.min_max import max as habapp_max
 from HABApp.util.functions.min_max import min as habapp_min
 
 from habapp_rules.common.config.logic import BinaryLogicConfig, InvertValueConfig, NumericLogicConfig
+from habapp_rules.core.base import RuleBase
 from habapp_rules.core.helper import filter_updated_items, send_if_different
-from habapp_rules.core.logger import InstanceLogger
-
-LOGGER = logging.getLogger(__name__)
 
 
-class _BinaryLogicBase(HABApp.Rule):
+class _BinaryLogicBase(RuleBase):
     """Base class for binary logical functions."""
 
     def __init__(self, config: BinaryLogicConfig) -> None:
@@ -30,9 +26,8 @@ class _BinaryLogicBase(HABApp.Rule):
         Raises:
             TypeError: if unsupported item-type is given for output_name
         """
-        HABApp.Rule.__init__(self)
         self._config = config
-        self._instance_logger = InstanceLogger(LOGGER, f"{self.__class__.__name__}_{self._config.items.output.name}")
+        RuleBase.__init__(self, self._config.items.output.name)
 
         if isinstance(self._config.items.output, SwitchItem):
             # item type is Switch
@@ -48,7 +43,7 @@ class _BinaryLogicBase(HABApp.Rule):
 
         self._cb_input_event(None)
         input_names = [item.name for item in self._config.items.inputs]
-        self._instance_logger.debug(f"Init of rule '{self.__class__.__name__}' with was successful. Output item = '{self._config.items.output.name}' | Input items = {input_names}")
+        self._log_init_done(f"Output item = '{self._config.items.output.name}' | Input items = {input_names}")
 
     @abc.abstractmethod
     def _cb_input_event(self, event: ItemStateUpdatedEvent | None) -> None:
@@ -112,7 +107,7 @@ class Or(_BinaryLogicBase):
         self._set_output_state(output_state)
 
 
-class _NumericLogicBase(HABApp.Rule):
+class _NumericLogicBase(RuleBase):
     """Base class for numeric logical functions."""
 
     def __init__(self, config: NumericLogicConfig) -> None:
@@ -124,16 +119,15 @@ class _NumericLogicBase(HABApp.Rule):
         Raises:
             TypeError: if unsupported item-type is given for output_name
         """
-        HABApp.Rule.__init__(self)
         self._config = config
-        self._instance_logger = InstanceLogger(LOGGER, f"{self.__class__.__name__}_{self._config.items.output.name}")
+        RuleBase.__init__(self, self._config.items.output.name)
 
         for item in self._config.items.inputs:
             item.listen_event(self._cb_input_event, ItemStateChangedEventFilter())
 
         self._cb_input_event(None)
         input_names = [item.name for item in self._config.items.inputs]
-        self._instance_logger.debug(f"Init of rule '{self.__class__.__name__}' with was successful. Output item = '{self._config.items.output.name}' | Input items = {input_names}")
+        self._log_init_done(f"Output item = '{self._config.items.output.name}' | Input items = {input_names}")
 
     def _cb_input_event(self, _: ItemStateUpdatedEvent | None) -> None:
         """Callback, which is called if one of the input items had a state event."""
@@ -274,7 +268,7 @@ class Sum(_NumericLogicBase):
         return sum(val for val in input_values if val is not None)
 
 
-class InvertValue(HABApp.Rule):
+class InvertValue(RuleBase):
     """Rule to update another item if the value of an item changed.
 
     # Config:
@@ -295,13 +289,12 @@ class InvertValue(HABApp.Rule):
         Args:
             config: Config for invert value rule
         """
-        HABApp.Rule.__init__(self)
         self._config = config
-        self._instance_logger = InstanceLogger(LOGGER, f"{self.__class__.__name__}_{self._config.items.output.name}")
+        RuleBase.__init__(self, self._config.items.output.name)
 
         self._config.items.input.listen_event(self._cb_input_value, ItemStateChangedEventFilter())
         self._cb_input_value(ItemStateChangedEvent(self._config.items.input.name, self._config.items.input.value, None))
-        self._instance_logger.debug(f"Init of rule '{self.__class__.__name__}' with was successful. Output item = '{self._config.items.output.name}' | Input item = '{self._config.items.input.name}'")
+        self._log_init_done(f"Output item = '{self._config.items.output.name}' | Input item = '{self._config.items.input.name}'")
 
     def _cb_input_value(self, event: ItemStateChangedEvent) -> None:
         """Set output, when input value changed.

@@ -8,14 +8,13 @@ import tempfile
 from datetime import timedelta
 
 import dateutil.relativedelta
-import HABApp
 import jinja2
 import multi_notifier.connectors.connector_mail
 from HABApp.openhab.items import NumberItem
 
 from habapp_rules import __version__
+from habapp_rules.core.base import RuleBase
 from habapp_rules.core.exceptions import HabAppRulesConfigurationError
-from habapp_rules.core.logger import InstanceLogger
 from habapp_rules.energy.charts import create_history_chart, create_pie_chart
 from habapp_rules.energy.config.monthly_report import MonthlyReportConfig
 from habapp_rules.energy.helper import get_historic_value
@@ -95,7 +94,7 @@ class HistoricValueProvider:
         return value
 
 
-class MonthlyReport(HABApp.Rule):
+class MonthlyReport(RuleBase):
     """Rule for sending the monthly energy consumption.
 
     # Config
@@ -132,8 +131,7 @@ class MonthlyReport(HABApp.Rule):
             HabAppRulesConfigurationError: if config is not valid
         """
         self._config = config
-        HABApp.Rule.__init__(self)
-        self._instance_logger = InstanceLogger(LOGGER, config.items.energy_sum.name)
+        RuleBase.__init__(self, config.items.energy_sum.name)
         self._mail = multi_notifier.connectors.connector_mail.Mail(config.parameter.config_mail)
 
         if config.parameter.persistence_group_name is not None:
@@ -151,7 +149,7 @@ class MonthlyReport(HABApp.Rule):
         if config.parameter.debug:
             self._instance_logger.warning("Debug mode is active!")
             self.run.soon(self._cb_send_energy)
-        self._instance_logger.info(f"Successfully initiated monthly consumption rule for {config.items.energy_sum.name}.")
+        self._log_init_done()
 
     def _create_html(self, energy_sum_month: float, *, show_history: bool = True) -> str:
         """Create html which will be sent by the mail.
@@ -247,7 +245,7 @@ class MonthlyReport(HABApp.Rule):
 
         # get energy sum at start of month
         if not (energy_start_of_month := self._historic_value_provider_sum.get_start_of_month_value(start_of_month.year, start_of_month.month)):
-            LOGGER.error(f"Could not get historic value 'energy_sum' for start of month ({start_of_month}).")
+            self._instance_logger.error(f"Could not get historic value 'energy_sum' for start of month ({start_of_month}).")
             return
 
         # get energy since start of month + energy of every share

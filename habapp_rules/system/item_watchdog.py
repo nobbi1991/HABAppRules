@@ -1,13 +1,13 @@
 """Watchdog rules."""
 
-import HABApp
 from HABApp.openhab.events import ItemStateUpdatedEvent, ItemStateUpdatedEventFilter
 
+from habapp_rules.core.base import RuleBase
 from habapp_rules.core.helper import send_if_different
 from habapp_rules.system.config.item_watchdog import WatchdogConfig
 
 
-class ItemWatchdog(HABApp.Rule):
+class ItemWatchdog(RuleBase):
     """Watchdog rule to check if the observed item was updated in time.
 
     # Items:
@@ -31,12 +31,13 @@ class ItemWatchdog(HABApp.Rule):
         Args:
             config: Config for watchdog rule
         """
-        HABApp.Rule.__init__(self)
+        RuleBase.__init__(self, config.items.observed.name)
         self._config = config
 
         self._countdown = self.run.countdown(self._config.parameter.timeout, send_if_different, item=self._config.items.warning, value="ON")
         self._countdown.reset()
         self._config.items.observed.listen_event(self._cb_observed_state_updated, ItemStateUpdatedEventFilter())
+        self._log_init_done()
 
     def _cb_observed_state_updated(self, _: ItemStateUpdatedEvent) -> None:
         """Callback which is called if the observed item was updated."""

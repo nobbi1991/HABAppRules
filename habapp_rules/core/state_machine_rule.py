@@ -1,20 +1,16 @@
 """Base class for Rule with State Machine."""
 
-import logging
 import threading
 import typing
 
-import HABApp
 import transitions.extensions
 import transitions.extensions.states
 from HABApp.openhab.items import StringItem
 from HABApp.rule import in_thread
 from transitions.core import EventData
 
+from habapp_rules.core.base import RuleBase
 from habapp_rules.core.exceptions import HabAppRulesError
-from habapp_rules.core.logger import InstanceLogger
-
-LOGGER = logging.getLogger(__name__)
 
 
 class _HabAppTimeout(transitions.extensions.states.Timeout):
@@ -39,7 +35,7 @@ class HierarchicalStateMachineWithTimeout(transitions.extensions.LockedHierarchi
     """Thread-safe hierarchical state machine class with timeout."""
 
 
-class StateMachineRule(HABApp.Rule):
+class StateMachineRule(RuleBase):
     """Base class for creating rules with a state machine."""
 
     states: typing.ClassVar[list[dict]] = []
@@ -55,17 +51,8 @@ class StateMachineRule(HABApp.Rule):
             state_item: name of the item to hold the state
             instance_logger_name: name of the instance logger
         """
-        HABApp.Rule.__init__(self)
-        self._instance_logger = InstanceLogger(LOGGER, instance_logger_name)
+        RuleBase.__init__(self, instance_logger_name)
         self._item_state = state_item
-
-    def _get_initial_log_message(self) -> str:
-        """Get log message which can be logged at the init of a rule with a state machine.
-
-        Returns:
-            log message
-        """
-        return f"Init of rule '{self.__class__.__name__}' with name '{self.rule_name}' was successful. Initial state = '{self.state}' | State item = '{self._item_state.name}'"
 
     def _get_initial_state(self, default_value: str = "initial") -> str:
         """Get initial state of state machine.
@@ -83,7 +70,7 @@ class StateMachineRule(HABApp.Rule):
     def _post_init(self) -> None:
         """Post init method to initialize the state machine. This should be called at the end of the __init__ method of the child class."""
         self._update_openhab_state()
-        self._instance_logger.info(self._get_initial_log_message())
+        self._log_init_done(f"Initial state = '{self.state}' | State item = '{self._item_state.name}'")
 
     def _set_state(self, state_name: str) -> None:  # noqa: PLR6301
         """Set given state.

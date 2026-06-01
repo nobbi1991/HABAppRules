@@ -1,20 +1,16 @@
 """Rules to for garden watering."""
 
 import datetime
-import logging
 
-import HABApp
 from HABApp.openhab.events import ItemStateChangedEvent
 from HABApp.openhab.events.event_filters import ItemStateChangedEventFilter
 
 from habapp_rules.actors.config.irrigation import IrrigationConfig
+from habapp_rules.core.base import RuleBase
 from habapp_rules.core.exceptions import HabAppRulesError
-from habapp_rules.core.logger import InstanceLogger
-
-LOGGER = logging.getLogger(__name__)
 
 
-class Irrigation(HABApp.Rule):
+class Irrigation(RuleBase):
     """Rule for easy irrigation control.
 
     # Items:
@@ -49,8 +45,7 @@ class Irrigation(HABApp.Rule):
             HabAppRulesConfigurationException: if configuration is not correct
         """
         self._config = config
-        HABApp.Rule.__init__(self)
-        self._instance_logger = InstanceLogger(LOGGER, self._config.items.valve.name)
+        RuleBase.__init__(self, self._config.items.valve.name)
 
         self.run.soon(self._cb_set_valve_state)  # type:ignore[reportCallIssue]
         self.run.at(self.run.trigger.interval(None, 60), self._cb_set_valve_state)
@@ -63,7 +58,7 @@ class Irrigation(HABApp.Rule):
         if self._config.items.brake is not None:
             self._config.items.brake.listen_event(self._cb_set_valve_state, ItemStateChangedEventFilter())
 
-        self._instance_logger.debug(f"Init of rule '{self.__class__.__name__}' with name '{self.rule_name}' was successful.")
+        self._log_init_done()
 
     def _get_target_valve_state(self) -> bool:
         """Get target valve state, depending on the OpenHAB item states.

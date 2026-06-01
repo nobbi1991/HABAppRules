@@ -1,4 +1,11 @@
-# Version 11.2.1 - 31.05.2026
+# Version 11.3.0 - 01.06.2026
+
+## Features
+
+- added `habapp_rules.core.base.RuleBase` as the common base class for all rules (on top of `HABApp.Rule`). It centralizes:
+  - a descriptive `rule_name` of the form `<ClassName>_<primary_item>` (e.g. `StateObserverRollerShutter_I01_01_RollerShutter` instead of `StateObserverRollerShutter.4`), making it easier to identify the responsible rule in the logs
+  - an instance logger bound to the concrete rule's module
+  - a standardized `_log_init_done` "init successful" log message, now emitted consistently by every rule
 
 ## Bugfix
 

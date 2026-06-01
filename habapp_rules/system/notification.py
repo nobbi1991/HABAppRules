@@ -1,13 +1,13 @@
 """Rules for notification."""
 
 from HABApp.openhab.events import ItemStateChangedEvent, ItemStateChangedEventFilter
-from HABApp.rule.rule import Rule
 from multi_notifier.connectors.connector_telegram import Telegram
 
+from habapp_rules.core.base import RuleBase
 from habapp_rules.system.config.notification import NotificationConfig
 
 
-class SendStateChanged(Rule):
+class SendStateChanged(RuleBase):
     """Rule class to send a telegram if the state of an item changes."""
 
     def __init__(self, config: NotificationConfig) -> None:
@@ -17,9 +17,10 @@ class SendStateChanged(Rule):
             config: config for notification rule
         """
         self._config = config
-        Rule.__init__(self)
+        RuleBase.__init__(self, config.items.target_item.name)
 
         self._config.items.target_item.listen_event(self._send_state_change, ItemStateChangedEventFilter())
+        self._log_init_done()
 
     def _send_state_change(self, event: ItemStateChangedEvent) -> None:
         """Callback which is called if the state of the item changed.
