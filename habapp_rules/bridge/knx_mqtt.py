@@ -1,18 +1,13 @@
 """Rules for bridging KNX controller to MQTT items."""
 
-import logging
-
-import HABApp
 from HABApp.openhab.events import ItemCommandEvent, ItemStateChangedEvent
 from HABApp.openhab.events.event_filters import ItemCommandEventFilter, ItemStateChangedEventFilter
 
 from habapp_rules.bridge.config.knx_mqtt import KnxMqttConfig
-from habapp_rules.core.logger import InstanceLogger
-
-LOGGER = logging.getLogger(__name__)
+from habapp_rules.core.base import RuleBase
 
 
-class KnxMqttDimmerBridge(HABApp.Rule):
+class KnxMqttDimmerBridge(RuleBase):
     """Create a bridge to control a MQTT dimmer from a KNX controller (e.g. wall switch).
 
     To use this the items must be configured according the following example:
@@ -35,15 +30,14 @@ class KnxMqttDimmerBridge(HABApp.Rule):
         self._config = config
         knx_name = self._config.items.knx_item_name
 
-        HABApp.Rule.__init__(self)
-        self._instance_logger = InstanceLogger(LOGGER, f"{knx_name}__{self._config.items.mqtt_dimmer.name}")
+        RuleBase.__init__(self, f"{knx_name}__{self._config.items.mqtt_dimmer.name}")
 
         self._config.items.mqtt_dimmer.listen_event(self._cb_mqtt_event, ItemStateChangedEventFilter())
         if self._config.items.knx_dimmer_ctr is not None:
             self._config.items.knx_dimmer_ctr.listen_event(self._cb_knx_event, ItemCommandEventFilter())
         if self._config.items.knx_switch_ctr is not None:
             self._config.items.knx_switch_ctr.listen_event(self._cb_knx_event, ItemCommandEventFilter())
-        self._instance_logger.debug("successful!")
+        self._log_init_done()
 
     def _cb_knx_event(self, event: ItemCommandEvent) -> None:
         """Callback, which is called if a KNX command received.

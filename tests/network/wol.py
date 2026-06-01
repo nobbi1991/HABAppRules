@@ -31,14 +31,14 @@ class TestWOL(TestCaseBase):
     def test_trigger(self) -> None:
         """Test trigger of WOL."""
         # min
-        with unittest.mock.patch("habapp_rules.network.wol.send_magic_packet") as send_magic_packet_mock, unittest.mock.patch("habapp_rules.network.wol.LOGGER") as logger_mock:
+        with unittest.mock.patch("habapp_rules.network.wol.send_magic_packet") as send_magic_packet_mock, unittest.mock.patch.object(self._rule_min, "_instance_logger") as logger_mock:
             item_state_change_event("Unittest_WOL_min", "ON")
             send_magic_packet_mock.assert_called_once_with("12:34:56:78:9a:ff")
             logger_mock.info.assert_called_once_with("Triggered WOL for '12:34:56:78:9a:ff'")
             assert_item_value("Unittest_WOL_min", "OFF")
 
         # max
-        with unittest.mock.patch("habapp_rules.network.wol.send_magic_packet") as send_magic_packet_mock, unittest.mock.patch("habapp_rules.network.wol.LOGGER") as logger_mock:
+        with unittest.mock.patch("habapp_rules.network.wol.send_magic_packet") as send_magic_packet_mock, unittest.mock.patch.object(self._rule_max, "_instance_logger") as logger_mock:
             item_state_change_event("Unittest_WOL_max", "ON")
             send_magic_packet_mock.assert_called_once_with("ab:cd:56:78:9a:ff")
             logger_mock.info.assert_called_once_with("Triggered WOL for 'Some better name'")

@@ -2,10 +2,10 @@
 
 from typing import TYPE_CHECKING
 
-import HABApp
 from HABApp.openhab.events import ItemStateChangedEvent
 from HABApp.openhab.events.event_filters import ItemStateChangedEventFilter
 
+from habapp_rules.core.base import RuleBase
 from habapp_rules.core.helper import send_if_different
 from habapp_rules.sensors.config.current_switch import CurrentSwitchConfig
 
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from HABApp.rule.scheduler.job_ctrl import CountdownJobControl
 
 
-class CurrentSwitch(HABApp.Rule):
+class CurrentSwitch(RuleBase):
     """Rules class which manages a switch based on electrical current values.
 
     # Items:
@@ -38,12 +38,13 @@ class CurrentSwitch(HABApp.Rule):
         Args:
             config: config for current switch rule
         """
-        HABApp.Rule.__init__(self)
+        RuleBase.__init__(self, config.items.switch.name)
         self._config = config
         self._extended_countdown: CountdownJobControl | None = self.run.countdown(self._config.parameter.extended_time, self._countdown_end) if self._config.parameter.extended_time else None
 
         self._check_current_and_set_switch(self._config.items.current.value)
         self._config.items.current.listen_event(self._cb_current_changed, ItemStateChangedEventFilter())
+        self._log_init_done()
 
     def _countdown_end(self) -> None:
         """Callback which is called if the extended countdown ended."""

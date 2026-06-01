@@ -1,18 +1,14 @@
 """Heating rules."""
 
-import logging
-
-import HABApp
 from HABApp.openhab.events import ItemCommandEvent, ItemStateChangedEvent
 from HABApp.openhab.events.event_filters import ItemCommandEventFilter, ItemStateChangedEventFilter
 
 from habapp_rules.actors.config.heating import HeatingActiveConfig, KnxHeatingConfig
+from habapp_rules.core.base import RuleBase
 from habapp_rules.core.helper import send_if_different
 
-LOGGER = logging.getLogger(__name__)
 
-
-class KnxHeating(HABApp.Rule):
+class KnxHeating(RuleBase):
     """Rule which can be used to control a heating actor which only supports temperature offsets (e.g. MDT).
 
     This rule uses a virtual temperature OpenHAB item for the target temperature. If this changes, the new offset is calculated and sent to the actor.
@@ -47,7 +43,7 @@ class KnxHeating(HABApp.Rule):
         Args:
             config: KNX heating config
         """
-        HABApp.Rule.__init__(self)
+        RuleBase.__init__(self, config.items.virtual_temperature.name)
         self._config = config
 
         self._temperature: float | None = config.items.actor_feedback_temperature.value
@@ -56,6 +52,7 @@ class KnxHeating(HABApp.Rule):
 
         config.items.actor_feedback_temperature.listen_event(self._cb_actor_feedback_temperature_changed, ItemStateChangedEventFilter())
         config.items.virtual_temperature.listen_event(self._cb_virtual_temperature_command, ItemCommandEventFilter())
+        self._log_init_done()
 
     def _cb_actor_feedback_temperature_changed(self, event: ItemStateChangedEvent) -> None:
         """Callback, which is triggered if the actor feedback temperature changed.
@@ -86,7 +83,7 @@ class KnxHeating(HABApp.Rule):
         self._temperature = event.value
 
 
-class HeatingActive(HABApp.Rule):
+class HeatingActive(RuleBase):
     """Rule sets a switch item to ON if any of the heating control values are above 0.
 
     # Items:
@@ -111,7 +108,7 @@ class HeatingActive(HABApp.Rule):
         Args:
             config: Config of the HeatingActive rule
         """
-        HABApp.Rule.__init__(self)
+        RuleBase.__init__(self, config.items.output.name)
         self._config = config
 
         self._extended_lock = self.run.countdown(self._config.parameter.extended_active_time, self._cb_lock_end)  # type:ignore[reportCallIssue]
@@ -132,14 +129,15 @@ class HeatingActive(HABApp.Rule):
             target_state = any(value > self._config.parameter.threshold for value in ctr_values) if ctr_values else False
             send_if_different(self._config.items.output, "ON" if target_state else "OFF")
 
-    @staticmethod
-    def _cb_output(event: ItemStateChangedEvent) -> None:
+        self._log_init_done()
+
+    def _cb_output(self, event: ItemStateChangedEvent) -> None:
         """Callback which is triggered if the output changed.
 
         Args:
             event: original trigger event
         """
-        LOGGER.debug(f"Heating active output changed to {event.value}")
+        self._instance_logger.debug(f"Heating active output changed to {event.value}")
 
     def _cb_control_value(self, event: ItemStateChangedEvent) -> None:
         """Callback which is triggered if any of the control values changed.

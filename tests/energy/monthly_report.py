@@ -161,7 +161,7 @@ class TestMonthlyReport(TestCaseBase):
 
     def test_cb_send_energy_error(self) -> None:
         """Test _cb_send_energy."""
-        with unittest.mock.patch("habapp_rules.energy.monthly_report.get_historic_value", side_effect=[None]), unittest.mock.patch("habapp_rules.energy.monthly_report.LOGGER") as logger_mock:
+        with unittest.mock.patch("habapp_rules.energy.monthly_report.get_historic_value", side_effect=[None]), unittest.mock.patch.object(self._rule, "_instance_logger") as logger_mock:
             self._rule._cb_send_energy()
 
         logger_mock.error.assert_called_once()

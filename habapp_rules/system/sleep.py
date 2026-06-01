@@ -1,19 +1,15 @@
 """Rule to set/unset sleep state."""
 
 import datetime
-import logging
 import typing
 
-import HABApp.util
 from HABApp.openhab.events import ItemStateChangedEvent
 from HABApp.openhab.events.event_filters import ItemStateChangedEventFilter
 
+from habapp_rules.core.base import RuleBase
 from habapp_rules.core.helper import send_if_different
-from habapp_rules.core.logger import InstanceLogger
 from habapp_rules.core.state_machine_rule import StateMachineRule, StateMachineWithTimeout
 from habapp_rules.system.config.sleep import LinkSleepConfig, SleepConfig
-
-LOGGER = logging.getLogger(__name__)
 
 
 class Sleep(StateMachineRule):
@@ -214,7 +210,7 @@ class Sleep(StateMachineRule):
             self.__update_lock_state()
 
 
-class LinkSleep(HABApp.Rule):
+class LinkSleep(RuleBase):
     """Link sleep items depending on current time."""
 
     def __init__(self, config: LinkSleepConfig) -> None:
@@ -224,8 +220,7 @@ class LinkSleep(HABApp.Rule):
             config: Config for linking sleep rules
         """
         self._config = config
-        HABApp.Rule.__init__(self)
-        self._instance_logger = InstanceLogger(LOGGER, self.rule_name)
+        RuleBase.__init__(self, config.items.sleep_master.name)
 
         config.items.sleep_master.listen_event(self._cb_master, ItemStateChangedEventFilter())
 
@@ -233,6 +228,8 @@ class LinkSleep(HABApp.Rule):
             self.run.at(self.run.trigger.time(config.parameter.link_time_start), self._set_link_active_feedback, target_state="ON")
             self.run.at(self.run.trigger.time(config.parameter.link_time_end), self._set_link_active_feedback, target_state="OFF")
             self.run.soon(self._set_link_active_feedback, target_state=self._check_time_in_window)
+
+        self._log_init_done()
 
     def _check_time_in_window(self) -> bool:
         """Check if current time is in the active time window.

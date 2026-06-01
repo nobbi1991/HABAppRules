@@ -131,7 +131,7 @@ class Sonos(StateMachineRule):
         track_uri = self._config.items.current_track_uri.value
 
         if not track_uri or not isinstance(track_uri, str):
-            LOGGER.warning(f"Track URI is not a string or is empty: {track_uri}")
+            self._instance_logger.warning(f"Track URI is not a string or is empty: {track_uri}")
             self._set_state("Playing_UnknownContent")
 
         elif track_uri.startswith("x-file-cifs:"):
@@ -203,7 +203,7 @@ class Sonos(StateMachineRule):
         elif self.state == "Standby" and self._previous_state == "Booting" and self._started_through_favorite_id:
             # this is used to set the favorite content after booting. E.g. if booted through favorite id (user pressed favorite button and Sonos was in PowerOff state)
             if (fav_content := self._get_favorite_content_by_id()) is None:
-                LOGGER.warning(f"Favorite ID {self._config.items.favorite_id_as_int} is not known. Can not set favorite content after booting.")
+                self._instance_logger.warning(f"Favorite ID {self._config.items.favorite_id_as_int} is not known. Can not set favorite content after booting.")
             else:
                 self._set_favorite_content(fav_content)
 
@@ -336,7 +336,7 @@ class Sonos(StateMachineRule):
             return
 
         if self.state.startswith("Playing_") or self.state in {"Standby", "Starting"}:
-            LOGGER.debug("fav ID changed. Setting content.")
+            self._instance_logger.debug("fav ID changed. Setting content.")
             self._config.items.sonos_player.set_value("PAUSE")  # set state before sending command to avoid wrong transitions from "Starting" state to Playing_
             self._config.items.favorite_id.set_value(event.value)  # type: ignore[union-attr] # _cb_favorite_id is only called if favorite_id-item is configured
             self._config.items.sonos_player.oh_send_command("PAUSE")
@@ -347,7 +347,7 @@ class Sonos(StateMachineRule):
                 self._started_through_favorite_id = True
                 self._config.items.power_switch.oh_send_command("ON")
             else:
-                LOGGER.warning(f"Favorite ID changed at PowerOff-state to {event.value}. No Power switch item is configured  -> can not start SONOS.")
+                self._instance_logger.warning(f"Favorite ID changed at PowerOff-state to {event.value}. No Power switch item is configured  -> can not start SONOS.")
 
     def _cb_current_track_uri(self, event: ItemStateChangedEvent) -> None:
         """Callback if the track URI changed.
@@ -356,7 +356,7 @@ class Sonos(StateMachineRule):
             event: event which triggered this event
         """
         if event.value and (self.state in {"Playing_TuneIn", "Playing_PlayUri"} or (self.state == "Standby" and "tunein" not in event.value.lower())):
-            LOGGER.debug(f"Track URI changed in '{self.state}' state. Set state to 'Starting'.")
+            self._instance_logger.debug(f"Track URI changed in '{self.state}' state. Set state to 'Starting'.")
             self.trigger("to_Starting")
 
     def _cb_presence_state(self, event: ItemStateChangedEvent) -> None:

@@ -1,25 +1,23 @@
 import abc
-import logging
 import time
 from typing import Generic, TypeVar
 
-import HABApp
 from HABApp.openhab.events import ItemStateChangedEvent
 from HABApp.openhab.events.event_filters import ItemStateChangedEventFilter
 
+from habapp_rules.core.base import RuleBase
 from habapp_rules.energy.config.virtual_energy_meter import EnergyMeterNumberConfig, EnergyMeterSwitchConfig
 
-LOGGER = logging.getLogger(__name__)
 _CONFIG_TYPE = TypeVar("_CONFIG_TYPE", bound=EnergyMeterSwitchConfig | EnergyMeterNumberConfig)
 
 
-class _VirtualEnergyMeterBase(HABApp.Rule, Generic[_CONFIG_TYPE]):
+class _VirtualEnergyMeterBase(RuleBase, Generic[_CONFIG_TYPE]):
     """Base class for virtual energy meter classes."""
 
     def __init__(self, config: _CONFIG_TYPE) -> None:
-        HABApp.Rule.__init__(self)
         self._config = config
         self._monitored_item = config.items.monitored_switch if isinstance(config, EnergyMeterSwitchConfig) else config.items.monitored_item
+        RuleBase.__init__(self, self._monitored_item.name)
 
         if self._config.items.energy_output is not None and self._config.items.energy_output.value is None:
             self._config.items.energy_output.oh_send_command(0)
@@ -34,6 +32,8 @@ class _VirtualEnergyMeterBase(HABApp.Rule, Generic[_CONFIG_TYPE]):
 
         if self._config.items.power_output is not None:
             self._config.items.power_output.oh_send_command(self._get_power() if self._is_on() else 0)
+
+        self._log_init_done()
 
     @abc.abstractmethod
     def _get_power(self) -> float:

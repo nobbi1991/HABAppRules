@@ -1,14 +1,14 @@
 import datetime
 
-import HABApp
 from HABApp.openhab.events import ItemStateChangedEvent
 from HABApp.openhab.events.event_filters import ItemStateChangedEventFilter
 
+from habapp_rules.core.base import RuleBase
 from habapp_rules.core.helper import send_if_different
 from habapp_rules.system.config.task import CounterTaskConfig, RecurringTaskConfig
 
 
-class RecurringTask(HABApp.Rule):
+class RecurringTask(RuleBase):
     """Rule to check and set recurring tasks.
 
     # Items:
@@ -34,7 +34,7 @@ class RecurringTask(HABApp.Rule):
         Args:
             config: config for this rule
         """
-        HABApp.Rule.__init__(self)
+        RuleBase.__init__(self, config.items.task_active.name)
         self._config = config
 
         if self._config.parameter.fixed_check_time is not None:
@@ -43,6 +43,7 @@ class RecurringTask(HABApp.Rule):
             self.run.at(self.run.trigger.interval(1, self._get_check_cycle()), self._check_and_set_task_undone)
 
         self._config.items.task_active.listen_event(self._cb_task_active, ItemStateChangedEventFilter())
+        self._log_init_done()
 
     def _get_check_cycle(self) -> datetime.timedelta:
         """Get cycle time to check if task is done.
@@ -69,7 +70,7 @@ class RecurringTask(HABApp.Rule):
             send_if_different(self._config.items.task_active, "ON")
 
 
-class CounterTask(HABApp.Rule):
+class CounterTask(RuleBase):
     """Rule to check number item and set a switch item to ON if the number is greater than a threshold.
 
     # Items:
@@ -96,11 +97,12 @@ class CounterTask(HABApp.Rule):
         Args:
             config: config for this rule
         """
-        HABApp.Rule.__init__(self)
+        RuleBase.__init__(self, config.items.task_active.name)
         self._config = config
 
         self._config.items.task_active.listen_event(self._cb_task_active, ItemStateChangedEventFilter())
         self._config.items.observed.listen_event(self._cb_observed, ItemStateChangedEventFilter())
+        self._log_init_done()
 
     def _cb_task_active(self, event: ItemStateChangedEvent) -> None:
         """Callback, which is called if the "task_active" item was changed.

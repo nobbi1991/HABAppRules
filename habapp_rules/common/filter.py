@@ -1,18 +1,13 @@
 """Module for filter functions / rules."""
 
-import logging
-
-import HABApp
 from HABApp.openhab.events import ItemStateChangedEvent
 from HABApp.openhab.events.event_filters import ItemStateChangedEventFilter
 
 from habapp_rules.common.config.filter import ExponentialFilterConfig
-from habapp_rules.core.logger import InstanceLogger
-
-LOGGER = logging.getLogger(__name__)
+from habapp_rules.core.base import RuleBase
 
 
-class ExponentialFilter(HABApp.Rule):
+class ExponentialFilter(RuleBase):
     """Rules class to apply a exponential filter to a number value.
 
     # Items:
@@ -53,10 +48,8 @@ class ExponentialFilter(HABApp.Rule):
         Args:
             config: Config for exponential filter
         """
-        HABApp.Rule.__init__(self)
         self._config = config
-
-        self._instance_logger = InstanceLogger(LOGGER, self.rule_name)
+        RuleBase.__init__(self, self._config.items.filtered.name)
 
         self._previous_value = self._config.items.raw.value
 
@@ -67,7 +60,7 @@ class ExponentialFilter(HABApp.Rule):
         if self._config.parameter.instant_increase or self._config.parameter.instant_decrease:
             self._config.items.raw.listen_event(self._cb_item_raw, ItemStateChangedEventFilter())
 
-        self._instance_logger.debug(f"Successfully created exponential filter for item {self._config.items.raw.name}")
+        self._log_init_done(f"Filtered item = '{self._config.items.filtered.name}' | Raw item = '{self._config.items.raw.name}'")
 
     def _cb_cyclic_calculate_and_update_output(self) -> None:
         """Calculate the new filter output and update the filtered item. This must be called cyclic."""

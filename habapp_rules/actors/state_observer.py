@@ -3,25 +3,21 @@
 from __future__ import annotations
 
 import abc
-import logging
 import threading
 import time
 from collections.abc import Callable
 
-import HABApp
 from HABApp.openhab.events import ItemCommandEvent, ItemStateChangedEvent, ItemStateUpdatedEvent
 from HABApp.openhab.events.event_filters import ItemCommandEventFilter, ItemStateChangedEventFilter, ItemStateUpdatedEventFilter
 from HABApp.openhab.items import OpenhabItem
 
-from habapp_rules.core.logger import InstanceLogger
-
-LOGGER = logging.getLogger(__name__)
+from habapp_rules.core.base import RuleBase
 
 EventTypes = ItemStateChangedEvent | ItemCommandEvent | ItemStateUpdatedEvent
 CallbackType = Callable[[EventTypes], None]
 
 
-class _StateObserverBase(HABApp.Rule, abc.ABC):
+class _StateObserverBase(RuleBase, abc.ABC):
     """Base class for observer classes."""
 
     def __init__(self, item_name: str, control_names: list[str] | None = None, group_names: list[str] | None = None, value_tolerance: float = 0) -> None:
@@ -35,8 +31,7 @@ class _StateObserverBase(HABApp.Rule, abc.ABC):
         """
         self._value_tolerance = value_tolerance
 
-        HABApp.Rule.__init__(self)
-        self._instance_logger = InstanceLogger(LOGGER, item_name)
+        RuleBase.__init__(self, item_name)
 
         self._last_manual_event: ItemStateChangedEvent | ItemCommandEvent | ItemStateUpdatedEvent = ItemCommandEvent("", None)  # type:ignore[reportCallIssue]
 
@@ -54,6 +49,8 @@ class _StateObserverBase(HABApp.Rule, abc.ABC):
             control_item.listen_event(self._cb_control_item, ItemCommandEventFilter())
         for group_item in self.__group_items:
             group_item.listen_event(self._cb_group_item, ItemStateUpdatedEventFilter())
+
+        self._log_init_done()
 
     @property
     def value(self) -> float | bool:

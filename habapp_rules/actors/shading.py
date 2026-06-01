@@ -2,11 +2,9 @@
 
 import abc
 import datetime
-import logging
 import time
 import typing
 
-import HABApp
 from HABApp.core.internals.event_bus_listener import EventBusListener  # noqa: TC002
 from HABApp.openhab.events import ItemCommandEvent, ItemStateChangedEvent, ItemStateUpdatedEvent
 from HABApp.openhab.events.event_filters import ItemStateChangedEventFilter, ItemStateUpdatedEventFilter
@@ -14,13 +12,11 @@ from HABApp.openhab.items import RollershutterItem
 
 from habapp_rules.actors.config.shading import ReferenceRunConfig, ResetAllManualHandConfig, ShadingConfig, ShadingPosition, SlatValueConfig
 from habapp_rules.actors.state_observer import StateObserverDimmer, StateObserverRollerShutter, StateObserverSlat
+from habapp_rules.core.base import RuleBase
 from habapp_rules.core.exceptions import HabAppRulesConfigurationError
 from habapp_rules.core.helper import send_if_different
-from habapp_rules.core.logger import InstanceLogger
 from habapp_rules.core.state_machine_rule import HierarchicalStateMachineWithTimeout, StateMachineRule
 from habapp_rules.system import PresenceState, SleepState
-
-LOGGER = logging.getLogger(__name__)
 
 HAND_IGNORE_TIME = 1.5
 
@@ -406,8 +402,6 @@ class Shutter(_ShadingBase):
         """
         _ShadingBase.__init__(self, config)
 
-        self._instance_logger.debug(self._get_initial_log_message())
-
     def _apply_target_position(self, target_position: ShadingPosition | None) -> None:
         """Apply target position by sending it via the observer(s).
 
@@ -490,8 +484,6 @@ class Raffstore(_ShadingBase):
         if self._config.items.sun_protection_slat is not None:
             self._config.items.sun_protection_slat.listen_event(self._cb_slat_target, ItemStateChangedEventFilter())
 
-        self._instance_logger.debug(self._get_initial_log_message())
-
     def __verify_items(self) -> None:
         """Check if given items are valid.
 
@@ -548,7 +540,7 @@ class Raffstore(_ShadingBase):
             self._state_observer_slat.send_command(event.value)
 
 
-class ResetAllManualHand(HABApp.Rule):
+class ResetAllManualHand(RuleBase):
     """Clear the state hand / manual state of all shading.
 
     # Items:
@@ -572,10 +564,11 @@ class ResetAllManualHand(HABApp.Rule):
             config: config for reset all manual / hand rule
         """
         self._config = config
-        HABApp.Rule.__init__(self)
+        RuleBase.__init__(self, self._config.items.reset_manual_hand.name)
 
         self._shading_subscriptions: dict[_ShadingBase, EventBusListener] = {}
         self._config.items.reset_manual_hand.listen_event(self._cb_reset_all, ItemStateUpdatedEventFilter())
+        self._log_init_done()
 
     def on_rule_loaded(self) -> None:
         """Discover shading objects once all rules in the file are registered."""
@@ -659,7 +652,7 @@ class ResetAllManualHand(HABApp.Rule):
         self._config.items.reset_manual_hand.oh_send_command("OFF")
 
 
-class SlatValueSun(HABApp.Rule):
+class SlatValueSun(RuleBase):
     """Rules class to get slat value depending on sun elevation.
 
     # Items:
@@ -689,8 +682,7 @@ class SlatValueSun(HABApp.Rule):
             HabAppRulesConfigurationException: if configuration is not valid
         """
         self._config = config
-        HABApp.Rule.__init__(self)
-        self._instance_logger = InstanceLogger(LOGGER, self._config.items.slat_value.name)
+        RuleBase.__init__(self, self._config.items.slat_value.name)
 
         # slat characteristics
         self._slat_characteristic_active = self._config.parameter.elevation_slat_characteristic_summer if self._config.items.summer is not None and self._config.items.summer.is_on() else self._config.parameter.elevation_slat_characteristic
@@ -701,7 +693,7 @@ class SlatValueSun(HABApp.Rule):
             self._config.items.summer.listen_event(self._cb_summer_winter, ItemStateChangedEventFilter())
         self.run.soon(self.__send_slat_value)
 
-        self._instance_logger.debug(f"Init of rule '{self.__class__.__name__}' with name '{self.rule_name}' was successful.")
+        self._log_init_done()
 
     def __get_slat_value(self, elevation: float) -> float:
         """Get slat value for given elevation.
@@ -743,7 +735,7 @@ class SlatValueSun(HABApp.Rule):
         self.__send_slat_value()
 
 
-class ReferenceRun(HABApp.Rule):
+class ReferenceRun(RuleBase):
     """Rule to trigger a reference run for blinds every month.
 
     # Items:
@@ -771,9 +763,10 @@ class ReferenceRun(HABApp.Rule):
             config: configuration of reference run rule
         """
         self._config = config
-        HABApp.Rule.__init__(self)
+        RuleBase.__init__(self, self._config.items.trigger_run.name)
 
         self._config.items.presence_state.listen_event(self._cb_presence_state, ItemStateChangedEventFilter())
+        self._log_init_done()
 
     def _cb_presence_state(self, event: ItemStateChangedEvent) -> None:
         """Callback which is called if presence state changed.
