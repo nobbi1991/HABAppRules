@@ -14,7 +14,7 @@ from multi_notifier.connectors.connector_mail import MailConfig
 from habapp_rules import __version__
 from habapp_rules.core.exceptions import HabAppRulesConfigurationError
 from habapp_rules.energy.config.monthly_report import EnergyShare, MonthlyReportConfig, MonthlyReportItems, MonthlyReportParameter
-from habapp_rules.energy.monthly_report import MONTH_MAPPING, MonthlyReport, _get_current_month_name
+from habapp_rules.energy.monthly_report import MONTH_MAPPING, HistoricValueProvider, MonthlyReport, _get_month_name
 from tests.helper.oh_item import (
     add_mock_item,
 )
@@ -24,14 +24,11 @@ from tests.helper.test_case_base import TestCaseBase
 class TestFunctions(unittest.TestCase):
     """Test all global functions."""
 
-    def test_get_current_month_name(self) -> None:
-        """Test _get_current_month_name."""
-        today = datetime.datetime.today()
-        with unittest.mock.patch("datetime.datetime") as datetime_mock:
-            for month_number in range(1, 13):
-                with self.subTest(month_number=month_number):
-                    datetime_mock.now.return_value = today.replace(month=month_number, day=1)
-                    self.assertEqual(MONTH_MAPPING[month_number], _get_current_month_name())
+    def test_get_month_name(self) -> None:
+        """Test _get_month_name."""
+        for month_number in range(1, 13):
+            with self.subTest(month_number=month_number):
+                self.assertEqual(MONTH_MAPPING[month_number], _get_month_name(month_number))
 
 
 class TestMonthlyReport(TestCaseBase):
@@ -104,8 +101,8 @@ class TestMonthlyReport(TestCaseBase):
         self._rule._config.items.energy_sum.value = 20_123.5489135
 
         template_mock = unittest.mock.MagicMock()
-        with unittest.mock.patch("jinja2.Template", return_value=template_mock), unittest.mock.patch("habapp_rules.energy.monthly_report._get_current_month_name", return_value="MonthName"):
-            self._rule._create_html(10_042.123456)
+        with unittest.mock.patch("jinja2.Template", return_value=template_mock):
+            self._rule._create_html(10_042.123456, "MonthName")
 
         template_mock.render.assert_called_once_with(month="MonthName", energy_now="20123.5", energy_last_month="10042.1", habapp_version=__version__, show_history=True)
 
@@ -123,7 +120,7 @@ class TestMonthlyReport(TestCaseBase):
             unittest.mock.patch("habapp_rules.energy.monthly_report.create_history_chart") as create_history_chart_mock,
             unittest.mock.patch.object(self._rule, "_get_monthly_history", return_value=(["Jan", "Feb"], [100.0, 200.0])) as history_mock,
             unittest.mock.patch.object(self._rule, "_create_html") as create_html_mock,
-            unittest.mock.patch("habapp_rules.energy.monthly_report._get_current_month_name", return_value="MonthName"),
+            unittest.mock.patch("habapp_rules.energy.monthly_report._get_month_name", return_value="MonthName"),
             unittest.mock.patch.object(self._rule, "_mail") as mail_mock,
         ):
             self._rule._cb_send_energy()
@@ -131,8 +128,39 @@ class TestMonthlyReport(TestCaseBase):
         create_pie_chart_mock.assert_called_once_with(["Energy 1", "Rest"], [10, 190.0], unittest.mock.ANY)
         history_mock.assert_called_once_with(12)
         create_history_chart_mock.assert_called_once_with(["Jan", "Feb"], [100.0, 200.0], unittest.mock.ANY)
-        create_html_mock.assert_called_once_with(200, show_history=True)
+        create_html_mock.assert_called_once_with(200, "MonthName", show_history=True)
         mail_mock.send_message.assert_called_once_with(["test@test.de"], unittest.mock.ANY, "Stromverbrauch MonthName", images={"chart": unittest.mock.ANY, "history_chart": unittest.mock.ANY})
+
+    def test_cb_send_energy_reported_month(self) -> None:
+        """When triggered at 00:00 on the 1st, the report must be about the previous month (not the current one)."""
+        TestCase = collections.namedtuple("TestCase", ["now", "expected_month_name"])
+        test_cases = [
+            TestCase(datetime.datetime(2026, 6, 1, 0, 0, 0), "Mai"),  # first of month -> previous month
+            TestCase(datetime.datetime(2026, 1, 1, 0, 0, 0), "Dezember"),  # first of January -> previous year December
+            TestCase(datetime.datetime(2026, 6, 2, 0, 0, 0), "Juni"),  # any other day -> current month
+        ]
+
+        self._rule._config.items.energy_sum.value = 1000
+        self._energy_1.energy_item.value = 100
+        self._energy_2.energy_item.value = 100_000
+
+        for test_case in test_cases:
+            with self.subTest(test_case=test_case):
+                with (
+                    unittest.mock.patch("habapp_rules.energy.monthly_report.datetime") as datetime_mock,
+                    unittest.mock.patch("habapp_rules.energy.monthly_report.get_historic_value", side_effect=[800]),
+                    unittest.mock.patch("habapp_rules.energy.config.monthly_report.get_historic_value", side_effect=[90, 1000]),
+                    unittest.mock.patch("habapp_rules.energy.monthly_report.create_pie_chart"),
+                    unittest.mock.patch("habapp_rules.energy.monthly_report.create_history_chart"),
+                    unittest.mock.patch.object(self._rule, "_get_monthly_history", return_value=([], [])),
+                    unittest.mock.patch.object(self._rule, "_create_html") as create_html_mock,
+                    unittest.mock.patch.object(self._rule, "_mail") as mail_mock,
+                ):
+                    datetime_mock.datetime.now.return_value = test_case.now
+                    self._rule._cb_send_energy()
+
+                self.assertEqual(test_case.expected_month_name, create_html_mock.call_args.args[1])
+                self.assertEqual(f"Stromverbrauch {test_case.expected_month_name}", mail_mock.send_message.call_args.args[2])
 
     def test_cb_send_energy_disabled(self) -> None:
         """Test cb_send_energy with history_months=0 disables history chart."""
@@ -149,7 +177,7 @@ class TestMonthlyReport(TestCaseBase):
             unittest.mock.patch("habapp_rules.energy.monthly_report.create_history_chart") as create_history_chart_mock,
             unittest.mock.patch.object(self._rule, "_get_monthly_history") as history_mock,
             unittest.mock.patch.object(self._rule, "_create_html"),
-            unittest.mock.patch("habapp_rules.energy.monthly_report._get_current_month_name", return_value="MonthName"),
+            unittest.mock.patch("habapp_rules.energy.monthly_report._get_month_name", return_value="MonthName"),
             unittest.mock.patch.object(self._rule, "_mail") as mail_mock,
         ):
             self._rule._cb_send_energy()
@@ -268,6 +296,27 @@ class TestMonthlyReportHistoryCache(TestCaseBase):
         self._provider._save_cache()
         self.assertEqual(data, json.loads(self._cache_path.read_text(encoding="utf-8")))
 
+    def test_save_history_cache_atomic(self) -> None:
+        """Saving replaces an existing file atomically and leaves no temporary file behind."""
+        self._cache_path.write_text('{"2020-01": 1.0}', encoding="utf-8")
+
+        data = {"2025-01": 1000.0, "2025-02": 1100.0}
+        self._provider._cached_values = data
+        self._provider._save_cache()
+
+        # existing content is fully replaced (not merged / appended)
+        self.assertEqual(data, json.loads(self._cache_path.read_text(encoding="utf-8")))
+        # the temporary file used for the atomic swap is gone
+        self.assertEqual([self._cache_path], list(self._cache_path.parent.iterdir()))
+
+    def test_save_history_cache_disabled(self) -> None:
+        """No file is written when caching is disabled (cache_path is None)."""
+        provider = HistoricValueProvider(self._rule._config.items.energy_sum, None)
+        provider._cached_values = {"2025-01": 1000.0}
+        with unittest.mock.patch("habapp_rules.energy.monthly_report.tempfile.mkstemp") as mkstemp_mock:
+            provider._save_cache()
+        mkstemp_mock.assert_not_called()
+
     def test_get_monthly_history_cache_miss(self) -> None:
         """Cache miss queries persistence and writes the values to file."""
         with unittest.mock.patch("habapp_rules.energy.monthly_report.get_historic_value", side_effect=[1000.0, 900.0, 750.0]):
@@ -276,6 +325,17 @@ class TestMonthlyReportHistoryCache(TestCaseBase):
         self.assertEqual(2, len(labels))
         cache = json.loads(self._cache_path.read_text(encoding="utf-8"))
         self.assertEqual(3, len(cache))
+
+    def test_get_start_of_month_value_failed_lookup_not_cached(self) -> None:
+        """A failed lookup (falsy value) is returned but never written to the cache."""
+        with unittest.mock.patch("habapp_rules.energy.monthly_report.get_historic_value", return_value=0) as get_mock:
+            self.assertEqual(0, self._provider.get_start_of_month_value(2025, 1))
+            # a second call re-queries because nothing was cached
+            self.assertEqual(0, self._provider.get_start_of_month_value(2025, 1))
+
+        self.assertEqual(2, get_mock.call_count)
+        self.assertEqual({}, self._provider._cached_values)
+        self.assertFalse(self._cache_path.exists())
 
     def test_get_monthly_history_cache_hit(self) -> None:
         """Fully cached month boundaries skip persistence and do not rewrite the file."""
