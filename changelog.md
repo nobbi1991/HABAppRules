@@ -10,6 +10,11 @@
 ## Bugfix
 
 - `habapp_rules.actors.shading.ResetAllManualHand`: only send a command to `any_hand_manual_is_active_feedback` when the value actually changes (uses `send_if_different`), avoiding redundant commands when many tracked shading objects change state at once (e.g. at end of sleep)
+- fixed several issues in `habapp_rules.energy.monthly_report.MonthlyReport`, mainly affecting the run at 00:00 on the 1st and setups with multiple instances:
+  - the month in the mail subject and HTML body now matches the reported period (correct month will be shown)
+  - the history chart no longer shows `0.0` for the most recent month: `habapp_rules.energy.helper.get_historic_value` now also searches the hour before `start_time` when the forward hour has no data yet, and failed lookups (value `0`) are no longer cached
+  - charts are rendered with the thread-safe object-oriented matplotlib API instead of the global `pyplot` state, fixing a crash (and figure leak) when reports were rendered concurrently from HABApp worker threads
+  - the history cache file is written atomically, so it can no longer be corrupted by concurrent writes or a crash mid-write
 
 # Version 11.2.0 - 30.05.2026
 

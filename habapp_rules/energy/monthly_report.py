@@ -3,6 +3,7 @@
 import datetime
 import json
 import logging
+import os
 import pathlib
 import tempfile
 from datetime import timedelta
@@ -25,15 +26,18 @@ MONTH_MAPPING = {1: "Januar", 2: "Februar", 3: "März", 4: "April", 5: "Mai", 6:
 SHORT_MONTH_MAPPING = {1: "Jan", 2: "Feb", 3: "Mär", 4: "Apr", 5: "Mai", 6: "Jun", 7: "Jul", 8: "Aug", 9: "Sep", 10: "Okt", 11: "Nov", 12: "Dez"}
 
 
-def _get_current_month_name() -> str:
-    """Get name of the current month.
+def _get_month_name(month: int) -> str:
+    """Get name of the given month.
 
     if other languages are required, the global dict must be replaced
 
+    Args:
+        month: month number (1-12)
+
     Returns:
-        name of current month
+        name of the given month
     """
-    return MONTH_MAPPING[datetime.datetime.now().month]
+    return MONTH_MAPPING[month]
 
 
 class HistoricValueProvider:
@@ -65,10 +69,16 @@ class HistoricValueProvider:
             return {}
 
     def _save_cache(self) -> None:
-        """Persist cached values to the JSON file."""
+        """Persist cached values to the JSON file.
+
+        The data is written to a uniquely named temporary file in the same directory and then atomically moved onto the cache file via ``os.replace``. This keeps the cache consistent even when multiple ``MonthlyReport`` instances (e.g. a debug and a productive one) write to the same file concurrently or the process is killed mid-write.
+        """
         if self._cache_path is None:
             return
-        self._cache_path.write_text(json.dumps(self._cached_values, indent=2), encoding="utf-8")
+        fd, tmp_name = tempfile.mkstemp(dir=self._cache_path.parent, suffix=".tmp")
+        with os.fdopen(fd, "w", encoding="utf-8") as tmp_file:
+            json.dump(self._cached_values, tmp_file, indent=2)
+        pathlib.Path(tmp_name).replace(self._cache_path)
 
     def get_start_of_month_value(self, year: int, month: int) -> float:
         """Return the meter reading at the start of the given month, using the cache.
@@ -88,8 +98,10 @@ class HistoricValueProvider:
 
         value = get_historic_value(self._item, request_time)
 
-        self._cached_values[cache_key] = value
-        self._save_cache()
+        # a falsy value means the lookup failed (no persistence data); do not cache it, otherwise a single bad read would be served permanently
+        if value:
+            self._cached_values[cache_key] = value
+            self._save_cache()
 
         return value
 
@@ -151,7 +163,7 @@ class MonthlyReport(RuleBase):
             self.run.soon(self._cb_send_energy)
         self._log_init_done()
 
-    def _create_html(self, energy_sum_month: float, *, show_history: bool = True) -> str:
+    def _create_html(self, energy_sum_month: float, month_name: str, *, show_history: bool = True) -> str:
         """Create html which will be sent by the mail.
 
         The template was created by https://app.bootstrapemail.com/editor/documents with the following input:
@@ -185,6 +197,7 @@ class MonthlyReport(RuleBase):
 
         Args:
             energy_sum_month: sum value for the current month
+            month_name: name of the month the report is about
             show_history: if True, the history chart section is rendered in the HTML
 
         Returns:
@@ -194,7 +207,7 @@ class MonthlyReport(RuleBase):
             html_template = template_file.read()
 
         return jinja2.Template(html_template).render(
-            month=_get_current_month_name(),
+            month=month_name,
             energy_now=f"{self._config.items.energy_sum.value:.1f}",
             energy_last_month=f"{energy_sum_month:.1f}",
             habapp_version=__version__,
@@ -240,8 +253,10 @@ class MonthlyReport(RuleBase):
 
         # get start of month -> normal case: if triggered at 00:00 of the first day of the month, start_of_month is the start of the previous month, otherwise get first day of current month
         now = datetime.datetime.now()
-        first_of_current = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        start_of_month = (first_of_current - timedelta(days=1)).replace(day=1) if now.day == 1 else first_of_current
+        start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        if now.day == 1:
+            start_of_month = (start_of_month - timedelta(days=1)).replace(day=1)
+        month_name = _get_month_name(start_of_month.month)
 
         # get energy sum at start of month
         if not (energy_start_of_month := self._historic_value_provider_sum.get_start_of_month_value(start_of_month.year, start_of_month.month)):
@@ -274,7 +289,7 @@ class MonthlyReport(RuleBase):
                 create_history_chart(history_labels, history_values, history_chart_path)
                 images["history_chart"] = history_chart_path
 
-            html = self._create_html(energy_sum_month, show_history=self._config.parameter.history_months > 0)
-            self._mail.send_message(self._config.parameter.recipients, html, f"Stromverbrauch {_get_current_month_name()}", images=images)
+            html = self._create_html(energy_sum_month, month_name, show_history=self._config.parameter.history_months > 0)
+            self._mail.send_message(self._config.parameter.recipients, html, f"Stromverbrauch {month_name}", images=images)
 
         self._instance_logger.info(f"Successfully sent energy consumption mail to {self._config.parameter.recipients}.")
