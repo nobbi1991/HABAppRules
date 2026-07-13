@@ -17,7 +17,7 @@ dependencies = [
     "multi-notifier~=0.6.2",
     "pydantic_extra_types~=2.11.0",
     "transitions==0.9.1", # > 0.9 creates strange graphs
-    "typing-extensions==4.15.0", # used for py3.10 support (SelfType)
+    "typing-extensions==4.16.0", # used for py3.10 support (SelfType)
     "wakeonlan~=3.3.0",
     "urllib3>=2.7.0"
 ]
