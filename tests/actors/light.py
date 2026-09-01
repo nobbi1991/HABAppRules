@@ -103,7 +103,7 @@ class TestLightBase(TestCaseBaseStateMachine):
         expected_trans = [
             {"trigger": "manual_on", "source": "auto", "dest": "manual"},
             {"trigger": "manual_off", "source": "manual", "dest": "auto"},
-            {"trigger": "hand_on", "source": ["auto_off", "auto_preoff"], "dest": "auto_on"},
+            {"trigger": "hand_on", "source": ["auto_off", "auto_preoff", "auto_presleep"], "dest": "auto_on"},
             {"trigger": "hand_off", "source": ["auto_on", "auto_leaving", "auto_presleep"], "dest": "auto_off"},
             {"trigger": "hand_off", "source": "auto_preoff", "dest": "auto_on"},
             {"trigger": "auto_on_timeout", "source": "auto_on", "dest": "auto_preoff", "conditions": "_pre_off_configured"},
@@ -901,7 +901,7 @@ class TestLightSwitch(TestCaseBaseStateMachine):
         expected_trans = [
             {"trigger": "manual_on", "source": "auto", "dest": "manual"},
             {"trigger": "manual_off", "source": "manual", "dest": "auto"},
-            {"trigger": "hand_on", "source": ["auto_off", "auto_preoff"], "dest": "auto_on"},
+            {"trigger": "hand_on", "source": ["auto_off", "auto_preoff", "auto_presleep"], "dest": "auto_on"},
             {"trigger": "hand_off", "source": ["auto_on", "auto_leaving", "auto_presleep"], "dest": "auto_off"},
             {"trigger": "hand_off", "source": "auto_preoff", "dest": "auto_on"},
             {"trigger": "auto_on_timeout", "source": "auto_on", "dest": "auto_preoff", "conditions": "_pre_off_configured"},
@@ -1118,7 +1118,7 @@ class TestLightDimmer(TestCaseBaseStateMachine):
         expected_trans = [
             {"trigger": "manual_on", "source": "auto", "dest": "manual"},
             {"trigger": "manual_off", "source": "manual", "dest": "auto"},
-            {"trigger": "hand_on", "source": ["auto_off", "auto_preoff"], "dest": "auto_on"},
+            {"trigger": "hand_on", "source": ["auto_off", "auto_preoff", "auto_presleep"], "dest": "auto_on"},
             {"trigger": "hand_off", "source": ["auto_on", "auto_leaving", "auto_presleep"], "dest": "auto_off"},
             {"trigger": "hand_off", "source": "auto_preoff", "dest": "auto_on"},
             {"trigger": "auto_on_timeout", "source": "auto_on", "dest": "auto_preoff", "conditions": "_pre_off_configured"},
@@ -1299,6 +1299,7 @@ class TestLightExtended(TestCaseBaseStateMachine):
             {"dest": "auto_off", "source": "auto_leaving", "trigger": "hand_off"},
             {"dest": "auto_off", "source": "auto_presleep", "trigger": "hand_off"},
             {"dest": "auto_on", "source": "auto_preoff", "trigger": "hand_off"},
+            {'dest': 'auto_on', 'source': 'auto_presleep', 'trigger': 'hand_on'},
             {"dest": "auto_off", "source": "auto_motion", "trigger": "hand_off"},
             {"dest": "auto_off", "source": "auto_door", "trigger": "hand_off"},
             {"conditions": "_pre_off_configured", "dest": "auto_preoff", "source": "auto_on", "trigger": "auto_on_timeout"},
