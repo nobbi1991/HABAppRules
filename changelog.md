@@ -1,4 +1,4 @@
-# Version 11.3.0 - 01.06.2026
+# Version 11.3.0 - 01.09.2026
 
 ## Features
 
@@ -15,6 +15,7 @@
   - the history chart no longer shows `0.0` for the most recent month: `habapp_rules.energy.helper.get_historic_value` now also searches the hour before `start_time` when the forward hour has no data yet, and failed lookups (value `0`) are no longer cached
   - charts are rendered with the thread-safe object-oriented matplotlib API instead of the global `pyplot` state, fixing a crash (and figure leak) when reports were rendered concurrently from HABApp worker threads
   - the history cache file is written atomically, so it can no longer be corrupted by concurrent writes or a crash mid-write
+  - fixed bug in all Light classes of `habapp_rules.actors.light` which did not allow to exit `auto_presleep` state by hand_on command 
 
 # Version 11.2.0 - 30.05.2026
 
