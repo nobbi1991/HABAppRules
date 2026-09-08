@@ -1,4 +1,4 @@
-import subprocess  # noqa: S404
+import subprocess  # ruff: ignore[suspicious-subprocess-import]
 import sys
 
 
@@ -8,7 +8,7 @@ def run(cmd: str) -> None:
     Args:
         cmd: Command to run
     """
-    result = subprocess.run(cmd, check=False, shell=True)  # noqa: S602
+    result = subprocess.run(cmd, check=False, shell=True)  # ruff: ignore[subprocess-popen-with-shell-equals-true]
     if result.returncode != 0:
         sys.exit(result.returncode)
 

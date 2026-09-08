@@ -54,7 +54,7 @@ class _StateObserverBase(RuleBase, abc.ABC):
 
     @property
     def value(self) -> float | bool:
-        """Get the current state / value of the observed item.
+        """Current state / value of the observed item.
 
         Returns:
             Current value of the observed item
@@ -63,7 +63,7 @@ class _StateObserverBase(RuleBase, abc.ABC):
 
     @property
     def last_manual_event(self) -> EventTypes:
-        """Get the last manual event.
+        """Last manual event.
 
         Returns:
             Last manual event
@@ -109,7 +109,7 @@ class _StateObserverBase(RuleBase, abc.ABC):
         Args:
             event: event, which triggered this callback
         """
-        if event.value in {"ON", "OFF"} and time.time() - self._group_last_event > 0.3:  # this is some kind of workaround. For some reason all events are doubled. # noqa: PLR2004
+        if event.value in {"ON", "OFF"} and time.time() - self._group_last_event > 0.3:  # this is some kind of workaround. For some reason all events are doubled. # ruff: ignore[magic-value-comparison]
             self._group_last_event = time.time()
             self._check_manual(event)
 
@@ -526,7 +526,7 @@ class StateObserverSlat(StateObserverNumber):
             self.__timer_manual = threading.Timer(3, self.__cb_check_manual_delayed, [event])
             self.__timer_manual.start()
         else:
-            StateObserverNumber._check_manual(self, event)  # noqa: SLF001
+            StateObserverNumber._check_manual(self, event)  # ruff: ignore[private-member-access]
 
     def __cb_check_manual_delayed(self, event: ItemStateChangedEvent | ItemCommandEvent) -> None:
         """Trigger delayed manual check.
@@ -534,7 +534,7 @@ class StateObserverSlat(StateObserverNumber):
         Args:
             event: event which should be checked
         """
-        StateObserverNumber._check_manual(self, event)  # noqa: SLF001
+        StateObserverNumber._check_manual(self, event)  # ruff: ignore[private-member-access]
 
     def _stop_timer_manual(self) -> None:
         """Stop timer if running."""

@@ -123,7 +123,7 @@ class Motion(StateMachineRule):
 
         self._post_init()
 
-    def _get_initial_state(self, default_value: str = "initial") -> str:  # noqa: ARG002
+    def _get_initial_state(self, default_value: str = "initial") -> str:  # ruff: ignore[unused-method-argument]
         """Get initial state of state machine.
 
         Args:
@@ -202,7 +202,7 @@ class Motion(StateMachineRule):
 
         return self._config.items.sleep_state.value == SleepState.SLEEPING.value
 
-    def on_enter_Unlocked_Init(self) -> None:  # noqa: N802
+    def on_enter_Unlocked_Init(self) -> None:  # ruff: ignore[invalid-function-name]
         """Callback, which is called on enter of Unlocked_Init state."""
         if self._config.items.brightness is not None and self._brightness_over_threshold():
             self.trigger("to_Unlocked_TooBright")

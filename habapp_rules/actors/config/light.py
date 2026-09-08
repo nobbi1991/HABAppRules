@@ -53,7 +53,7 @@ class BrightnessTimeout(BaseModel):
         Raises:
             AssertionError: if brightness and timeout are not valid
         """
-        if self.brightness is False or self.brightness == 0:  # noqa: SIM102
+        if self.brightness is False or self.brightness == 0:  # ruff: ignore[collapsible-if]
             # Default if the light should be switched off e.g. for leaving / sleeping
             if not self.timeout:
                 self.timeout = 0.5

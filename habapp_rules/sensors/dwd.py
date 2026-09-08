@@ -49,7 +49,7 @@ class DwdItems:
 
     @property
     def severity_as_int(self) -> int:
-        """Get severity as integer.
+        """Severity as integer.
 
         Returns:
             severity as integer value
@@ -135,7 +135,7 @@ class DwdWindAlarm(StateMachineRule):
 
         self._post_init()
 
-    def _get_initial_state(self, default_value: str = "") -> str:  # noqa: ARG002
+    def _get_initial_state(self, default_value: str = "") -> str:  # ruff: ignore[unused-method-argument]
         """Get initial state of state machine.
 
         Args:
@@ -170,7 +170,7 @@ class DwdWindAlarm(StateMachineRule):
 
             self._previous_state = self.state
 
-    def on_enter_Auto_Init(self) -> None:  # noqa: N802
+    def on_enter_Auto_Init(self) -> None:  # ruff: ignore[invalid-function-name]
         """Is called on entering of init state."""
         self._set_state(self._get_initial_state())
 

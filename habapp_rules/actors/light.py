@@ -99,7 +99,7 @@ class _LightBase(StateMachineRule, abc.ABC):
 
         self._post_init()
 
-    def _get_initial_state(self, default_value: str = "") -> str:  # noqa: ARG002
+    def _get_initial_state(self, default_value: str = "") -> str:  # ruff: ignore[unused-method-argument]
         """Get initial state of state machine.
 
         Args:
@@ -181,7 +181,7 @@ class _LightBase(StateMachineRule, abc.ABC):
 
         return bool(self._timeout_pre_sleep) and not pre_sleep_prevent
 
-    def on_enter_auto_restoreState(self) -> None:  # noqa: N802
+    def on_enter_auto_restoreState(self) -> None:  # ruff: ignore[invalid-function-name]
         """On enter of state auto_restoreState."""
         self._restore_state = "auto_off" if self._restore_state == "auto_preoff" else self._restore_state
 
@@ -224,7 +224,7 @@ class _LightBase(StateMachineRule, abc.ABC):
     def _set_light_state(self) -> None:
         """Set brightness to light."""
 
-    def _get_target_brightness(self) -> bool | float | None:  # noqa: C901, PLR0912
+    def _get_target_brightness(self) -> bool | float | None:  # ruff: ignore[complex-structure, too-many-branches]
         """Get configured brightness for the current day/night/sleep state.
 
         Returns:
@@ -239,7 +239,7 @@ class _LightBase(StateMachineRule, abc.ABC):
                 return self._brightness_before
 
             # starting from here: previous state == auto_off
-            if isinstance(man_value := self._state_observer.last_manual_event.value, int | float) and 0 < man_value < 100:  # noqa: PLR2004
+            if isinstance(man_value := self._state_observer.last_manual_event.value, int | float) and 0 < man_value < 100:  # ruff: ignore[magic-value-comparison]
                 return None
             if self._state_observer.last_manual_event.value == "INCREASE":
                 return None
@@ -409,7 +409,7 @@ class LightSwitch(_LightBase):
 
     def _update_openhab_state(self) -> None:
         """Update OpenHAB state item and other states."""
-        _LightBase._update_openhab_state(self)  # noqa: SLF001
+        _LightBase._update_openhab_state(self)  # ruff: ignore[private-member-access]
 
         if self.state == "auto_preoff":
             timeout = self._get_state_timeout(self.state)

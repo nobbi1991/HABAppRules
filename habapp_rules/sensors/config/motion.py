@@ -74,7 +74,7 @@ class MotionConfig(ConfigBase):
 
     @property
     def brightness_threshold(self) -> float:
-        """Get the current brightness threshold value.
+        """Current brightness threshold value.
 
         Returns:
             brightness threshold
