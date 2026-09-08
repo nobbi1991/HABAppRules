@@ -2,5 +2,5 @@
 
 import pathlib
 
-__version__ = "11.3.0"
+__version__ = "11.3.1"
 BASE_PATH = pathlib.Path(__file__).parent.parent.resolve()

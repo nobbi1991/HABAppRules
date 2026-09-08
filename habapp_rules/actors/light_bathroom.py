@@ -75,7 +75,7 @@ class BathroomLight(StateMachineRule):
 
         self._post_init()
 
-    def _get_initial_state(self, default_value: str = "initial") -> str:  # noqa: ARG002
+    def _get_initial_state(self, default_value: str = "initial") -> str:  # ruff: ignore[unused-method-argument]
         """Get initial state of state machine.
 
         Args:
@@ -86,14 +86,14 @@ class BathroomLight(StateMachineRule):
         """
         return "Manual" if self._config.items.manual.is_on() else "Auto"
 
-    def on_enter_Auto_Init(self) -> None:  # noqa: N802
+    def on_enter_Auto_Init(self) -> None:  # ruff: ignore[invalid-function-name]
         """Callback, which is called on enter of Auto_Init state."""
         if self._config.items.light_main.is_on():
             self.trigger("to_Auto_On")
         else:
             self.trigger("to_Auto_Off")
 
-    def on_enter_Auto_On_Init(self) -> None:  # noqa: N802
+    def on_enter_Auto_On_Init(self) -> None:  # ruff: ignore[invalid-function-name]
         """Callback, which is called on enter of Auto_On_Init state."""
         if self._mirror_is_on():
             self.trigger("to_Auto_On_MainAndMirror")

@@ -19,7 +19,7 @@ class WolParameter(ParameterBase):
 
     @property
     def log_name(self) -> str:
-        """Get name for logging.
+        """Name for logging.
 
         Returns:
             Name which is can be used for logging

@@ -305,7 +305,7 @@ class TestEnergySaveSwitch(TestCaseBaseStateMachine):
         """Test to Hand transitions."""
         for state in ["Auto_On", "Auto_WaitCurrent", "Auto_Off"]:
             with self.subTest(state=state):
-                eval(f"self._rule_with_current.to_{state}()")  # noqa: S307
+                eval(f"self._rule_with_current.to_{state}()")  # ruff: ignore[suspicious-eval-usage]
                 item_state_change_event("Unittest_Current_Switch", "OFF")
                 item_state_change_event("Unittest_Current_Switch", "ON")
                 assert_item_value("Unittest_Current_State", "Hand")

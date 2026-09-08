@@ -91,7 +91,7 @@ class EnergyMeterNumberParameter(EnergyMeterBaseParameter):
         Raises:
             HabAppRulesConfigurationError: if power_mapping is not valid
         """
-        if len(mappings) < 2:  # noqa: PLR2004
+        if len(mappings) < 2:  # ruff: ignore[magic-value-comparison]
             msg = "power_mapping must have at least 2 elements"
             raise HabAppRulesConfigurationError(msg)
 
@@ -147,7 +147,7 @@ class EnergyMeterNumberConfig(ConfigBase):
         """
         if isinstance(self.items.monitored_item, DimmerItem):
             all_values = [mapping.value for mapping in self.parameter.power_mapping]
-            if any(value < 0 for value in all_values) or any(value > 100 for value in all_values):  # noqa: PLR2004
+            if any(value < 0 for value in all_values) or any(value > 100 for value in all_values):  # ruff: ignore[magic-value-comparison]
                 msg = "power_mapping values for dimmer items must be between 0 and 100"
                 raise HabAppRulesConfigurationError(msg)
         return self

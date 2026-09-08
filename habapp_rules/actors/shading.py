@@ -5,7 +5,7 @@ import datetime
 import time
 import typing
 
-from HABApp.core.internals.event_bus_listener import EventBusListener  # noqa: TC002
+from HABApp.core.internals.event_bus_listener import EventBusListener  # ruff: ignore[typing-only-third-party-import]
 from HABApp.openhab.events import ItemCommandEvent, ItemStateChangedEvent, ItemStateUpdatedEvent
 from HABApp.openhab.events.event_filters import ItemStateChangedEventFilter, ItemStateUpdatedEventFilter
 from HABApp.openhab.items import RollershutterItem
@@ -128,7 +128,7 @@ class _ShadingBase(StateMachineRule):
 
     @property
     def config(self) -> ShadingConfig:
-        """Return the shading config."""
+        """Shading config."""
         return self._config
 
     def _apply_config(self) -> None:
@@ -137,7 +137,7 @@ class _ShadingBase(StateMachineRule):
         self._set_state_timeout("Auto_DoorOpen_PostOpen", self._config.parameter.door_post_time)
         self._set_state_timeout("Manual", self._config.parameter.manual_timeout)
 
-    def _get_initial_state(self, default_value: str = "") -> str:  # noqa: ARG002
+    def _get_initial_state(self, default_value: str = "") -> str:  # ruff: ignore[unused-method-argument]
         """Get initial state of state machine.
 
         Args:
@@ -193,7 +193,7 @@ class _ShadingBase(StateMachineRule):
             target_position: target position of the shading object
         """
 
-    def _get_target_position(self) -> ShadingPosition | None:  # noqa: C901
+    def _get_target_position(self) -> ShadingPosition | None:  # ruff: ignore[complex-structure]
         """Get target position for shading object.
 
         Returns:
@@ -228,15 +228,15 @@ class _ShadingBase(StateMachineRule):
 
         return None
 
-    def on_enter_Auto_Init(self) -> None:  # noqa: N802
+    def on_enter_Auto_Init(self) -> None:  # ruff: ignore[invalid-function-name]
         """Is called on entering of init state."""
         self._set_state(self._get_initial_state())
 
-    def on_exit_Manual(self) -> None:  # noqa: N802
+    def on_exit_Manual(self) -> None:  # ruff: ignore[invalid-function-name]
         """Is called if state Manual is left."""
         self._set_position_before()
 
-    def on_exit_Hand(self) -> None:  # noqa: N802
+    def on_exit_Hand(self) -> None:  # ruff: ignore[invalid-function-name]
         """Is called if state Hand is left."""
         self._set_position_before()
 

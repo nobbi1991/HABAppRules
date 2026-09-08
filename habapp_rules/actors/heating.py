@@ -75,8 +75,8 @@ class KnxHeating(RuleBase):
         if self._config.items.temperature_offset.value is None:
             self._config.items.temperature_offset.oh_send_command(0)
 
-        # T_offset_new = T_target - T_base # noqa: ERA001
-        # T_base = T_old - T_offset_old # noqa: ERA001
+        # T_offset_new = T_target - T_base # ruff: ignore[commented-out-code]
+        # T_base = T_old - T_offset_old # ruff: ignore[commented-out-code]
         # ==> T_offset_new = T_target - T_old + T_offset_old
         offset_new = event.value - self._temperature + self._config.items.temperature_offset.value
         self._config.items.temperature_offset.oh_send_command(offset_new)

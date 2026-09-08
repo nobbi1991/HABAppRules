@@ -64,7 +64,7 @@ class _VirtualEnergyMeterBase(RuleBase, Generic[_CONFIG_TYPE]):
 
         return self._config.parameter.energy_update_resolution / self._power * 3_600_000
 
-    def _cb_monitored_item(self, event: ItemStateChangedEvent) -> None:  # noqa:  ARG002
+    def _cb_monitored_item(self, event: ItemStateChangedEvent) -> None:  # ruff: ignore[unused-method-argument]
         """Callback which is triggered if the monitored item changed.
 
         Args:

@@ -14,7 +14,7 @@ from habapp_rules.core.helper import OH_ITEM_TYPE, create_additional_item
 class BaseModel(pydantic.BaseModel):
     """Base class for pydantic models."""
 
-    def __init__(self, **data: typing.Any) -> None:  # noqa: ANN401
+    def __init__(self, **data: typing.Any) -> None:  # ruff: ignore[any-type]
         """Initialize the model.
 
         Args:
@@ -37,7 +37,7 @@ class ItemBase(BaseModel):
 
     @pydantic.model_validator(mode="before")
     @classmethod
-    def check_all_fields_oh_items(cls, data: typing.Any) -> typing.Any:  # noqa: ANN401, C901
+    def check_all_fields_oh_items(cls, data: typing.Any) -> typing.Any:  # ruff: ignore[any-type, complex-structure]
         """Validate that all fields are OpenHAB items.
 
         All items must be subclasses of `OpenhabItem` or `Thing`.

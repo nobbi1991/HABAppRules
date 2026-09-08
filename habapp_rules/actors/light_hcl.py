@@ -79,7 +79,7 @@ class _HclBase(StateMachineRule, typing.Generic[CONFIG_TYPE]):
         self._set_state_timeout("Auto_Sleep_Post", self._config.parameter.post_sleep_timeout)
         self._set_state_timeout("Hand", self._config.parameter.hand_timeout)
 
-    def _get_initial_state(self, default_value: str = "") -> str:  # noqa: ARG002
+    def _get_initial_state(self, default_value: str = "") -> str:  # ruff: ignore[unused-method-argument]
         """Get initial state of state machine.
 
         Args:
@@ -122,7 +122,7 @@ class _HclBase(StateMachineRule, typing.Generic[CONFIG_TYPE]):
         if target_color is not None:
             self._state_observer.send_command(target_color)
 
-    def on_enter_Auto_Init(self) -> None:  # noqa: N802
+    def on_enter_Auto_Init(self) -> None:  # ruff: ignore[invalid-function-name]
         """Is called on entering of init state."""
         self._set_state(self._get_initial_state())
 
@@ -323,9 +323,9 @@ class HclTime(_HclBase[HclTimeConfig]):
         if not self._config.parameter.shift_weekend_holiday:
             return False
 
-        if current_time.hour > 12 and (is_holiday(1) or is_weekend(1)):  # noqa: PLR2004
+        if current_time.hour > 12 and (is_holiday(1) or is_weekend(1)):  # ruff: ignore[magic-value-comparison]
             return True
-        return bool(current_time.hour <= 4 and (is_holiday() or is_weekend()))  # noqa: PLR2004
+        return bool(current_time.hour <= 4 and (is_holiday() or is_weekend()))  # ruff: ignore[magic-value-comparison]
 
     def _get_hcl_color(self) -> int:
         """Get HCL color depending on time.

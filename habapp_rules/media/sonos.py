@@ -97,7 +97,7 @@ class Sonos(StateMachineRule):
         self._set_state_timeout("Booting", self._config.parameter.booting_timeout)
         self._set_state_timeout("Starting", self._config.parameter.starting_timeout)
 
-    def _get_initial_state(self, default_value: str = "") -> str:  # noqa: ARG002
+    def _get_initial_state(self, default_value: str = "") -> str:  # ruff: ignore[unused-method-argument]
         """Get initial state of state machine.
 
         Args:
@@ -116,17 +116,17 @@ class Sonos(StateMachineRule):
             return "Playing_Init"
         return "Standby"
 
-    def on_enter_Booting(self) -> None:  # noqa: N802
+    def on_enter_Booting(self) -> None:  # ruff: ignore[invalid-function-name]
         """Callback which is triggered if "Booting" state is entered."""
         if self._config.items.sonos_thing.status == ThingStatusEnum.ONLINE:
             self._set_state("Standby")
 
-    def on_enter_Starting(self) -> None:  # noqa: N802
+    def on_enter_Starting(self) -> None:  # ruff: ignore[invalid-function-name]
         """Callback which is triggered if "Starting" state is entered."""
         if self._config.items.sonos_player.value == "PLAY":
             self.trigger("player_start")
 
-    def on_enter_Playing_Init(self) -> None:  # noqa: N802
+    def on_enter_Playing_Init(self) -> None:  # ruff: ignore[invalid-function-name]
         """Go to child state if playing_init state is entered."""
         track_uri = self._config.items.current_track_uri.value
 

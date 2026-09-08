@@ -31,7 +31,7 @@ class KnxMqttItems(ItemBase):
 
     @property
     def knx_item_name(self) -> str:
-        """Get name of configured KNX item.
+        """Name of configured KNX item.
 
         Returns:
             name of configured KNX item

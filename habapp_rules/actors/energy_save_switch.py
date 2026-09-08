@@ -107,7 +107,7 @@ class EnergySaveSwitch(StateMachineRule):
         self._set_state_timeout("Hand", self._config.parameter.hand_timeout or 0)
         self._set_state_timeout("Auto_WaitCurrentExtended", self._config.parameter.extended_wait_for_current_time)
 
-    def _get_initial_state(self, default_value: str = "") -> str:  # noqa: ARG002
+    def _get_initial_state(self, default_value: str = "") -> str:  # ruff: ignore[unused-method-argument]
         """Get initial state of state machine.
 
         Args:
@@ -138,7 +138,7 @@ class EnergySaveSwitch(StateMachineRule):
             self._set_switch_state()
             self._previous_state = self.state
 
-    def on_enter_Auto_Init(self) -> None:  # noqa: N802
+    def on_enter_Auto_Init(self) -> None:  # ruff: ignore[invalid-function-name]
         """Callback, which is called on enter of init state."""
         if self._get_on_off_conditions_met():
             self.trigger("to_Auto_On")

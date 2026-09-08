@@ -46,7 +46,7 @@ class TestMonthlyReport(TestCaseBase):
         self._energy_1 = EnergyShare("Energy_1", "Energy 1")
         self._energy_2 = EnergyShare("Energy_2", "Energy 2")
         self._energy_3 = EnergyShare("Energy_3", "Energy 3")
-        self._mail_config = MailConfig(user="User", password="Password", smtp_host="smtp.test.de", smtp_port=587)  # noqa: S106
+        self._mail_config = MailConfig(user="User", password="Password", smtp_host="smtp.test.de", smtp_port=587)  # ruff: ignore[hardcoded-password-func-arg]
 
         config = MonthlyReportConfig(
             items=MonthlyReportItems(energy_sum="Energy_Sum"),
@@ -256,7 +256,7 @@ class TestMonthlyReportHistoryCache(TestCaseBase):
         """Setup test case."""
         TestCaseBase.setUp(self)
         add_mock_item(NumberItem, "Energy_Sum", None)
-        mail_config = MailConfig(user="u", password="p", smtp_host="h", smtp_port=587)  # noqa: S106
+        mail_config = MailConfig(user="u", password="p", smtp_host="h", smtp_port=587)  # ruff: ignore[hardcoded-password-func-arg]
         self._temp_dir = tempfile.TemporaryDirectory()
         self._cache_path = pathlib.Path(self._temp_dir.name) / "cache.json"
         self._rule = MonthlyReport(
