@@ -25,9 +25,9 @@ dependencies = [
 [dependency-groups]
 dev = [
     "graphviz~=0.21.0",
-    "pytest~=8.4.1",
+    "pytest>=8.4.1,<9.2.0",
     "ruff~=0.15.0",
-    "pytest~=8.4.1",
+    "pytest>=8.4.1,<9.2.0",
     "prek>=0.1.0",
     "coverage>=7.11.0",
     "requests>=2.33.1",
