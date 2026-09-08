@@ -50,7 +50,7 @@ class _LightBase(StateMachineRule, abc.ABC):
     trans: typing.ClassVar = [
         {"trigger": "manual_on", "source": "auto", "dest": "manual"},
         {"trigger": "manual_off", "source": "manual", "dest": "auto"},
-        {"trigger": "hand_on", "source": ["auto_off", "auto_preoff"], "dest": "auto_on"},
+        {"trigger": "hand_on", "source": ["auto_off", "auto_preoff", "auto_presleep"], "dest": "auto_on"},
         {"trigger": "hand_off", "source": ["auto_on", "auto_leaving", "auto_presleep"], "dest": "auto_off"},
         {"trigger": "hand_off", "source": "auto_preoff", "dest": "auto_on"},
         {"trigger": "auto_on_timeout", "source": "auto_on", "dest": "auto_preoff", "conditions": "_pre_off_configured"},
