@@ -28,9 +28,9 @@ def check_default_is_set() -> int:
             violations.append(f"{path}:{lineno}: {lines[lineno - 1].strip()}")
 
     if violations:
-        print("ERROR: pydantic Field() must use the default= keyword for default values:")  # noqa: T201
+        print("ERROR: pydantic Field() must use the default= keyword for default values:")  # ruff: ignore[print]
         for violation in violations:
-            print(f"  {violation}")  # noqa: T201
+            print(f"  {violation}")  # ruff: ignore[print]
         return 1
     return 0
 

@@ -156,7 +156,7 @@ class SensorTemperatureDifference(_SensorBase[TemperatureDifferenceConfig]):
     def _cb_temperature(self, _: ItemStateChangedEvent | None) -> None:
         """Callback, which is triggered if a temperature value changed."""
         filtered_items = [itm for itm in filter_updated_items(self._config.items.temperatures, self._config.parameter.ignore_old_values_time) if itm.value is not None]
-        if len(filtered_items) < 2:  # noqa: PLR2004
+        if len(filtered_items) < 2:  # ruff: ignore[magic-value-comparison]
             return
         value_min = min(item.value for item in filtered_items)
         value_max = max(item.value for item in filtered_items)

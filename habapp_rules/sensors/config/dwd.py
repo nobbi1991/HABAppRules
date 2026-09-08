@@ -53,7 +53,7 @@ class WindAlarmConfig(ConfigBase):
 
     @property
     def hand_timeout(self) -> int:
-        """Get value of hand timeout.
+        """Value of hand timeout.
 
         Returns:
             hand timeout in seconds (0 is no timeout)

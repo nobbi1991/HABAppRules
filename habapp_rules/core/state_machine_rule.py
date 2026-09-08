@@ -72,13 +72,13 @@ class StateMachineRule(RuleBase):
         self._update_openhab_state()
         self._log_init_done(f"Initial state = '{self.state}' | State item = '{self._item_state.name}'")
 
-    def _set_state(self, state_name: str) -> None:  # noqa: PLR6301
+    def _set_state(self, state_name: str) -> None:  # ruff: ignore[no-self-use]
         """Set given state.
 
         Args:
             state_name: name of state
         """
-        eval(f"self.to_{state_name}()")  # noqa: S307
+        eval(f"self.to_{state_name}()")  # ruff: ignore[suspicious-eval-usage]
 
     def _update_openhab_state(self) -> None:
         """Update OpenHAB state item. This should method should be set to "after_state_change" of the state machine."""

@@ -92,7 +92,7 @@ class EnergyShare(BaseModel):
 
     @property
     def get_items_as_list(self) -> list[NumberItem]:
-        """Get energy item(s) as list.
+        """Energy item(s) as list.
 
         Returns:
             All energy items

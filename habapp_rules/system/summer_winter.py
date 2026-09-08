@@ -50,7 +50,7 @@ class SummerWinter(RuleBase):
             SummerWinterError: if there is not enough data for at least one evaluated hour.
         """
         day_offset = 0
-        if self.__now.hour < 23:  # noqa: PLR2004
+        if self.__now.hour < 23:  # ruff: ignore[magic-value-comparison]
             day_offset = 1
 
         temperature_values = []

@@ -68,7 +68,7 @@ class HumiditySwitch(StateMachineRule):
         target_state = "ON" if self.state in {"on_HighHumidity", "on_Extended"} else "OFF"
         send_if_different(self._config.items.output, target_state)
 
-    def _get_initial_state(self, default_value: str = "initial") -> str:  # noqa: ARG002
+    def _get_initial_state(self, default_value: str = "initial") -> str:  # ruff: ignore[unused-method-argument]
         """Get initial state of state machine.
 
         Args:

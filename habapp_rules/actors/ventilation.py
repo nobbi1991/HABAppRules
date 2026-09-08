@@ -103,7 +103,7 @@ class _VentilationBase(StateMachineRule, typing.Generic[CONFIG_TYPE]):
 
         self._post_init()
 
-    def _get_initial_state(self, default_value: str = "initial") -> str:  # noqa: ARG002
+    def _get_initial_state(self, default_value: str = "initial") -> str:  # ruff: ignore[unused-method-argument]
         """Get initial state of state machine.
 
         Args:
@@ -221,11 +221,11 @@ class _VentilationBase(StateMachineRule, typing.Generic[CONFIG_TYPE]):
         # re-trigger this method in 1 minute
         self.run.once(60, self.__set_hand_display_text)
 
-    def on_enter_Auto_Init(self) -> None:  # noqa: N802
+    def on_enter_Auto_Init(self) -> None:  # ruff: ignore[invalid-function-name]
         """Is called on entering of Auto_Init state."""
         self._set_state(self._get_initial_state())
 
-    def on_enter_Auto_LongAbsence_Off(self) -> None:  # noqa: N802
+    def on_enter_Auto_LongAbsence_Off(self) -> None:  # ruff: ignore[invalid-function-name]
         """Is called on entering of Auto_LongAbsence_Off state."""
         trigger_time = _to_datetime(self._config.parameter.state_long_absence.start_time)
         self.run.once(trigger_time, self._trigger_long_absence_power_on)
@@ -402,7 +402,7 @@ class VentilationHeliosTwoStage(_VentilationBase[VentilationTwoStageConfig]):
         if self.state == "Auto_PowerAfterRun":
             return self._config.parameter.state_after_run.display_text
 
-        return _VentilationBase._get_display_text(self)  # noqa: SLF001
+        return _VentilationBase._get_display_text(self)  # ruff: ignore[private-member-access]
 
     def _set_level(self) -> None:
         """Set ventilation level."""

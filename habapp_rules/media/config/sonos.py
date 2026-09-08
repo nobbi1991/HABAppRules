@@ -43,7 +43,7 @@ class SonosItems(ItemBase):
 
     @property
     def favorite_id_as_int(self) -> int | None:
-        """Get favorite id as int.
+        """Favorite id as int.
 
         Returns:
             int | None: favorite id as int or None if not set

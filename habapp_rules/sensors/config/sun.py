@@ -40,7 +40,7 @@ class TemperatureDifferenceItems(_ItemsBase):
         Raises:
             ValueError: if less than two temperature items are given
         """
-        if len(self.temperatures) < 2:  # noqa: PLR2004
+        if len(self.temperatures) < 2:  # ruff: ignore[magic-value-comparison]
             msg = "At least two temperature items are required!"
             raise ValueError(msg)
         return self
@@ -90,7 +90,7 @@ class _ConfigBase(ConfigBase, Generic[ITEM, PARAM, _ITEMS, _PARAMS]):
 
     @property
     def threshold(self) -> float:
-        """Get threshold."""
+        """Threshold."""
         if self.parameter.threshold:
             return self.parameter.threshold
 
@@ -174,7 +174,7 @@ class SunPositionParameter(ParameterBase):
 
     @property
     def sun_position_windows(self) -> list[SunPositionWindow]:
-        """Get sun position windows."""
+        """Sun position windows."""
         return self.sun_position_window if isinstance(self.sun_position_window, list) else [self.sun_position_window]
 
 

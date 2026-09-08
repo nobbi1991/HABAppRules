@@ -121,4 +121,4 @@ class TestMotionConfig(TestCaseBase):
 
         config.parameter.brightness_threshold = None
         with self.assertRaises(HabAppRulesConfigurationError):
-            config.brightness_threshold  # noqa: B018
+            config.brightness_threshold  # ruff: ignore[useless-expression]

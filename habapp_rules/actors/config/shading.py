@@ -7,7 +7,7 @@ from typing import Any
 
 import pydantic
 import typing_extensions
-from HABApp.openhab.items import ContactItem, DatetimeItem, DimmerItem, NumberItem, RollershutterItem, StringItem, SwitchItem  # noqa: TC002
+from HABApp.openhab.items import ContactItem, DatetimeItem, DimmerItem, NumberItem, RollershutterItem, StringItem, SwitchItem  # ruff: ignore[typing-only-third-party-import]
 
 from habapp_rules.core.pydantic_base import ConfigBase, ItemBase, ParameterBase
 
