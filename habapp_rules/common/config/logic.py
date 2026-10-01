@@ -1,6 +1,5 @@
 """Config models for logic rules."""
 
-
 import pydantic
 import typing_extensions
 from HABApp.openhab.items import ContactItem, DimmerItem, NumberItem, SwitchItem

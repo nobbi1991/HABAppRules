@@ -1,6 +1,5 @@
 """Rules to handle sun sensors."""
 
-
 from HABApp.openhab.events import ItemStateChangedEvent
 from HABApp.openhab.events.event_filters import ItemStateChangedEventFilter
 from HABApp.openhab.items import NumberItem

@@ -83,7 +83,7 @@ def send_if_different(item: str | OpenhabItem, value: str | float) -> None:
         item.oh_send_command(value)
 
 
-def filter_updated_items(input_items: list[OH_ITEM_TYPE], filter_time: int | None = None) -> list[OH_ITEM_TYPE]:
+def filter_updated_items[ITEM_TYPE: OH_ITEM_TYPE](input_items: list[ITEM_TYPE], filter_time: int | None = None) -> list[ITEM_TYPE]:
     """Get input items depending on their last update time and _ignore_old_values_time.
 
     Args:
