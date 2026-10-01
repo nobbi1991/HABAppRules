@@ -11,7 +11,7 @@ from habapp_rules.actors.config.light_hcl import HclElevationConfig, HclElevatio
 from habapp_rules.actors.light_hcl import HclElevation, HclTime
 from habapp_rules.system import SleepState
 from tests.helper.graph_machines import create_state_graphs
-from tests.helper.oh_item import add_mock_item, assert_item_value, item_state_change_event, set_item_state
+from tests.helper.oh_item import add_mock_item, assert_item_value, create_item, item_state_change_event, set_item_state
 from tests.helper.test_case_base import TestCaseBase, TestCaseBaseStateMachine
 
 
@@ -275,9 +275,9 @@ class TestHclTime(TestCaseBaseStateMachine):
 
         self._config = HclTimeConfig(
             items=HclTimeItems(
-                color=NumberItem("Unittest_Color_min"),
-                manual=SwitchItem("Unittest_Manual_min"),
-                state=StringItem("H_Unittest_Color_min_state"),
+                color=create_item(NumberItem, "Unittest_Color_min"),
+                manual=create_item(SwitchItem, "Unittest_Manual_min"),
+                state=create_item(StringItem, "H_Unittest_Color_min_state"),
             ),
             parameter=HclTimeParameter(
                 color_map=[(2, 3000), (8, 4000), (12, 9000), (17, 9000), (20, 4000)],

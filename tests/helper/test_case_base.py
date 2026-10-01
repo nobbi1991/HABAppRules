@@ -4,7 +4,6 @@ import threading
 import unittest
 import unittest.mock
 
-from HABApp.core.internals import get_current_context
 from HABApp.rule.rule import Rule
 
 from tests.helper.async_helper import call_async_sync
@@ -25,7 +24,7 @@ class TestCaseBase(unittest.TestCase):
         self.addCleanup(self.send_command_mock_patcher.stop)
         self.send_command_mock = self.send_command_mock_patcher.start()
 
-        self.item_exists_mock_patcher = unittest.mock.patch("habapp_rules.core.helper.item_exists", return_value=True)
+        self.item_exists_mock_patcher = unittest.mock.patch("habapp_rules.core.helper._item_exists", return_value=True)
         self.addCleanup(self.item_exists_mock_patcher.stop)
         self.item_exists_mock = self.item_exists_mock_patcher.start()
 
@@ -38,7 +37,7 @@ class TestCaseBase(unittest.TestCase):
         Args:
             rule: The rule to unload
         """
-        call_async_sync(get_current_context(rule).unload_rule)
+        call_async_sync(rule._habapp_ctx.unload_rule)
         self._runner.loaded_rules.remove(rule)
 
     def tearDown(self) -> None:
