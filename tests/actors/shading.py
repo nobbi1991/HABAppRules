@@ -19,6 +19,7 @@ from tests.helper.graph_machines import create_state_graphs
 from tests.helper.oh_item import (
     add_mock_item,
     assert_item_value,
+    create_item,
     item_state_change_event,
     remove_mocked_item_by_name,
     send_command,
@@ -900,7 +901,7 @@ class TestShadingRaffstore(TestCaseBaseStateMachine):
 
         for test_case in test_cases:
             with self.subTest(test_case=test_case):
-                self.raffstore._config.items.shading_position = test_case.item_type("Name")
+                self.raffstore._config.items.shading_position = create_item(test_case.item_type, "Name")
                 if test_case.raises_exc:
                     with self.assertRaises(HabAppRulesConfigurationError):
                         self.raffstore._Raffstore__verify_items()

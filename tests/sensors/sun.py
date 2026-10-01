@@ -46,7 +46,7 @@ class TestSensorTemperatureDifference(TestCaseBase):
 
         config = TemperatureDifferenceConfig(items=TemperatureDifferenceItems(temperatures=["Unittest_Temperature_1", "Unittest_Temperature_2"], output="Unittest_Output_Temperature", threshold="Unittest_Threshold_Temperature"))
 
-        with unittest.mock.patch("HABApp.openhab.interface_sync.item_exists", return_value=True), unittest.mock.patch("habapp_rules.common.filter.ExponentialFilter"):
+        with unittest.mock.patch("habapp_rules.core.helper._item_exists", return_value=True), unittest.mock.patch("habapp_rules.common.filter.ExponentialFilter"):
             self._sensor = SensorTemperatureDifference(config)
 
     def test_init(self) -> None:
@@ -61,7 +61,7 @@ class TestSensorTemperatureDifference(TestCaseBase):
             parameter=TemperatureDifferenceParameter(threshold=42),
         )
 
-        with unittest.mock.patch("HABApp.openhab.interface_sync.item_exists", return_value=True), unittest.mock.patch("habapp_rules.common.filter.ExponentialFilter"):
+        with unittest.mock.patch("habapp_rules.core.helper._item_exists", return_value=True), unittest.mock.patch("habapp_rules.common.filter.ExponentialFilter"):
             sensor = SensorTemperatureDifference(config)
         self.assertEqual(42, sensor._hysteresis_switch._threshold)
 
@@ -130,7 +130,7 @@ class TestSensorBrightness(TestCaseBase):
 
         config = BrightnessConfig(items=BrightnessItems(brightness="Unittest_Brightness", output="Unittest_Output_Brightness", threshold="Unittest_Threshold_Brightness"))
 
-        with unittest.mock.patch("HABApp.openhab.interface_sync.item_exists", return_value=True), unittest.mock.patch("habapp_rules.common.filter.ExponentialFilter"):
+        with unittest.mock.patch("habapp_rules.core.helper._item_exists", return_value=True), unittest.mock.patch("habapp_rules.common.filter.ExponentialFilter"):
             self._sensor = SensorBrightness(config)
 
     def test_init(self) -> None:
@@ -147,7 +147,7 @@ class TestSensorBrightness(TestCaseBase):
             parameter=BrightnessParameter(threshold=42),
         )
 
-        with unittest.mock.patch("HABApp.openhab.interface_sync.item_exists", return_value=True), unittest.mock.patch("habapp_rules.common.filter.ExponentialFilter"):
+        with unittest.mock.patch("habapp_rules.core.helper._item_exists", return_value=True), unittest.mock.patch("habapp_rules.common.filter.ExponentialFilter"):
             sensor = SensorBrightness(config)
         self.assertEqual(42, sensor._hysteresis_switch._threshold)
 

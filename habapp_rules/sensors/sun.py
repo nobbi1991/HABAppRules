@@ -1,7 +1,5 @@
 """Rules to handle sun sensors."""
 
-import typing
-
 from HABApp.openhab.events import ItemStateChangedEvent
 from HABApp.openhab.events.event_filters import ItemStateChangedEventFilter
 from HABApp.openhab.items import NumberItem
@@ -14,13 +12,11 @@ from habapp_rules.core.helper import create_additional_item, filter_updated_item
 from habapp_rules.sensors.config.sun import BrightnessConfig, SunPositionConfig, TemperatureDifferenceConfig, WinterFilterConfig
 from habapp_rules.system import PresenceState
 
-_CONFIG_TYPE = typing.TypeVar("_CONFIG_TYPE", bound=BrightnessConfig | TemperatureDifferenceConfig)
 
-
-class _SensorBase(RuleBase, typing.Generic[_CONFIG_TYPE]):
+class _SensorBase[CONFIG_TYPE: BrightnessConfig | TemperatureDifferenceConfig](RuleBase):
     """Base class for sun sensors."""
 
-    def __init__(self, config: _CONFIG_TYPE, item_input: NumberItem) -> None:
+    def __init__(self, config: CONFIG_TYPE, item_input: NumberItem) -> None:
         """Init of base class for sun sensors.
 
         Args:
