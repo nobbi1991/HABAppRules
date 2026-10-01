@@ -4,13 +4,41 @@ import logging
 import time
 from typing import TypeVar
 
-from HABApp.openhab.connection.handler.func_sync import create_item, item_exists
+from HABApp.core.provider import HABAPP_PROVIDER
+from HABApp.openhab.connection.handler import OpenHabSyncInterface
 from HABApp.openhab.items import CallItem, ColorItem, ContactItem, DatetimeItem, DimmerItem, GroupItem, ImageItem, LocationItem, NumberItem, OpenhabItem, PlayerItem, RollershutterItem, StringItem, SwitchItem
 
 from habapp_rules.core.exceptions import HabAppRulesError
 
 LOGGER = logging.getLogger(__name__)
 OH_ITEM_TYPE = TypeVar("OH_ITEM_TYPE", CallItem, ColorItem, ContactItem, DatetimeItem, DimmerItem, GroupItem, ImageItem, LocationItem, NumberItem, OpenhabItem, PlayerItem, RollershutterItem, StringItem, SwitchItem)
+
+
+def _item_exists(name: str) -> bool:
+    """Check if an item exists in the openHAB item registry.
+
+    Args:
+        name: Name of item
+
+    Returns:
+        True if the item exists
+    """
+    return HABAPP_PROVIDER.get_existing(OpenHabSyncInterface).item_exists(name)
+
+
+def _create_item(item_type: str, name: str, label: str | None = None, groups: list[str] | None = None) -> bool:
+    """Create an item in the openHAB item registry.
+
+    Args:
+        item_type: Type of item (e.g. String)
+        name: Name of item
+        label: Label of the item
+        groups: in which groups is the item
+
+    Returns:
+        True if the item was created / updated
+    """
+    return HABAPP_PROVIDER.get_existing(OpenHabSyncInterface).create_item(item_type=item_type, name=name, label=label, groups=groups)
 
 
 def create_additional_item(name: str, item_class: type[OH_ITEM_TYPE], label: str | None = None, groups: list[str] | None = None) -> OH_ITEM_TYPE:
@@ -32,10 +60,10 @@ def create_additional_item(name: str, item_class: type[OH_ITEM_TYPE], label: str
         LOGGER.warning(f"Item '{name}' does not start with 'H_'. All automatically created items must start with 'H_'. habapp_rules will add 'H_' automatically.")
         name = f"H_{name}"
 
-    if not item_exists(name):
+    if not _item_exists(name):
         if not label:
             label = f"{name.removeprefix('H_').replace('_', ' ')}"
-        if not create_item(item_type=item_class.__name__.removesuffix("Item"), name=name, label=label, groups=groups):
+        if not _create_item(item_type=item_class.__name__.removesuffix("Item"), name=name, label=label, groups=groups):
             msg = f"Could not create item '{name}'"
             raise HabAppRulesError(msg)
         time.sleep(0.05)

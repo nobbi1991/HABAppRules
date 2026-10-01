@@ -28,7 +28,7 @@ class _VirtualEnergyMeterBase(RuleBase, Generic[_CONFIG_TYPE]):
         self._monitored_item.listen_event(self._cb_monitored_item, ItemStateChangedEventFilter())
 
         if self._is_on():
-            self.run.soon(self._cb_monitored_item, ItemStateChangedEvent(self._monitored_item.name, self._monitored_item.value, None))
+            self.run.soon(self._cb_monitored_item, ItemStateChangedEvent(self._monitored_item.name, self._monitored_item.value, None, last_state_update=None, last_state_change=None))
 
         if self._config.items.power_output is not None:
             self._config.items.power_output.oh_send_command(self._get_power() if self._is_on() else 0)
