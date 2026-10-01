@@ -5,7 +5,7 @@ from typing import Any, TypeVar
 T = TypeVar("T")
 
 
-def call_async_sync(async_func: Callable[..., Awaitable[T]], *args: Any, **kwargs: Any) -> T:
+def call_async_sync[T](async_func: Callable[..., Awaitable[T]], *args: Any, **kwargs: Any) -> T:
     """Call an async function from synchronous code.
 
     Args:

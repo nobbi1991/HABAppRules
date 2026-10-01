@@ -188,7 +188,7 @@ ITEM = TypeVar("ITEM", bound=ItemBase)
 PARAM = TypeVar("PARAM", bound=ParameterBase)
 
 
-class ConfigBase(BaseModel, typing.Generic[ITEM, PARAM]):
+class ConfigBase[ITEM: ItemBase, PARAM: ParameterBase](BaseModel):
     """Base class for config objects."""
 
     items: ITEM | None

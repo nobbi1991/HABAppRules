@@ -2,7 +2,6 @@
 
 import logging
 import time
-from typing import TypeVar
 
 from HABApp.core.provider import HABAPP_PROVIDER
 from HABApp.openhab.connection.handler import OpenHabSyncInterface
@@ -11,7 +10,7 @@ from HABApp.openhab.items import CallItem, ColorItem, ContactItem, DatetimeItem,
 from habapp_rules.core.exceptions import HabAppRulesError
 
 LOGGER = logging.getLogger(__name__)
-OH_ITEM_TYPE = TypeVar("OH_ITEM_TYPE", CallItem, ColorItem, ContactItem, DatetimeItem, DimmerItem, GroupItem, ImageItem, LocationItem, NumberItem, OpenhabItem, PlayerItem, RollershutterItem, StringItem, SwitchItem)
+type OH_ITEM_TYPE = CallItem | ColorItem | ContactItem | DatetimeItem | DimmerItem | GroupItem | ImageItem | LocationItem | NumberItem | OpenhabItem | PlayerItem | RollershutterItem | StringItem | SwitchItem
 
 
 def _item_exists(name: str) -> bool:
