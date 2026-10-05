@@ -7,6 +7,9 @@ import datetime
 from typing import TYPE_CHECKING
 
 import HABApp.core
+import HABApp.core.provider
+from HABApp.core.internals import EventBus, ItemRegistry
+from HABApp.openhab.connection.handler import OpenHabSyncInterface
 from HABApp.openhab.events import ItemCommandEvent, ItemStateChangedEvent, ItemStateUpdatedEvent, ThingStatusInfoChangedEvent
 
 if TYPE_CHECKING:
@@ -19,6 +22,38 @@ _MOCKED_ITEM_NAMES = []
 StateTypes = str | float | datetime.datetime
 
 
+def _event_bus() -> EventBus:
+    """Get the event bus of the current test environment.
+
+    Returns:
+        event bus
+    """
+    return HABApp.core.provider.HABAPP_PROVIDER.get_existing(EventBus)
+
+
+def _item_registry() -> ItemRegistry:
+    """Get the item registry of the current test environment.
+
+    Returns:
+        item registry
+    """
+    return HABApp.core.provider.HABAPP_PROVIDER.get_existing(ItemRegistry)
+
+
+def create_item[T: HABApp.openhab.items.OpenhabItem](item_type: type[T], name: str, initial_value: str | float | None = None) -> T:
+    """Create an item which is not added to the item registry.
+
+    Args:
+        item_type: Type of the item
+        name: Name of the item
+        initial_value: initial value
+
+    Returns:
+        created item
+    """
+    return item_type(name, initial_value, event_bus=_event_bus(), interface=HABApp.core.provider.HABAPP_PROVIDER.get_existing(OpenHabSyncInterface))
+
+
 def add_mock_item(item_type: type[HABApp.openhab.items.OpenhabItem], name: str, initial_value: str | float | None = None) -> None:
     """Add a mock item.
 
@@ -27,10 +62,11 @@ def add_mock_item(item_type: type[HABApp.openhab.items.OpenhabItem], name: str, 
         name: Name of the mock item
         initial_value: initial value
     """
-    if HABApp.core.Items.item_exists(name):
-        HABApp.core.Items.pop_item(name)
-    item = item_type(name, initial_value)
-    HABApp.core.Items.add_item(item)
+    item_registry = _item_registry()
+    if item_registry.item_exists(name):
+        item_registry.pop_item(name)
+    item = create_item(item_type, name, initial_value)
+    item_registry.add_item(item)
     _MOCKED_ITEM_NAMES.append(name)
 
 
@@ -40,8 +76,8 @@ def add_mock_thing(name: str) -> None:
     Args:
         name: name of thing
     """
-    thing = HABApp.openhab.items.Thing(name)
-    HABApp.core.Items.add_item(thing)
+    thing = HABApp.openhab.items.Thing(name, interface=HABApp.core.provider.HABAPP_PROVIDER.get_existing(OpenHabSyncInterface))
+    _item_registry().add_item(thing)
     _MOCKED_ITEM_NAMES.append(name)
 
 
@@ -51,14 +87,14 @@ def remove_mocked_item_by_name(name: str) -> None:
     Args:
         name: name of mocked item
     """
-    HABApp.core.Items.pop_item(name)
+    _item_registry().pop_item(name)
     _MOCKED_ITEM_NAMES.remove(name)
 
 
 def remove_all_mocked_items() -> None:
     """Remove all mocked items."""
     for name in _MOCKED_ITEM_NAMES:
-        HABApp.core.Items.pop_item(name)
+        _item_registry().pop_item(name)
     _MOCKED_ITEM_NAMES.clear()
 
 
@@ -100,8 +136,8 @@ def send_command(item_name: str, new_value: StateTypes, old_value: StateTypes = 
 
     set_item_state(item_name, new_value)
     if old_value is not NO_VALUE and old_value != new_value:
-        HABApp.core.EventBus.post_event(item_name, ItemStateChangedEvent(item_name, new_value, old_value))
-    HABApp.core.EventBus.post_event(item_name, ItemStateUpdatedEvent(item_name, new_value))
+        _event_bus().post_event(item_name, ItemStateChangedEvent(item_name, new_value, old_value, last_state_update=None, last_state_change=None))
+    _event_bus().post_event(item_name, ItemStateUpdatedEvent(item_name, new_value, last_state_update=None))
 
 
 def oh_send_command(item: OpenhabItem, new_value: StateTypes, old_value: StateTypes = NO_VALUE) -> None:
@@ -134,7 +170,7 @@ def item_command_event(item_name: str, value: StateTypes) -> None:
     """
     with contextlib.suppress(HABApp.core.errors.InvalidItemValueError):
         set_item_state(item_name, value)
-    HABApp.core.EventBus.post_event(item_name, ItemCommandEvent(item_name, value))
+    _event_bus().post_event(item_name, ItemCommandEvent(item_name, value))
 
 
 def item_state_event(item_name: str, value: StateTypes) -> None:
@@ -145,7 +181,7 @@ def item_state_event(item_name: str, value: StateTypes) -> None:
         value: value of the event
     """
     set_item_state(item_name, value)
-    HABApp.core.EventBus.post_event(item_name, ItemStateUpdatedEvent(item_name, value))
+    _event_bus().post_event(item_name, ItemStateUpdatedEvent(item_name, value, last_state_update=None))
 
 
 def item_state_change_event(item_name: str, value: StateTypes, old_value: StateTypes = None) -> None:
@@ -158,7 +194,7 @@ def item_state_change_event(item_name: str, value: StateTypes, old_value: StateT
     """
     prev_value = old_value or HABApp.openhab.items.OpenhabItem.get_item(item_name).value
     set_item_state(item_name, value)
-    HABApp.core.EventBus.post_event(item_name, ItemStateChangedEvent(item_name, value, prev_value))
+    _event_bus().post_event(item_name, ItemStateChangedEvent(item_name, value, prev_value, last_state_update=None, last_state_change=None))
 
 
 def thing_status_info_changed_event(thing_name: str, status: ThingStatusEnum) -> None:
@@ -169,7 +205,7 @@ def thing_status_info_changed_event(thing_name: str, status: ThingStatusEnum) ->
         status: status
     """
     set_thing_state(thing_name, status)
-    HABApp.core.EventBus.post_event(thing_name, ThingStatusInfoChangedEvent(thing_name, status))
+    _event_bus().post_event(thing_name, ThingStatusInfoChangedEvent(thing_name, status))
 
 
 def assert_item_value(item_name: str, value: StateTypes | None, message: str | None = None) -> None:

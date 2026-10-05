@@ -1,6 +1,5 @@
 import abc
 import time
-from typing import Generic, TypeVar
 
 from HABApp.openhab.events import ItemStateChangedEvent
 from HABApp.openhab.events.event_filters import ItemStateChangedEventFilter
@@ -8,13 +7,11 @@ from HABApp.openhab.events.event_filters import ItemStateChangedEventFilter
 from habapp_rules.core.base import RuleBase
 from habapp_rules.energy.config.virtual_energy_meter import EnergyMeterNumberConfig, EnergyMeterSwitchConfig
 
-_CONFIG_TYPE = TypeVar("_CONFIG_TYPE", bound=EnergyMeterSwitchConfig | EnergyMeterNumberConfig)
 
-
-class _VirtualEnergyMeterBase(RuleBase, Generic[_CONFIG_TYPE]):
+class _VirtualEnergyMeterBase[CONFIG_TYPE: EnergyMeterSwitchConfig | EnergyMeterNumberConfig](RuleBase):
     """Base class for virtual energy meter classes."""
 
-    def __init__(self, config: _CONFIG_TYPE) -> None:
+    def __init__(self, config: CONFIG_TYPE) -> None:
         self._config = config
         self._monitored_item = config.items.monitored_switch if isinstance(config, EnergyMeterSwitchConfig) else config.items.monitored_item
         RuleBase.__init__(self, self._monitored_item.name)
@@ -28,7 +25,7 @@ class _VirtualEnergyMeterBase(RuleBase, Generic[_CONFIG_TYPE]):
         self._monitored_item.listen_event(self._cb_monitored_item, ItemStateChangedEventFilter())
 
         if self._is_on():
-            self.run.soon(self._cb_monitored_item, ItemStateChangedEvent(self._monitored_item.name, self._monitored_item.value, None))
+            self.run.soon(self._cb_monitored_item, ItemStateChangedEvent(self._monitored_item.name, self._monitored_item.value, None, last_state_update=None, last_state_change=None))
 
         if self._config.items.power_output is not None:
             self._config.items.power_output.oh_send_command(self._get_power() if self._is_on() else 0)

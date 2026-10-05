@@ -271,9 +271,9 @@ class TestStateObserverDimmer(TestCaseBase):
         self._observer_dimmer._group_last_event = 0
         with unittest.mock.patch("time.time") as time_mock, unittest.mock.patch.object(self._observer_dimmer, "_check_manual") as check_manual_mock:
             time_mock.return_value = 10
-            self._observer_dimmer._cb_group_item(HABApp.openhab.events.ItemStateUpdatedEvent("item_name", "ON"))
+            self._observer_dimmer._cb_group_item(HABApp.openhab.events.ItemStateUpdatedEvent("item_name", "ON", last_state_update=None))
             time_mock.return_value = 10.2
-            self._observer_dimmer._cb_group_item(HABApp.openhab.events.ItemStateUpdatedEvent("item_name", "ON"))
+            self._observer_dimmer._cb_group_item(HABApp.openhab.events.ItemStateUpdatedEvent("item_name", "ON", last_state_update=None))
         check_manual_mock.assert_called_once()
 
     def test_send_command_exception(self) -> None:
@@ -392,18 +392,18 @@ class TestStateObserverRollerShutter(TestCaseBase):
         TestCase = collections.namedtuple("TestCase", "event, value, tolerance, cb_called")
 
         test_cases = [
-            TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", None, None), 0, 0, False),
-            TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 0, None), None, 0, False),
-            TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 0, None), 0, 0, False),
-            TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 10, None), 10, 0, False),
-            TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 1, None), 0, 0, True),
-            TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 10, None), 0, 0, True),
-            TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 1, None), 0, 2, False),
-            TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 2, None), 0, 2, False),
-            TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 3, None), 0, 2, True),
-            TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 9, None), 10, 2, False),
-            TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 8, None), 10, 2, False),
-            TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 7, None), 10, 2, True),
+            TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", None, None, last_state_update=None, last_state_change=None), 0, 0, False),
+            TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 0, None, last_state_update=None, last_state_change=None), None, 0, False),
+            TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 0, None, last_state_update=None, last_state_change=None), 0, 0, False),
+            TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 10, None, last_state_update=None, last_state_change=None), 10, 0, False),
+            TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 1, None, last_state_update=None, last_state_change=None), 0, 0, True),
+            TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 10, None, last_state_update=None, last_state_change=None), 0, 0, True),
+            TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 1, None, last_state_update=None, last_state_change=None), 0, 2, False),
+            TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 2, None, last_state_update=None, last_state_change=None), 0, 2, False),
+            TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 3, None, last_state_update=None, last_state_change=None), 0, 2, True),
+            TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 9, None, last_state_update=None, last_state_change=None), 10, 2, False),
+            TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 8, None, last_state_update=None, last_state_change=None), 10, 2, False),
+            TestCase(HABApp.openhab.events.ItemStateChangedEvent("any", 7, None, last_state_update=None, last_state_change=None), 10, 2, True),
         ]
 
         with unittest.mock.patch.object(self._observer_jalousie, "_trigger_callback") as trigger_callback_mock:
@@ -512,7 +512,7 @@ class TestStateObserverNumber(TestCaseBase):
                 with self.subTest(test_case=test_case):
                     trigger_cb_mock.reset_mock()
                     self._observer_number._value = test_case.last_value
-                    self._observer_number._check_manual(HABApp.openhab.events.ItemStateChangedEvent("some_name", test_case.new_value, None))
+                    self._observer_number._check_manual(HABApp.openhab.events.ItemStateChangedEvent("some_name", test_case.new_value, None, last_state_update=None, last_state_change=None))
                     if test_case.manual_expected:
                         trigger_cb_mock.assert_called_once()
                     else:
@@ -539,19 +539,19 @@ class TestStateObserverSlat(TestCaseBase):
         """Test _check_manual."""
         # value is 0
         with unittest.mock.patch("threading.Timer") as timer_mock, unittest.mock.patch("habapp_rules.actors.state_observer.StateObserverNumber._check_manual") as base_check_manual_mock:
-            self._observer_slat._check_manual(event := HABApp.openhab.events.ItemStateChangedEvent("any", 0, 42))
+            self._observer_slat._check_manual(event := HABApp.openhab.events.ItemStateChangedEvent("any", 0, 42, last_state_update=None, last_state_change=None))
         timer_mock.assert_called_once_with(3, self._observer_slat._StateObserverSlat__cb_check_manual_delayed, [event])
         base_check_manual_mock.assert_not_called()
 
         # value is 100
         with unittest.mock.patch("threading.Timer") as timer_mock, unittest.mock.patch("habapp_rules.actors.state_observer.StateObserverNumber._check_manual") as base_check_manual_mock:
-            self._observer_slat._check_manual(event := HABApp.openhab.events.ItemStateChangedEvent("any", 100, 42))
+            self._observer_slat._check_manual(event := HABApp.openhab.events.ItemStateChangedEvent("any", 100, 42, last_state_update=None, last_state_change=None))
         timer_mock.assert_called_once_with(3, self._observer_slat._StateObserverSlat__cb_check_manual_delayed, [event])
         base_check_manual_mock.assert_not_called()
 
         # other value | timer not running
         with unittest.mock.patch("threading.Timer") as timer_mock, unittest.mock.patch("habapp_rules.actors.state_observer.StateObserverNumber._check_manual") as base_check_manual_mock:
-            self._observer_slat._check_manual(event := HABApp.openhab.events.ItemStateChangedEvent("any", 80, 42))
+            self._observer_slat._check_manual(event := HABApp.openhab.events.ItemStateChangedEvent("any", 80, 42, last_state_update=None, last_state_change=None))
         timer_mock.assert_not_called()
         base_check_manual_mock.assert_called_once_with(self._observer_slat, event)
 

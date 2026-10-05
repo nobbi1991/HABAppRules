@@ -38,7 +38,7 @@ def _to_datetime(time_input: datetime.time) -> datetime.datetime:  # this is nee
     return result
 
 
-class _VentilationBase(StateMachineRule, typing.Generic[CONFIG_TYPE]):
+class _VentilationBase[CONFIG_TYPE: VentilationConfig | VentilationTwoStageConfig](StateMachineRule):
     """Class for ventilation objects."""
 
     states: typing.ClassVar = [

@@ -1,3 +1,13 @@
+# Version 12.0.0 - dd.10.2026
+
+## Breaking changes
+
+- updated HABApp to 26.10.0. Check [release info](https://github.com/spacemanspiff2007/HABApp/releases/tag/26.10.0)
+
+## Project related
+
+- fixed mypy / ruff findings: `habapp_rules.core.helper.filter_updated_items` is now generic over the item type and `habapp_rules.sensors.config.sun` uses PEP 695 generics
+
 # Version 11.3.1 - 08.09.2026
 
 ## Project related

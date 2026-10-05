@@ -2,7 +2,6 @@
 
 import inspect
 import os
-import typing
 from functools import partial
 from pathlib import Path
 
@@ -172,10 +171,7 @@ class HierarchicalGraphMachineTimer(HierarchicalGraphMachine):
     """HierarchicalGraphMachine with Timer."""
 
 
-_GRAPH_MACHINE_TYPE = typing.TypeVar("_GRAPH_MACHINE_TYPE", bound=GraphMachineTimer | HierarchicalGraphMachineTimer)
-
-
-def get_graph_machine(state_machine: StateMachineRule, graph_machine_class: type[_GRAPH_MACHINE_TYPE], show_conditions: bool = False) -> _GRAPH_MACHINE_TYPE:
+def get_graph_machine[GRAPH_MACHINE_TYPE: GraphMachineTimer | HierarchicalGraphMachineTimer](state_machine: StateMachineRule, graph_machine_class: type[GRAPH_MACHINE_TYPE], show_conditions: bool = False) -> GRAPH_MACHINE_TYPE:
     """Get graph machine from state machine rule.
 
     Args:
