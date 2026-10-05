@@ -645,7 +645,7 @@ wheels = [
 
 [[package]]
 name = "eascheduler"
-version = "0.2.9"
+version = "0.2.10"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "astral" },
@@ -653,9 +653,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "whenever" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/7c/e2/753babc441bdbc4e323c471ae492ead41b0379902031c83225bf4cafa402/eascheduler-0.2.9.tar.gz", hash = "sha256:abaac8ca20a2f507507863486f01808f191122f06e4426014a958728eddc0f66", size = 34258, upload-time = "2026-08-10T09:46:12.27Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/16/65/425dd47bec84466a6b1cd2f2b0e671b7c69da2e390f084a50a1241f41972/eascheduler-0.2.10.tar.gz", hash = "sha256:50b85969ab43603f0966a57e17a2be4f6c93c310222e2498faa4ae8b347c4e75", size = 34421, upload-time = "2026-10-05T05:52:27.557Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/fa/81/505462338fd3209233c8cd9e8ae3a7fc659653029c6cae9fc7f2fbf32a46/eascheduler-0.2.9-py3-none-any.whl", hash = "sha256:0a521b741dc9638bc889552b0855a094f90ac979e14dc0c834b6661c9eb6fb67", size = 48613, upload-time = "2026-08-10T09:46:11.291Z" },
+    { url = "https://files.pythonhosted.org/packages/65/c1/eca59a21a8812b03871bd04413a1f825e2f9d791d7b0595be79867fe2268/eascheduler-0.2.10-py3-none-any.whl", hash = "sha256:f25844bb63052381eb3ccad8730da181be77029d6446ca15ebef33e6fc35b4ee", size = 48684, upload-time = "2026-10-05T05:52:26.191Z" },
 ]
 
 [[package]]
@@ -904,7 +904,7 @@ wheels = [
 
 [[package]]
 name = "habapp"
-version = "26.9.0"
+version = "26.10.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -924,9 +924,9 @@ dependencies = [
     { name = "ujson" },
     { name = "watchfiles" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d4/17/3189e4aa6c1ff110db677b5748e8adb7216988c324cf4adee71b3dabd128/habapp-26.9.0.tar.gz", hash = "sha256:e15a1d6aeb620d7076dc5f303e8ba55193742f3674987025b0e02e31fcedeb23", size = 200482, upload-time = "2026-09-29T08:55:54.707Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3a/4a/90e13d4e70057e8307264ff6ba44011ef79f03563a529c84c40703df5921/habapp-26.10.0.tar.gz", hash = "sha256:f841864305772dd2ba56fe1acccecf6217d91c1e9d7f9a515a83e2d446e6d2c2", size = 200741, upload-time = "2026-10-05T07:55:44.564Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/90/d5/d5716f976b9f769134dd28f742b53da0cd9f4eb04e5b4e831c674b768c87/habapp-26.9.0-py3-none-any.whl", hash = "sha256:cf2ee27b8740574357909a4aa40e424203e3bdc54f5620b74ce32dc3f82e2b97", size = 294321, upload-time = "2026-09-29T08:55:52.904Z" },
+    { url = "https://files.pythonhosted.org/packages/89/20/c8be5eae3566fad649ae6fd0e2a05ddf7e2437d1f082a3b3269562249b0c/habapp-26.10.0-py3-none-any.whl", hash = "sha256:aaa5abb8513a003f8db21a408cd5b926bb246fe6f5d6d0151600ac87f9d718ad", size = 294590, upload-time = "2026-10-05T07:55:42.666Z" },
 ]
 
 [[package]]
@@ -958,7 +958,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "habapp", specifier = "==26.9.0" },
+    { name = "habapp", specifier = "==26.10.0" },
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "matplotlib", specifier = "~=3.10.0" },
     { name = "multi-notifier", specifier = "~=0.6.2" },
@@ -983,14 +983,14 @@ dev = [
 
 [[package]]
 name = "holidays"
-version = "0.102"
+version = "0.105"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "python-dateutil" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b4/bd/129ac0572cbc7357fc9aec05af37c2db4384edf850476e412f57454b5f76/holidays-0.102.tar.gz", hash = "sha256:fc29b2fc76d262c822a200c50095e2dadc974b3e41e245875a33f1436bafe7d3", size = 978332, upload-time = "2026-08-03T17:11:34.693Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5b/b7/b0563bf091ff8089a8a4299068236d277c299e13b5809afeaa99b0c11280/holidays-0.105.tar.gz", hash = "sha256:fc9abc0c187b62e955f92aa12dbe7ed1998cc94712f295ec9244db788594d662", size = 1039659, upload-time = "2026-09-21T21:32:01.423Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7f/b9/1304d15e603617bb65877025f4c11ddb20c09ce2d7e3600995a633a9ab3b/holidays-0.102-py3-none-any.whl", hash = "sha256:ea1116491db82fc56612cad4b6c6f49272a13d73f006b073a3b77e98848c9fbf", size = 1575281, upload-time = "2026-08-03T17:11:32.906Z" },
+    { url = "https://files.pythonhosted.org/packages/9e/d0/dbc6c50f190ed0c32e4ebca037bff252280b0707049ee95825f4e8c3cc19/holidays-0.105-py3-none-any.whl", hash = "sha256:7fbd87770f1128eb24514fbb4c3ec6afa1c72d65c346713dbc13c2d0297df481", size = 1637790, upload-time = "2026-09-21T21:31:59.345Z" },
 ]
 
 [[package]]
