@@ -1,5 +1,9 @@
 # Version 11.3.1 - 08.09.2026
 
+## Bugfix
+
+- fixed `LightDimmerExtended` / `LightSwitchExtended` (`habapp_rules.actors.light`): door and motion timeouts were only calculated once during init and not refreshed on day/night, sleeping or presence changes (regression since 11.x). `_set_timeouts` now also refreshes the additional timeouts via the new `_set_additional_timeouts` hook
+
 ## Project related
 
 - updated prek hooks to latest versions

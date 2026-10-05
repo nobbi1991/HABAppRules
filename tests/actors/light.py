@@ -1492,6 +1492,25 @@ class TestLightExtended(TestCaseBaseStateMachine):
                 self.assertEqual(test_case.timeout_motion, self.light_extended._get_state_timeout("auto_motion"))
                 self.assertEqual(test_case.timeout_door, self.light_extended._get_state_timeout("auto_door"))
 
+    def test_additional_timeouts_updated_on_day_change(self) -> None:
+        """Test that door and motion timeouts are refreshed by the day callback."""
+        parameter = self.light_parameter.model_copy(
+            update={
+                "door": FunctionConfig(day=None, night=BrightnessTimeout(60, 300), sleeping=None),
+                "motion": FunctionConfig(day=None, night=BrightnessTimeout(50, 200), sleeping=None),
+            }
+        )
+        light = LightDimmerExtended(LightConfig(items=self.config_full.items, parameter=parameter))
+        self.assertFalse(light._door_configured())
+        self.assertFalse(light._motion_configured())
+
+        item_state_change_event("Unittest_Day", "OFF")
+
+        self.assertEqual(300, light._get_state_timeout("auto_door"))
+        self.assertEqual(200, light._get_state_timeout("auto_motion"))
+        self.assertTrue(light._door_configured())
+        self.assertTrue(light._motion_configured())
+
     def test_get_target_brightness(self) -> None:
         """Test _get_target_brightness."""
         light_config = LightConfig(
