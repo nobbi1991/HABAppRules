@@ -1,3 +1,9 @@
+# Version 11.3.2 - 10.10.2026
+
+## Project related
+
+- updated prek hooks to latest versions
+
 # Version 11.3.1 - 07.10.2026
 
 ## Bugfix
