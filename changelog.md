@@ -8,7 +8,11 @@
 
 - fixed mypy / ruff findings: `habapp_rules.core.helper.filter_updated_items` is now generic over the item type and `habapp_rules.sensors.config.sun` uses PEP 695 generics
 
-# Version 11.3.1 - 08.09.2026
+# Version 11.3.1 - 07.10.2026
+
+## Bugfix
+
+- fixed `LightDimmerExtended` / `LightSwitchExtended` (`habapp_rules.actors.light`): door and motion timeouts were only calculated once during init and not refreshed on day/night, sleeping or presence changes (regression since 11.x). `_set_timeouts` now also refreshes the additional timeouts via the new `_set_additional_timeouts` hook
 
 ## Project related
 

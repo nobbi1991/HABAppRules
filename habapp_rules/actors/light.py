@@ -215,10 +215,15 @@ class _LightBase(StateMachineRule, abc.ABC):
             self._timeout_leaving = getattr(self._config.parameter.leaving.night if self._config.parameter.leaving else 0, "timeout", 0)
             self._timeout_pre_sleep = getattr(self._config.parameter.pre_sleep.night if self._config.parameter.pre_sleep else 0, "timeout", 0)
 
+        self._set_additional_timeouts()
+
         self._set_state_timeout("auto_on", self._timeout_on)
         self._set_state_timeout("auto_preoff", self._timeout_pre_off)
         self._set_state_timeout("auto_leaving", self._timeout_leaving)
         self._set_state_timeout("auto_presleep", self._timeout_pre_sleep)
+
+    def _set_additional_timeouts(self) -> None:
+        """Hook for subclasses / mixins which have additional state timeouts. Called at the end of _set_timeouts."""
 
     @abc.abstractmethod
     def _set_light_state(self) -> None:
@@ -605,7 +610,11 @@ class _LightExtendedMixin(_LightBase):
 
     def _set_additional_timeouts(self) -> None:
         """Set timeouts depending on the current day/night/sleep state."""
-        # set timeouts of additional states
+        if "auto_door" not in self.state_machine.get_nested_state_names():
+            # This method is also called via _LightBase._set_timeouts() from _LightBase.__init__, which runs before _add_additional_states() of this mixin.
+            # At that point "auto_door" / "auto_motion" do not exist yet and _set_state_timeout would raise. Skip here, __init__ of this mixin calls this method again once the states exist.
+            return
+
         if self._get_sleeping_activ():
             self._timeout_motion = getattr(self._config.parameter.motion.sleeping if self._config.parameter.motion else 0, "timeout", 0)
             self._timeout_door = getattr(self._config.parameter.door.sleeping if self._config.parameter.door else 0, "timeout", 0)
