@@ -6,6 +6,7 @@
 
 ## Project related
 
+- added python 3.15 to the test matrix
 - fixed mypy / ruff findings: `habapp_rules.core.helper.filter_updated_items` is now generic over the item type and `habapp_rules.sensors.config.sun` uses PEP 695 generics
 
 # Version 11.3.1 - 07.10.2026
