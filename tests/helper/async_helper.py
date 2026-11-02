@@ -5,7 +5,7 @@ from typing import Any, TypeVar
 T = TypeVar("T")
 
 
-def call_async_sync(async_func: Callable[..., Awaitable[T]], *args: Any, **kwargs: Any) -> T:
+def call_async_sync[T](async_func: Callable[..., Awaitable[T]], *args: Any, **kwargs: Any) -> T:
     """Call an async function from synchronous code.
 
     Args:
@@ -16,7 +16,12 @@ def call_async_sync(async_func: Callable[..., Awaitable[T]], *args: Any, **kwarg
     Returns:
         The result of the async function
     """
-    loop = asyncio.get_event_loop()
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        # Python 3.14+: no implicit event loop is created anymore
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
     if loop.is_running():
         # If there's already a running event loop, we need to create a new one
         loop = asyncio.new_event_loop()

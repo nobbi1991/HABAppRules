@@ -1,13 +1,12 @@
 """Config models for sun rules."""
 
 import logging
-from typing import Generic, TypeVar
 
 import pydantic
 import typing_extensions
 from HABApp.openhab.items import NumberItem, StringItem, SwitchItem
 
-from habapp_rules.core.pydantic_base import ITEM, PARAM, ConfigBase, ItemBase, ParameterBase
+from habapp_rules.core.pydantic_base import ConfigBase, ItemBase, ParameterBase
 
 LOGGER = logging.getLogger(__name__)
 
@@ -63,15 +62,11 @@ class TemperatureDifferenceParameter(BrightnessParameter):
     ignore_old_values_time: int | None = pydantic.Field(default=None, description="ignores values which are older than the given time in seconds. If None, all values will be taken")
 
 
-_ITEMS = TypeVar("_ITEMS", bound=_ItemsBase)
-_PARAMS = TypeVar("_PARAMS", bound=BrightnessParameter | TemperatureDifferenceParameter)
-
-
-class _ConfigBase(ConfigBase, Generic[ITEM, PARAM, _ITEMS, _PARAMS]):
+class _ConfigBase[ITEMS: _ItemsBase, PARAMS: BrightnessParameter | TemperatureDifferenceParameter](ConfigBase[ITEMS, PARAMS]):
     """Base config model for sun sensor."""
 
-    items: _ITEMS = pydantic.Field(..., description="items for sun sensor")
-    parameter: _PARAMS = pydantic.Field(..., description="parameter for sun sensor")
+    items: ITEMS = pydantic.Field(..., description="items for sun sensor")
+    parameter: PARAMS = pydantic.Field(..., description="parameter for sun sensor")
 
     @pydantic.model_validator(mode="after")
     def validate_threshold(self) -> typing_extensions.Self:
@@ -101,14 +96,14 @@ class _ConfigBase(ConfigBase, Generic[ITEM, PARAM, _ITEMS, _PARAMS]):
         return self.items.threshold.value
 
 
-class BrightnessConfig(_ConfigBase):
+class BrightnessConfig(_ConfigBase[BrightnessItems, BrightnessParameter]):
     """Config model for sun sensor which uses brightness as input."""
 
     items: BrightnessItems = pydantic.Field(..., description="items for sun sensor which uses brightness as input")
     parameter: BrightnessParameter = pydantic.Field(default=BrightnessParameter(), description="parameter for sun sensor which uses brightness as input")
 
 
-class TemperatureDifferenceConfig(_ConfigBase):
+class TemperatureDifferenceConfig(_ConfigBase[TemperatureDifferenceItems, TemperatureDifferenceParameter]):
     """Config model for sun sensor which uses temperature items as input."""
 
     items: TemperatureDifferenceItems = pydantic.Field(..., description="items for sun sensor which uses temperature items as input")

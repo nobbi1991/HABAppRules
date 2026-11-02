@@ -9,7 +9,7 @@ from HABApp.rule.rule import Rule
 
 from habapp_rules.core.exceptions import HabAppRulesError
 from habapp_rules.core.state_machine_rule import StateMachineRule, StateMachineWithTimeout
-from tests.helper.oh_item import add_mock_item
+from tests.helper.oh_item import add_mock_item, create_item
 from tests.helper.test_case_base import TestCaseBase
 
 
@@ -23,7 +23,7 @@ class TestStateMachineRule(TestCaseBase):
         self.state_item = StringItem.get_item("Unittest_State")
         self.item_exists_mock.return_value = False
 
-        with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=StringItem("rules_common_state_machine_rule_StateMachineRule_state", "")):
+        with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=create_item(StringItem, "rules_common_state_machine_rule_StateMachineRule_state", "")):
             self._state_machine = StateMachineRule(self.state_item, "logger_name")
 
         states = [{"name": "State1"}, {"name": "State2", "timeout": 99, "on_timeout": "trigger_stop"}]
@@ -76,7 +76,7 @@ class TestStateMachineRule(TestCaseBase):
         # check if timer is stopped correctly
         states = [{"name": "stopped"}, {"name": "running", "timeout": 99, "on_timeout": "trigger_stop"}]
 
-        with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=StringItem("rules_common_state_machine_rule_StateMachineRule_state", "")):
+        with unittest.mock.patch("habapp_rules.core.helper.create_additional_item", return_value=create_item(StringItem, "rules_common_state_machine_rule_StateMachineRule_state", "")):
             for initial_state in ["stopped", "running"]:
                 state_machine_rule = StateMachineRule(self.state_item, "logger_name")
 

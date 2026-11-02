@@ -15,6 +15,7 @@ from tests.helper.graph_machines import create_state_graphs
 from tests.helper.oh_item import (
     add_mock_item,
     assert_item_value,
+    create_item,
     send_command,
     set_item_state,
 )
@@ -151,8 +152,8 @@ class TestPresence(TestCaseBaseStateMachine):
                 self._presence._config.items.presence.value = testcase.presence
                 self._presence._config.items.leaving.value = testcase.leaving
 
-                self._presence._config.items.outdoor_doors = [ContactItem(f"Unittest_Door{idx}", state) for idx, state in enumerate(testcase.outside_doors)]
-                self._presence._config.items.phones = [SwitchItem(f"Unittest_Phone{idx}", state) for idx, state in enumerate(testcase.phones)]
+                self._presence._config.items.outdoor_doors = [create_item(ContactItem, f"Unittest_Door{idx}", state) for idx, state in enumerate(testcase.outside_doors)]
+                self._presence._config.items.phones = [create_item(SwitchItem, f"Unittest_Phone{idx}", state) for idx, state in enumerate(testcase.phones)]
 
                 self.assertEqual(self._presence._get_initial_state("default"), testcase.expected_result, f"failed testcase: {testcase}")
 
@@ -169,7 +170,7 @@ class TestPresence(TestCaseBaseStateMachine):
         self.assertEqual(self._presence._get_initial_state("default"), "LongAbsence")
 
         # with phones
-        self._presence._config.items.phones = [SwitchItem("Unittest_Phone1")]
+        self._presence._config.items.phones = [create_item(SwitchItem, "Unittest_Phone1")]
         self.assertEqual(self._presence._get_initial_state("default"), "LongAbsence")
 
     def test_presence_trough_doors(self) -> None:
@@ -323,7 +324,7 @@ class TestPresence(TestCaseBaseStateMachine):
         assert_item_value("Unittest_Presence", "OFF")
 
         # check if presence is set after door open
-        self._presence._cb_outside_door(ItemStateChangedEvent("Unittest_Door1", "OPEN", "CLOSED"))
+        self._presence._cb_outside_door(ItemStateChangedEvent("Unittest_Door1", "OPEN", "CLOSED", last_state_update=None, last_state_change=None))
         self.assertEqual(self._presence.state, "Presence")
         assert_item_value("Unittest_Presence", "ON")
 
@@ -332,28 +333,28 @@ class TestPresence(TestCaseBaseStateMachine):
         # send manual off from presence
         self._presence.state_machine.set_state("Presence")
         send_command("Unittest_Presence", "ON", "OFF")
-        self._presence._cb_presence(ItemStateChangedEvent("Unittest_Presence", "OFF", "ON"))
+        self._presence._cb_presence(ItemStateChangedEvent("Unittest_Presence", "OFF", "ON", last_state_update=None, last_state_change=None))
         self.assertEqual(self._presence.state, "Absence")
         send_command("Unittest_Presence", "OFF", "ON")
 
         # send manual off from leaving
         self._presence.state_machine.set_state("Leaving")
         send_command("Unittest_Presence", "ON", "OFF")
-        self._presence._cb_presence(ItemStateChangedEvent("Unittest_Presence", "OFF", "ON"))
+        self._presence._cb_presence(ItemStateChangedEvent("Unittest_Presence", "OFF", "ON", last_state_update=None, last_state_change=None))
         self.assertEqual(self._presence.state, "Absence")
         send_command("Unittest_Presence", "OFF", "ON")
 
         # send manual on from absence
         self._presence.state_machine.set_state("Absence")
         send_command("Unittest_Presence", "OFF", "ON")
-        self._presence._cb_presence(ItemStateChangedEvent("Unittest_Presence", "ON", "OFF"))
+        self._presence._cb_presence(ItemStateChangedEvent("Unittest_Presence", "ON", "OFF", last_state_update=None, last_state_change=None))
         self.assertEqual(self._presence.state, "Presence")
         send_command("Unittest_Presence", "ON", "OFF")
 
         # send manual on from long_absence
         self._presence.state_machine.set_state("LongAbsence")
         send_command("Unittest_Presence", "OFF", "ON")
-        self._presence._cb_presence(ItemStateChangedEvent("Unittest_Presence", "ON", "OFF"))
+        self._presence._cb_presence(ItemStateChangedEvent("Unittest_Presence", "ON", "OFF", last_state_update=None, last_state_change=None))
         self.assertEqual(self._presence.state, "Presence")
         send_command("Unittest_Presence", "ON", "OFF")
 

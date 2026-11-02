@@ -19,7 +19,7 @@ LOGGER = logging.getLogger(__name__)
 CONFIG_TYPE = typing.TypeVar("CONFIG_TYPE", bound=HclElevationConfig | HclTimeConfig)
 
 
-class _HclBase(StateMachineRule, typing.Generic[CONFIG_TYPE]):
+class _HclBase[CONFIG_TYPE: HclElevationConfig | HclTimeConfig](StateMachineRule):
     """Base class for HCL rules."""
 
     states: typing.ClassVar = [

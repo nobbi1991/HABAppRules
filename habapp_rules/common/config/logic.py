@@ -1,23 +1,17 @@
 """Config models for logic rules."""
 
-import typing
-
 import pydantic
 import typing_extensions
 from HABApp.openhab.items import ContactItem, DimmerItem, NumberItem, SwitchItem
 
 from habapp_rules.core.pydantic_base import ConfigBase, ItemBase, ParameterBase
 
-_LOGIC_ITEM_TYPE = typing.TypeVar("_LOGIC_ITEM_TYPE", bound=SwitchItem | ContactItem | NumberItem | DimmerItem)
-_BINARY_ITEM_TYPE = typing.TypeVar("_BINARY_ITEM_TYPE", bound=SwitchItem | ContactItem)
-_NUMERIC_ITEM_TYPE = typing.TypeVar("_NUMERIC_ITEM_TYPE", bound=NumberItem | DimmerItem)
 
-
-class _LogicItemsBase(ItemBase, typing.Generic[_LOGIC_ITEM_TYPE]):
+class _LogicItemsBase[LOGIC_ITEM_TYPE: SwitchItem | ContactItem | NumberItem | DimmerItem](ItemBase):
     """Base class for logic items."""
 
-    inputs: list[_LOGIC_ITEM_TYPE] = pydantic.Field(..., description="List of input items (must be either Switch or Contact and all have to match to output_item)")
-    output: _LOGIC_ITEM_TYPE = pydantic.Field(..., description="Output item")
+    inputs: list[LOGIC_ITEM_TYPE] = pydantic.Field(..., description="List of input items (must be either Switch or Contact and all have to match to output_item)")
+    output: LOGIC_ITEM_TYPE = pydantic.Field(..., description="Output item")
 
     @pydantic.model_validator(mode="after")
     def validate_items(self) -> typing_extensions.Self:
@@ -36,11 +30,11 @@ class _LogicItemsBase(ItemBase, typing.Generic[_LOGIC_ITEM_TYPE]):
         return self
 
 
-class BinaryLogicItems(_LogicItemsBase[_BINARY_ITEM_TYPE], typing.Generic[_BINARY_ITEM_TYPE]):
+class BinaryLogicItems[BINARY_ITEM_TYPE: SwitchItem | ContactItem](_LogicItemsBase[BINARY_ITEM_TYPE]):
     """Items for binary logic."""
 
-    inputs: list[_BINARY_ITEM_TYPE] = pydantic.Field(..., description="List of input items (must be either Switch or Contact and all have to match to output_item)")
-    output: _BINARY_ITEM_TYPE = pydantic.Field(..., description="Output item")
+    inputs: list[BINARY_ITEM_TYPE] = pydantic.Field(..., description="List of input items (must be either Switch or Contact and all have to match to output_item)")
+    output: BINARY_ITEM_TYPE = pydantic.Field(..., description="Output item")
 
 
 class BinaryLogicConfig(ConfigBase):
@@ -50,11 +44,11 @@ class BinaryLogicConfig(ConfigBase):
     parameter: None = None
 
 
-class NumericLogicItems(_LogicItemsBase[_NUMERIC_ITEM_TYPE], typing.Generic[_NUMERIC_ITEM_TYPE]):
+class NumericLogicItems[NUMERIC_ITEM_TYPE: NumberItem | DimmerItem](_LogicItemsBase[NUMERIC_ITEM_TYPE]):
     """Items for numeric logic."""
 
-    inputs: list[_NUMERIC_ITEM_TYPE] = pydantic.Field(..., description="List of input items (must be either Number or Dimmer and all have to match to output_item)")
-    output: _NUMERIC_ITEM_TYPE = pydantic.Field(..., description="Output item")
+    inputs: list[NUMERIC_ITEM_TYPE] = pydantic.Field(..., description="List of input items (must be either Number or Dimmer and all have to match to output_item)")
+    output: NUMERIC_ITEM_TYPE = pydantic.Field(..., description="Output item")
 
 
 class NumericLogicParameter(ParameterBase):

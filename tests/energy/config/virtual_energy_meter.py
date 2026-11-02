@@ -5,19 +5,19 @@ from HABApp.openhab.items import DimmerItem, NumberItem
 
 from habapp_rules.core.exceptions import HabAppRulesConfigurationError
 from habapp_rules.energy.config.virtual_energy_meter import EnergyMeterBaseItems, EnergyMeterNumberConfig, EnergyMeterNumberItems, EnergyMeterNumberParameter, PowerMapping
-from tests.helper.oh_item import add_mock_item
+from tests.helper.oh_item import add_mock_item, create_item
 from tests.helper.test_case_base import TestCaseBase
 
 
-class TestEnergyMeterBaseItems(unittest.TestCase):
+class TestEnergyMeterBaseItems(TestCaseBase):
     """Tests for EnergyMeterBaseItems."""
 
     def test_exceptions_with_missing_item(self) -> None:
         """Test exceptions with missing item."""
         TestCase = collections.namedtuple("TestCase", "power_item, energy_item, raises_exc")
 
-        power_item = NumberItem("Power")
-        energy_item = NumberItem("Energy")
+        power_item = create_item(NumberItem, "Power")
+        energy_item = create_item(NumberItem, "Energy")
 
         test_cases = [
             TestCase(power_item=None, energy_item=None, raises_exc=True),

@@ -11,6 +11,7 @@ from habapp_rules.system.task import CounterTask, RecurringTask
 from tests.helper.oh_item import (
     add_mock_item,
     assert_item_value,
+    create_item,
     item_state_change_event,
     set_item_state,
 )
@@ -46,7 +47,7 @@ class TestRecurringTask(TestCaseBase):
         """Test init with minimal config."""
         add_mock_item(DatetimeItem, "H_Unittest_Task_last_done", None)
 
-        with unittest.mock.patch("habapp_rules.system.config.task.create_additional_item", return_value=DatetimeItem("H_Unittest_Task_last_done")) as create_item_mock:
+        with unittest.mock.patch("habapp_rules.system.config.task.create_additional_item", return_value=create_item(DatetimeItem, "H_Unittest_Task_last_done")) as create_item_mock:
             config_min = RecurringTaskConfig(
                 items=RecurringTaskItems(
                     task_active="Unittest_Task",
@@ -124,7 +125,7 @@ class TestCounterTask(TestCaseBase):
         """Test init with minimal config."""
         add_mock_item(NumberItem, "H_Unittest_Observed_last_reset", None)
 
-        with unittest.mock.patch("habapp_rules.system.config.task.create_additional_item", return_value=NumberItem("H_Unittest_Observed_last_reset")) as create_item_mock:
+        with unittest.mock.patch("habapp_rules.system.config.task.create_additional_item", return_value=create_item(NumberItem, "H_Unittest_Observed_last_reset")) as create_item_mock:
             config_min = CounterTaskConfig(items=CounterTaskItems(task_active="Unittest_Counter_Task", observed="Unittest_Observed"), parameter=CounterTaskParameter(max_value=42))
             CounterTask(config_min)
 
