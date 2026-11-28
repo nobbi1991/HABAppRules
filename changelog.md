@@ -1,4 +1,4 @@
-# Version 12.0.0 - dd.10.2026
+# Version 12.0.0 - 28.11.2026
 
 ## Breaking changes
 
