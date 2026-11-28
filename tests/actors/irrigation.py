@@ -1,7 +1,7 @@
 """Test irrigation rule."""
 
 import collections
-import datetime
+import datetime as dt
 import unittest.mock
 
 from HABApp.openhab.events import ItemStateChangedEvent
@@ -69,17 +69,17 @@ class TestIrrigation(TestCaseBase):
         """Test _get_target_valve_state."""
         # irrigation is active
         set_item_state("Unittest_active", "ON")
-        datetime_now = datetime.datetime(2023, 1, 1, 12, 00)
+        datetime_now = dt.datetime(2023, 1, 1, 12, 00)
         with unittest.mock.patch("datetime.datetime") as datetime_mock, unittest.mock.patch.object(self._irrigation_min, "_is_in_time_range", return_value=False):
             datetime_mock.now.return_value = datetime_now
             self.assertFalse(self._irrigation_min._get_target_valve_state())
-            datetime_mock.combine.assert_called_once_with(date=datetime_now, time=datetime.time(12, 30))
+            datetime_mock.combine.assert_called_once_with(date=datetime_now, time=dt.time(12, 30))
             self._irrigation_min._is_in_time_range.assert_called_once()
 
         with unittest.mock.patch("datetime.datetime") as datetime_mock, unittest.mock.patch.object(self._irrigation_min, "_is_in_time_range", return_value=True):
             datetime_mock.now.return_value = datetime_now
             self.assertTrue(self._irrigation_min._get_target_valve_state())
-            datetime_mock.combine.assert_called_once_with(date=datetime_now, time=datetime.time(12, 30))
+            datetime_mock.combine.assert_called_once_with(date=datetime_now, time=dt.time(12, 30))
             self._irrigation_min._is_in_time_range.assert_called_once()
 
     def test_get_target_valve_state_with_repetitions(self) -> None:
@@ -110,17 +110,17 @@ class TestIrrigation(TestCaseBase):
             self.assertFalse(irrigation_max._get_target_valve_state())
             self.assertEqual(3, irrigation_max._is_in_time_range.call_count)
             irrigation_max._is_in_time_range.assert_has_calls([
-                unittest.mock.call(datetime.time(12, 30), datetime.time(12, 35), unittest.mock.ANY),
-                unittest.mock.call(datetime.time(12, 45), datetime.time(12, 50), unittest.mock.ANY),
-                unittest.mock.call(datetime.time(13, 0), datetime.time(13, 5), unittest.mock.ANY),
+                unittest.mock.call(dt.time(12, 30), dt.time(12, 35), unittest.mock.ANY),
+                unittest.mock.call(dt.time(12, 45), dt.time(12, 50), unittest.mock.ANY),
+                unittest.mock.call(dt.time(13, 0), dt.time(13, 5), unittest.mock.ANY),
             ])
 
         with unittest.mock.patch.object(irrigation_max, "_is_in_time_range", side_effect=[False, True]):
             self.assertTrue(irrigation_max._get_target_valve_state())
             self.assertEqual(2, irrigation_max._is_in_time_range.call_count)
             irrigation_max._is_in_time_range.assert_has_calls([
-                unittest.mock.call(datetime.time(12, 30), datetime.time(12, 35), unittest.mock.ANY),
-                unittest.mock.call(datetime.time(12, 45), datetime.time(12, 50), unittest.mock.ANY),
+                unittest.mock.call(dt.time(12, 30), dt.time(12, 35), unittest.mock.ANY),
+                unittest.mock.call(dt.time(12, 45), dt.time(12, 50), unittest.mock.ANY),
             ])
 
     def test_is_in_time_range(self) -> None:
@@ -128,15 +128,15 @@ class TestIrrigation(TestCaseBase):
         TestCase = collections.namedtuple("TestCase", "start_time, end_time, time_to_check, expected_result")
 
         test_cases = [
-            TestCase(datetime.time(12, 00), datetime.time(13, 00), datetime.time(12, 30), True),
-            TestCase(datetime.time(12, 00), datetime.time(13, 00), datetime.time(14, 30), False),
-            TestCase(datetime.time(12, 00), datetime.time(13, 00), datetime.time(13, 00), False),
-            TestCase(datetime.time(12, 00), datetime.time(13, 00), datetime.time(12, 00), True),
-            TestCase(datetime.time(23, 00), datetime.time(1, 00), datetime.time(23, 0), True),
-            TestCase(datetime.time(23, 00), datetime.time(1, 00), datetime.time(23, 59), True),
-            TestCase(datetime.time(23, 00), datetime.time(1, 00), datetime.time(0, 0), True),
-            TestCase(datetime.time(23, 00), datetime.time(1, 00), datetime.time(0, 30), True),
-            TestCase(datetime.time(23, 00), datetime.time(1, 00), datetime.time(1, 0), False),
+            TestCase(dt.time(12, 00), dt.time(13, 00), dt.time(12, 30), True),
+            TestCase(dt.time(12, 00), dt.time(13, 00), dt.time(14, 30), False),
+            TestCase(dt.time(12, 00), dt.time(13, 00), dt.time(13, 00), False),
+            TestCase(dt.time(12, 00), dt.time(13, 00), dt.time(12, 00), True),
+            TestCase(dt.time(23, 00), dt.time(1, 00), dt.time(23, 0), True),
+            TestCase(dt.time(23, 00), dt.time(1, 00), dt.time(23, 59), True),
+            TestCase(dt.time(23, 00), dt.time(1, 00), dt.time(0, 0), True),
+            TestCase(dt.time(23, 00), dt.time(1, 00), dt.time(0, 30), True),
+            TestCase(dt.time(23, 00), dt.time(1, 00), dt.time(1, 0), False),
         ]
 
         for test_case in test_cases:
@@ -153,7 +153,7 @@ class TestIrrigation(TestCaseBase):
 
         # called by event
         with unittest.mock.patch.object(self._irrigation_min, "_get_target_valve_state", return_value=False):
-            self._irrigation_min._cb_set_valve_state(ItemStateChangedEvent("Unittest_active", "ON", "OFF"))
+            self._irrigation_min._cb_set_valve_state(ItemStateChangedEvent("Unittest_active", "ON", "OFF", last_state_update=None, last_state_change=None))
         self.assertEqual("OFF", self._irrigation_min._config.items.valve.value)
 
         # same state -> no oh command

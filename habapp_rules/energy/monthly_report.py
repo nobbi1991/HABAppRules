@@ -1,6 +1,6 @@
 """Module for sending the monthly energy consumption."""
 
-import datetime
+import datetime as dt
 import json
 import logging
 import os
@@ -90,7 +90,7 @@ class HistoricValueProvider:
         Returns:
             energy meter value at midnight on the first of the month
         """
-        request_time = datetime.datetime(year, month, 1)
+        request_time = dt.datetime(year, month, 1)
         cache_key = request_time.strftime("%Y-%m")
 
         if cache_key in self._cached_values:
@@ -223,7 +223,7 @@ class MonthlyReport(RuleBase):
         Returns:
             tuple of (month_labels, consumption_values_kWh)
         """
-        now = datetime.datetime.now()
+        now = dt.datetime.now()
         first_of_this_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
         energy_values: list[float] = []
@@ -252,7 +252,7 @@ class MonthlyReport(RuleBase):
         self._instance_logger.debug("Send energy consumption was triggered.")
 
         # get start of month -> normal case: if triggered at 00:00 of the first day of the month, start_of_month is the start of the previous month, otherwise get first day of current month
-        now = datetime.datetime.now()
+        now = dt.datetime.now()
         start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         if now.day == 1:
             start_of_month = (start_of_month - timedelta(days=1)).replace(day=1)

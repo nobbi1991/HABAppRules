@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 import logging
 
 from HABApp.openhab.items import NumberItem
@@ -6,7 +6,7 @@ from HABApp.openhab.items import NumberItem
 LOGGER = logging.getLogger(__name__)
 
 
-def get_historic_value(item: NumberItem, start_time: datetime.datetime, default_value: float = 0.0) -> float:
+def get_historic_value(item: NumberItem, start_time: dt.datetime, default_value: float = 0.0) -> float:
     """Get historic value of given Number item.
 
     The value is searched in the hour after ``start_time`` first. If no data is found there, the hour before ``start_time`` is searched as a fallback. The backward fallback is required for the start-of-current-month boundary, which is requested at the exact instant it occurs (e.g. the 1st at 00:00:00): at that moment persistence has no future data yet, so a forward-only lookup would wrongly return 0.
@@ -19,11 +19,11 @@ def get_historic_value(item: NumberItem, start_time: datetime.datetime, default_
     Returns:
         historic value of the item
     """
-    forward = item.get_persistence_data(start_time=start_time, end_time=start_time + datetime.timedelta(hours=1)).data
+    forward = item.get_persistence_data(start_time=start_time, end_time=start_time + dt.timedelta(hours=1)).data
     if forward:
         return next((v for v in forward.values() if isinstance(v, float | int)), default_value)
 
-    backward = item.get_persistence_data(start_time=start_time - datetime.timedelta(hours=1), end_time=start_time).data
+    backward = item.get_persistence_data(start_time=start_time - dt.timedelta(hours=1), end_time=start_time).data
     if backward:
         return next((v for v in reversed(backward.values()) if isinstance(v, float | int)), default_value)
 

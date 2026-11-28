@@ -175,7 +175,7 @@ class ItemBase(BaseModel):
 
         if isinstance(field_type, types.UnionType):
             field_type = [arg for arg in typing.get_args(field_type) if arg is not types.NoneType]
-        return field_type
+        return field_type  # type: ignore[return-value]
 
 
 class ParameterBase(BaseModel):
@@ -188,7 +188,7 @@ ITEM = TypeVar("ITEM", bound=ItemBase)
 PARAM = TypeVar("PARAM", bound=ParameterBase)
 
 
-class ConfigBase(BaseModel, typing.Generic[ITEM, PARAM]):
+class ConfigBase[ITEM: ItemBase, PARAM: ParameterBase](BaseModel):
     """Base class for config objects."""
 
     items: ITEM | None

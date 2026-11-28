@@ -5,17 +5,15 @@ import time
 import unittest.mock
 
 import whenever
-from HABApp.core.items.base_item import UpdatedTime
-from HABApp.openhab.interface_sync import create_item
 from HABApp.openhab.items import DimmerItem, NumberItem, SwitchItem
 
 from habapp_rules.core.exceptions import HabAppRulesError
-from habapp_rules.core.helper import create_additional_item, filter_updated_items, send_if_different
+from habapp_rules.core.helper import _create_item, _item_exists, create_additional_item, filter_updated_items, send_if_different
 from tests.helper.oh_item import add_mock_item, assert_item_value
 from tests.helper.test_case_base import TestCaseBase
 
 
-class TestHelperFunctions(TestCaseBase):
+class TestHelper(TestCaseBase):
     """Tests for all helper functions."""
 
     def test_create_additional_item(self) -> None:
@@ -27,14 +25,11 @@ class TestHelperFunctions(TestCaseBase):
         test_cases = [
             TestCase(SwitchItem, "Switch", "Item_name", "Some label", "Some label", None),
             TestCase(SwitchItem, "Switch", "Item_name", None, "Item name", None),
-            TestCase(SwitchItem, "Switch", "Item_name", "Some label", "Some label", None),
-            TestCase(SwitchItem, "Switch", "Item_name", "Some label", "Some label", None),
-            TestCase(SwitchItem, "Switch", "Item_name", None, "Item name", None),
             TestCase(SwitchItem, "Switch", "Item_name", None, "Item name", ["test_group"]),
             TestCase(NumberItem, "Number", "Item_name", "Some label", "Some label", None),
         ]
 
-        with unittest.mock.patch("habapp_rules.core.helper.create_item", spec=create_item) as create_mock, unittest.mock.patch("HABApp.openhab.items.OpenhabItem.get_item"):
+        with unittest.mock.patch("habapp_rules.core.helper._create_item", spec=_create_item) as create_mock, unittest.mock.patch("HABApp.openhab.items.OpenhabItem.get_item"):
             for test_case in test_cases:
                 create_mock.reset_mock()
                 create_additional_item(test_case.name, test_case.item_class, test_case.label_input, test_case.groups)
@@ -42,15 +37,33 @@ class TestHelperFunctions(TestCaseBase):
 
         # check if item is NOT created if existing
         self.item_exists_mock.return_value = True
-        with unittest.mock.patch("habapp_rules.core.helper.create_item", spec=create_item) as create_mock, unittest.mock.patch("HABApp.openhab.items.OpenhabItem.get_item"):
+        with unittest.mock.patch("habapp_rules.core.helper._create_item", spec=_create_item) as create_mock, unittest.mock.patch("HABApp.openhab.items.OpenhabItem.get_item"):
             create_additional_item("Name_of_Item", SwitchItem)
             create_mock.assert_not_called()
 
-    def test_test_create_additional_item_exception(self) -> None:
-        """Test exceptions of _create_additional_item."""
+    def test_create_additional_item_exception(self) -> None:
+        """Test exceptions of create_additional_item."""
         self.item_exists_mock.return_value = False
-        with unittest.mock.patch("habapp_rules.core.helper.create_item", spec=create_item, return_value=False), self.assertRaises(HabAppRulesError):
+        with unittest.mock.patch("habapp_rules.core.helper._create_item", spec=_create_item, return_value=False), self.assertRaises(HabAppRulesError):
             create_additional_item("Name_of_Item", SwitchItem)
+
+    def test_item_exists(self) -> None:
+        """Test _item_exists."""
+        with unittest.mock.patch("habapp_rules.core.helper.HABAPP_PROVIDER") as provider_mock:
+            interface_mock = provider_mock.get_existing.return_value
+            for exists in (True, False):
+                interface_mock.item_exists.return_value = exists
+                self.assertEqual(exists, _item_exists("Item_name"))
+                interface_mock.item_exists.assert_called_with("Item_name")
+
+    def test_create_item(self) -> None:
+        """Test _create_item."""
+        with unittest.mock.patch("habapp_rules.core.helper.HABAPP_PROVIDER") as provider_mock:
+            interface_mock = provider_mock.get_existing.return_value
+            for created in (True, False):
+                interface_mock.create_item.return_value = created
+                self.assertEqual(created, _create_item("Switch", "H_Item_name", "Label", ["group"]))
+                interface_mock.create_item.assert_called_with(item_type="Switch", name="H_Item_name", label="Label", groups=["group"])
 
     def test_send_if_different(self) -> None:
         """Test send_if_different."""
@@ -71,10 +84,6 @@ class TestHelperFunctions(TestCaseBase):
         send_if_different("Unittest_Number", 84)
         assert_item_value("Unittest_Number", 84)
 
-
-class TestHelperWithItems(TestCaseBase):
-    """Test helper functions with OpenHAB items."""
-
     def test_filter_updated_items(self) -> None:
         """Test filter_updated_items."""
         add_mock_item(NumberItem, "Unittest_Number", 0)
@@ -93,6 +102,6 @@ class TestHelperWithItems(TestCaseBase):
         result = filter_updated_items([item_number, item_dimmer, item_switch], 60)
         self.assertListEqual([item_number, item_dimmer, item_switch], result)
 
-        item_dimmer._last_update = UpdatedTime("Unittest_Dimmer", whenever.Instant.from_timestamp(time.time() - 61))
+        item_dimmer._last_update.set(whenever.Instant.from_timestamp(time.time() - 61), events=False)
         result = filter_updated_items([item_number, item_dimmer, item_switch], 60)
         self.assertListEqual([item_number, item_switch], result)

@@ -14,7 +14,7 @@ from habapp_rules.actors.light import LightDimmer, LightDimmerExtended, LightSwi
 from habapp_rules.actors.state_observer import StateObserverDimmer
 from habapp_rules.system import PresenceState, SleepState
 from tests.helper.graph_machines import _get_state_names, create_state_graphs, extract_states_from_machine, extract_transitions_from_machine
-from tests.helper.oh_item import add_mock_item, item_state_change_event, item_state_event, send_command, set_item_state
+from tests.helper.oh_item import add_mock_item, create_item, item_state_change_event, item_state_event, send_command, set_item_state
 from tests.helper.test_case_base import TestCaseBaseStateMachine
 
 
@@ -324,14 +324,14 @@ class TestLightBase(TestCaseBaseStateMachine):
             TestCase(1, None, None, True),
             TestCase(42, None, None, True),
             # prevent as item
-            TestCase(None, None, SwitchItem("Test", "ON"), False),
-            TestCase(0, None, SwitchItem("Test", "ON"), False),
-            TestCase(1, None, SwitchItem("Test", "ON"), False),
-            TestCase(42, None, SwitchItem("Test", "ON"), False),
-            TestCase(None, None, SwitchItem("Test", "OFF"), False),
-            TestCase(0, None, SwitchItem("Test", "OFF"), False),
-            TestCase(1, None, SwitchItem("Test", "OFF"), True),
-            TestCase(42, None, SwitchItem("Test", "OFF"), True),
+            TestCase(None, None, create_item(SwitchItem, "Test", "ON"), False),
+            TestCase(0, None, create_item(SwitchItem, "Test", "ON"), False),
+            TestCase(1, None, create_item(SwitchItem, "Test", "ON"), False),
+            TestCase(42, None, create_item(SwitchItem, "Test", "ON"), False),
+            TestCase(None, None, create_item(SwitchItem, "Test", "OFF"), False),
+            TestCase(0, None, create_item(SwitchItem, "Test", "OFF"), False),
+            TestCase(1, None, create_item(SwitchItem, "Test", "OFF"), True),
+            TestCase(42, None, create_item(SwitchItem, "Test", "OFF"), True),
             # pre sleep prevent as callable
             TestCase(None, always_true, None, False),
             TestCase(0, always_true, None, False),
@@ -342,10 +342,10 @@ class TestLightBase(TestCaseBaseStateMachine):
             TestCase(1, always_false, None, True),
             TestCase(42, always_false, None, True),
             # pre sleep prevent as callable and item -> item has priority
-            TestCase(42, always_false, SwitchItem("Test", "OFF"), True),
-            TestCase(42, always_false, SwitchItem("Test", "ON"), False),
-            TestCase(42, always_true, SwitchItem("Test", "OFF"), True),
-            TestCase(42, always_true, SwitchItem("Test", "ON"), False),
+            TestCase(42, always_false, create_item(SwitchItem, "Test", "OFF"), True),
+            TestCase(42, always_false, create_item(SwitchItem, "Test", "ON"), False),
+            TestCase(42, always_true, create_item(SwitchItem, "Test", "OFF"), True),
+            TestCase(42, always_true, create_item(SwitchItem, "Test", "ON"), False),
         ]
 
         for test_case in test_cases:
@@ -423,8 +423,8 @@ class TestLightBase(TestCaseBaseStateMachine):
 
         for test_case in test_cases:
             with self.subTest(test_case=test_case):
-                self.light_base._config.items.day = SwitchItem("day", "ON" if test_case.day else "OFF")
-                self.light_base._config.items.sleeping_state = _item_sleeping_state = SwitchItem("Sleeping", "Sleeping" if test_case.sleeping else "Awake")
+                self.light_base._config.items.day = create_item(SwitchItem, "day", "ON" if test_case.day else "OFF")
+                self.light_base._config.items.sleeping_state = _item_sleeping_state = create_item(SwitchItem, "Sleeping", "Sleeping" if test_case.sleeping else "Awake")
                 self.light_base._config = test_case.config
 
                 self.light_base._set_timeouts()
@@ -988,9 +988,9 @@ class TestLightSwitch(TestCaseBaseStateMachine):
             TestCase("auto_preoff", 10, 2, "auto_off"),
         ]
 
-        with unittest.mock.patch("time.sleep", spec=time.sleep) as sleep_mock, unittest.mock.patch.object(self.light_switch._state_observer, "send_command") as send_mock:
+        with unittest.mock.patch("habapp_rules.actors.light.time", spec=time) as time_mock, unittest.mock.patch.object(self.light_switch._state_observer, "send_command") as send_mock:
             for test_case in test_cases:
-                sleep_mock.reset_mock()
+                time_mock.reset_mock()
                 send_mock.reset_mock()
 
                 self.light_switch.state_machine.set_state(test_case.real_state)
@@ -1008,13 +1008,13 @@ class TestLightSwitch(TestCaseBaseStateMachine):
                         if idx + 1 < test_case.switch_off_amount:
                             sleep_calls.append(unittest.mock.call(0.5))
 
-                    sleep_mock.assert_has_calls(sleep_calls)
+                    time_mock.sleep.assert_has_calls(sleep_calls)
                     send_mock.assert_has_calls(on_off_calls)
                 else:
                     send_mock.assert_not_called()
 
         # state changes after OFF was sent
-        with unittest.mock.patch("time.sleep", spec=time.sleep), unittest.mock.patch.object(self.light_switch._state_observer, "send_command") as send_mock, unittest.mock.patch.object(self.light_switch, "state") as state_mock:
+        with unittest.mock.patch("habapp_rules.actors.light.time", spec=time), unittest.mock.patch.object(self.light_switch._state_observer, "send_command") as send_mock, unittest.mock.patch.object(self.light_switch, "state") as state_mock:
             state_mock.__ne__.side_effect = [False, True]
 
             self.light_switch._LightSwitch__trigger_warning("auto_preoff", 0, 1)
@@ -1478,8 +1478,8 @@ class TestLightExtended(TestCaseBaseStateMachine):
 
         for test_case in test_cases:
             with self.subTest(test_case=test_case):
-                self.light_extended._config.items.day = SwitchItem("day", "ON" if test_case.day else "OFF")
-                self.light_extended._config.items.sleeping_state = SwitchItem("Sleeping", "Sleeping" if test_case.sleeping else "Awake")
+                self.light_extended._config.items.day = create_item(SwitchItem, "day", "ON" if test_case.day else "OFF")
+                self.light_extended._config.items.sleeping_state = create_item(SwitchItem, "Sleeping", "Sleeping" if test_case.sleeping else "Awake")
                 self.light_extended._config = test_case.config
 
                 self.light_extended._set_timeouts()
@@ -1616,13 +1616,13 @@ class TestLightExtended(TestCaseBaseStateMachine):
 
     def test_motion_door_allowed(self) -> None:
         """Test _motion_door_allowed."""
-        with unittest.mock.patch("time.time", return_value=1000), unittest.mock.patch.object(self.light_extended, "_hand_off_timestamp", 100):
+        with unittest.mock.patch("habapp_rules.actors.light.time", spec=time, **{"time.return_value": 1000}), unittest.mock.patch.object(self.light_extended, "_hand_off_timestamp", 100):
             self.assertTrue(self.light_extended._motion_door_allowed())
 
-        with unittest.mock.patch("time.time", return_value=121), unittest.mock.patch.object(self.light_extended, "_hand_off_timestamp", 100):
+        with unittest.mock.patch("habapp_rules.actors.light.time", spec=time, **{"time.return_value": 121}), unittest.mock.patch.object(self.light_extended, "_hand_off_timestamp", 100):
             self.assertTrue(self.light_extended._motion_door_allowed())
 
-        with unittest.mock.patch("time.time", return_value=120), unittest.mock.patch.object(self.light_extended, "_hand_off_timestamp", 100):
+        with unittest.mock.patch("habapp_rules.actors.light.time", spec=time, **{"time.return_value": 120}), unittest.mock.patch.object(self.light_extended, "_hand_off_timestamp", 100):
             self.assertFalse(self.light_extended._motion_door_allowed())
 
     def test_manual(self) -> None:

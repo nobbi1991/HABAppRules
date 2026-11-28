@@ -1,7 +1,7 @@
 """Tests for monthly energy report."""
 
 import collections
-import datetime
+import datetime as dt
 import json
 import pathlib
 import tempfile
@@ -135,9 +135,9 @@ class TestMonthlyReport(TestCaseBase):
         """When triggered at 00:00 on the 1st, the report must be about the previous month (not the current one)."""
         TestCase = collections.namedtuple("TestCase", ["now", "expected_month_name"])
         test_cases = [
-            TestCase(datetime.datetime(2026, 6, 1, 0, 0, 0), "Mai"),  # first of month -> previous month
-            TestCase(datetime.datetime(2026, 1, 1, 0, 0, 0), "Dezember"),  # first of January -> previous year December
-            TestCase(datetime.datetime(2026, 6, 2, 0, 0, 0), "Juni"),  # any other day -> current month
+            TestCase(dt.datetime(2026, 6, 1, 0, 0, 0), "Mai"),  # first of month -> previous month
+            TestCase(dt.datetime(2026, 1, 1, 0, 0, 0), "Dezember"),  # first of January -> previous year December
+            TestCase(dt.datetime(2026, 6, 2, 0, 0, 0), "Juni"),  # any other day -> current month
         ]
 
         self._rule._config.items.energy_sum.value = 1000
@@ -147,7 +147,7 @@ class TestMonthlyReport(TestCaseBase):
         for test_case in test_cases:
             with self.subTest(test_case=test_case):
                 with (
-                    unittest.mock.patch("habapp_rules.energy.monthly_report.datetime") as datetime_mock,
+                    unittest.mock.patch("habapp_rules.energy.monthly_report.dt") as datetime_mock,
                     unittest.mock.patch("habapp_rules.energy.monthly_report.get_historic_value", side_effect=[800]),
                     unittest.mock.patch("habapp_rules.energy.config.monthly_report.get_historic_value", side_effect=[90, 1000]),
                     unittest.mock.patch("habapp_rules.energy.monthly_report.create_pie_chart"),

@@ -1,7 +1,7 @@
 """DWD rules."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import logging
 import re
 import typing
@@ -205,7 +205,7 @@ class DwdWindAlarm(StateMachineRule):
                 if not speed_values:
                     continue
 
-                if max(speed_values) >= self._config.parameter.threshold_wind_speed and dwd_items.severity_as_int >= self._config.parameter.threshold_severity and dwd_items.start_time.value < datetime.datetime.now() < dwd_items.end_time.value:
+                if max(speed_values) >= self._config.parameter.threshold_wind_speed and dwd_items.severity_as_int >= self._config.parameter.threshold_severity and dwd_items.start_time.value < dt.datetime.now() < dwd_items.end_time.value:
                     return True
         return False
 

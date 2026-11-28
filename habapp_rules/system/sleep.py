@@ -1,6 +1,6 @@
 """Rule to set/unset sleep state."""
 
-import datetime
+import datetime as dt
 import typing
 
 from HABApp.openhab.events import ItemStateChangedEvent
@@ -237,7 +237,7 @@ class LinkSleep(RuleBase):
         Returns:
             True if current time is in time the active time window
         """
-        now = datetime.datetime.now().time()
+        now = dt.datetime.now().time()
 
         if self._config.parameter.link_time_start <= self._config.parameter.link_time_end:
             return self._config.parameter.link_time_start <= now <= self._config.parameter.link_time_end

@@ -1,6 +1,7 @@
 """Test energy save switch rules."""
 
 import collections
+import time
 import unittest.mock
 
 from HABApp.openhab.items import DimmerItem, NumberItem, SwitchItem
@@ -129,7 +130,11 @@ class TestVirtualEnergyMeterSwitch(TestCaseBase):
 
     def test_reset_countdown(self) -> None:
         """Test _reset_countdown."""
-        with unittest.mock.patch.object(self._rule_max, "_send_energy_countdown") as countdown_mock, unittest.mock.patch.object(self._rule_max, "_get_energy_countdown_time") as get_time_mock, unittest.mock.patch("time.time", return_value=42):
+        with (
+            unittest.mock.patch.object(self._rule_max, "_send_energy_countdown") as countdown_mock,
+            unittest.mock.patch.object(self._rule_max, "_get_energy_countdown_time") as get_time_mock,
+            unittest.mock.patch("habapp_rules.energy.virtual_energy_meter.time", spec=time, **{"time.return_value": 42}),
+        ):
             self._rule_max._reset_countdown()
             countdown_mock.set_countdown.assert_called_once_with(get_time_mock.return_value)
             countdown_mock.reset.assert_called_once()

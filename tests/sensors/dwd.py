@@ -1,7 +1,7 @@
 """Test DWD rules."""
 
 import collections
-import datetime
+import datetime as dt
 import sys
 import unittest.mock
 
@@ -158,11 +158,11 @@ class TestDwdWindAlarm(TestCaseBaseStateMachine):
         """Test _wind_alarm_active."""
         TestCase = collections.namedtuple("TestCase", "type_1, description_1, severity_1 start_time_1, end_time_1, type_2, description_2, severity_2 start_time_2, end_time_2, expected_result")
 
-        now = datetime.datetime.now()
-        start_active = now + datetime.timedelta(hours=-1)
-        end_active = now + datetime.timedelta(hours=1)
-        start_not_active = now + datetime.timedelta(hours=1)
-        end_not_active = now + datetime.timedelta(hours=-2)
+        now = dt.datetime.now()
+        start_active = now + dt.timedelta(hours=-1)
+        end_active = now + dt.timedelta(hours=1)
+        start_not_active = now + dt.timedelta(hours=1)
+        end_not_active = now + dt.timedelta(hours=-2)
 
         test_cases = [
             TestCase(None, None, None, None, None, None, None, None, None, None, False),

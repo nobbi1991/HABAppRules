@@ -1,6 +1,6 @@
 """Get type of day."""
 
-import datetime
+import datetime as dt
 
 import holidays
 
@@ -16,7 +16,7 @@ def is_weekend(offset_days: int = 0) -> bool:
     Returns:
         True if desired day is a weekend day
     """
-    day_to_check = datetime.datetime.now() + datetime.timedelta(days=offset_days)
+    day_to_check = dt.datetime.now() + dt.timedelta(days=offset_days)
     return day_to_check.isoweekday() in {6, 7}
 
 
@@ -29,5 +29,5 @@ def is_holiday(offset_days: int = 0) -> bool:
     Returns:
         True if desired day is holiday
     """
-    day_to_check = datetime.datetime.now() + datetime.timedelta(days=offset_days)
+    day_to_check = dt.datetime.now() + dt.timedelta(days=offset_days)
     return day_to_check in _BY_HOLIDAYS

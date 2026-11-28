@@ -1,6 +1,6 @@
 """Rules to for garden watering."""
 
-import datetime
+import datetime as dt
 
 from HABApp.openhab.events import ItemStateChangedEvent
 from HABApp.openhab.events.event_filters import ItemStateChangedEventFilter
@@ -77,20 +77,20 @@ class Irrigation(RuleBase):
         repetitions = int(self._config.items.repetitions.value) if self._config.items.repetitions else 0
         brake = int(self._config.items.brake.value) if self._config.items.brake else 0
 
-        now = datetime.datetime.now()
+        now = dt.datetime.now()
         hour = int(self._config.items.hour.value)
         minute = int(self._config.items.minute.value)
         duration = int(self._config.items.duration.value)
 
         for idx in range(repetitions + 1):
-            start_time = datetime.datetime.combine(date=now, time=datetime.time(hour, minute)) + datetime.timedelta(minutes=idx * (duration + brake))
-            end_time = start_time + datetime.timedelta(minutes=duration)
+            start_time = dt.datetime.combine(date=now, time=dt.time(hour, minute)) + dt.timedelta(minutes=idx * (duration + brake))
+            end_time = start_time + dt.timedelta(minutes=duration)
             if self._is_in_time_range(start_time.time(), end_time.time(), now.time()):
                 return True
         return False
 
     @staticmethod
-    def _is_in_time_range(start_time: datetime.time, end_time: datetime.time, time_to_check: datetime.time) -> bool:
+    def _is_in_time_range(start_time: dt.time, end_time: dt.time, time_to_check: dt.time) -> bool:
         """Check if a time is in a given range.
 
         Args:

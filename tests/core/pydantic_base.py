@@ -7,7 +7,7 @@ from HABApp.openhab.items import ContactItem, DimmerItem, NumberItem, SwitchItem
 
 from habapp_rules.core.exceptions import HabAppRulesConfigurationError
 from habapp_rules.core.pydantic_base import ItemBase
-from tests.helper.oh_item import add_mock_item, add_mock_thing
+from tests.helper.oh_item import add_mock_item, add_mock_thing, create_item
 from tests.helper.test_case_base import TestCaseBase
 
 
@@ -72,7 +72,7 @@ class TestItemBase(TestCaseBase):
         dimmer = DimmerItem.get_item("Unittest_Dimmer_2")
 
         # good case
-        with unittest.mock.patch("habapp_rules.core.pydantic_base.create_additional_item", return_value=SwitchItem("Unittest_Switch_Created", "")) as create_item_mock:
+        with unittest.mock.patch("habapp_rules.core.pydantic_base.create_additional_item", return_value=create_item(SwitchItem, "Unittest_Switch_Created", "")) as create_item_mock:
             items_for_testing = ItemsForTesting(
                 switch="Unittest_Switch",  # normal case
                 switch_create="Unittest_Switch_Created",  # item which will be created
@@ -100,7 +100,7 @@ class TestItemBase(TestCaseBase):
 
         # with exception
         with (
-            unittest.mock.patch("habapp_rules.core.pydantic_base.create_additional_item", return_value=SwitchItem("Unittest_Switch_Created", "")) as create_item_mock,
+            unittest.mock.patch("habapp_rules.core.pydantic_base.create_additional_item", return_value=create_item(SwitchItem, "Unittest_Switch_Created", "")) as create_item_mock,
             self.assertRaises(HabAppRulesConfigurationError),
         ):
             ItemsForTesting(

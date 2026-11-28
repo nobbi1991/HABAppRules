@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 
 from HABApp.openhab.events import ItemStateChangedEvent
 from HABApp.openhab.events.event_filters import ItemStateChangedEventFilter
@@ -45,7 +45,7 @@ class RecurringTask(RuleBase):
         self._config.items.task_active.listen_event(self._cb_task_active, ItemStateChangedEventFilter())
         self._log_init_done()
 
-    def _get_check_cycle(self) -> datetime.timedelta:
+    def _get_check_cycle(self) -> dt.timedelta:
         """Get cycle time to check if task is done.
 
         Returns:
@@ -60,13 +60,13 @@ class RecurringTask(RuleBase):
             event: event, which triggered this callback
         """
         if event.value == "OFF":
-            self._config.items.last_done.oh_send_command(datetime.datetime.now())
+            self._config.items.last_done.oh_send_command(dt.datetime.now())
 
     def _check_and_set_task_undone(self) -> None:
         """Check if task should be set to True."""
-        last_done_time = self._config.items.last_done.value if self._config.items.last_done.value is not None else datetime.datetime.min.replace()
+        last_done_time = self._config.items.last_done.value if self._config.items.last_done.value is not None else dt.datetime.min.replace()
 
-        if last_done_time + self._config.parameter.recurrence_time < datetime.datetime.now():
+        if last_done_time + self._config.parameter.recurrence_time < dt.datetime.now():
             send_if_different(self._config.items.task_active, "ON")
 
 

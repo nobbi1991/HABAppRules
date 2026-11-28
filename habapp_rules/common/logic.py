@@ -293,7 +293,7 @@ class InvertValue(RuleBase):
         RuleBase.__init__(self, self._config.items.output.name)
 
         self._config.items.input.listen_event(self._cb_input_value, ItemStateChangedEventFilter())
-        self._cb_input_value(ItemStateChangedEvent(self._config.items.input.name, self._config.items.input.value, None))
+        self._cb_input_value(ItemStateChangedEvent(self._config.items.input.name, self._config.items.input.value, None, last_state_update=None, last_state_change=None))
         self._log_init_done(f"Output item = '{self._config.items.output.name}' | Input item = '{self._config.items.input.name}'")
 
     def _cb_input_value(self, event: ItemStateChangedEvent) -> None:

@@ -2,7 +2,7 @@
 
 import abc
 import copy
-import datetime
+import datetime as dt
 import logging
 import typing
 
@@ -20,7 +20,7 @@ LEVEL_POWER = 2
 CONFIG_TYPE = typing.TypeVar("CONFIG_TYPE", bound=VentilationConfig | VentilationTwoStageConfig)
 
 
-def _to_datetime(time_input: datetime.time) -> datetime.datetime:  # this is needed because of https://github.com/spacemanspiff2007/eascheduler/issues
+def _to_datetime(time_input: dt.time) -> dt.datetime:  # this is needed because of https://github.com/spacemanspiff2007/eascheduler/issues
     """Converts a datetime.time object to a datetime.datetime object using today's date. Adds one day if the time is in the past.
 
     Args:
@@ -29,16 +29,16 @@ def _to_datetime(time_input: datetime.time) -> datetime.datetime:  # this is nee
     Returns:
         The resulting datetime object with today's date or the next day if the time is in the past.
     """
-    result = datetime.datetime.combine(datetime.datetime.now(), time_input)
+    result = dt.datetime.combine(dt.datetime.now(), time_input)
 
     # If the resulting datetime is in the past, add one day
-    if result <= datetime.datetime.now():
-        result += datetime.timedelta(days=1)
+    if result <= dt.datetime.now():
+        result += dt.timedelta(days=1)
 
     return result
 
 
-class _VentilationBase(StateMachineRule, typing.Generic[CONFIG_TYPE]):
+class _VentilationBase[CONFIG_TYPE: VentilationConfig | VentilationTwoStageConfig](StateMachineRule):
     """Class for ventilation objects."""
 
     states: typing.ClassVar = [
@@ -87,7 +87,7 @@ class _VentilationBase(StateMachineRule, typing.Generic[CONFIG_TYPE]):
 
         # init state machine
         self._previous_state: str | None = None
-        self._state_change_time = datetime.datetime.now()
+        self._state_change_time = dt.datetime.now()
         self.state_machine = HierarchicalStateMachineWithTimeout(model=self, states=self.states, transitions=self.trans, ignore_invalid_triggers=True, after_state_change="_update_openhab_state", initial=self._get_initial_state())
 
         self._apply_config()
@@ -134,7 +134,7 @@ class _VentilationBase(StateMachineRule, typing.Generic[CONFIG_TYPE]):
         """
         if self.state != self._previous_state:
             super()._update_openhab_state()
-            self._state_change_time = datetime.datetime.now()
+            self._state_change_time = dt.datetime.now()
             self._instance_logger.debug(f"State change: {self._previous_state} -> {self.state}")
 
             self._set_level()
@@ -214,7 +214,7 @@ class _VentilationBase(StateMachineRule, typing.Generic[CONFIG_TYPE]):
             return
 
         # get the remaining minutes and set display text
-        remaining_minutes = round((self._config.parameter.state_hand.timeout - (datetime.datetime.now() - self._state_change_time).seconds) / 60)
+        remaining_minutes = round((self._config.parameter.state_hand.timeout - (dt.datetime.now() - self._state_change_time).seconds) / 60)
         remaining_minutes = max(remaining_minutes, 0)
         send_if_different(self._config.items.display_text, f"{self._config.parameter.state_hand.display_text} {remaining_minutes}min")
 
