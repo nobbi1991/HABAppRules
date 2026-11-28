@@ -1,3 +1,9 @@
+# Version 12.1.0 - 28.11.2026
+
+## Bugfix
+
+- docker image: set `MPLCONFIGDIR` and `XDG_CACHE_HOME` to writable directories. Matplotlib and Fontconfig could not write their caches for the `habapp` user (warnings in the log, slower import)
+
 # Version 12.0.0 - 28.11.2026
 
 ## Breaking changes
