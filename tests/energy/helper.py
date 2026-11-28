@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 import unittest
 import unittest.mock
 
@@ -16,8 +16,8 @@ class TestHelperFunctions(unittest.TestCase):
         fake_persistence_data = HABApp.openhab.definitions.helpers.persistence_data.OpenhabPersistenceData()
         mock_item.get_persistence_data.return_value = fake_persistence_data
 
-        start_time = datetime.datetime.now()
-        end_time = start_time + datetime.timedelta(hours=1)
+        start_time = dt.datetime.now()
+        end_time = start_time + dt.timedelta(hours=1)
 
         # data in the forward window -> returns the first value, only the forward window is queried
         fake_persistence_data.data = {"0.0": 42, "1.0": 1337}
@@ -33,11 +33,11 @@ class TestHelperFunctions(unittest.TestCase):
         backward_data.data = {"0.0": 100, "1.0": 200}
         mock_item.get_persistence_data.side_effect = [forward_data, backward_data]
 
-        start_time = datetime.datetime.now()
+        start_time = dt.datetime.now()
 
         # most recent value of the backward window (last entry) is returned
         self.assertEqual(200, get_historic_value(mock_item, start_time))
-        mock_item.get_persistence_data.assert_any_call(start_time=start_time - datetime.timedelta(hours=1), end_time=start_time)
+        mock_item.get_persistence_data.assert_any_call(start_time=start_time - dt.timedelta(hours=1), end_time=start_time)
 
     def test_get_historic_value_no_data(self) -> None:
         """No data in either window returns 0 and logs a warning."""
@@ -47,5 +47,5 @@ class TestHelperFunctions(unittest.TestCase):
         mock_item.get_persistence_data.return_value = empty_data
 
         with unittest.mock.patch("habapp_rules.energy.helper.LOGGER") as logger_mock:
-            self.assertEqual(0, get_historic_value(mock_item, datetime.datetime.now()))
+            self.assertEqual(0, get_historic_value(mock_item, dt.datetime.now()))
         logger_mock.warning.assert_called_once()

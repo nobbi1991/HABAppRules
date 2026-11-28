@@ -1,6 +1,6 @@
 """Rule to detect whether it is summer or winter."""
 
-import datetime
+import datetime as dt
 import statistics
 
 from habapp_rules.common.hysteresis import HysteresisSwitch
@@ -26,7 +26,7 @@ class SummerWinter(RuleBase):
 
         # set class variables
         self._hysteresis_switch = HysteresisSwitch(config.parameter.temperature_threshold, 0.5)
-        self.__now = datetime.datetime.now()
+        self.__now = dt.datetime.now()
 
         # run at init and every day at 23:00
         self.run.soon(self._cb_update_summer)
@@ -55,8 +55,8 @@ class SummerWinter(RuleBase):
 
         temperature_values = []
         for hour in [7, 14, 22]:
-            start_time = datetime.datetime(self.__now.year, self.__now.month, self.__now.day, hour, 0) - datetime.timedelta(days=day_offset + days_in_past)
-            end_time = start_time + datetime.timedelta(hours=1)
+            start_time = dt.datetime(self.__now.year, self.__now.month, self.__now.day, hour, 0) - dt.timedelta(days=day_offset + days_in_past)
+            end_time = start_time + dt.timedelta(hours=1)
             persistence_data = self._config.items.outside_temperature.get_persistence_data(persistence=self._config.parameter.persistence_service, start_time=start_time, end_time=end_time)
             if not persistence_data.data:
                 msg = f"No data for {start_time}"
@@ -73,7 +73,7 @@ class SummerWinter(RuleBase):
         Raises:
             SummerWinterError: if summer/winter could not be detected
         """
-        self.__now = datetime.datetime.now()
+        self.__now = dt.datetime.now()
         values = []
         for day in range(self._config.parameter.days):
             try:
@@ -107,4 +107,4 @@ class SummerWinter(RuleBase):
 
         # update last update item at every call
         if self._config.items.last_check is not None:
-            self._config.items.last_check.oh_send_command(datetime.datetime.now())
+            self._config.items.last_check.oh_send_command(dt.datetime.now())

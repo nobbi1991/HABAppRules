@@ -1,6 +1,6 @@
 """Config models for ventilation rules."""
 
-import datetime
+import datetime as dt
 
 import pydantic
 from HABApp.openhab.items import NumberItem, StringItem, SwitchItem
@@ -25,7 +25,7 @@ class StateConfigLongAbsence(StateConfig):
     """State config for long absence state."""
 
     duration: int = 3600
-    start_time: datetime.time = datetime.time(6)
+    start_time: dt.time = dt.time(6)
 
 
 class _VentilationItemsBase(ItemBase):

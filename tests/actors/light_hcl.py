@@ -1,7 +1,7 @@
 """Test light HCL rules."""
 
 import collections
-import datetime
+import datetime as dt
 import sys
 import unittest.mock
 
@@ -292,27 +292,27 @@ class TestHclTime(TestCaseBaseStateMachine):
 
         test_cases = [
             # not configured -> always false
-            TestCase(False, datetime.datetime(2023, 12, 19, 12), False, False, False),
+            TestCase(False, dt.datetime(2023, 12, 19, 12), False, False, False),
             # 12:00 -> always false
-            TestCase(True, datetime.datetime(2023, 12, 19, 12), False, False, False),
-            TestCase(True, datetime.datetime(2023, 12, 19, 12), False, True, False),
-            TestCase(True, datetime.datetime(2023, 12, 19, 12), True, False, False),
-            TestCase(True, datetime.datetime(2023, 12, 19, 12), True, True, False),
+            TestCase(True, dt.datetime(2023, 12, 19, 12), False, False, False),
+            TestCase(True, dt.datetime(2023, 12, 19, 12), False, True, False),
+            TestCase(True, dt.datetime(2023, 12, 19, 12), True, False, False),
+            TestCase(True, dt.datetime(2023, 12, 19, 12), True, True, False),
             # 13:00 -> true if next day is a free day
-            TestCase(True, datetime.datetime(2023, 12, 19, 13), False, False, False),
-            TestCase(True, datetime.datetime(2023, 12, 19, 13), False, True, True),
-            TestCase(True, datetime.datetime(2023, 12, 19, 13), True, False, False),
-            TestCase(True, datetime.datetime(2023, 12, 19, 13), True, True, True),
+            TestCase(True, dt.datetime(2023, 12, 19, 13), False, False, False),
+            TestCase(True, dt.datetime(2023, 12, 19, 13), False, True, True),
+            TestCase(True, dt.datetime(2023, 12, 19, 13), True, False, False),
+            TestCase(True, dt.datetime(2023, 12, 19, 13), True, True, True),
             # 4:00 -> true if today is a free day
-            TestCase(True, datetime.datetime(2023, 12, 19, 4), False, False, False),
-            TestCase(True, datetime.datetime(2023, 12, 19, 4), False, True, True),
-            TestCase(True, datetime.datetime(2023, 12, 19, 4), True, False, False),
-            TestCase(True, datetime.datetime(2023, 12, 19, 4), True, True, True),
+            TestCase(True, dt.datetime(2023, 12, 19, 4), False, False, False),
+            TestCase(True, dt.datetime(2023, 12, 19, 4), False, True, True),
+            TestCase(True, dt.datetime(2023, 12, 19, 4), True, False, False),
+            TestCase(True, dt.datetime(2023, 12, 19, 4), True, True, True),
             # 5:00 -> always false
-            TestCase(True, datetime.datetime(2023, 12, 19, 5), False, False, False),
-            TestCase(True, datetime.datetime(2023, 12, 19, 5), False, True, False),
-            TestCase(True, datetime.datetime(2023, 12, 19, 5), True, False, False),
-            TestCase(True, datetime.datetime(2023, 12, 19, 5), True, True, False),
+            TestCase(True, dt.datetime(2023, 12, 19, 5), False, False, False),
+            TestCase(True, dt.datetime(2023, 12, 19, 5), False, True, False),
+            TestCase(True, dt.datetime(2023, 12, 19, 5), True, False, False),
+            TestCase(True, dt.datetime(2023, 12, 19, 5), True, True, False),
         ]
 
         with unittest.mock.patch("habapp_rules.actors.light_hcl.is_holiday") as is_holiday_mock, unittest.mock.patch("habapp_rules.actors.light_hcl.is_weekend") as is_weekend_mock:
@@ -338,18 +338,18 @@ class TestHclTime(TestCaseBaseStateMachine):
         TestCase = collections.namedtuple("TestCase", "test_time, output")
 
         test_cases = [
-            TestCase(datetime.datetime(2023, 1, 1, 0, 0), 3333),
-            TestCase(datetime.datetime(2023, 1, 1, 1, 0), 3167),
-            TestCase(datetime.datetime(2023, 1, 1, 2, 0), 3000),
-            TestCase(datetime.datetime(2023, 1, 1, 3, 30), 3250),
-            TestCase(datetime.datetime(2023, 1, 1, 5, 0), 3500),
-            TestCase(datetime.datetime(2023, 1, 1, 8, 0), 4000),
-            TestCase(datetime.datetime(2023, 1, 1, 9, 0), 5250),
-            TestCase(datetime.datetime(2023, 1, 1, 12, 0), 9000),
-            TestCase(datetime.datetime(2023, 1, 1, 12, 10), 9000),
-            TestCase(datetime.datetime(2023, 1, 1, 20, 0), 4000),
-            TestCase(datetime.datetime(2023, 1, 1, 22, 0), 3667),
-            TestCase(datetime.datetime(2023, 1, 1, 22, 12), 3633),
+            TestCase(dt.datetime(2023, 1, 1, 0, 0), 3333),
+            TestCase(dt.datetime(2023, 1, 1, 1, 0), 3167),
+            TestCase(dt.datetime(2023, 1, 1, 2, 0), 3000),
+            TestCase(dt.datetime(2023, 1, 1, 3, 30), 3250),
+            TestCase(dt.datetime(2023, 1, 1, 5, 0), 3500),
+            TestCase(dt.datetime(2023, 1, 1, 8, 0), 4000),
+            TestCase(dt.datetime(2023, 1, 1, 9, 0), 5250),
+            TestCase(dt.datetime(2023, 1, 1, 12, 0), 9000),
+            TestCase(dt.datetime(2023, 1, 1, 12, 10), 9000),
+            TestCase(dt.datetime(2023, 1, 1, 20, 0), 4000),
+            TestCase(dt.datetime(2023, 1, 1, 22, 0), 3667),
+            TestCase(dt.datetime(2023, 1, 1, 22, 12), 3633),
         ]
 
         with unittest.mock.patch("datetime.datetime") as datetime_mock:
@@ -359,7 +359,7 @@ class TestHclTime(TestCaseBaseStateMachine):
                     self.assertEqual(test_case.output, round(self._rule._get_hcl_color()))
 
         # test one hour later
-        test_time = datetime.datetime(2023, 1, 1, 21, 0)
+        test_time = dt.datetime(2023, 1, 1, 21, 0)
         with unittest.mock.patch.object(self._rule, "_one_hour_later", return_value=True), unittest.mock.patch("datetime.datetime") as datetime_mock:
             datetime_mock.now.return_value = test_time
             self.assertEqual(4000, round(self._rule._get_hcl_color()))

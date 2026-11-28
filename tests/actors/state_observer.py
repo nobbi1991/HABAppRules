@@ -1,6 +1,7 @@
 """Test Presence rule."""
 
 import collections
+import time
 import unittest.mock
 
 import HABApp.rule.rule
@@ -269,10 +270,10 @@ class TestStateObserverDimmer(TestCaseBase):
     def test_cb_group_item(self) -> None:
         """Test _cb_group_item."""
         self._observer_dimmer._group_last_event = 0
-        with unittest.mock.patch("time.time") as time_mock, unittest.mock.patch.object(self._observer_dimmer, "_check_manual") as check_manual_mock:
-            time_mock.return_value = 10
+        with unittest.mock.patch("habapp_rules.actors.state_observer.time", spec=time) as time_mock, unittest.mock.patch.object(self._observer_dimmer, "_check_manual") as check_manual_mock:
+            time_mock.time.return_value = 10
             self._observer_dimmer._cb_group_item(HABApp.openhab.events.ItemStateUpdatedEvent("item_name", "ON", last_state_update=None))
-            time_mock.return_value = 10.2
+            time_mock.time.return_value = 10.2
             self._observer_dimmer._cb_group_item(HABApp.openhab.events.ItemStateUpdatedEvent("item_name", "ON", last_state_update=None))
         check_manual_mock.assert_called_once()
 

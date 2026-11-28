@@ -2,11 +2,13 @@
 
 ## Breaking changes
 
-- updated HABApp to 26.10.0. Check [release info](https://github.com/spacemanspiff2007/HABApp/releases/tag/26.10.0)
+- updated HABApp to 26.11.1. Check [release info](https://github.com/spacemanspiff2007/HABApp/releases/tag/26.11.1)
 
 ## Project related
 
 - added python 3.15 to the test matrix
+- docker image is now based on python 3.15
+- updated all runtime and dev dependencies to their latest versions (HABApp 26.11.1, matplotlib 3.11, wakeonlan 4.0, pytest 9.2, ruff 0.17, mypy 2.4, ...)
 - fixed mypy / ruff findings: `habapp_rules.core.helper.filter_updated_items` is now generic over the item type and `habapp_rules.sensors.config.sun` uses PEP 695 generics
 
 # Version 11.3.1 - 07.10.2026

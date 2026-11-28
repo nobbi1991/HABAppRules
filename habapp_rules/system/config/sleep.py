@@ -1,6 +1,6 @@
 """Config models for sleep rules."""
 
-import datetime
+import datetime as dt
 
 import pydantic
 from HABApp.openhab.items import StringItem, SwitchItem
@@ -40,8 +40,8 @@ class LinkSleepItems(ItemBase):
 class LinkSleepParameter(ParameterBase):
     """Config for sleep detection."""
 
-    link_time_start: datetime.time = pydantic.Field(default=datetime.time(0), description="Start time when the linking is active")
-    link_time_end: datetime.time = pydantic.Field(default=datetime.time(23, 59, 59), description="End time when the linking is not active anymore")
+    link_time_start: dt.time = pydantic.Field(default=dt.time(0), description="Start time when the linking is active")
+    link_time_end: dt.time = pydantic.Field(default=dt.time(23, 59, 59), description="End time when the linking is not active anymore")
 
 
 class LinkSleepConfig(ConfigBase):

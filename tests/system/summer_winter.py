@@ -1,7 +1,7 @@
 """Tests for SummerWinter Rule."""
 
 import collections
-import datetime
+import datetime as dt
 import logging
 import unittest.mock
 
@@ -48,9 +48,9 @@ class TestSummerWinter(TestCaseBase):
         TestCase = collections.namedtuple("TestCase", "now, expected_day, temperatures, expected_mean")
 
         test_cases = [
-            TestCase(now=datetime.datetime(2050, 1, 1, 17), expected_day=datetime.datetime(2049, 12, 31), temperatures=[[8], [18], [14]], expected_mean=13),
-            TestCase(now=datetime.datetime(2050, 1, 1, 23), expected_day=datetime.datetime(2050, 1, 1), temperatures=[[8, 99], [18, 100, 100], [14]], expected_mean=13),
-            TestCase(now=datetime.datetime(2050, 1, 1, 22, 59), expected_day=datetime.datetime(2049, 12, 31), temperatures=[[8], [18], [14]], expected_mean=13),
+            TestCase(now=dt.datetime(2050, 1, 1, 17), expected_day=dt.datetime(2049, 12, 31), temperatures=[[8], [18], [14]], expected_mean=13),
+            TestCase(now=dt.datetime(2050, 1, 1, 23), expected_day=dt.datetime(2050, 1, 1), temperatures=[[8, 99], [18, 100, 100], [14]], expected_mean=13),
+            TestCase(now=dt.datetime(2050, 1, 1, 22, 59), expected_day=dt.datetime(2049, 12, 31), temperatures=[[8], [18], [14]], expected_mean=13),
         ]
 
         with unittest.mock.patch.object(self._summer_winter._config.items, "outside_temperature", spec=NumberItem) as outside_temp_mock:
@@ -74,9 +74,9 @@ class TestSummerWinter(TestCaseBase):
 
                 # check if call of get_persistence_data was correct
                 self.assertEqual(outside_temp_mock.get_persistence_data.call_count, 3)
-                outside_temp_mock.get_persistence_data.assert_any_call(persistence="persist_name", start_time=test_case.expected_day + datetime.timedelta(hours=7), end_time=test_case.expected_day + datetime.timedelta(hours=8))
-                outside_temp_mock.get_persistence_data.assert_any_call(persistence="persist_name", start_time=test_case.expected_day + datetime.timedelta(hours=14), end_time=test_case.expected_day + datetime.timedelta(hours=15))
-                outside_temp_mock.get_persistence_data.assert_any_call(persistence="persist_name", start_time=test_case.expected_day + datetime.timedelta(hours=22), end_time=test_case.expected_day + datetime.timedelta(hours=23))
+                outside_temp_mock.get_persistence_data.assert_any_call(persistence="persist_name", start_time=test_case.expected_day + dt.timedelta(hours=7), end_time=test_case.expected_day + dt.timedelta(hours=8))
+                outside_temp_mock.get_persistence_data.assert_any_call(persistence="persist_name", start_time=test_case.expected_day + dt.timedelta(hours=14), end_time=test_case.expected_day + dt.timedelta(hours=15))
+                outside_temp_mock.get_persistence_data.assert_any_call(persistence="persist_name", start_time=test_case.expected_day + dt.timedelta(hours=22), end_time=test_case.expected_day + dt.timedelta(hours=23))
 
                 # call with days_in_past = 2
                 outside_temp_mock.get_persistence_data.side_effect = history_temperatures
@@ -84,9 +84,9 @@ class TestSummerWinter(TestCaseBase):
 
                 # check if call of get_persistence_data was correct
                 self.assertEqual(outside_temp_mock.get_persistence_data.call_count, 6)
-                outside_temp_mock.get_persistence_data.assert_any_call(persistence="persist_name", start_time=test_case.expected_day + datetime.timedelta(days=-2, hours=7), end_time=test_case.expected_day + datetime.timedelta(days=-2, hours=8))
-                outside_temp_mock.get_persistence_data.assert_any_call(persistence="persist_name", start_time=test_case.expected_day + datetime.timedelta(days=-2, hours=14), end_time=test_case.expected_day + datetime.timedelta(days=-2, hours=15))
-                outside_temp_mock.get_persistence_data.assert_any_call(persistence="persist_name", start_time=test_case.expected_day + datetime.timedelta(days=-2, hours=22), end_time=test_case.expected_day + datetime.timedelta(days=-2, hours=23))
+                outside_temp_mock.get_persistence_data.assert_any_call(persistence="persist_name", start_time=test_case.expected_day + dt.timedelta(days=-2, hours=7), end_time=test_case.expected_day + dt.timedelta(days=-2, hours=8))
+                outside_temp_mock.get_persistence_data.assert_any_call(persistence="persist_name", start_time=test_case.expected_day + dt.timedelta(days=-2, hours=14), end_time=test_case.expected_day + dt.timedelta(days=-2, hours=15))
+                outside_temp_mock.get_persistence_data.assert_any_call(persistence="persist_name", start_time=test_case.expected_day + dt.timedelta(days=-2, hours=22), end_time=test_case.expected_day + dt.timedelta(days=-2, hours=23))
 
     def test__get_weighted_mean_exception(self) -> None:
         """Test normal function of wighted_mean."""

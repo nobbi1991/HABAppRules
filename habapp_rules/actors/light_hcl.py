@@ -1,7 +1,7 @@
 """Light HCL rules."""
 
 import abc
-import datetime
+import datetime as dt
 import logging
 import typing
 
@@ -311,7 +311,7 @@ class HclTime(_HclBase[HclTimeConfig]):
         _HclBase.__init__(self, config)
         self.run.at(self.run.trigger.interval(None, 300), self._update_color)  # every 5 minutes
 
-    def _one_hour_later(self, current_time: datetime.datetime) -> bool:
+    def _one_hour_later(self, current_time: dt.datetime) -> bool:
         """Check if today the color values will be shifted one hour later in the evening.
 
         Args:
@@ -333,10 +333,10 @@ class HclTime(_HclBase[HclTimeConfig]):
         Returns:
             HCL light color
         """
-        current_time = datetime.datetime.now()
+        current_time = dt.datetime.now()
 
         if self._one_hour_later(current_time):
-            current_time -= datetime.timedelta(hours=1)
+            current_time -= dt.timedelta(hours=1)
 
         if current_time.hour < self._config.parameter.color_map[0][0]:
             start_config = (self._config.parameter.color_map[-1][0] - 24, self._config.parameter.color_map[-1][1])

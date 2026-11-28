@@ -128,11 +128,11 @@ class TestEnergySaveSwitch(TestCaseBaseStateMachine):
             TestCase(sleep_end_time=100, time_now=111, expected_result=False),
         ]
 
-        with unittest.mock.patch("time.time", return_value=42) as time_mock:
+        with unittest.mock.patch("habapp_rules.actors.light_bathroom.time", spec=time, **{"time.return_value": 42}) as time_mock:
             for test_case in test_cases:
                 with self.subTest(test_case=test_case):
                     self._rule._sleep_end_time = test_case.sleep_end_time
-                    time_mock.return_value = test_case.time_now
+                    time_mock.time.return_value = test_case.time_now
                     self.assertEqual(test_case.expected_result, self._rule._is_extended_sleep())
 
     def test_mirror_is_on(self) -> None:
@@ -285,7 +285,7 @@ class TestEnergySaveSwitch(TestCaseBaseStateMachine):
             TestCase(sleeping_state=SleepState.POST_SLEEPING.value, expected_state="Auto_On_MainDay", expected_sleep_end_time=0),
         ]
 
-        with unittest.mock.patch("time.time", return_value=42):
+        with unittest.mock.patch("habapp_rules.actors.light_bathroom.time", spec=time, **{"time.return_value": 42}):
             for test_case in test_cases:
                 with self.subTest(test_case=test_case):
                     self._rule._sleep_end_time = 0

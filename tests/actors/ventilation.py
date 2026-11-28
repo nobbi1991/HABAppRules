@@ -1,7 +1,7 @@
 """Test ventilation rules."""
 
 import collections
-import datetime
+import datetime as dt
 import sys
 import unittest
 import unittest.mock
@@ -36,17 +36,17 @@ class TestGlobalFunctions(unittest.TestCase):
         TestCase = collections.namedtuple("TestCase", "input_time, now, expected_result")
 
         test_cases = [
-            TestCase(datetime.time(0, 0), datetime.datetime(2024, 1, 1, 0, 1), datetime.datetime(2024, 1, 2, 0, 0)),
-            TestCase(datetime.time(6, 0), datetime.datetime(2024, 1, 1, 0, 1), datetime.datetime(2024, 1, 1, 6, 0)),
-            TestCase(datetime.time(18, 0), datetime.datetime(2024, 1, 1, 17, 59), datetime.datetime(2024, 1, 1, 18, 0)),
-            TestCase(datetime.time(18, 0), datetime.datetime(2024, 1, 1, 18, 00), datetime.datetime(2024, 1, 2, 18, 0)),
-            TestCase(datetime.time(18, 0), datetime.datetime(2024, 1, 1, 18, 1), datetime.datetime(2024, 1, 2, 18, 0)),
+            TestCase(dt.time(0, 0), dt.datetime(2024, 1, 1, 0, 1), dt.datetime(2024, 1, 2, 0, 0)),
+            TestCase(dt.time(6, 0), dt.datetime(2024, 1, 1, 0, 1), dt.datetime(2024, 1, 1, 6, 0)),
+            TestCase(dt.time(18, 0), dt.datetime(2024, 1, 1, 17, 59), dt.datetime(2024, 1, 1, 18, 0)),
+            TestCase(dt.time(18, 0), dt.datetime(2024, 1, 1, 18, 00), dt.datetime(2024, 1, 2, 18, 0)),
+            TestCase(dt.time(18, 0), dt.datetime(2024, 1, 1, 18, 1), dt.datetime(2024, 1, 2, 18, 0)),
         ]
 
-        combine_orig = datetime.datetime.combine
+        combine_orig = dt.datetime.combine
 
         with unittest.mock.patch("datetime.datetime") as datetime_mock:
-            datetime.datetime.combine = combine_orig
+            dt.datetime.combine = combine_orig
             for test_case in test_cases:
                 with self.subTest(test_case=test_case):
                     datetime_mock.now.return_value = test_case.now
@@ -84,7 +84,7 @@ class TestVentilation(TestCaseBaseStateMachine):
             state_hand=StateConfigWithTimeout(level=102, display_text="Hand Custom", timeout=42 * 60),
             state_external=StateConfig(level=103, display_text="External Custom"),
             state_humidity=StateConfig(level=104, display_text="Humidity Custom"),
-            state_long_absence=StateConfigLongAbsence(level=105, display_text="Absence Custom", duration=1800, start_time=datetime.time(18)),
+            state_long_absence=StateConfigLongAbsence(level=105, display_text="Absence Custom", duration=1800, start_time=dt.time(18)),
         )
 
         config_max = VentilationConfig(
@@ -263,13 +263,13 @@ class TestVentilation(TestCaseBaseStateMachine):
         TestCase = collections.namedtuple("TestCase", "changed_time, now_time, expected_display")
 
         test_cases = [
-            TestCase(datetime.datetime(2024, 1, 1, 12), datetime.datetime(2024, 1, 1, 12, 0), "Hand Custom 42min"),
-            TestCase(datetime.datetime(2024, 1, 1, 12), datetime.datetime(2024, 1, 1, 12, 0, 30), "Hand Custom 42min"),
-            TestCase(datetime.datetime(2024, 1, 1, 12), datetime.datetime(2024, 1, 1, 12, 0, 31), "Hand Custom 41min"),
-            TestCase(datetime.datetime(2024, 1, 1, 12), datetime.datetime(2024, 1, 1, 12, 2, 0), "Hand Custom 40min"),
-            TestCase(datetime.datetime(2024, 1, 1, 12), datetime.datetime(2024, 1, 1, 12, 2, 31), "Hand Custom 39min"),
-            TestCase(datetime.datetime(2024, 1, 1, 12), datetime.datetime(2024, 1, 1, 12, 42, 0), "Hand Custom 0min"),
-            TestCase(datetime.datetime(2024, 1, 1, 12), datetime.datetime(2024, 1, 1, 12, 45, 0), "Hand Custom 0min"),
+            TestCase(dt.datetime(2024, 1, 1, 12), dt.datetime(2024, 1, 1, 12, 0), "Hand Custom 42min"),
+            TestCase(dt.datetime(2024, 1, 1, 12), dt.datetime(2024, 1, 1, 12, 0, 30), "Hand Custom 42min"),
+            TestCase(dt.datetime(2024, 1, 1, 12), dt.datetime(2024, 1, 1, 12, 0, 31), "Hand Custom 41min"),
+            TestCase(dt.datetime(2024, 1, 1, 12), dt.datetime(2024, 1, 1, 12, 2, 0), "Hand Custom 40min"),
+            TestCase(dt.datetime(2024, 1, 1, 12), dt.datetime(2024, 1, 1, 12, 2, 31), "Hand Custom 39min"),
+            TestCase(dt.datetime(2024, 1, 1, 12), dt.datetime(2024, 1, 1, 12, 42, 0), "Hand Custom 0min"),
+            TestCase(dt.datetime(2024, 1, 1, 12), dt.datetime(2024, 1, 1, 12, 45, 0), "Hand Custom 0min"),
         ]
 
         self.ventilation_max.state = "Auto_PowerHand"
@@ -444,7 +444,7 @@ class TestVentilationHeliosTwoStage(TestCaseBaseStateMachine):
             state_hand=StateConfigWithTimeout(level=102, display_text="Hand Custom", timeout=42 * 60),
             state_external=StateConfig(level=103, display_text="External Custom"),
             state_humidity=StateConfig(level=104, display_text="Humidity Custom"),
-            state_long_absence=StateConfigLongAbsence(level=105, display_text="Absence Custom", duration=1800, start_time=datetime.time(18)),
+            state_long_absence=StateConfigLongAbsence(level=105, display_text="Absence Custom", duration=1800, start_time=dt.time(18)),
             state_after_run=StateConfig(level=99, display_text="AfterRun Custom"),
             after_run_timeout=350,
         )
@@ -586,7 +586,7 @@ class TestVentilationHeliosTwoStageHumidity(TestCaseBaseStateMachine):
             state_hand=StateConfigWithTimeout(level=102, display_text="Hand Custom", timeout=42 * 60),
             state_external=StateConfig(level=103, display_text="External Custom"),
             state_humidity=StateConfig(level=104, display_text="Humidity Custom"),
-            state_long_absence=StateConfigLongAbsence(level=105, display_text="Absence Custom", duration=1800, start_time=datetime.time(18)),
+            state_long_absence=StateConfigLongAbsence(level=105, display_text="Absence Custom", duration=1800, start_time=dt.time(18)),
             after_run_timeout=350,
             current_threshold_power=0.5,
         )

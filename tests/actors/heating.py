@@ -1,7 +1,7 @@
 """Test heating rules."""
 
 import collections
-import datetime
+import datetime as dt
 import unittest.mock
 
 import HABApp.rule.scheduler.job_ctrl
@@ -94,7 +94,7 @@ class TestHeatingActive(TestCaseBase):
         self._config_1 = HeatingActiveConfig(items=HeatingActiveItems(control_values=["Unittest_ctr_value_1", "Unittest_ctr_value_2"], output="Unittest_heating_active_1"))
         self._config_2 = HeatingActiveConfig(
             items=HeatingActiveItems(control_values=["Unittest_ctr_value_1", "Unittest_ctr_value_2"], output="Unittest_heating_active_2"),
-            parameter=HeatingActiveParameter(extended_active_time=datetime.timedelta(seconds=10), threshold=20),
+            parameter=HeatingActiveParameter(extended_active_time=dt.timedelta(seconds=10), threshold=20),
         )
 
         self._rule_1 = HeatingActive(self._config_1)

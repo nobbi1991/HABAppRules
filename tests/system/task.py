@@ -1,7 +1,7 @@
 """Tests for Task rules."""
 
 import collections
-import datetime
+import datetime as dt
 import unittest.mock
 
 from HABApp.openhab.items import DatetimeItem, NumberItem, SwitchItem
@@ -28,7 +28,7 @@ class TestRecurringTask(TestCaseBase):
         add_mock_item(SwitchItem, "Unittest_Task", None)
         add_mock_item(DatetimeItem, "Unittest_Task_last", None)
 
-        config_max = RecurringTaskConfig(items=RecurringTaskItems(task_active="Unittest_Task", last_done="Unittest_Task_last"), parameter=RecurringTaskParameter(recurrence_time=datetime.timedelta(hours=12)))
+        config_max = RecurringTaskConfig(items=RecurringTaskItems(task_active="Unittest_Task", last_done="Unittest_Task_last"), parameter=RecurringTaskParameter(recurrence_time=dt.timedelta(hours=12)))
 
         self._rule = RecurringTask(config_max)
 
@@ -37,11 +37,11 @@ class TestRecurringTask(TestCaseBase):
         self._rule = RecurringTask(
             RecurringTaskConfig(
                 items=RecurringTaskItems(task_active="Unittest_Task", last_done="Unittest_Task_last"),
-                parameter=RecurringTaskParameter(recurrence_time=datetime.timedelta(hours=12), fixed_check_time=datetime.time(7)),
+                parameter=RecurringTaskParameter(recurrence_time=dt.timedelta(hours=12), fixed_check_time=dt.time(7)),
             )
         )
 
-        self.assertEqual(self._rule._config.parameter.fixed_check_time, datetime.time(7))
+        self.assertEqual(self._rule._config.parameter.fixed_check_time, dt.time(7))
 
     def test_init_with_min_config(self) -> None:
         """Test init with minimal config."""
@@ -52,7 +52,7 @@ class TestRecurringTask(TestCaseBase):
                 items=RecurringTaskItems(
                     task_active="Unittest_Task",
                 ),
-                parameter=RecurringTaskParameter(recurrence_time=datetime.timedelta(hours=12)),
+                parameter=RecurringTaskParameter(recurrence_time=dt.timedelta(hours=12)),
             )
             RecurringTask(config_min)
 
@@ -63,8 +63,8 @@ class TestRecurringTask(TestCaseBase):
         TestCase = collections.namedtuple("TestCase", "recurrence_time, expected_result")
 
         test_cases = [
-            TestCase(datetime.timedelta(hours=12), datetime.timedelta(seconds=2160)),
-            TestCase(datetime.timedelta(hours=20), datetime.timedelta(hours=1)),
+            TestCase(dt.timedelta(hours=12), dt.timedelta(seconds=2160)),
+            TestCase(dt.timedelta(hours=20), dt.timedelta(hours=1)),
         ]
 
         for test_case in test_cases:
@@ -80,7 +80,7 @@ class TestRecurringTask(TestCaseBase):
         assert_item_value("Unittest_Task_last", None)
 
         item_state_change_event("Unittest_Task", "OFF")
-        self.assertTrue(datetime.datetime.now() - self._rule._config.items.last_done.value < datetime.timedelta(seconds=1))
+        self.assertTrue(dt.datetime.now() - self._rule._config.items.last_done.value < dt.timedelta(seconds=1))
 
     def test_check_and_set_task_undone(self) -> None:
         """Test _check_and_set_task_undone."""
@@ -92,13 +92,13 @@ class TestRecurringTask(TestCaseBase):
 
         # last done is value that should set task to undone
         item_state_change_event("Unittest_Task", "OFF")
-        set_item_state("Unittest_Task_last", datetime.datetime.now() - datetime.timedelta(days=1))
+        set_item_state("Unittest_Task_last", dt.datetime.now() - dt.timedelta(days=1))
         self._rule._check_and_set_task_undone()
         assert_item_value("Unittest_Task", "ON")
 
         # last done is value that should not set task to undone
         item_state_change_event("Unittest_Task", "OFF")
-        set_item_state("Unittest_Task_last", datetime.datetime.now() - datetime.timedelta(hours=1))
+        set_item_state("Unittest_Task_last", dt.datetime.now() - dt.timedelta(hours=1))
         self._rule._check_and_set_task_undone()
         assert_item_value("Unittest_Task", "OFF")
 

@@ -2,7 +2,7 @@
 
 import collections
 import copy
-import datetime
+import datetime as dt
 import sys
 import time
 import unittest
@@ -1258,14 +1258,14 @@ class TestReferenceRun(TestCaseBase):
 
         test_cases = [
             # trigger expected
-            TestCase(datetime.datetime(2021, 1, 1, 10), datetime.datetime(2020, 12, 1, 10), PresenceState.ABSENCE, True),
-            TestCase(datetime.datetime(2021, 2, 1, 10), datetime.datetime(2021, 1, 1, 10), PresenceState.ABSENCE, True),
+            TestCase(dt.datetime(2021, 1, 1, 10), dt.datetime(2020, 12, 1, 10), PresenceState.ABSENCE, True),
+            TestCase(dt.datetime(2021, 2, 1, 10), dt.datetime(2021, 1, 1, 10), PresenceState.ABSENCE, True),
             # no trigger -> wrong state
-            TestCase(datetime.datetime(2021, 2, 1, 10), datetime.datetime(2021, 1, 1, 10), PresenceState.PRESENCE, False),
-            TestCase(datetime.datetime(2021, 2, 1, 10), datetime.datetime(2021, 1, 1, 10), PresenceState.LEAVING, False),
-            TestCase(datetime.datetime(2021, 2, 1, 10), datetime.datetime(2021, 1, 1, 10), PresenceState.LONG_ABSENCE, False),
+            TestCase(dt.datetime(2021, 2, 1, 10), dt.datetime(2021, 1, 1, 10), PresenceState.PRESENCE, False),
+            TestCase(dt.datetime(2021, 2, 1, 10), dt.datetime(2021, 1, 1, 10), PresenceState.LEAVING, False),
+            TestCase(dt.datetime(2021, 2, 1, 10), dt.datetime(2021, 1, 1, 10), PresenceState.LONG_ABSENCE, False),
             # no trigger -> already triggered this month
-            TestCase(datetime.datetime(2021, 2, 1, 10), datetime.datetime(2021, 2, 1, 9), PresenceState.ABSENCE, False),
+            TestCase(dt.datetime(2021, 2, 1, 10), dt.datetime(2021, 2, 1, 9), PresenceState.ABSENCE, False),
         ]
 
         with unittest.mock.patch("datetime.datetime") as datetime_mock:

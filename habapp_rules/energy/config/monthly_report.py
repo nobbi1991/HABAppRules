@@ -1,6 +1,6 @@
 """Config models for monthly energy report."""
 
-import datetime
+import datetime as dt
 import pathlib
 
 import multi_notifier.connectors.connector_mail
@@ -77,7 +77,7 @@ class EnergyShare(BaseModel):
             return [cls._get_number_item_by_name(itm) for itm in data]
         return cls._get_number_item_by_name(data)
 
-    def get_energy_since(self, start_time: datetime.datetime) -> float:
+    def get_energy_since(self, start_time: dt.datetime) -> float:
         """Get energy since start time.
 
         Args:

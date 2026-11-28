@@ -988,9 +988,9 @@ class TestLightSwitch(TestCaseBaseStateMachine):
             TestCase("auto_preoff", 10, 2, "auto_off"),
         ]
 
-        with unittest.mock.patch("time.sleep", spec=time.sleep) as sleep_mock, unittest.mock.patch.object(self.light_switch._state_observer, "send_command") as send_mock:
+        with unittest.mock.patch("habapp_rules.actors.light.time", spec=time) as time_mock, unittest.mock.patch.object(self.light_switch._state_observer, "send_command") as send_mock:
             for test_case in test_cases:
-                sleep_mock.reset_mock()
+                time_mock.reset_mock()
                 send_mock.reset_mock()
 
                 self.light_switch.state_machine.set_state(test_case.real_state)
@@ -1008,13 +1008,13 @@ class TestLightSwitch(TestCaseBaseStateMachine):
                         if idx + 1 < test_case.switch_off_amount:
                             sleep_calls.append(unittest.mock.call(0.5))
 
-                    sleep_mock.assert_has_calls(sleep_calls)
+                    time_mock.sleep.assert_has_calls(sleep_calls)
                     send_mock.assert_has_calls(on_off_calls)
                 else:
                     send_mock.assert_not_called()
 
         # state changes after OFF was sent
-        with unittest.mock.patch("time.sleep", spec=time.sleep), unittest.mock.patch.object(self.light_switch._state_observer, "send_command") as send_mock, unittest.mock.patch.object(self.light_switch, "state") as state_mock:
+        with unittest.mock.patch("habapp_rules.actors.light.time", spec=time), unittest.mock.patch.object(self.light_switch._state_observer, "send_command") as send_mock, unittest.mock.patch.object(self.light_switch, "state") as state_mock:
             state_mock.__ne__.side_effect = [False, True]
 
             self.light_switch._LightSwitch__trigger_warning("auto_preoff", 0, 1)
@@ -1616,13 +1616,13 @@ class TestLightExtended(TestCaseBaseStateMachine):
 
     def test_motion_door_allowed(self) -> None:
         """Test _motion_door_allowed."""
-        with unittest.mock.patch("time.time", return_value=1000), unittest.mock.patch.object(self.light_extended, "_hand_off_timestamp", 100):
+        with unittest.mock.patch("habapp_rules.actors.light.time", spec=time, **{"time.return_value": 1000}), unittest.mock.patch.object(self.light_extended, "_hand_off_timestamp", 100):
             self.assertTrue(self.light_extended._motion_door_allowed())
 
-        with unittest.mock.patch("time.time", return_value=121), unittest.mock.patch.object(self.light_extended, "_hand_off_timestamp", 100):
+        with unittest.mock.patch("habapp_rules.actors.light.time", spec=time, **{"time.return_value": 121}), unittest.mock.patch.object(self.light_extended, "_hand_off_timestamp", 100):
             self.assertTrue(self.light_extended._motion_door_allowed())
 
-        with unittest.mock.patch("time.time", return_value=120), unittest.mock.patch.object(self.light_extended, "_hand_off_timestamp", 100):
+        with unittest.mock.patch("habapp_rules.actors.light.time", spec=time, **{"time.return_value": 120}), unittest.mock.patch.object(self.light_extended, "_hand_off_timestamp", 100):
             self.assertFalse(self.light_extended._motion_door_allowed())
 
     def test_manual(self) -> None:

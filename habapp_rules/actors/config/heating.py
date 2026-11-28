@@ -1,6 +1,6 @@
 """Config models for heating rules."""
 
-import datetime
+import datetime as dt
 
 import pydantic
 from HABApp.openhab.items import NumberItem, SwitchItem
@@ -34,7 +34,7 @@ class HeatingActiveParameter(ParameterBase):
     """Parameters for active heating rule."""
 
     threshold: float = pydantic.Field(default=0, description="control value threshold")
-    extended_active_time: datetime.timedelta = pydantic.Field(default=datetime.timedelta(days=1), description="extended time to keep the output item ON, after last control value change below the threshold")
+    extended_active_time: dt.timedelta = pydantic.Field(default=dt.timedelta(days=1), description="extended time to keep the output item ON, after last control value change below the threshold")
 
 
 class HeatingActiveConfig(ConfigBase):

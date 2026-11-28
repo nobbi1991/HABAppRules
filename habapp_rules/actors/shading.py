@@ -1,7 +1,7 @@
 """Rules to manage shading objects."""
 
 import abc
-import datetime
+import datetime as dt
 import time
 import typing
 
@@ -775,8 +775,8 @@ class ReferenceRun(RuleBase):
             event: presence state event
         """
         if event.value == PresenceState.ABSENCE.value:
-            last_run = self._config.items.last_run.value or datetime.datetime.min
-            current_time = datetime.datetime.now()
+            last_run = self._config.items.last_run.value or dt.datetime.min
+            current_time = dt.datetime.now()
 
             if last_run.year < current_time.year or last_run.month < current_time.month:
                 self._config.items.trigger_run.oh_send_command("ON")

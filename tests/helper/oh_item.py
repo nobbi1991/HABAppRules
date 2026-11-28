@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import contextlib
-import datetime
+import datetime as dt
 from typing import TYPE_CHECKING
 
 import HABApp.core
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 NO_VALUE = object()
 _MOCKED_ITEM_NAMES = []
-StateTypes = str | float | datetime.datetime
+StateTypes = str | float | dt.datetime
 
 
 def _event_bus() -> EventBus:

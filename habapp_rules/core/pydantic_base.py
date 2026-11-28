@@ -175,7 +175,7 @@ class ItemBase(BaseModel):
 
         if isinstance(field_type, types.UnionType):
             field_type = [arg for arg in typing.get_args(field_type) if arg is not types.NoneType]
-        return field_type
+        return field_type  # type: ignore[return-value]
 
 
 class ParameterBase(BaseModel):

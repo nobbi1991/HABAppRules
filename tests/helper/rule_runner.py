@@ -26,7 +26,7 @@ from HABApp.mqtt import MqttAsyncInterface, MqttInterface
 from HABApp.openhab.connection.handler import OpenHabAsyncInterface, OpenHabSyncInterface
 from HABApp.rule.rule_hook import HABAppRuleHook
 from HABApp.runtime import Runtime
-from HABApp.testing.executor import TestingExecutorFactory
+from HABApp.testing.executor import HABAppTestingExecutorFactory
 from HABApp.testing.inspect_habapp import find_in_modules
 
 
@@ -141,7 +141,7 @@ class SimpleRuleRunner:
         # Patch the hook so we can instantiate the rules
         hook = HABAppRuleHook(
             self.loaded_rules.append, suggest_rule_name, DummyRuntime(), None, get_event_loop(), None,
-            item_registry=ir, event_bus=eb, executor_factory=TestingExecutorFactory(eb),
+            item_registry=ir, event_bus=eb, executor_factory=HABAppTestingExecutorFactory(eb),
             oh_interface_sync=oh_interface_sync, oh_interface_async=Mock(OpenHabAsyncInterface),
             mqtt_interface_sync=Mock(MqttInterface), mqtt_interface_async=Mock(MqttAsyncInterface),
         )

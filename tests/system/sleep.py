@@ -1,7 +1,7 @@
 """Test sleep rule."""
 
 import collections
-import datetime
+import datetime as dt
 import sys
 import unittest
 import unittest.mock
@@ -312,8 +312,8 @@ class TestLinkSleep(TestCaseBase):
                 sleep_request_slaves=["Unittest_Sleep5_req", "Unittest_Sleep6_req"],
             ),
             parameter=LinkSleepParameter(
-                start_time=datetime.time(22),
-                end_time=datetime.time(10),
+                start_time=dt.time(22),
+                end_time=dt.time(10),
             ),
         )
 
@@ -341,27 +341,27 @@ class TestLinkSleep(TestCaseBase):
 
         test_cases = [
             # full day
-            TestCase(datetime.time(0), datetime.time(23, 59), datetime.time(0, 0), True),
-            TestCase(datetime.time(0), datetime.time(23, 59), datetime.time(12), True),
-            TestCase(datetime.time(0), datetime.time(23, 59), datetime.time(23, 59), True),
+            TestCase(dt.time(0), dt.time(23, 59), dt.time(0, 0), True),
+            TestCase(dt.time(0), dt.time(23, 59), dt.time(12), True),
+            TestCase(dt.time(0), dt.time(23, 59), dt.time(23, 59), True),
             # range during day
-            TestCase(datetime.time(10), datetime.time(16), datetime.time(0, 0), False),
-            TestCase(datetime.time(10), datetime.time(16), datetime.time(9, 59), False),
-            TestCase(datetime.time(10), datetime.time(16), datetime.time(10), True),
-            TestCase(datetime.time(10), datetime.time(16), datetime.time(10, 1), True),
-            TestCase(datetime.time(10), datetime.time(16), datetime.time(15, 59), True),
-            TestCase(datetime.time(10), datetime.time(16), datetime.time(16), True),
-            TestCase(datetime.time(10), datetime.time(16), datetime.time(16, 1), False),
-            TestCase(datetime.time(10), datetime.time(16), datetime.time(23, 59), False),
+            TestCase(dt.time(10), dt.time(16), dt.time(0, 0), False),
+            TestCase(dt.time(10), dt.time(16), dt.time(9, 59), False),
+            TestCase(dt.time(10), dt.time(16), dt.time(10), True),
+            TestCase(dt.time(10), dt.time(16), dt.time(10, 1), True),
+            TestCase(dt.time(10), dt.time(16), dt.time(15, 59), True),
+            TestCase(dt.time(10), dt.time(16), dt.time(16), True),
+            TestCase(dt.time(10), dt.time(16), dt.time(16, 1), False),
+            TestCase(dt.time(10), dt.time(16), dt.time(23, 59), False),
             # range over midnight day
-            TestCase(datetime.time(22), datetime.time(5), datetime.time(12), False),
-            TestCase(datetime.time(22), datetime.time(5), datetime.time(21, 59), False),
-            TestCase(datetime.time(22), datetime.time(5), datetime.time(22), True),
-            TestCase(datetime.time(22), datetime.time(5), datetime.time(22, 1), True),
-            TestCase(datetime.time(22), datetime.time(5), datetime.time(0), True),
-            TestCase(datetime.time(22), datetime.time(5), datetime.time(4, 59), True),
-            TestCase(datetime.time(22), datetime.time(5), datetime.time(5), True),
-            TestCase(datetime.time(22), datetime.time(5), datetime.time(5, 1), False),
+            TestCase(dt.time(22), dt.time(5), dt.time(12), False),
+            TestCase(dt.time(22), dt.time(5), dt.time(21, 59), False),
+            TestCase(dt.time(22), dt.time(5), dt.time(22), True),
+            TestCase(dt.time(22), dt.time(5), dt.time(22, 1), True),
+            TestCase(dt.time(22), dt.time(5), dt.time(0), True),
+            TestCase(dt.time(22), dt.time(5), dt.time(4, 59), True),
+            TestCase(dt.time(22), dt.time(5), dt.time(5), True),
+            TestCase(dt.time(22), dt.time(5), dt.time(5, 1), False),
         ]
 
         with unittest.mock.patch("datetime.datetime") as datetime_mock:
