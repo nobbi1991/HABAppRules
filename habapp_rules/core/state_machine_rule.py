@@ -14,15 +14,24 @@ from habapp_rules.core.exceptions import HabAppRulesError
 
 
 class _HabAppTimeout(transitions.extensions.states.Timeout):
-    """Timeout state that registers the timer thread with HABApp before processing callbacks.
+    """Timeout state that registers the timer thread with HABApp before processing callbacks."""
 
-    threading.Timer fires _process_timeout from an unregistered thread. Wrapping it with
-    in_thread prevents HABApp from emitting "Thread usage detected" warnings for every
-    timeout-triggered state transition across all state-machine rules.
-    """
+    def enter(self, event_data: EventData) -> None:
+        """Create the in_thread wrapper (in the HABApp worker thread) and start the timer.
+
+        Args:
+            event_data: event data of the state change
+        """
+        self._process_timeout_in_thread = in_thread(super()._process_timeout)
+        super().enter(event_data)
 
     def _process_timeout(self, event_data: EventData) -> None:
-        in_thread(super()._process_timeout)(event_data)
+        """Process the timeout in the timer thread using the in_thread wrapper created in enter().
+
+        Args:
+            event_data: event data of the state change
+        """
+        self._process_timeout_in_thread(event_data)
 
 
 @transitions.extensions.states.add_state_features(_HabAppTimeout)

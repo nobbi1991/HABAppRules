@@ -15,7 +15,9 @@ COPY container/entrypoint.sh /entrypoint.sh
 ENV HABAPP_HOME=/habapp \
 	USER_ID=9001 \
 	GROUP_ID=9001 \
-	TZ=Europe/Berlin
+	TZ=Europe/Berlin \
+	MPLCONFIGDIR=/tmp/matplotlib \
+	XDG_CACHE_HOME=/tmp/.cache
 
 RUN set -eux; \
 # Install required dependencies
