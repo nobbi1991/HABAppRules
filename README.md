@@ -18,8 +18,8 @@ Rules model real-world smart home scenarios as state machines powered by the [`t
 
 ## Requirements
 
-- Python ≥ 3.11
-- OpenHAB with HABApp 25.12.0
+- Python ≥ 3.12 (tested with 3.12 – 3.15)
+- OpenHAB with HABApp 26.11.1
 
 ## Installation
 
@@ -54,7 +54,7 @@ Presence(
             absence="Presence_Absence",
         ),
         parameter=PresenceParameter(
-            phones=["Phone_Norbert", "Phone_Anna"],
+            phones=["Phone_Person1", "Phone_Person2"],
         ),
     )
 )
@@ -169,9 +169,9 @@ uv add <package>
 # Add a dev dependency
 uv add <package> --group dev
 
-# Update all dependencies and lockfile
-uv sync -U --all-groups
+# Upgrade all dependencies in the lockfile
+uv lock --upgrade
 
-# Update lockfile only
-uv lock -U
+# Install exactly what the lockfile specifies
+uv sync --frozen --all-groups
 ```
