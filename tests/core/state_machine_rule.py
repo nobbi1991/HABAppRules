@@ -1,14 +1,17 @@
 """Unit-test for state_machine."""
 
+import asyncio
 import collections
+import threading
 import time
 import unittest.mock
 
+from HABApp.core.asyncio import loop_context
 from HABApp.openhab.items import StringItem
 from HABApp.rule.rule import Rule
 
 from habapp_rules.core.exceptions import HabAppRulesError
-from habapp_rules.core.state_machine_rule import StateMachineRule, StateMachineWithTimeout
+from habapp_rules.core.state_machine_rule import StateMachineRule, StateMachineWithTimeout, _HabAppTimeout
 from tests.helper.oh_item import add_mock_item, create_item
 from tests.helper.test_case_base import TestCaseBase
 
@@ -92,3 +95,31 @@ class TestStateMachineRule(TestCaseBase):
                 if initial_state == "running":
                     time.sleep(0.001)
                     self.assertFalse(next(iter(state_machine_rule.state_machine.states["running"].runner.values())).is_alive())
+
+
+class TestHabAppTimeout(unittest.TestCase):
+    """Tests for _HabAppTimeout."""
+
+    def test_timeout_fires_from_real_timer_thread(self) -> None:
+        """Test that the timeout callback is processed when the timer fires in a plain thread (no event loop in that thread)."""
+        fired = threading.Event()
+
+        class _Model:
+            def on_enter_idle(self) -> None:
+                fired.set()
+
+        states = [{"name": "init"}, {"name": "idle"}, {"name": "running", "timeout": 0.05, "on_timeout": "trigger_stop"}]
+        transitions_ = [{"trigger": "trigger_stop", "source": "running", "dest": "idle"}]
+        model = _Model()
+        machine = StateMachineWithTimeout(model=model, states=states, transitions=transitions_, initial="init", ignore_invalid_triggers=True)
+        self.assertIsInstance(machine.states["running"], _HabAppTimeout)
+
+        loop = asyncio.new_event_loop()
+        token = loop_context.set(loop)  # like in a HABApp worker thread
+        try:
+            model.to_running()
+            self.assertTrue(fired.wait(2))
+            self.assertEqual("idle", model.state)
+        finally:
+            loop_context.reset(token)
+            loop.close()

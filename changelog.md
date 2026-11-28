@@ -1,7 +1,8 @@
-# Version 12.1.0 - 28.11.2026
+# Version 12.0.1 - 28.11.2026
 
 ## Bugfix
 
+- fixed all state timeouts not firing with HABApp 26.11 (regression in 12.0.0). `_HabAppTimeout` created the `in_thread` wrapper inside the timer thread, where HABApp 26.11 raises `RuntimeError: There is no current event loop` (silently, no log entry). Effects were e.g. lights / presence stuck in `leaving`, ventilation stuck in `PowerHand`. The wrapper is now created when the state is entered
 - docker image: set `MPLCONFIGDIR` and `XDG_CACHE_HOME` to writable directories. Matplotlib and Fontconfig could not write their caches for the `habapp` user (warnings in the log, slower import)
 
 # Version 12.0.0 - 28.11.2026
